@@ -17,27 +17,18 @@ Two major options to start from:
 
 Treat deconstruction of a tuple into existing variables as a kind of assignment.
 
-Treat deconstruction of a tuple into new variables as a new kind of node (TODO: is it assignment or expression?). 
+Treat deconstruction of a tuple into new variables as a new kind of node (AssignmentExpression). 
 It would pick up the behavior of each contexts where new variables can be declared (TODO: need to list). For instance, in LINQ, new variables go into a transparent identifiers.
 It is seen as deconstructing into separate variables (we don't introduce transparent identifiers in contexts where they didn't exist previously).
 
 Deconstruction-assignment (deconstruction into into exising variables):
+No syntax change.
+One kind of unary_expression is tuple_literal.
 
-```ANTLR
-assignment
-    : unary_expression assignment_operator expression
-    | tuple_expression assignment_operator expression
-    ;
+- Static semantic: The LHS of the an assignment-expression used be a L-value, but now it can be L-value -- which uses existing rules -- or tuple_literal. The new rules for tuple_literal on the LHS...
+- Dynamic semantic
 
-tuple_expression
-    : '(' tuple_expression_element_list ')'
-    ;
-
-tuple_expression_element_list
-    : unary_expression
-    : tuple_expression_element_list ',' unary_expression
-    ;
-```
+(note: assignment should be assignment_expression in C# spec)
 
 Deconstruction-declaration (deconstruction into new variables):
 
@@ -49,7 +40,6 @@ declaration_statement
     ;
 
 local_variable_combo_declaration
-    : local_variable_combo_declaration_lhs
     : local_variable_combo_declaration_lhs '=' expression
     
 local_variable_combo_declaration_lhs
@@ -58,15 +48,25 @@ local_variable_combo_declaration_lhs
     ;
     
 identifier_list
-    : identifier
+    : identifier ',' identifier
     | identifier_list ',' identifier
     ;
 
 local_variable_list
-    : local_variable_type identifier
+    : local_variable_type identifier ',' local_variable_type identifier
     | local_variable_list ',' local_variable_type identifier
     ;
 ```
+
+Should we allow this?
+`var t = (x: 1, y: 2);    (x: var a, y: var b) = t;`
+or `var (x: a, y: b) = t;`
+(if not, tuple names aren't very useful?)
+
+Add example: var (x, y) = 
+Semantic (cardinality should match, ordering including conversion, 
+What are the type rules? `(string s, int x) = (null, 3);`
+
 
 **Option 2**
 
