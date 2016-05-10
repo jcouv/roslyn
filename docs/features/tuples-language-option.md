@@ -48,7 +48,6 @@ declaration_statement
     | local_variable_combo_declaration ';'
     ;
 
-
 local_variable_combo_declaration
     : local_variable_combo_declaration_lhs
     : local_variable_combo_declaration_lhs '=' expression
