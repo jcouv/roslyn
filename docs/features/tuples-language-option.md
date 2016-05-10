@@ -21,54 +21,52 @@ Treat deconstruction of a tuple into new variables as a new kind of node (TODO: 
 It would pick up the behavior of each contexts where new variables can be declared (TODO: need to list). For instance, in LINQ, new variables go into a transparent identifiers.
 It is seen as deconstructing into separate variables (we don't introduce transparent identifiers in contexts where they didn't exist previously).
 
+Deconstruction-assignment (deconstruction into into exising variables):
+
 ```ANTLR
 assignment
     : unary_expression assignment_operator expression
-    ;
-    
-unary_expression
-    : primary_expression
-    | null_conditional_expression
-    | '+' unary_expression
-    | '-' unary_expression
-    | '!' unary_expression
-    | '~' unary_expression
-    | pre_increment_expression
-    | pre_decrement_expression
-    | cast_expression
-    | await_expression
-    | unary_expression_unsafe
+    | tuple_expression assignment_operator expression
     ;
 
-primary_expression
-    : primary_no_array_creation_expression
-    | array_creation_expression
+tuple_expression
+    : '(' tuple_expression_element_list ')'
     ;
 
-primary_no_array_creation_expression
-    : literal
-    | interpolated_string
-    | simple_name
-    | parenthesized_expression
-    | member_access
-    | invocation_expression
-    | element_access
-    | this_access
-    | base_access
-    | post_increment_expression
-    | post_decrement_expression
-    | object_creation_expression
-    | delegate_creation_expression
-    | anonymous_object_creation_expression
-    | typeof_expression
-    | checked_expression
-    | unchecked_expression
-    | default_value_expression
-    | nameof_expression
-    | anonymous_method_expression
-    | primary_no_array_creation_expression_unsafe
+tuple_expression_element_list
+    : unary_expression
+    : tuple_expression_element_list ',' unary_expression
+    ;
+```
+
+Deconstruction-declaration (deconstruction into new variables):
+
+```ANTLR
+declaration_statement
+    : local_variable_declaration ';'
+    | local_constant_declaration ';'
+    | local_variable_combo_declaration ';'
+    ;
+
+
+local_variable_combo_declaration
+    : local_variable_combo_declaration_lhs
+    : local_variable_combo_declaration_lhs '=' expression
+    
+local_variable_combo_declaration_lhs
+    : 'var' '(' identifier_list ')'
+    | '(' local_variable_list ')'
     ;
     
+identifier_list
+    : identifier
+    | identifier_list ',' identifier
+    ;
+
+local_variable_list
+    : local_variable_type identifier
+    | local_variable_list ',' local_variable_type identifier
+    ;
 ```
 
 **Option 2**
