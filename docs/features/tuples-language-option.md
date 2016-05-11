@@ -15,9 +15,10 @@ One kind of unary_expression is tuple_literal.
 - Static semantic: The LHS of the an assignment-expression used be a L-value, but now it can be L-value -- which uses existing rules -- or tuple_literal. The new rules for tuple_literal on the LHS...
 - Dynamic semantic
 
-This should work even if `System.ValueTuple` is not present.
-This should not create a new kind of bound node.
-How is the Deconstruct method resolved? (there could be multiple candidates)
+- This should work even if `System.ValueTuple` is not present.
+- This should not create a new kind of bound node.
+- How is the Deconstruct method resolved? (there could be multiple candidates)
+- Do the names matter? `int x, y; (a: x, b: y) = M();`
 
 (note: assignment should be assignment_expression in C# spec)
 
