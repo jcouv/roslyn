@@ -1,17 +1,4 @@
 
-For some background, there are different kinds of syntax:
-
-* Statement
-* Expression
-* Declarator
-
-Existing contexts where a variable can be defined:
-
-* For
-* LINQ
-* 
-
-Two major options to start from:
 
 **Option 1**
 
@@ -99,15 +86,12 @@ Add example: var (x, y) =
 Semantic (cardinality should match, ordering including conversion, 
 What are the type rules? `(string s, int x) = (null, 3);`
 
+Deconstruction for `System.ValueTuple`, `System.Tuple` and any other type involves a call to `Deconstruct`.
 
 **Option 2**
 
 Treat deconstruction of a tuple into both existing or new variables as a new kind of node (TODO: more details).
 
-**Other dimensions**
-
-1. Whether all existing contexts that allow declaring new variables should also allow deconstruction of tuples into new variables. (I'm assuming yes)
-2. Whether deconstruction for `System.ValueTuple` and `System.Tuple` involves a call to `Deconstruct`. (I'm assuming yes)
 
 **Implications**
 
