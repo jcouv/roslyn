@@ -56,6 +56,38 @@ local_variable_list
     : local_variable_type identifier ',' local_variable_type identifier
     | local_variable_list ',' local_variable_type identifier
     ;
+    
+foreach_statement
+    : 'foreach' '(' local_variable_type identifier 'in' expression ')' embedded_statement
+    | 'foreach' '(' local_variable_combo_declaration_lhs 'in' expression ')' embedded_statement
+    ;
+    
+for_initializer
+    : local_variable_declaration
+    | local_variable_combo_declaration
+    | statement_expression_list
+    ;
+
+let_clause
+    : 'let' identifier '=' expression
+    | 'let' '(' identifier_list ')' '=' expression
+    ;
+    
+from_clause // not sure
+    : 'from' type? identifier 'in' expression
+    ;
+    
+join_clause // not sure
+    : 'join' type? identifier 'in' expression 'on' expression 'equals' expression
+    ;
+
+join_into_clause // not sure
+    : 'join' type? identifier 'in' expression 'on' expression 'equals' expression 'into' identifier
+    ;
+
+constant_declarator // not sure
+    : identifier '=' constant_expression
+    ;
 ```
 
 Should we allow this?
