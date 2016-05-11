@@ -36,7 +36,7 @@ Deconstruction-declaration (deconstruction into new variables):
 declaration_statement
     : local_variable_declaration ';'
     | local_constant_declaration ';'
-    | local_variable_combo_declaration ';'
+    | local_variable_combo_declaration ';'  // new
     ;
 
 local_variable_combo_declaration
@@ -59,18 +59,18 @@ local_variable_list
     
 foreach_statement
     : 'foreach' '(' local_variable_type identifier 'in' expression ')' embedded_statement
-    | 'foreach' '(' local_variable_combo_declaration_lhs 'in' expression ')' embedded_statement
+    | 'foreach' '(' local_variable_combo_declaration_lhs 'in' expression ')' embedded_statement // new
     ;
     
 for_initializer
     : local_variable_declaration
-    | local_variable_combo_declaration
+    | local_variable_combo_declaration // new
     | statement_expression_list
     ;
 
 let_clause
     : 'let' identifier '=' expression
-    | 'let' '(' identifier_list ')' '=' expression
+    | 'let' '(' identifier_list ')' '=' expression // new
     ;
     
 from_clause // not sure
