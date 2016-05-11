@@ -8,12 +8,14 @@ Treat deconstruction of a tuple into new variables as a new kind of node (Assign
 It would pick up the behavior of each contexts where new variables can be declared (TODO: need to list). For instance, in LINQ, new variables go into a transparent identifiers.
 It is seen as deconstructing into separate variables (we don't introduce transparent identifiers in contexts where they didn't exist previously).
 
-Deconstruction-assignment (deconstruction into into exising variables):
+###Deconstruction-assignment (deconstruction into into exising variables):
 No syntax change.
 One kind of unary_expression is tuple_literal.
 
 - Static semantic: The LHS of the an assignment-expression used be a L-value, but now it can be L-value -- which uses existing rules -- or tuple_literal. The new rules for tuple_literal on the LHS...
 - Dynamic semantic
+
+Open issues and assumptions:
 
 - This should work even if `System.ValueTuple` is not present.
 - This will create a new bound node, with the list of L-values to be assigned to, the node on the right and its `Deconstruct` member, and conversions?
@@ -50,7 +52,7 @@ This evaluation order is unaffected by nesting (x, (y, z)) behaves the same as (
 Target typing and type inference are likely to just work.
 
 
-Deconstruction-declaration (deconstruction into new variables):
+###Deconstruction-declaration (deconstruction into new variables):
 
 ```ANTLR
 declaration_statement
