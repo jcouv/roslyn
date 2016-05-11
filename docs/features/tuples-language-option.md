@@ -20,8 +20,35 @@ One kind of unary_expression is tuple_literal.
 - How is the Deconstruct method resolved? There can be no ambiguity. Only one `Deconstruct` is allowed.
 - Do the names matter? `int x, y; (a: x, b: y) = M();`
 - Can we deconstruct into a single out variable?
+- No compound assignment `(x, y) += M();`
+
 
 (note: assignment should be assignment_expression in C# spec)
+
+We can re-use the existing assignment syntax node (AssignmentExpression). What is on the left is a tuple expression.
+
+The binding for assignment (which currently checks if the left is can be assigned to and if the two sides are compatible) would be updated:
+- Each item on the left needs to be assignable and needs to be compatible with corresponding position on the right
+- Needs to handle nesting case such as (x, (y, z)) = GetValues()
+
+The lowering for assignment would translate: (expressionX, expressionY, expressionZ) = (expressionA, expressionB, expressionC) into:
+```
+tempX = &evaluate expressionX
+tempY = &evaluate expressionY
+tempZ = &evaluate expressionZ
+
+tempRight = evaluate right
+
+tempX = tempRight.A (including conversions)
+tempY = tempRight.B (including conversions)
+tempZ = tempRight.C (including conversions)
+
+“return/continue” with newTupleIncludingNames tempRight (so you can do get Item1 from the assignment)?
+```
+
+This evaluation order is unaffected by nesting (x, (y, z)) behaves the same as (x, y, z).
+Target typing and type inference are likely to just work.
+
 
 Deconstruction-declaration (deconstruction into new variables):
 
