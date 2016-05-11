@@ -16,7 +16,7 @@ One kind of unary_expression is tuple_literal.
 - Dynamic semantic
 
 - This should work even if `System.ValueTuple` is not present.
-- This should not create a new kind of bound node.
+- This will create a new bound node, with the list of L-values to be assigned to, the node on the right and its `Deconstruct` member, and conversions?
 - How is the Deconstruct method resolved? (there could be multiple candidates)
 - Do the names matter? `int x, y; (a: x, b: y) = M();`
 
