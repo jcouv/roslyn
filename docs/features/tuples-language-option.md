@@ -23,6 +23,7 @@ Open issues and assumptions:
 - Do the names matter? `int x, y; (a: x, b: y) = M();`
 - Can we deconstruct into a single out variable? I assume no.
 - I assume no compound assignment `(x, y) += M();`
+- 
 
 
 (note: assignment should be assignment_expression in C# spec)
@@ -76,6 +77,9 @@ evaluate Deconstruct passing the references directly in
 Note that the feature is built around `Deconstruct`. `ValueTuple` and `System.Tuple` will rely on that same mechanism, except that the compiler may need to synthesize the proper `Deconstruct` methods.
 
 Target typing and type inference are likely to just work. (TODO: is there any target typing or type inference here?)
+
+Work items and reminders:
+- [ ] Discuss with Aleksey about "Deconstruct and flow analysis for nullable ref type"
 
 
 ###Deconstruction-declaration (deconstruction into new variables):
