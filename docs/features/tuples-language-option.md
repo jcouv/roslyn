@@ -17,7 +17,9 @@ No syntax change (one kind of unary_expression is already tuple_literal).
 Open issues and assumptions:
 
 - I assume this should work even if `System.ValueTuple` is not present.
-- How is the Deconstruct method resolved? I assumed there can be no ambiguity. Only one `Deconstruct` is allowed (in nesting cases we have no type to guide the resolution process).
+- How is the Deconstruct method resolved? 
+    - I assumed there can be no ambiguity. Only one `Deconstruct` is allowed (in nesting cases we have no type to guide the resolution process).
+    - But we may allow a little bit of ambiguity and preferring an instance over extension method.
 - Do the names matter? `int x, y; (a: x, b: y) = M();`
 - Can we deconstruct into a single out variable? I assume no.
 - I assume no compound assignment `(x, y) += M();`
