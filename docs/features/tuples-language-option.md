@@ -31,7 +31,7 @@ We can re-use the existing assignment syntax node (AssignmentExpression). What i
 
 The binding for assignment (which currently checks if the left is can be assigned to and if the two sides are compatible) would be updated:
 - Each item on the left needs to be assignable and needs to be compatible with corresponding position on the right
-- Needs to handle nesting case such as (x, (y, z)) = GetValues()
+- Needs to handle nesting case such as `(x, (y, z)) = GetValues();`, but note that the second item in the top-level group has no discernable type.
 
 The lowering for assignment would translate: (expressionX, expressionY, expressionZ) = (expressionA, expressionB, expressionC) into:
 ```
