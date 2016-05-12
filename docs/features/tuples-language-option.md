@@ -67,6 +67,12 @@ tempZ = tempRNest.C (including conversions)
 
 ```
 
+The evaluation order for the simplest cases (locals, fields, array indexers, or anything returning ref) without needing conversion:
+```
+evaluate side-effect on the left-hand-side variables
+evaluate Deconstruct passing the references directly in
+```
+
 Target typing and type inference are likely to just work.
 
 
