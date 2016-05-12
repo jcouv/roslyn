@@ -9,20 +9,18 @@ It would pick up the behavior of each contexts where new variables can be declar
 It is seen as deconstructing into separate variables (we don't introduce transparent identifiers in contexts where they didn't exist previously).
 
 ###Deconstruction-assignment (deconstruction into into exising variables):
-No syntax change.
-One kind of unary_expression is tuple_literal.
+No syntax change (one kind of unary_expression is already tuple_literal).
 
 - Static semantic: The LHS of the an assignment-expression used be a L-value, but now it can be L-value -- which uses existing rules -- or tuple_literal. The new rules for tuple_literal on the LHS...
 - Dynamic semantic
 
 Open issues and assumptions:
 
-- This should work even if `System.ValueTuple` is not present.
-- This will create a new bound node, with the list of L-values to be assigned to, the node on the right and its `Deconstruct` member, and conversions?
-- How is the Deconstruct method resolved? There can be no ambiguity. Only one `Deconstruct` is allowed (in nesting cases we have no type to guide the resolution process).
+- I assume this should work even if `System.ValueTuple` is not present.
+- How is the Deconstruct method resolved? I assumed there can be no ambiguity. Only one `Deconstruct` is allowed (in nesting cases we have no type to guide the resolution process).
 - Do the names matter? `int x, y; (a: x, b: y) = M();`
-- Can we deconstruct into a single out variable?
-- No compound assignment `(x, y) += M();`
+- Can we deconstruct into a single out variable? I assume no.
+- I assume no compound assignment `(x, y) += M();`
 
 
 (note: assignment should be assignment_expression in C# spec)
@@ -31,7 +29,7 @@ We can re-use the existing assignment syntax node (AssignmentExpression). What i
 
 The binding for assignment (which currently checks if the left is can be assigned to and if the two sides are compatible) would be updated:
 - Each item on the left needs to be assignable and needs to be compatible with corresponding position on the right
-- Needs to handle nesting case such as `(x, (y, z)) = GetValues();`, but note that the second item in the top-level group has no discernable type.
+- Needs to handle nesting case such as `(x, (y, z)) = M();`, but note that the second item in the top-level group has no discernable type.
 
 The lowering for assignment would translate: (expressionX, expressionY, expressionZ) = (expressionA, expressionB, expressionC) into:
 ```
@@ -73,7 +71,9 @@ evaluate side-effect on the left-hand-side variables
 evaluate Deconstruct passing the references directly in
 ```
 
-Target typing and type inference are likely to just work.
+Note that the feature is built around `Deconstruct`. `ValueTuple` and `System.Tuple` will rely on that same mechanism, except that the compiler may need to synthesize the proper `Deconstruct` methods.
+
+Target typing and type inference are likely to just work. (TODO: is there any target typing or type inference here?)
 
 
 ###Deconstruction-declaration (deconstruction into new variables):
