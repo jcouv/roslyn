@@ -39,7 +39,7 @@ tempX = &evaluate expressionX
 tempY = &evaluate expressionY
 tempZ = &evaluate expressionZ
 
-tempRight = evaluate right
+tempRight = evaluate right and evaluate Deconstruct
 
 tempX = tempRight.A (including conversions)
 tempY = tempRight.B (including conversions)
@@ -48,7 +48,25 @@ tempZ = tempRight.C (including conversions)
 “return/continue” with newTupleIncludingNames tempRight (so you can do get Item1 from the assignment)?
 ```
 
-This evaluation order is unaffected by nesting (x, (y, z)) behaves the same as (x, y, z).
+The evaluation order for nesting `(x, (y, z))` is:
+```
+tempX = &evaluate expressionX
+
+tempRight = evaluate right and evaluate Deconstruct
+
+tempX = tempRight.A (including conversions)
+tempLNested = tempRight.B (no conversions)
+
+tempY = &evaluate expressionY
+tempZ = &evaluate expressionZ
+
+tempRNest = evaluate Deconstruct on tempRight
+
+tempY = tempRNest.B (including conversions)
+tempZ = tempRNest.C (including conversions)
+
+```
+
 Target typing and type inference are likely to just work.
 
 
