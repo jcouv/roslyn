@@ -19,7 +19,7 @@ Open issues and assumptions:
 
 - This should work even if `System.ValueTuple` is not present.
 - This will create a new bound node, with the list of L-values to be assigned to, the node on the right and its `Deconstruct` member, and conversions?
-- How is the Deconstruct method resolved? There can be no ambiguity. Only one `Deconstruct` is allowed.
+- How is the Deconstruct method resolved? There can be no ambiguity. Only one `Deconstruct` is allowed (in nesting cases we have no type to guide the resolution process).
 - Do the names matter? `int x, y; (a: x, b: y) = M();`
 - Can we deconstruct into a single out variable?
 - No compound assignment `(x, y) += M();`
