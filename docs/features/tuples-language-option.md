@@ -159,3 +159,6 @@ Treat deconstruction of a tuple into both existing or new variables as a new kin
 | Not allowed | Succeeds | `int x;   (x, int y) = (0, 0);` | |
 | Succeeds | Succeeds | `void M(out (int x, int y) v) { ... }    M(out (int x, int y));` | |
 
+**References**
+
+[C# Design Notes for Apr 12-22, 2016](https://github.com/dotnet/roslyn/issues/11031)
