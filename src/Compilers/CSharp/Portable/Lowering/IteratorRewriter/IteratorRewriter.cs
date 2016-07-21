@@ -49,7 +49,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             out IteratorStateMachine stateMachineType)
         {
             TypeSymbol elementType = method.IteratorElementType;
-            if ((object)elementType == null)
+            if ((object)elementType == null || method is MethodToClassRewriter.BaseMethodWrapperSymbol)
             {
                 stateMachineType = null;
                 return body;

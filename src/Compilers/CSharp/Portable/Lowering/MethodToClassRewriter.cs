@@ -688,7 +688,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// A wrapper method that is created for non-virtually calling a base-class 
         /// virtual method from other classes (like those created for lambdas...).
         /// </summary>
-        private sealed partial class BaseMethodWrapperSymbol : SynthesizedMethodBaseSymbol
+        internal sealed partial class BaseMethodWrapperSymbol : SynthesizedMethodBaseSymbol
         {
             internal BaseMethodWrapperSymbol(NamedTypeSymbol containingType, MethodSymbol methodBeingWrapped, CSharpSyntaxNode syntax, string name)
                 : base(containingType, methodBeingWrapped, syntax.SyntaxTree.GetReference(syntax), null, syntax.GetLocation(), name, DeclarationModifiers.Private)
