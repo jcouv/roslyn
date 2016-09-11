@@ -1224,6 +1224,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                     sawLocalFunctions: out sawLocalFunctions,
                     sawAwaitInExceptionHandler: out sawAwaitInExceptionHandler);
 
+                if (compilationState.ModuleBuilderOpt.IsEncDelta && body.Syntax.HasUnsupportedCSharp7EnCNodes())
+                {
+                    var location = method.Locations[0];
+                    diagnostics.Add(new CSDiagnosticInfo(ErrorCode.ERR_EncNoCSharp7Features), location);
+                    return loweredBody;
+                }
+
                 if (loweredBody.HasErrors)
                 {
                     return loweredBody;

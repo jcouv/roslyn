@@ -7183,5 +7183,46 @@ class C
                     generation0,
                     ImmutableArray.Create(new SemanticEdit(SemanticEditKind.Update, f0, f1, GetSyntaxMapFromMarkers(source0, source1), preserveLocalVariables: true))));
         }
+
+        [Fact]
+        public void V7Switch()
+        {
+            var source0 =
+@"class C
+{
+    static void F(object x) { if (x is int i) { } }
+}";
+            var source1 =
+@"class C
+{
+    static void F(object x) { if (x is string s) { } }
+}";
+
+            var compilation0 = CreateCompilationWithMscorlib(source0, options: TestOptions.DebugDll, references: new[] { ValueTupleRef, SystemRuntimeFacadeRef });
+            var compilation1 = compilation0.WithSource(source1);
+
+            var bytes0 = compilation0.EmitToArray();
+            using (var md0 = ModuleMetadata.CreateFromImage(bytes0))
+            {
+                var reader0 = md0.MetadataReader;
+
+                var method0 = compilation0.GetMember<MethodSymbol>("C.F");
+                var generation0 = EmitBaseline.CreateInitialBaseline(
+                    md0,
+                    EmptyLocalsProvider);
+                var method1 = compilation1.GetMember<MethodSymbol>("C.F");
+
+                var diff1 = compilation1.EmitDifference(
+                    generation0,
+                    ImmutableArray.Create(new SemanticEdit(SemanticEditKind.Update, method0, method1)));
+
+                diff1.EmitResult.Diagnostics.Verify(
+                // (3,17): error CS8112: Cannot continue since the edit includes an unspported C# 7 feature (is-pattern, type-switch, ...).
+                //     static void F(object x) { if (x is string s) { } }
+                Diagnostic(ErrorCode.ERR_EncNoCSharp7Features, "F").WithLocation(3, 17)
+                    );
+            }
+        }
+
     }
 }

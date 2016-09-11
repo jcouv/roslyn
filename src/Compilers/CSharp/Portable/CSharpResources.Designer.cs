@@ -1565,7 +1565,7 @@ namespace Microsoft.CodeAnalysis.CSharp {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Invalid operand for pattern match..
+        ///   Looks up a localized string similar to Invalid operand for pattern match; value required, but found &apos;{0}&apos;..
         /// </summary>
         internal static string ERR_BadIsPatternExpression {
             get {
@@ -3667,6 +3667,15 @@ namespace Microsoft.CodeAnalysis.CSharp {
         internal static string ERR_EmptyYield {
             get {
                 return ResourceManager.GetString("ERR_EmptyYield", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot continue since the edit includes an unspported C# 7 feature (is-pattern, type-switch, ...)..
+        /// </summary>
+        internal static string ERR_EncNoCSharp7Features {
+            get {
+                return ResourceManager.GetString("ERR_EncNoCSharp7Features", resourceCulture);
             }
         }
         

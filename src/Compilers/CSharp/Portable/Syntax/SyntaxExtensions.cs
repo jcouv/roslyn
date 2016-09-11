@@ -363,5 +363,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                 default(ArrowExpressionClauseSyntax),
                 semicolonToken);
         }
+
+        internal static bool HasUnsupportedCSharp7EnCNodes(this SyntaxNode self)
+        {
+            return self.DescendantNodesAndSelf().Any(n => n.Kind() == SyntaxKind.IsPatternExpression);
+        }
     }
 }

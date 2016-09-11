@@ -1351,7 +1351,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         #endregion
 
-        // Available = 8112, 8113, 8114, 8115
+        ERR_EncNoCSharp7Features = 8112,
+
+        // Available = 8113, 8114, 8115
 
         #region diagnostics for pattern-matching introduced in C# 7
         ERR_PatternNullableType = 8116,
