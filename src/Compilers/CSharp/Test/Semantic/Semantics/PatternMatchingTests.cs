@@ -3491,5 +3491,45 @@ public class C
             VerifyModelForDeclarationPattern(model, x2Decl, x2Ref);
             Assert.Equal("System.Collections.Generic.IEnumerable<System.String>", model.GetTypeInfo(x2Ref).Type.ToTestDisplayString());
         }
+
+        [Fact]
+        public void DiscardInPattern()
+        {
+            var source =
+@"
+using static System.Console;
+public class C
+{
+    public static void Main()
+    {
+        //int i = 3;
+        //Write($""is int _: {i is int _}, "");
+        //Write($""is var _: {i is var _}, "");
+        switch (3)
+        {
+            case int _:
+                Write(""case int _, "");
+                break;
+        }
+        //switch (3)
+        //{
+        //    case var _:
+        //        Write(""case var _, "");
+        //        break;
+        //}
+    }
+}
+";
+            var compilation = CreateCompilationWithMscorlibAndSystemCore(source, options: TestOptions.DebugExe);
+            compilation.VerifyDiagnostics();
+            CompileAndVerify(compilation, expectedOutput: "");
+            var tree = compilation.SyntaxTrees.Single();
+            var model = compilation.GetSemanticModel(tree);
+
+            //var x2Decl = GetPatternDeclarations(tree, "x2").Single();
+            //var x2Ref = GetReferences(tree, "x2").Single();
+            //VerifyModelForDeclarationPattern(model, x2Decl, x2Ref);
+            //Assert.Equal("System.Collections.Generic.IEnumerable<System.String>", model.GetTypeInfo(x2Ref).Type.ToTestDisplayString());
+        }
     }
 }
