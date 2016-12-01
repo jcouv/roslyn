@@ -7096,6 +7096,39 @@ Copyright (C) Microsoft Corporation. All rights reserved.", output);
         }
 
         [Fact]
+        public void RecordRepro()
+        {
+            string sourcePath = MakeTrivialExe();
+            string exePath = Path.Combine(Path.GetDirectoryName(sourcePath), "test.exe");
+            var csc = new MockCSharpCompiler(null, _baseDirectory, new[] { "/nologo", "/preferreduilang:en", $"/out:{exePath}", sourcePath });
+            csc.GetEnvironmentVariable = (variable) =>
+            {
+                if (variable == "RoslynCommandLineLogFile")
+                {
+                    return Path.Combine(Path.GetDirectoryName(sourcePath), "repro");
+                }
+                else if (variable == "RoslynCommandLineLogRepro")
+                {
+                    return "not null";
+                }
+
+                return null;
+            };
+            csc.FileCopy = (src, dest) =>
+            {
+                throw new Exception($"Mock copied file {Path.GetFileName(src)}");
+            };
+
+            var outWriter = new StringWriter(CultureInfo.InvariantCulture);
+            Assert.Equal(0, csc.Run(outWriter));
+            Assert.Contains($"error CS2012: Cannot open '{exePath}' for writing", outWriter.ToString());
+            // TODO
+            File.Delete(sourcePath);
+            File.Delete(exePath);
+            CleanupAllGeneratedFiles(sourcePath);
+        }
+
+        [Fact]
         public void IOFailure_OpenXmlFinal()
         {
             string sourcePath = MakeTrivialExe();

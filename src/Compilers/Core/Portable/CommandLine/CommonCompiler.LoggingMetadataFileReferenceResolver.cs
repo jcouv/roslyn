@@ -30,7 +30,7 @@ namespace Microsoft.CodeAnalysis
 
                 if (fullPath != null)
                 {
-                    _loggerOpt?.AddRead(fullPath);
+                    _loggerOpt?.AddReadReference(fullPath);
                     return ImmutableArray.Create(_provider(fullPath, properties));
                 }
 

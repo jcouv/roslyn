@@ -132,10 +132,8 @@ namespace Microsoft.CodeAnalysis.Scripting.Hosting
 
         private static ScriptOptions GetScriptOptions(CommandLineArguments arguments, string scriptPathOpt, CommonMessageProvider messageProvider, List<DiagnosticInfo> diagnostics)
         {
-            var touchedFilesLoggerOpt = (arguments.TouchedFilesPath != null) ? new TouchedFileLogger() : null;
-
-            var metadataResolver = GetMetadataReferenceResolver(arguments, touchedFilesLoggerOpt);
-            var sourceResolver = GetSourceReferenceResolver(arguments, touchedFilesLoggerOpt);
+            var metadataResolver = GetMetadataReferenceResolver(arguments, loggerOpt: null);
+            var sourceResolver = GetSourceReferenceResolver(arguments, loggerOpt: null);
 
             var resolvedReferences = new List<MetadataReference>();
             if (!arguments.ResolveMetadataReferences(metadataResolver, diagnostics, messageProvider, resolvedReferences))

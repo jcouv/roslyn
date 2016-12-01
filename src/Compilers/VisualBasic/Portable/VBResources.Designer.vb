@@ -4937,6 +4937,15 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
         End Property
         
         '''<summary>
+        '''  Looks up a localized string similar to Could not read environment variable &apos;{0}&apos; -- &apos;{1}&apos;.
+        '''</summary>
+        Friend ReadOnly Property ERR_GetEnvVariableFailed() As String
+            Get
+                Return ResourceManager.GetString("ERR_GetEnvVariableFailed", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
         '''  Looks up a localized string similar to &apos;GoTo {0}&apos; is not valid because &apos;{0}&apos; is inside a &apos;For&apos; or &apos;For Each&apos; statement that does not contain this statement..
         '''</summary>
         Friend ReadOnly Property ERR_GotoIntoFor() As String

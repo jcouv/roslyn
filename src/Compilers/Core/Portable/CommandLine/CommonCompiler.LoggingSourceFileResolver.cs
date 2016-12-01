@@ -25,7 +25,7 @@ namespace Microsoft.CodeAnalysis
             {
                 if (fullPath != null)
                 {
-                    _loggerOpt?.AddRead(fullPath);
+                    _loggerOpt?.AddReadSource(fullPath);
                 }
 
                 return base.FileExists(fullPath);

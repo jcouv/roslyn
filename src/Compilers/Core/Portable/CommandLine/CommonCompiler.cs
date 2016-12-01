@@ -12,7 +12,6 @@ using System.Text;
 using System.Threading;
 using Microsoft.CodeAnalysis.Collections;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 using Roslyn.Utilities;
 using System.Security.Cryptography;
@@ -238,7 +237,7 @@ namespace Microsoft.CodeAnalysis
             // size, FileStream.Read still allocates the internal buffer.
             return new FileStream(
                 filePath,
-                FileMode.Open, 
+                FileMode.Open,
                 FileAccess.Read,
                 FileShare.ReadWrite,
                 bufferSize: 1,
@@ -436,7 +435,7 @@ namespace Microsoft.CodeAnalysis
         {
             Debug.Assert(Arguments.ErrorLogPath != null);
 
-            var errorLog = OpenFile(Arguments.ErrorLogPath,
+            var errorLog = TryFileOpen(Arguments.ErrorLogPath,
                                     consoleOutput,
                                     FileMode.Create,
                                     FileAccess.Write,
@@ -524,7 +523,8 @@ namespace Microsoft.CodeAnalysis
                 return Failed;
             }
 
-            var touchedFilesLogger = (Arguments.TouchedFilesPath != null) ? new TouchedFileLogger() : null;
+            var touchedFilesLogger = TouchedFileLogger.CreateIfNeeded(Arguments, consoleOutput,
+                this.TryFileOpen, this.TryFileCopy, this.TryGetEnvironmentVariable);
 
             Compilation compilation = CreateCompilation(consoleOutput, touchedFilesLogger, errorLogger);
             if (compilation == null)
@@ -546,7 +546,7 @@ namespace Microsoft.CodeAnalysis
             {
                 return Failed;
             }
-            
+
             bool reportAnalyzer = false;
             CancellationTokenSource analyzerCts = null;
             AnalyzerManager analyzerManager = null;
@@ -611,7 +611,7 @@ namespace Microsoft.CodeAnalysis
 
                     if (Arguments.SourceLink != null)
                     {
-                        sourceLinkStreamOpt = OpenFile(Arguments.SourceLink, consoleOutput, FileMode.Open, FileAccess.Read, FileShare.Read);
+                        sourceLinkStreamOpt = TryFileOpen(Arguments.SourceLink, consoleOutput, FileMode.Open, FileAccess.Read, FileShare.Read);
                     }
 
                     var moduleBeingBuilt = compilation.CheckOptionsAndCreateModuleBuilder(
@@ -645,7 +645,7 @@ namespace Microsoft.CodeAnalysis
 
                                 if (finalXmlFilePath != null)
                                 {
-                                    xmlStreamOpt = OpenFile(finalXmlFilePath,
+                                    xmlStreamOpt = TryFileOpen(finalXmlFilePath,
                                                             consoleOutput,
                                                             FileMode.OpenOrCreate,
                                                             FileAccess.Write,
@@ -776,26 +776,9 @@ namespace Microsoft.CodeAnalysis
                         touchedFilesLogger.AddWritten(finalXmlFilePath);
                     }
 
-                    var readStream = OpenFile(Arguments.TouchedFilesPath + ".read", consoleOutput, mode: FileMode.OpenOrCreate);
-                    if (readStream == null)
+                    if (!touchedFilesLogger.Finish())
                     {
                         return Failed;
-                    }
-
-                    using (var writer = new StreamWriter(readStream))
-                    {
-                        touchedFilesLogger.WriteReadPaths(writer);
-                    }
-
-                    var writtenStream = OpenFile(Arguments.TouchedFilesPath + ".write", consoleOutput, mode: FileMode.OpenOrCreate);
-                    if (writtenStream == null)
-                    {
-                        return Failed;
-                    }
-
-                    using (var writer = new StreamWriter(writtenStream))
-                    {
-                        touchedFilesLogger.WriteWrittenPaths(writer);
                     }
                 }
             }
@@ -926,7 +909,7 @@ namespace Microsoft.CodeAnalysis
         }
         private Func<string, FileMode, FileAccess, FileShare, Stream> _fileOpen;
 
-        private Stream OpenFile(string filePath,
+        private Stream TryFileOpen(string filePath,
                                 TextWriter consoleOutput,
                                 FileMode mode = FileMode.Open,
                                 FileAccess access = FileAccess.ReadWrite,
@@ -942,6 +925,62 @@ namespace Microsoft.CodeAnalysis
                 {
                     // TODO: distinct error message?
                     DiagnosticInfo diagnosticInfo = new DiagnosticInfo(MessageProvider, (int)MessageProvider.ERR_OutputWriteFailed, filePath, e.Message);
+                    consoleOutput.WriteLine(diagnosticInfo.ToString(Culture));
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Test hook for intercepting File.Copy.
+        /// </summary>
+        internal Action<string, string> FileCopy
+        {
+            get { return _fileCopy ?? ((src, dest) => File.Copy(src, dest)); }
+            set { _fileCopy = value; }
+        }
+        private Action<string, string> _fileCopy;
+
+        private void TryFileCopy(string src,
+                                string dest,
+                                TextWriter consoleOutput)
+        {
+            try
+            {
+                FileCopy(src, dest);
+            }
+            catch (Exception e)
+            {
+                if (consoleOutput != null)
+                {
+                    DiagnosticInfo diagnosticInfo = new DiagnosticInfo(MessageProvider, MessageProvider.ERR_OutputWriteFailed, dest, e.Message);
+                    consoleOutput.WriteLine(diagnosticInfo.ToString(Culture));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Test hook for intercepting Environment.GetEnvironmentVariable
+        /// </summary>
+        internal Func<string, string> GetEnvironmentVariable
+        {
+            get { return _getEnvironmentVariable ?? ((variable) => Environment.GetEnvironmentVariable(variable)); }
+            set { _getEnvironmentVariable = value; }
+        }
+        private Func<string, string> _getEnvironmentVariable;
+
+        private string TryGetEnvironmentVariable(string variable, TextWriter consoleOutput)
+        {
+            try
+            {
+                return GetEnvironmentVariable(variable);
+            }
+            catch (Exception e)
+            {
+                if (consoleOutput != null)
+                {
+                    DiagnosticInfo diagnosticInfo = new DiagnosticInfo(MessageProvider, MessageProvider.ERR_GetEnvVariableFailed, variable, e.Message);
                     consoleOutput.WriteLine(diagnosticInfo.ToString(Culture));
                 }
 

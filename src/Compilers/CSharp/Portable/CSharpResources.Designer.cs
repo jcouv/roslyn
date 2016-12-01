@@ -4697,6 +4697,15 @@ namespace Microsoft.CodeAnalysis.CSharp {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Could not read environment variable &apos;{0}&apos; -- &apos;{1}&apos;.
+        /// </summary>
+        internal static string ERR_GetEnvVariableFailed {
+            get {
+                return ResourceManager.GetString("ERR_GetEnvVariableFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to A get or set accessor expected.
         /// </summary>
         internal static string ERR_GetOrSetExpected {

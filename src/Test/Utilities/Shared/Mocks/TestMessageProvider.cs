@@ -417,5 +417,13 @@ namespace Roslyn.Test.Utilities
                 throw new NotImplementedException();
             }
         }
+
+        public override int ERR_GetEnvVariableFailed
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
     }
 }

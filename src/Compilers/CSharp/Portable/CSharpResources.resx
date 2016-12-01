@@ -405,6 +405,9 @@
   <data name="ERR_OutputWriteFailed" xml:space="preserve">
     <value>Could not write to output file '{0}' -- '{1}'</value>
   </data>
+  <data name="ERR_GetEnvVariableFailed" xml:space="preserve">
+    <value>Could not read environment variable '{0}' -- '{1}'</value>
+  </data>
   <data name="ERR_MultipleEntryPoints" xml:space="preserve">
     <value>Program has more than one entry point defined. Compile with /main to specify the type that contains the entry point.</value>
   </data>

@@ -97,11 +97,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            if (Arguments.TouchedFilesPath != null)
+            if (touchedFilesLogger != null)
             {
                 foreach (var path in uniqueFilePaths)
                 {
-                    touchedFilesLogger.AddRead(path);
+                    touchedFilesLogger.AddReadSource(path);
                 }
             }
 

@@ -1432,8 +1432,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         ERR_PredefinedValueTupleTypeMustBeStruct = 8182,
         ERR_DiscardTypeInferenceFailed = 8183,
         ERR_MixedDeconstructionDisallowed = 8184,
+        ERR_GetEnvVariableFailed = 8185,
 
-        // Available  = 8185-8195
+        // Available  = 8186-8195
 
         #region diagnostics for out var
         ERR_ImplicitlyTypedOutVariableUsedInTheSameArgumentList = 8196,

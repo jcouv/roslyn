@@ -149,6 +149,7 @@ namespace Microsoft.CodeAnalysis
         public abstract int ERR_NoSourceFile { get; }
         public abstract int ERR_CantOpenFileWrite { get; }
         public abstract int ERR_OutputWriteFailed { get; }
+        public abstract int ERR_GetEnvVariableFailed { get; }
         public abstract int WRN_NoConfigNotOnCommandLine { get; }
         public abstract int ERR_BinaryFile { get; }
         public abstract int WRN_UnableToLoadAnalyzer { get; }
