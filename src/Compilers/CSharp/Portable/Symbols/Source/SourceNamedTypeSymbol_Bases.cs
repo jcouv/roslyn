@@ -117,6 +117,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             // and it's possible to define derived interfaces with weaker
             // constraints than the base interfaces, at least in metadata.
             var interfaces = this.InterfacesAndTheirBaseInterfacesNoUseSiteDiagnostics;
+            this.MakeAllInterfaces(diagnostics);
 
             if (interfaces.IsEmpty)
             {

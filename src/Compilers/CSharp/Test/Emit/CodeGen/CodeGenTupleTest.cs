@@ -20942,5 +20942,35 @@ class C
             var xSymbol = (model.GetDeclaredSymbol(x) as LocalSymbol)?.Type;
             Assert.Equal("(System.Int32 a, System.Int32 b)", xSymbol.ToTestDisplayString());
         }
+
+        [Fact]
+        [WorkItem(14841, "https://github.com/dotnet/roslyn/issues/14841")]
+        public void SimpleTest()
+        {
+            var source = @"
+interface I<T> { }
+class Base : I<(int a, int b)> { }
+class Derived1 : Base, I<(int notA, int notB)> { } // TODO should be error
+class Derived2<U> : Base, I<U> { }
+";
+            var comp = CreateCompilationWithMscorlib(source, references: s_valueTupleRefs);
+            comp.VerifyDiagnostics(
+                );
+        }
+
+        [Fact]
+        [WorkItem(14841, "https://github.com/dotnet/roslyn/issues/14841")]
+        public void SimpleTest3()
+        {
+            var source = @"
+interface I<T> { }
+class Base<T> : I<T> { }
+class Derived1<T, U> : Base<T>, I<U> { }
+";
+            // TODO should be error
+            var comp = CreateCompilationWithMscorlib(source, references: s_valueTupleRefs);
+            comp.VerifyDiagnostics(
+                );
+        }
     }
 }

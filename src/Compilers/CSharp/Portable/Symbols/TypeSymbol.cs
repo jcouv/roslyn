@@ -359,7 +359,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (info.allInterfaces.IsDefault)
             {
-                ImmutableInterlocked.InterlockedInitialize(ref info.allInterfaces, MakeAllInterfaces());
+                ImmutableInterlocked.InterlockedInitialize(ref info.allInterfaces, MakeAllInterfaces(diagnostics: null));
             }
 
             return info.allInterfaces;
@@ -369,17 +369,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// TypeSymbol.Interfaces as the source of edge data, which has had cycles and infinitely
         /// long dependency cycles removed. Consequently, it is possible (and we do) use the
         /// simplest version of Tarjan's topological sorting algorithm.
-        protected virtual ImmutableArray<NamedTypeSymbol> MakeAllInterfaces()
+        protected ImmutableArray<NamedTypeSymbol> MakeAllInterfaces(DiagnosticBag diagnostics)
         {
             var result = ArrayBuilder<NamedTypeSymbol>.GetInstance();
-            var visited = new HashSet<NamedTypeSymbol>(EqualsIgnoringComparer.InstanceIgnoringTupleNames);
+            var visited = new Dictionary<TypeSymbol, TypeSymbol>(EqualsIgnoringComparer.InstanceIgnoringTupleNames);
 
             for (var baseType = this; !ReferenceEquals(baseType, null); baseType = baseType.BaseTypeNoUseSiteDiagnostics)
             {
                 var interfaces = (baseType.TypeKind == TypeKind.TypeParameter) ? ((TypeParameterSymbol)baseType).EffectiveInterfacesNoUseSiteDiagnostics : baseType.InterfacesNoUseSiteDiagnostics();
                 for (int i = interfaces.Length - 1; i >= 0; i--)
                 {
-                    AddAllInterfaces(interfaces[i], visited, result);
+                    AddAllInterfaces(interfaces[i], visited, result, diagnostics);
                 }
             }
 
@@ -387,15 +387,29 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return result.ToImmutableAndFree();
         }
 
-        private static void AddAllInterfaces(NamedTypeSymbol @interface, HashSet<NamedTypeSymbol> visited, ArrayBuilder<NamedTypeSymbol> result)
+        private static void AddAllInterfaces(NamedTypeSymbol @interface, Dictionary<TypeSymbol, TypeSymbol> visited, ArrayBuilder<NamedTypeSymbol> result, DiagnosticBag diagnostics)
         {
-            if (visited.Add(@interface))
+            if (visited.TryGetValue(@interface, out TypeSymbol found))
             {
+                if (!@interface.Equals(found)) // interfaces only differ in tuple names
+                {
+                    var merged = MethodTypeInferrer.MergeTupleNames(found, @interface);
+                    visited.Remove(found);
+                    visited.Add(merged, merged);
+                    if (diagnostics != null)
+                    {
+                        // TODO add error
+                    }
+                }
+            }
+            else
+            {
+                visited.Add(@interface, @interface);
                 ImmutableArray<NamedTypeSymbol> baseInterfaces = @interface.InterfacesNoUseSiteDiagnostics();
                 for (int i = baseInterfaces.Length - 1; i >= 0; i--)
                 {
                     var baseInterface = baseInterfaces[i];
-                    AddAllInterfaces(baseInterface, visited, result);
+                    AddAllInterfaces(baseInterface, visited, result, diagnostics);
                 }
 
                 result.Add(@interface);
