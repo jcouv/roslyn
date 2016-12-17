@@ -624,7 +624,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
                 }
 
-                if (deconstructMethod.ReturnType.GetSpecialTypeSafe() != SpecialType.System_Void)
+                if (deconstructMethod.ReturnsVoid)
                 {
                     return MissingDeconstruct(receiver, syntax, numCheckedVariables, diagnostics, out outPlaceholders, result);
                 }
