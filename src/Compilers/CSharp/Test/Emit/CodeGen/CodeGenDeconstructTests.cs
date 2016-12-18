@@ -3777,9 +3777,6 @@ class C
                 // (4,19): error CS1031: Type expected
                 //     var (x, y) = (1, 2);
                 Diagnostic(ErrorCode.ERR_TypeExpected, "1").WithLocation(4, 19),
-                // (4,19): error CS8124: Tuple must contain at least two elements.
-                //     var (x, y) = (1, 2);
-                Diagnostic(ErrorCode.ERR_TupleTooFewElements, "1").WithLocation(4, 19),
                 // (4,19): error CS1026: ) expected
                 //     var (x, y) = (1, 2);
                 Diagnostic(ErrorCode.ERR_CloseParenExpected, "1").WithLocation(4, 19),

@@ -20954,7 +20954,7 @@ class C
 
         [Fact]
         [WorkItem(14841, "https://github.com/dotnet/roslyn/issues/14841")]
-        public void TupleWithOneElement()
+        public void TupleTypeWithOneElement()
         {
             var source = @"
 class C
@@ -20964,9 +20964,9 @@ class C
 ";
             var comp = CreateCompilationWithMscorlib(source, references: s_valueTupleRefs);
             comp.VerifyDiagnostics(
-                // (4,25): error CS8124: Tuple must contain at least two elements.
+                // (4,19): error CS8124: Tuple must contain at least two elements.
                 //     void M(int x, (int a) y) { }
-                Diagnostic(ErrorCode.ERR_TupleTooFewElements, ")").WithLocation(4, 25)
+                Diagnostic(ErrorCode.ERR_TupleTooFewElements, "(int a)").WithLocation(4, 19)
                 );
         }
     }

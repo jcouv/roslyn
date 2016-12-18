@@ -475,7 +475,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (typesArray.Length < 2)
             {
-                throw ExceptionUtilities.Unreachable;
+                elementNames?.Free();
+                return new ExtendedErrorTypeSymbol(this.Compilation.Assembly.GlobalNamespace, LookupResultKind.NotCreatable, diagnostics.Add(ErrorCode.ERR_TupleTooFewElements, syntax.Location));
             }
 
             return TupleTypeSymbol.Create(syntax.Location,
