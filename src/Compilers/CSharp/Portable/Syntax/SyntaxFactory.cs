@@ -2213,6 +2213,14 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
 
                     break;
+
+                case SyntaxKind.DeclarationExpression:
+                    if (((DeclarationExpressionSyntax)parent).Type == node)
+                    {
+                        return parent;
+                    }
+
+                    break;
             }
 
             return node;

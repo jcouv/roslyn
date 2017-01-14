@@ -520,12 +520,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else if (SyntaxFacts.IsDeclarationExpressionType(expression, out DeclarationExpressionSyntax parent))
             {
-                if (parent.Designation.Kind() != SyntaxKind.SingleVariableDesignation)
+                if (parent.Designation.Kind() != SyntaxKind.SingleVariableDesignation &&
+                    parent.Designation.Kind() != SyntaxKind.DiscardDesignation)
                 {
                     return SymbolInfo.None;
                 }
 
-                return TypeFromVariable((SingleVariableDesignationSyntax)parent.Designation, cancellationToken);
+                var typeInfo = GetTypeInfo(expression);
+                return new SymbolInfo(typeInfo.Type);
             }
             else if (expression is DeclarationExpressionSyntax declaration)
             {
@@ -543,40 +545,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             return this.GetSymbolInfoWorker(expression, SymbolInfoOptions.DefaultOptions, cancellationToken);
-        }
-
-        /// <summary>
-        /// Given a variable designation (typically in the left-hand-side of a deconstruction declaration statement),
-        /// figure out its type by looking at the declared symbol of the corresponding variable.
-        /// </summary>
-        private SymbolInfo TypeFromVariable(SingleVariableDesignationSyntax variableDesignation, CancellationToken cancellationToken)
-        {
-            var variable = GetDeclaredSymbol(variableDesignation, cancellationToken);
-
-            if (variable != null)
-            {
-                ITypeSymbol variableType;
-
-                switch (variable.Kind)
-                {
-                    case SymbolKind.Local:
-                        variableType = ((ILocalSymbol)variable).Type;
-                        break;
-                    case SymbolKind.Field:
-                        variableType = ((IFieldSymbol)variable).Type;
-                        break;
-                    default:
-                        variableType = null;
-                        break;
-                }
-
-                if (variableType?.Kind != SymbolKind.ErrorType)
-                {
-                    return new SymbolInfo(variableType);
-                }
-            }
-
-            return SymbolInfo.None;
         }
 
         /// <summary>
