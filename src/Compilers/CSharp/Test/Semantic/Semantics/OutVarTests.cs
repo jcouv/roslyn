@@ -28495,6 +28495,10 @@ public class C
             Assert.Equal("System.Int32", model.GetTypeInfo(declaration2).Type.ToTestDisplayString());
             Assert.Null(model.GetSymbolInfo(declaration2).Symbol);
 
+            Assert.Equal("var", declaration2.Type.ToString());
+            Assert.Equal("var", model.GetTypeInfo(declaration2.Type).Type.ToTestDisplayString()); // <-- wrong
+            Assert.Null(model.GetSymbolInfo(declaration2.Type).Symbol); // <-- wrong
+
             var discard3 = GetDiscardIdentifiers(tree).First();
             Assert.Equal("System.Int32", model.GetTypeInfo(discard3).Type.ToTestDisplayString());
             var discard3Symbol = (IDiscardSymbol)model.GetSymbolInfo(discard3).Symbol;
