@@ -72,6 +72,43 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.Classification
         }
 
         [Fact, Trait(Traits.Feature, Traits.Features.Classification)]
+        public async Task ShortDiscardInAssignment()
+        {
+            await TestInMethodAsync(
+                className: "Class",
+                methodName: "M",
+                code: @"_ = M();");
+        }
+
+        [Fact, Trait(Traits.Feature, Traits.Features.Classification)]
+        public async Task ShortDiscardInOutVar()
+        {
+            await TestInMethodAsync(
+                className: "Class",
+                methodName: "M",
+                code: @"M(out _);"); // Doesn't match what I observed
+        }
+
+        [Fact, Trait(Traits.Feature, Traits.Features.Classification)]
+        public async Task DiscardInOutVar()
+        {
+            await TestInMethodAsync(
+                className: "Class",
+                methodName: "M",
+                code: @"M(out var _);",
+                expected: Keyword("var")); // Doesn't match what I observed
+        }
+
+        [Fact, Trait(Traits.Feature, Traits.Features.Classification)]
+        public async Task DiscardInIsPattern()
+        {
+            await TestInMethodAsync(
+                className: "Class",
+                methodName: "M",
+                code: @"if (3 is int _) { }"); // Doesn't match what I observed
+        }
+
+        [Fact, Trait(Traits.Feature, Traits.Features.Classification)]
         public async Task UsingAlias1()
         {
             await TestAsync(
