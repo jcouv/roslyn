@@ -12,6 +12,29 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.Semantics
     public class DefaultLiteralTests : CompilingTestBase
     {
         [Fact]
+        public void DefaultOfInt()
+        {
+            var text =
+@"class Program
+{
+    static void Main()
+    {
+        int x = default(int);
+        System.Console.Write(x);
+    }
+}";
+
+            var comp = CreateCompilationWithMscorlibAndSystemCore(text, parseOptions: TestOptions.ExperimentalParseOptions, options: TestOptions.DebugExe);
+            comp.VerifyDiagnostics();
+
+            var tree = comp.SyntaxTrees.First();
+            var model = comp.GetSemanticModel(tree);
+            var def = tree.GetCompilationUnitRoot().DescendantNodes().OfType<DefaultExpressionSyntax>().Single();
+
+            Assert.Equal(0, model.GetConstantValue(def).Value);
+        }
+
+        [Fact]
         public void TestCSharp7()
         {
             string source = @"
@@ -47,6 +70,12 @@ class C
             var comp = CreateCompilationWithMscorlib(source, parseOptions: TestOptions.ExperimentalParseOptions, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
             CompileAndVerify(comp, expectedOutput: "0");
+
+            var tree = comp.SyntaxTrees.First();
+            var model = comp.GetSemanticModel(tree);
+            var def = tree.GetCompilationUnitRoot().DescendantNodes().OfType<DefaultLiteralSyntax>().Single();
+
+            Assert.Equal(0, model.GetConstantValue(def).Value);
         }
 
         [Fact]
@@ -325,6 +354,10 @@ class C
             Assert.Null(model.GetTypeInfo(def).Type);
             Assert.Equal("System.Int32", model.GetTypeInfo(def).ConvertedType.ToTestDisplayString());
             Assert.Null(model.GetSymbolInfo(def).Symbol);
+            Assert.Equal(0, model.GetConstantValue(def).Value);
+
+            var conversion = model.GetConversion(def);
+            Assert.Equal(ConversionKind.DefaultLiteral, conversion.Kind);
         }
 
         [Fact]
@@ -427,6 +460,7 @@ class C
             Assert.Null(model.GetTypeInfo(def).Type);
             Assert.Null(model.GetSymbolInfo(def).Symbol);
             Assert.Null(model.GetDeclaredSymbol(def));
+            Assert.Equal(0, model.GetConstantValue(def).Value);
         }
 
         [Fact]
@@ -790,6 +824,10 @@ class Program
             Assert.Null(model.GetTypeInfo(def).Type);
             Assert.Equal("System.Int32?", model.GetTypeInfo(def).ConvertedType.ToTestDisplayString());
             Assert.Null(model.GetSymbolInfo(def).Symbol);
+
+            Assert.Null(model.GetConstantValue(def).Value);
+            var conversion = model.GetConversion(def);
+            Assert.Equal(ConversionKind.DefaultLiteral, conversion.Kind);
         }
 
         [Fact]
@@ -991,11 +1029,15 @@ class C
             Assert.Null(model.GetTypeInfo(def).Type);
             Assert.Null(model.GetSymbolInfo(def).Symbol);
             Assert.Null(model.GetDeclaredSymbol(def));
+            Assert.Null(model.GetConstantValue(def).Value);
 
-            var conversion = nodes.OfType<CastExpressionSyntax>().Single();
-            var conversionTypeInfo = model.GetTypeInfo(conversion);
-            Assert.Equal("System.Int16", conversionTypeInfo.Type.ToTestDisplayString());
-            Assert.Equal("System.Int32", conversionTypeInfo.ConvertedType.ToTestDisplayString());
+            var cast = nodes.OfType<CastExpressionSyntax>().Single();
+            var castTypeInfo = model.GetTypeInfo(cast);
+            Assert.Equal("System.Int16", castTypeInfo.Type.ToTestDisplayString());
+            Assert.Equal("System.Int32", castTypeInfo.ConvertedType.ToTestDisplayString());
+
+            var conversion = model.GetConversion(def);
+            Assert.Equal(ConversionKind.Identity, conversion.Kind);
         }
 
         [Fact]

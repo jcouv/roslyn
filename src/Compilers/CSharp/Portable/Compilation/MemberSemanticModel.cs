@@ -980,6 +980,11 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (boundExpr == null) return default(Optional<object>);
 
+            if (boundExpr.Kind == BoundKind.DefaultLiteral)
+            {
+                boundExpr = this.GetUpperBoundNode(bindableNode) as BoundExpression;
+            }
+
             ConstantValue constantValue = boundExpr.ConstantValue;
             return constantValue == null || constantValue.IsBad
                 ? default(Optional<object>)

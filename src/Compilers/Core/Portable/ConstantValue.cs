@@ -439,6 +439,7 @@ namespace Microsoft.CodeAnalysis
                 {
                     case ConstantValueTypeDiscriminator.Bad: return null;
                     case ConstantValueTypeDiscriminator.Null: return null;
+                    case ConstantValueTypeDiscriminator.DefaultLiteral: return null;
                     case ConstantValueTypeDiscriminator.SByte: return Boxes.Box(SByteValue);
                     case ConstantValueTypeDiscriminator.Byte: return Boxes.Box(ByteValue);
                     case ConstantValueTypeDiscriminator.Int16: return Boxes.Box(Int16Value);
