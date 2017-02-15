@@ -322,10 +322,10 @@ class C
             var nodes = tree.GetCompilationUnitRoot().DescendantNodes();
 
             var def = nodes.OfType<DefaultLiteralSyntax>().Single();
-            Assert.Null(model.GetTypeInfo(def).Type);
+            Assert.Equal("System.Int32", model.GetTypeInfo(def).Type.ToTestDisplayString());
             Assert.Equal("System.Int32", model.GetTypeInfo(def).ConvertedType.ToTestDisplayString());
             Assert.Null(model.GetSymbolInfo(def).Symbol);
-            Assert.Equal("", model.GetConstantValue(def).Value.ToString()); // crash
+            Assert.Equal("0", model.GetConstantValue(def).Value.ToString()); // crash
         }
 
         [Fact]
