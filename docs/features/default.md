@@ -10,4 +10,11 @@ Some examples:
 - `var x = flag ? default : parameter;`
 - `if (x == default) ...`
 
+### Grammar
 
+```antlr
+default_value_expression
+    : 'default' '(' type ')'
+    | 'default' // new
+    ;
+```
