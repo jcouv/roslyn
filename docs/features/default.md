@@ -18,3 +18,4 @@ default_value_expression
     | 'default' // new
     ;
 ```
+(in reference to Lucian's [ANTLR grammar](https://github.com/ljw1004/csharpspec/blob/gh-pages/csharp.g4))
