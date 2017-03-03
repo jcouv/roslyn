@@ -2979,6 +2979,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return new BoundAsOperator(node, operand, typeExpression, Conversion.NoConversion, resultType, hasErrors: true);
             }
 
+            if (operand.IsLiteralDefault())
+            {
+                Error(diagnostics, ErrorCode.ERR_DefaultNotValid, node);
+                return new BoundAsOperator(node, operand, typeExpression, Conversion.NoConversion, resultType, hasErrors: true);
+            }
+
             // SPEC:    In an operation of the form E as T, E must be an expression and T must be a
             // SPEC:    reference type, a type parameter known to be a reference type, or a nullable type.
 

@@ -754,14 +754,18 @@ class C
     static void Main()
     {
         System.Console.Write(default as long);
+        System.Console.Write(default as C);
     }
 }";
 
             var comp = CreateCompilationWithMscorlib(text, parseOptions: TestOptions.ExperimentalParseOptions, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics(
-                // (6,30): error CS0077: The as operator must be used with a reference type or nullable type ('long' is a non-nullable value type)
+                // (6,30): error CS9001: Use of default is not valid in this context
                 //         System.Console.Write(default as long);
-                Diagnostic(ErrorCode.ERR_AsMustHaveReferenceType, "default as long").WithArguments("long").WithLocation(6, 30)
+                Diagnostic(ErrorCode.ERR_DefaultNotValid, "default as long").WithLocation(6, 30),
+                // (7,30): error CS9001: Use of default is not valid in this context
+                //         System.Console.Write(default as C);
+                Diagnostic(ErrorCode.ERR_DefaultNotValid, "default as C").WithLocation(7, 30)
                 );
         }
 
