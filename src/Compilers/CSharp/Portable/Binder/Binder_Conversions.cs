@@ -5,6 +5,7 @@ using System.Diagnostics;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Roslyn.Utilities;
 using System.Collections.Immutable;
+using System;
 
 namespace Microsoft.CodeAnalysis.CSharp
 {
@@ -103,6 +104,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             ConstantValue constantValue = this.FoldConstantConversion(syntax, source, conversion, destination, diagnostics);
+            if (conversion.Kind == ConversionKind.DefaultOrNullLiteral && source.Kind == BoundKind.DefaultLiteral)
+            {
+                source = ((BoundDefaultLiteral)source).Update(constantValue, destination);
+            }
+
             return new BoundConversion(
                 syntax,
                 source,
@@ -863,7 +869,18 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             var sourceConstantValue = source.ConstantValue;
-            if (sourceConstantValue == null || sourceConstantValue.IsBad)
+            if (sourceConstantValue == null)
+            {
+                if (conversion.Kind == ConversionKind.DefaultOrNullLiteral && source.Kind == BoundKind.DefaultLiteral)
+                {
+                    return destination.GetDefaultValue();
+                }
+                else
+                {
+                    return sourceConstantValue;
+                }
+            }
+            else if (sourceConstantValue.IsBad)
             {
                 return sourceConstantValue;
             }
@@ -884,12 +901,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                             return sourceConstantValue;
                     }
 
-                case ConversionKind.NullLiteral:
+                case ConversionKind.DefaultOrNullLiteral:
+                    // 'default' case is handled above, 'null' is handled here
                     return sourceConstantValue;
-
-                case ConversionKind.DefaultLiteral:
-                    Debug.Assert(sourceConstantValue.IsDefaultLiteral);
-                    return destination.GetDefaultValue();
 
                 case ConversionKind.ImplicitConstant:
                     return FoldConstantNumericConversion(syntax, sourceConstantValue, destination, diagnostics);
