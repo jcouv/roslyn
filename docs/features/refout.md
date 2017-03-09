@@ -12,15 +12,14 @@ But, as a starting point (to unblock work on msbuild), we are using metadata-onl
 
 
 
-ReferenceAssemblyAttribute 
-
-private types and members
-internal types and members
-structs with only private members
-Non-public attributes on public APIs 
-doc comment for every API that goes into the primary output.
-effect on diagnostics 
-
+- ReferenceAssemblyAttribute 
+- private types and members
+- internal types and members
+- structs with only private members
+- Non-public attributes on public APIs 
+- doc comment for every API that goes into the primary output.
+- effect on diagnostics 
+- PDBs
 
 # Related issues
 - Produce ref assemblies from command-line and msbuild (https://github.com/dotnet/roslyn/issues/2184)
