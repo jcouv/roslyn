@@ -31,9 +31,7 @@ The `/refonly` parameter is not allowed together with the `/refout` parameter, a
 
 When the compiler produces documentation, the contents produced will match the APIs that go into the primary output. In other words, the documentation will be filtered down when using the `/refonly` parameter.
 
-Open question: can `csc.exe` return an error code but still produce a ref assembly (and not produce its primary outputs)?
-
-
+The compilation from the command-line will either produce both assemblies (implementation and ref) or neither.
 
 
 ### CscTask/CoreCompile
@@ -46,7 +44,7 @@ We will need to expose another flag (TBD) for filtering out data that is un-nece
 ## Open questions
 - ref assemblies and NoPia
 - `/refout` and `/addmodule`
-- behavior from command-line and msbuild when ref assembly could be produced, but assembly fails.
+
 
 ## Related issues
 - Produce ref assemblies from command-line and msbuild (https://github.com/dotnet/roslyn/issues/2184)
