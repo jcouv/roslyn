@@ -25,7 +25,7 @@ Two command-line parameters will be added:
 - `/refonly`
 
 The `/refout` parameter specifies a file path where the ref assembly should be output.
-The `/refonly` parameter is a flag that indicates that a ref assembly should be output instead of a regular assembly. 
+The `/refonly` parameter is a flag that indicates that a ref assembly should be output instead of an implementation assembly. 
 The `/refonly` parameter is not allowed together with the `/refout` parameter, as it doesn't make sense to have both the primary and secondary outputs be ref assemblies. Also, the `/refonly` parameter silently disables outputting PDBs, as ref assemblies cannot be executed.
 
 When the compiler produces documentation, the contents produced will match the APIs that go into the primary output. In other words, the documentation will be filtered down when using the `/refonly` parameter.
