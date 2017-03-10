@@ -46,6 +46,7 @@ We will need to expose another flag (TBD) for filtering out data that is un-nece
 ## Open questions
 - ref assemblies and NoPia
 - `/refout` and `/addmodule`
+- behavior from command-line and msbuild when ref assembly could be produced, but assembly fails.
 
 ## Related issues
 - Produce ref assemblies from command-line and msbuild (https://github.com/dotnet/roslyn/issues/2184)
