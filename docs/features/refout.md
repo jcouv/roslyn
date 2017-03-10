@@ -15,9 +15,9 @@ The definition of what goes into ref assemblies is incremental, with the startin
 - effect on diagnostics 
 - error codes
 
-
+ some diagnostics should not affect emitting ref assemblies.
+ 
 ## API changes
-
 
 ### Command-line
 Two command-line parameters will be added:
@@ -33,13 +33,14 @@ When the compiler produces documentation, the contents produced will match the A
 
 Open question: can `csc.exe` return an error code but still produce a ref assembly (and not produce its primary outputs)?
 
- some diagnostics should not affect emitting ref assemblies.
+
 
 
 ### CscTask/CoreCompile
 
 ### CodeAnalysis APIs
 It is already possible to produce metadata-only assemblies by using `EmitOptions.EmitMetadataOnly`, which is used in IDE scenarios with cross-language dependencies.
+
 We will need to expose another flag (TBD) for filtering out data that is un-necessary for ref assemblies.
 
 
