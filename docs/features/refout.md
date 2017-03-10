@@ -43,8 +43,11 @@ It is already possible to produce metadata-only assemblies by using `EmitOptions
 
 We will need to expose another flag (TBD) for filtering out data that is un-necessary for ref assemblies.
 
+## Open questions
+- ref assemblies and NoPia
+- `/refout` and `/addmodule`
 
-# Related issues
+## Related issues
 - Produce ref assemblies from command-line and msbuild (https://github.com/dotnet/roslyn/issues/2184)
 - Refine what is in reference assemblies and what diagnostics prevent generating one (https://github.com/dotnet/roslyn/issues/17612)
 - [Are private members part of the API surface?](http://blog.paranoidcoding.com/2016/02/15/are-private-members-api-surface.html)
