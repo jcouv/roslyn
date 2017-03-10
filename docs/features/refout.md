@@ -37,13 +37,9 @@ Open question: can `csc.exe` return an error code but still produce a ref assemb
 
 ### CscTask/CoreCompile
 
-### CompilationOptions/EmitOptions
-It is already possible to produce metadata-only assemblies by using `EmitOptions.EmitMetadataOnly`.
+### CodeAnalysis APIs
+It is already possible to produce metadata-only assemblies by using `EmitOptions.EmitMetadataOnly`, which is used in IDE scenarios with cross-language dependencies.
 We will need to expose another flag (TBD) for filtering out data that is un-necessary for ref assemblies.
-
-The compiler already supports emitting metadata-only assemblies via Emit APIs. This is used by the IDE for cross-language dependencies.
-
-
 
 
 # Related issues
