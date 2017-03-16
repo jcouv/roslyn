@@ -44,7 +44,7 @@ We will need to expose another flag (TBD) for filtering out data that is un-nece
 ## Open questions
 - ref assemblies and NoPia
 - `/refout` and `/addmodule`
-
+- private fields in structs and interop code (https://github.com/dotnet/roslyn/pull/17558#issuecomment-287209362)
 
 ## Related issues
 - Produce ref assemblies from command-line and msbuild (https://github.com/dotnet/roslyn/issues/2184)
