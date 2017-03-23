@@ -22,6 +22,7 @@ The definition of what goes into ref assemblies is incremental, with the startin
 - effect on diagnostics 
 - error codes
 
+
  some diagnostics should not affect emitting ref assemblies.
  
 ## API changes
@@ -52,6 +53,7 @@ We will need to expose another flag (TBD) for filtering out data that is un-nece
 - ref assemblies and NoPia
 - `/refout` and `/addmodule`
 - private fields in structs and interop code (https://github.com/dotnet/roslyn/pull/17558#issuecomment-287209362)
+- how to handle types that are used in modreq?
 
 ## Related issues
 - Produce ref assemblies from command-line and msbuild (https://github.com/dotnet/roslyn/issues/2184)
