@@ -6,9 +6,19 @@ Reference assemblies are metadata-only assemblies with the minimum amount of met
 There are 4 scenarios:
 
 1. The traditional one, where an assembly is emitted as the primary output (`/out` command-line parameter, or `peStream` parameter in `Compilation.Emit` APIs).
-2. The IDE scenario, where the metadata-only assembly is emitted (via `Emit` API), still as the primary output.
-3. The COREFX scenario, where only the ref assembly is emitted, still as the primary output (`/refonly` command-line parameter) 
-4. The MSBUILD scenario, which is the new scenario, where both a real assembly is emitted as the primary output, and a ref assembly is emitted as the secondary output (`/refout` command-line parameter, or `metadataPeStream` parameter in `Emit`).
+2. The IDE scenario, where the metadata-only assembly is emitted (via `Emit` API), still as the primary output. Later on, the IDE is interested to get metadata-only assemblies even when there are errors in the compilation.
+3. The CoreFX scenario, where only the ref assembly is emitted, still as the primary output (`/refonly` command-line parameter) 
+4. The MSBuild scenario, which is the new scenario, where both a real assembly is emitted as the primary output, and a ref assembly is emitted as the secondary output (`/refout` command-line parameter, or `metadataPeStream` parameter in `Emit`).
+
+
+## Progression
+1. Add `/refout` and `/refonly` command-line parameters (for MSBuild)
+2. Strip out all private members (using the `EmitOptions.IncludePrivateMembers`), with some caveats:
+    - structs with private fields: ref case, struct case, generic case
+3. If there are no `InternalsVisibleTo` attributes, do the same for internal members
+---------------------
+4. Produce ref assemblies even when there are errors outside method bodies
+5. Produce "public ref assemblies"
 
 
 ## Definition of ref assemblies
@@ -20,10 +30,14 @@ The definition of what goes into ref assemblies is incremental, with the startin
 - private types and members
 - internal types and members
 - structs with only private members
-- Non-public attributes on public APIs 
+- Non-public attributes on public APIs (emit attribute based on accessibility rule)
 - effect on diagnostics 
 - error codes
+structs with private fields
 
+
+controlling internals (producing public ref assemblies)
+tolerate methods with no bodies in source code (for CoreFX)
 
  some diagnostics should not affect emitting ref assemblies.
  
@@ -48,8 +62,9 @@ The compilation from the command-line will either produce both assemblies (imple
 
 ### CodeAnalysis APIs
 It is already possible to produce metadata-only assemblies by using `EmitOptions.EmitMetadataOnly`, which is used in IDE scenarios with cross-language dependencies.
+The compiler will be updated to honour the `EmitOptions.IncludePrivateMembers` flag as well. When combined with `EmitMetadataOnly` in `Emit`, a ref assembly will be produced.
+Later on, the `EmitOptions.TolerateErrors` flag will allow emitting error types as well.
 
-We will need to expose another flag (TBD) for filtering out data that is un-necessary for ref assemblies.
 
 ## Open questions
 - ref assemblies and NoPia
