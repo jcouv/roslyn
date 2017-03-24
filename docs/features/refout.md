@@ -3,11 +3,13 @@
 Reference assemblies are metadata-only assemblies with the minimum amount of metadata to preserve the compile-time behavior of consumers.
 
 ## Scenarios
-There are 3 scenarios:
+There are 4 scenarios:
 
 1. The traditional one, where an assembly is emitted as the primary output (`/out` command-line parameter, or `peStream` parameter in `Compilation.Emit` APIs).
-2. The IDE scenario, where only the ref assembly is emitted, still as the primary output.
-3. The MSBUILD scenario, which is the new scenario, where both a real assembly is emitted as the primary output, and a ref assembly is emitted as the secondary output (`/refout` command-line parameter, or `metadataPeStream` parameter in `Emit`).
+2. The IDE scenario, where the metadata-only assembly is emitted (via `Emit` API), still as the primary output.
+3. The COREFX scenario, where only the ref assembly is emitted, still as the primary output (`/refonly` command-line parameter) 
+4. The MSBUILD scenario, which is the new scenario, where both a real assembly is emitted as the primary output, and a ref assembly is emitted as the secondary output (`/refout` command-line parameter, or `metadataPeStream` parameter in `Emit`).
+
 
 ## Definition of ref assemblies
 The definition of what goes into ref assemblies is incremental, with the starting point of metadata-only assemblies (which simply have their method bodies removed) and then removing un-necessary metadata.
