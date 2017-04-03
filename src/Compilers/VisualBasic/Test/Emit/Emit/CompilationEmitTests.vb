@@ -298,6 +298,45 @@ End Class
         End Sub
 
         <Fact>
+        Public Sub RefAssembly_ReferenceAssemblyAttributeAlsoInSource()
+            Dim emitRefAssembly = EmitOptions.Default.WithEmitMetadataOnly(True).WithIncludePrivateMembers(False)
+
+            Dim sourceSymbolValidator As Action(Of IModuleSymbol) =
+            Sub(m)
+                Dim sourceModule = DirectCast(m, SourceModuleSymbol)
+                Dim sourceAssembly = DirectCast(sourceModule.DeclaringCompilation.Assembly, SourceAssemblySymbol)
+                AssertEx.SetEqual(sourceAssembly.GetAttributes().Select(Function(a) a.ToString()),
+                    {"System.Runtime.CompilerServices.ReferenceAssemblyAttribute"})
+
+                AssertEx.SetEqual(sourceAssembly.GetSynthesizedAttributes().Select(Function(a) a.ToString()),
+                    {"System.Runtime.CompilerServices.CompilationRelaxationsAttribute",
+                        "System.Runtime.CompilerServices.RuntimeCompatibilityAttribute",
+                        "System.Diagnostics.DebuggableAttribute"})
+
+            End Sub
+
+            Dim assemblyValidator As Action(Of PEAssembly) =
+                Sub(assembly)
+                    Dim reader = assembly.GetMetadataReader()
+                    Dim attributes = reader.GetAssemblyDefinition().GetCustomAttributes()
+                    AssertEx.SetEqual(attributes.Select(Function(a) MetadataReaderUtils.Dump(reader, reader.GetCustomAttribute(a).Constructor)),
+                    {
+                        "MemberReference:Void System.Runtime.CompilerServices.CompilationRelaxationsAttribute.ctor(Int32)",
+                        "MemberReference:Void System.Runtime.CompilerServices.RuntimeCompatibilityAttribute.ctor()",
+                        "MemberReference:Void System.Diagnostics.DebuggableAttribute.ctor(DebuggingModes)",
+                        "MemberReference:Void System.Runtime.CompilerServices.ReferenceAssemblyAttribute.ctor()"
+                    })
+                End Sub
+
+            Dim source = <compilation>
+                             <file name="a.vb"><![CDATA[
+<assembly:System.Runtime.CompilerServices.ReferenceAssembly()>
+                         ]]></file>
+                         </compilation>
+            CompileAndVerify(source, emitOptions:=emitRefAssembly, verify:=True, sourceSymbolValidator:=sourceSymbolValidator, validator:=assemblyValidator)
+        End Sub
+
+        <Fact>
         Public Sub RefAssembly_InvariantToSomeChanges()
 
             RefAssembly_InvariantToSomeChanges(

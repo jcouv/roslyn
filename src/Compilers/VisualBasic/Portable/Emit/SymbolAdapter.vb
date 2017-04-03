@@ -36,12 +36,20 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
         End Function
 
         Friend Overridable Function GetCustomAttributesToEmit(compilationState As ModuleCompilationState) As IEnumerable(Of VisualBasicAttributeData)
-            Return GetCustomAttributesToEmit(compilationState, emittingAssemblyAttributesInNetModule:=False)
+            Return GetCustomAttributesToEmit(compilationState, emittingRefAssembly:=False, emittingAssemblyAttributesInNetModule:=False)
         End Function
 
-        Friend Function GetCustomAttributesToEmit(compilationState As ModuleCompilationState, emittingAssemblyAttributesInNetModule As Boolean) As IEnumerable(Of VisualBasicAttributeData)
+        Friend Function GetCustomAttributesToEmit(compilationState As ModuleCompilationState, emittingRefAssembly As Boolean, emittingAssemblyAttributesInNetModule As Boolean) As IEnumerable(Of VisualBasicAttributeData)
             Dim synthesized As ArrayBuilder(Of SynthesizedAttributeData) = Nothing
             AddSynthesizedAttributes(compilationState, synthesized)
+
+            If emittingRefAssembly Then
+                Dim referenceAssemblyAttribute = Me.DeclaringCompilation?.TrySynthesizeAttribute(WellKnownMember.System_Runtime_CompilerServices_ReferenceAssemblyAttribute__ctor, isOptionalUse:=True)
+                If referenceAssemblyAttribute IsNot Nothing Then
+                    Symbol.AddSynthesizedAttribute(synthesized, referenceAssemblyAttribute)
+                End If
+            End If
+
             Return GetCustomAttributesToEmit(Me.GetAttributes(), synthesized, isReturnType:=False, emittingAssemblyAttributesInNetModule:=emittingAssemblyAttributesInNetModule)
         End Function
 

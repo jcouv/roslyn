@@ -60,10 +60,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             CheckDefinitionInvariant();
 
             Debug.Assert(this.Kind != SymbolKind.Assembly);
-            return GetCustomAttributesToEmit(compilationState, emittingAssemblyAttributesInNetModule: false);
+            return GetCustomAttributesToEmit(compilationState, emittingRefAssembly: false, emittingAssemblyAttributesInNetModule: false);
         }
 
-        internal IEnumerable<CSharpAttributeData> GetCustomAttributesToEmit(ModuleCompilationState compilationState, bool emittingAssemblyAttributesInNetModule)
+        internal IEnumerable<CSharpAttributeData> GetCustomAttributesToEmit(
+            ModuleCompilationState compilationState,
+            bool emittingRefAssembly,
+            bool emittingAssemblyAttributesInNetModule)
         {
             CheckDefinitionInvariant();
 
@@ -71,6 +74,16 @@ namespace Microsoft.CodeAnalysis.CSharp
             ArrayBuilder<SynthesizedAttributeData> synthesized = null;
             userDefined = this.GetAttributes();
             this.AddSynthesizedAttributes(compilationState, ref synthesized);
+
+            if (emittingRefAssembly)
+            {
+                var referenceAssemblyAttribute = this.DeclaringCompilation?
+                    .TrySynthesizeAttribute(WellKnownMember.System_Runtime_CompilerServices_ReferenceAssemblyAttribute__ctor, isOptionalUse: true);
+                if ((object)referenceAssemblyAttribute != null)
+                {
+                    Symbol.AddSynthesizedAttribute(ref synthesized, referenceAssemblyAttribute);
+                }
+            }
 
             // Note that callers of this method (CCI and ReflectionEmitter) have to enumerate 
             // all items of the returned iterator, otherwise the synthesized ArrayBuilder may leak.
