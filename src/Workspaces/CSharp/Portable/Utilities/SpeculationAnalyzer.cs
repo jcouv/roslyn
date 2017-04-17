@@ -439,8 +439,19 @@ namespace Microsoft.CodeAnalysis.CSharp.Utilities
                 var replacedAnonymousObjectMemberDeclarator = (AnonymousObjectMemberDeclaratorSyntax)currentReplacedNode;
                 return ReplacementBreaksAnonymousObjectMemberDeclarator(originalAnonymousObjectMemberDeclarator, replacedAnonymousObjectMemberDeclarator);
             }
+            else if (currentOriginalNode.IsKind(SyntaxKind.Argument) && currentOriginalNode.Parent.IsKind(SyntaxKind.TupleExpression))
+            {
+                return ReplacementBreaksTupleElement((ArgumentSyntax)currentOriginalNode, (ArgumentSyntax)currentReplacedNode);
+            }
 
             return false;
+        }
+
+        private bool ReplacementBreaksTupleElement(ArgumentSyntax currentOriginalNode, ArgumentSyntax currentReplacedNode)
+        {
+            var originalExpressionType = this.OriginalSemanticModel.GetTypeInfo(currentOriginalNode.Expression, this.CancellationToken).Type;
+            var newExpressionType = this.SpeculativeSemanticModel.GetTypeInfo(currentReplacedNode.Expression, this.CancellationToken).Type;
+            return originalExpressionType != newExpressionType;
         }
 
         private bool ReplacementBreaksAnonymousObjectMemberDeclarator(AnonymousObjectMemberDeclaratorSyntax originalAnonymousObjectMemberDeclarator, AnonymousObjectMemberDeclaratorSyntax replacedAnonymousObjectMemberDeclarator)
