@@ -8120,7 +8120,33 @@ End Module
             Assert.Equal("System.Int32", type.ToString())
             Assert.NotNull(model.GetSymbolInfo(type).Symbol)
             Assert.Equal("System.Int32", model.GetSymbolInfo(type).Symbol.ToTestDisplayString())
+        End Sub
 
+        <Fact>
+        <WorkItem(16697, "https://github.com/dotnet/roslyn/issues/16697")>
+        Public Sub GetSymbolInfo_01()
+            Dim comp = CreateCompilationWithMscorlibAndVBRuntime(
+ <compilation>
+     <file name="a.vb">
+Module C
+     Sub M()
+        Dim x1 As DummyType = (Alice:=1, "hello")
+        Dim Alice = x1.Alice
+     End Sub
+End Module
+
+    </file>
+ </compilation>, additionalRefs:=s_valueTupleRefs)
+
+            Dim tree = comp.SyntaxTrees(0)
+            Dim model = comp.GetSemanticModel(tree, ignoreAccessibility:=False)
+            Dim nodes = tree.GetCompilationUnitRoot().DescendantNodes()
+
+            Dim nc = nodes.OfType(Of NameColonEqualsSyntax)().First()
+            Dim sym = model.GetSymbolInfo(nc.Name)
+            Assert.Equal(SymbolKind.Field, sym.Symbol.Kind)
+            Assert.Equal("Alice", sym.Symbol.Name)
+            Assert.Equal(nc.Name.GetLocation(), sym.Symbol.Locations(0))
         End Sub
 
         <Fact>
