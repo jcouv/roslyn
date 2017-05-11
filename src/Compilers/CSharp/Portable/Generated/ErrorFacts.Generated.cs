@@ -174,6 +174,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ErrorCode.WRN_AttributeIgnoredWhenPublicSigning:
                 case ErrorCode.WRN_TupleLiteralNameMismatch:
                 case ErrorCode.WRN_Experimental:
+                case ErrorCode.WRN_RefOutFilenameDoesNotMatchOut:
                 case ErrorCode.WRN_DefaultInSwitch:
                     return true;
                 default:

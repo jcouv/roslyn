@@ -14602,6 +14602,24 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
         End Property
         
         '''<summary>
+        '''  Looks up a localized string similar to The filenames for the main output &apos;{0}&apos; and reference output &apos;{1}&apos; don&apos;t match. That is not recommended..
+        '''</summary>
+        Friend ReadOnly Property WRN_RefOutFilenameDoesNotMatchOut() As String
+            Get
+                Return ResourceManager.GetString("WRN_RefOutFilenameDoesNotMatchOut", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized string similar to The filenames for the main output and reference output don&apos;t match. That is not recommended..
+        '''</summary>
+        Friend ReadOnly Property WRN_RefOutFilenameDoesNotMatchOut_Title() As String
+            Get
+                Return ResourceManager.GetString("WRN_RefOutFilenameDoesNotMatchOut_Title", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
         '''  Looks up a localized string similar to The &apos;AddressOf&apos; expression has no effect in this context because the method argument to &apos;AddressOf&apos; requires a relaxed conversion to the delegate type of the event. Assign the &apos;AddressOf&apos; expression to a variable, and use the variable to add or remove the method as the handler..
         '''</summary>
         Friend ReadOnly Property WRN_RelDelegatePassedToRemoveHandler() As String

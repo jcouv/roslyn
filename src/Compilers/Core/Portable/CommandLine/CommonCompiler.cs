@@ -752,6 +752,7 @@ namespace Microsoft.CodeAnalysis
                             var pdbStreamProviderOpt = emitPdbFile ? new CompilerEmitStreamProvider(this, finalPdbFilePath) : null;
 
                             string finalRefPeFilePath = Arguments.OutputRefFilePath;
+                            ReportRefFilenameMismatch(finalPeFilePath, finalRefPeFilePath, diagnosticBag);
                             var refPeStreamProviderOpt = finalRefPeFilePath != null ? new CompilerEmitStreamProvider(this, finalRefPeFilePath) : null;
 
                             try
@@ -859,6 +860,22 @@ namespace Microsoft.CodeAnalysis
             }
 
             return Succeeded;
+        }
+
+        private void ReportRefFilenameMismatch(string finalPeFilePath, string finalRefPeFilePath, DiagnosticBag diagnosticBag)
+        {
+            if (finalPeFilePath == null || finalRefPeFilePath == null)
+            {
+                return;
+            }
+
+            var primaryOutput = Path.GetFileName(finalPeFilePath);
+            var secondaryOutput = Path.GetFileName(finalRefPeFilePath);
+            if (!primaryOutput.Equals(secondaryOutput, StringComparison.OrdinalIgnoreCase))
+            {
+                diagnosticBag.Add(MessageProvider.CreateDiagnostic(MessageProvider.WRN_RefOutFilenameDoesNotMatchOut,
+                    Location.None, primaryOutput, secondaryOutput));
+            }
         }
 
         private bool WriteTouchedFiles(TextWriter consoleOutput, TouchedFileLogger touchedFilesLogger, string finalXmlFilePath)

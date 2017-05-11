@@ -8253,6 +8253,30 @@ a
         End Sub
 
         <Fact>
+        Public Sub RefOutWithFilenameMismatch()
+            Dim dir = Temp.CreateDirectory()
+            Dim refDir = dir.CreateDirectory("ref")
+
+            Dim src = dir.CreateFile("a.vb")
+            src.WriteAllText("
+Public Class C
+End Class")
+
+            Dim outWriter = New StringWriter(CultureInfo.InvariantCulture)
+            Dim vbc = New MockVisualBasicCompiler(Nothing, dir.Path,
+                {"/define:_MYTYPE=""Empty"" ", "/nologo", "/refout:ref/b.dll", "/target:library", "/deterministic", "a.vb"})
+
+            Dim exitCode = vbc.Run(outWriter)
+            Assert.Equal("vbc : warning BC42381: The filenames for the main output 'a.dll' and reference output 'b.dll' don't match. That is not recommended.",
+                outWriter.ToString().Trim())
+            Assert.Equal(0, exitCode)
+
+            ' Clean up temp files
+            CleanupAllGeneratedFiles(dir.Path)
+            CleanupAllGeneratedFiles(refDir.Path)
+        End Sub
+
+        <Fact>
         Public Sub RefOutWithError()
             Dim dir = Temp.CreateDirectory()
             dir.CreateDirectory("ref")

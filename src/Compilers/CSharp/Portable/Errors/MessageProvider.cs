@@ -172,6 +172,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override int ERR_MetadataReferencesNotSupported => (int)ErrorCode.ERR_MetadataReferencesNotSupported;
         public override int ERR_LinkedNetmoduleMetadataMustProvideFullPEImage => (int)ErrorCode.ERR_LinkedNetmoduleMetadataMustProvideFullPEImage;
 
+        // refout:
+        public override int WRN_RefOutFilenameDoesNotMatchOut => (int)ErrorCode.WRN_RefOutFilenameDoesNotMatchOut;
+
         public override void ReportDuplicateMetadataReferenceStrong(DiagnosticBag diagnostics, Location location, MetadataReference reference, AssemblyIdentity identity, MetadataReference equivalentReference, AssemblyIdentity equivalentIdentity)
         {
             diagnostics.Add(ErrorCode.ERR_DuplicateImport, location,

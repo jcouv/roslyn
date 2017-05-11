@@ -1955,9 +1955,10 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
 
         WRN_AttributeIgnoredWhenPublicSigning = 42379
         WRN_Experimental = 42380
+        WRN_RefOutFilenameDoesNotMatchOut = 42381
 
-        ' // AVAILABLE                             42381 - 49998
-        ERRWRN_Last = WRN_Experimental
+        ' // AVAILABLE                             42382 - 49998
+        ERRWRN_Last = WRN_RefOutFilenameDoesNotMatchOut
 
         '// HIDDENS AND INFOS BEGIN HERE
         HDN_UnusedImportClause = 50000

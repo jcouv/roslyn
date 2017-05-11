@@ -13688,6 +13688,24 @@ namespace Microsoft.CodeAnalysis.CSharp {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The filenames for the main output &apos;{0}&apos; and reference output &apos;{1}&apos; don&apos;t match. That is not recommended..
+        /// </summary>
+        internal static string WRN_RefOutFilenameDoesNotMatchOut {
+            get {
+                return ResourceManager.GetString("WRN_RefOutFilenameDoesNotMatchOut", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The filenames for the main output and reference output don&apos;t match. That is not recommended..
+        /// </summary>
+        internal static string WRN_RefOutFilenameDoesNotMatchOut_Title {
+            get {
+                return ResourceManager.GetString("WRN_RefOutFilenameDoesNotMatchOut_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The type &apos;{1}&apos; in &apos;{0}&apos; conflicts with the imported type &apos;{3}&apos; in &apos;{2}&apos;. Using the type defined in &apos;{0}&apos;..
         /// </summary>
         internal static string WRN_SameFullNameThisAggAgg {

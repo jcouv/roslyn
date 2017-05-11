@@ -169,7 +169,8 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
                      ERRID.WRN_NoAnalyzerInAssembly,
                      ERRID.WRN_UnableToLoadAnalyzer,
                      ERRID.WRN_AttributeIgnoredWhenPublicSigning,
-                     ERRID.WRN_Experimental
+                     ERRID.WRN_Experimental,
+                     ERRID.WRN_RefOutFilenameDoesNotMatchOut
                     Return True
                 Case Else
                     Return False

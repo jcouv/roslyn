@@ -9131,6 +9131,33 @@ public class C
         }
 
         [Fact]
+        public void RefOutWithFilenameMismatch()
+        {
+            var dir = Temp.CreateDirectory();
+            var refDir = dir.CreateDirectory("ref");
+
+            var src = dir.CreateFile("a.cs");
+            src.WriteAllText(@"
+public class C
+{
+}");
+
+            var outWriter = new StringWriter(CultureInfo.InvariantCulture);
+            var csc = new MockCSharpCompiler(null, dir.Path,
+                new[] { "/nologo", "/refout:ref/b.dll", "/target:library", "/deterministic", "a.cs" });
+
+            int exitCode = csc.Run(outWriter);
+
+            Assert.Equal("error CS8310: The filenames for the main output 'a.dll' and reference output 'b.dll' don't match. That is not recommended.",
+                outWriter.ToString().Trim());
+            Assert.Equal(0, exitCode);
+
+            // Clean up temp files
+            CleanupAllGeneratedFiles(dir.Path);
+            CleanupAllGeneratedFiles(refDir.Path);
+        }
+
+        [Fact]
         public void RefOutWithError()
         {
             var dir = Temp.CreateDirectory();

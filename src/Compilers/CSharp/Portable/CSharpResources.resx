@@ -5060,6 +5060,12 @@ To remove the warning, you can use /reference instead (set the Embed Interop Typ
   <data name="ERR_VoidAssignment" xml:space="preserve">
     <value>A value of type 'void' may not be assigned.</value>
   </data>
+  <data name="WRN_RefOutFilenameDoesNotMatchOut" xml:space="preserve">
+    <value>The filenames for the main output '{0}' and reference output '{1}' don't match. That is not recommended.</value>
+  </data>
+  <data name="WRN_RefOutFilenameDoesNotMatchOut_Title" xml:space="preserve">
+    <value>The filenames for the main output and reference output don't match. That is not recommended.</value>
+  </data>
   <data name="WRN_Experimental" xml:space="preserve">
     <value>'{0}' is for evaluation purposes only and is subject to change or removal in future updates.</value>
   </data>

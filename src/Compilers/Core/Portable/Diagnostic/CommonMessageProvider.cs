@@ -221,6 +221,9 @@ namespace Microsoft.CodeAnalysis
         public abstract int ERR_ModuleEmitFailure { get; }
         public abstract int ERR_EncUpdateFailedMissingAttribute { get; }
 
+        // Refout:
+        public abstract int WRN_RefOutFilenameDoesNotMatchOut { get; }
+
         /// <summary>
         /// Takes an exception produced while writing to a file stream and produces a diagnostic.
         /// </summary>

@@ -213,6 +213,12 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
             End Get
         End Property
 
+        Public Overrides ReadOnly Property WRN_RefOutFilenameDoesNotMatchOut As Integer
+            Get
+                Return ERRID.WRN_RefOutFilenameDoesNotMatchOut
+            End Get
+        End Property
+
         Public Overrides ReadOnly Property INF_UnableToLoadSomeTypesInAnalyzer As Integer
             Get
                 Return ERRID.INF_UnableToLoadSomeTypesInAnalyzer
