@@ -342,7 +342,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             // Terminate the try block with a hidden sequence point
-            BoundBlock terminatedTryBlock = tryBlock.WithStatements(tryBlock.Statements.Add(new BoundSequencePoint(null, null)));
+            BoundBlock terminatedTryBlock = tryBlock; // .WithStatements(tryBlock.Statements.Add(new BoundSequencePoint(null, null)));
 
             // try { ... } finally { if (local != null) local.Dispose(); }
             BoundStatement tryFinally = new BoundTryStatement(

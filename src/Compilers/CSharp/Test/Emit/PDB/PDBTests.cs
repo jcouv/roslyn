@@ -4482,7 +4482,6 @@ class C
         <entry offset=""0x1"" startLine=""22"" startColumn=""16"" endLine=""22"" endColumn=""60"" />
         <entry offset=""0xc"" startLine=""22"" startColumn=""62"" endLine=""22"" endColumn=""90"" />
         <entry offset=""0x17"" startLine=""23"" startColumn=""13"" endLine=""23"" endColumn=""47"" />
-        <entry offset=""0x22"" hidden=""true"" />
         <entry offset=""0x24"" hidden=""true"" />
         <entry offset=""0x2f"" hidden=""true"" />
         <entry offset=""0x31"" hidden=""true"" />
@@ -4491,7 +4490,6 @@ class C
         <entry offset=""0x52"" startLine=""26"" startColumn=""9"" endLine=""26"" endColumn=""10"" />
         <entry offset=""0x53"" startLine=""27"" startColumn=""13"" endLine=""27"" endColumn=""48"" />
         <entry offset=""0x5e"" startLine=""28"" startColumn=""9"" endLine=""28"" endColumn=""10"" />
-        <entry offset=""0x5f"" hidden=""true"" />
         <entry offset=""0x61"" hidden=""true"" />
         <entry offset=""0x6c"" hidden=""true"" />
         <entry offset=""0x6e"" hidden=""true"" />
@@ -4643,7 +4641,6 @@ class C
     // sequence point: <hidden>
     IL_000e:  ldloc.1
     IL_000f:  brtrue.s   IL_0009
-    // sequence point: <hidden>
     IL_0011:  leave.s    IL_001e
   }
   finally
@@ -4703,7 +4700,6 @@ class C
     // sequence point: <hidden>
     IL_000e:  ldloc.1
     IL_000f:  brtrue.s   IL_0009
-    // sequence point: <hidden>
     IL_0011:  leave.s    IL_001e
   }
   finally

@@ -87,6 +87,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 builder.Add(new BoundLabelStatement(syntax, alt));
                 builder.Add(rewrittenAlternativeOpt);
                 builder.Add(new BoundLabelStatement(syntax, afterif));
+                builder.Add(new BoundSequencePoint(null, null));
                 return new BoundStatementList(syntax, builder.ToImmutableAndFree(), hasErrors);
             }
 
