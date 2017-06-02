@@ -7346,5 +7346,115 @@ class Program
 }
 ", sequencePoints: "Program+<Test>d__0.MoveNext", source: source);
         }
+
+        [Fact]
+        [WorkItem(17076, "https://github.com/dotnet/roslyn/issues/17076")]
+        public void Bug()
+        {
+            var source = @"
+using System;
+
+class C<T>
+{
+    public static async System.Threading.Tasks.Task Test(object o)
+    {
+        if (false)
+        {
+        }
+        else if (o is T x2)
+        {
+            throw null;
+            return;
+        }
+    }
+}";
+            var v = CompileAndVerify(source, options: TestOptions.DebugDll, additionalRefs: new[] { MscorlibRef_v4_0_30316_17626, SystemCoreRef, CSharpRef });
+
+            v.VerifyIL("C<T>.<Test>d__0.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext()", @"
+{
+  // Code size      128 (0x80)
+  .maxstack  3
+  .locals init (int V_0,
+                bool V_1,
+                bool V_2,
+                bool V_3,
+                object V_4,
+                T V_5,
+                System.Exception V_6)
+  // sequence point: <hidden>
+  IL_0000:  ldarg.0
+  IL_0001:  ldfld      ""int C<T>.<Test>d__0.<>1__state""
+  IL_0006:  stloc.0
+  .try
+  {
+    // sequence point: {
+    IL_0007:  nop
+    // sequence point: if (false)
+    IL_0008:  ldc.i4.0
+    IL_0009:  stloc.1
+    IL_000a:  br.s       IL_000c
+    // sequence point: if (o is T x2)
+    IL_000c:  ldarg.0
+    IL_000d:  ldfld      ""object C<T>.<Test>d__0.o""
+    IL_0012:  stloc.s    V_4
+    IL_0014:  ldarg.0
+    IL_0015:  ldloc.s    V_4
+    IL_0017:  isinst     ""T""
+    IL_001c:  ldnull
+    IL_001d:  cgt.un
+    IL_001f:  dup
+    IL_0020:  stloc.3
+    IL_0021:  brtrue.s   IL_002f
+    IL_0023:  ldloca.s   V_5
+    IL_0025:  initobj    ""T""
+    IL_002b:  ldloc.s    V_5
+    IL_002d:  br.s       IL_0036
+    IL_002f:  ldloc.s    V_4
+    IL_0031:  unbox.any  ""T""
+    IL_0036:  stfld      ""T C<T>.<Test>d__0.<x2>5__1""
+    IL_003b:  ldloc.3
+    IL_003c:  stloc.2
+    // sequence point: <hidden>
+    IL_003d:  ldloc.2
+    IL_003e:  brfalse.s  IL_0043
+    // sequence point: {
+    IL_0040:  nop
+    // sequence point: throw null;
+    IL_0041:  ldnull
+    IL_0042:  throw
+    // sequence point: <hidden>
+    IL_0043:  ldarg.0
+    IL_0044:  ldflda     ""T C<T>.<Test>d__0.<x2>5__1""
+    IL_0049:  initobj    ""T""
+    // sequence point: <hidden>
+    IL_004f:  leave.s    IL_006b
+  }
+  catch System.Exception
+  {
+    // sequence point: <hidden>
+    IL_0051:  stloc.s    V_6
+    IL_0053:  ldarg.0
+    IL_0054:  ldc.i4.s   -2
+    IL_0056:  stfld      ""int C<T>.<Test>d__0.<>1__state""
+    IL_005b:  ldarg.0
+    IL_005c:  ldflda     ""System.Runtime.CompilerServices.AsyncTaskMethodBuilder C<T>.<Test>d__0.<>t__builder""
+    IL_0061:  ldloc.s    V_6
+    IL_0063:  call       ""void System.Runtime.CompilerServices.AsyncTaskMethodBuilder.SetException(System.Exception)""
+    IL_0068:  nop
+    IL_0069:  leave.s    IL_007f
+  }
+  // sequence point: }
+  IL_006b:  ldarg.0
+  IL_006c:  ldc.i4.s   -2
+  IL_006e:  stfld      ""int C<T>.<Test>d__0.<>1__state""
+  // sequence point: <hidden>
+  IL_0073:  ldarg.0
+  IL_0074:  ldflda     ""System.Runtime.CompilerServices.AsyncTaskMethodBuilder C<T>.<Test>d__0.<>t__builder""
+  IL_0079:  call       ""void System.Runtime.CompilerServices.AsyncTaskMethodBuilder.SetResult()""
+  IL_007e:  nop
+  IL_007f:  ret
+}
+", sequencePoints: "C`1+<Test>d__0.MoveNext", source: source);
+        }
     }
 }

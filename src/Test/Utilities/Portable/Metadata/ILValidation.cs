@@ -62,6 +62,8 @@ namespace Roslyn.Test.Utilities
             string[] lines = source?.Split(new[] { "\r\n" }, StringSplitOptions.None);
             var doc = new XmlDocument();
             doc.LoadXml(pdbXml);
+            AssertMethodWasFoundInPDB(doc);
+
             var result = new Dictionary<int, string>();
 
             if (source == null)
@@ -143,6 +145,20 @@ namespace Roslyn.Test.Utilities
                 {
                     dict[key] = "// " + value;
                 }
+            }
+        }
+
+        private static void AssertMethodWasFoundInPDB(XmlDocument doc)
+        {
+            if (doc.FirstChild.LocalName == "error")
+            {
+                var methods = new StringBuilder();
+                methods.AppendLine("Available methods in this PDB:");
+                foreach (XmlNode method in doc.GetElementsByTagName("method"))
+                {
+                    methods.AppendLine(method.InnerText);
+                }
+                AssertEx.Fail(methods.ToString());
             }
         }
 
