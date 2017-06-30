@@ -17,6 +17,7 @@ Imports Microsoft.VisualStudio.Utilities
 Imports Roslyn.Utilities
 
 Namespace Microsoft.CodeAnalysis.Editor.UnitTests.IntelliSense
+    <Trait(Traits.Feature, Traits.Features.Completion)>
     Public Class CSharpCompletionCommandHandlerTests
         <WorkItem(541201, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/541201")>
         <WpfFact, Trait(Traits.Feature, Traits.Features.Completion)>
@@ -225,6 +226,49 @@ class C
                 Await state.AssertSelectedCompletionItem(displayText:="List<int>", isHardSelected:=True)
                 state.SendTab()
                 Assert.Contains("new List<int>", state.GetLineTextFromCaretPosition(), StringComparison.Ordinal)
+            End Using
+        End Function
+
+        <WpfFact>
+        Public Async Function TestShortDiscardIntOut() As Task
+            Using state = TestState.CreateCSharpTestState(
+                  <Document><![CDATA[
+class C
+{
+    public void M()
+    {
+        int _something = 4;
+        M2(out $$
+    }
+    public void M2(out int i) { i = 1; }
+}]]></Document>)
+
+                state.SendTypeChars("_")
+                Await state.WaitForAsynchronousOperationsAsync()
+                Await state.AssertSelectedCompletionItem(displayText:="_", isHardSelected:=True)
+                state.SendTypeChars(")")
+                Assert.Contains("M2(out _)", state.GetLineTextFromCaretPosition(), StringComparison.Ordinal)
+            End Using
+        End Function
+
+        <WpfFact>
+        Public Async Function TestShortDiscardInAssignment() As Task
+            Using state = TestState.CreateCSharpTestState(
+                  <Document><![CDATA[
+class C
+{
+    public int M()
+    {
+        int _something = 4;
+        $$
+    }
+}]]></Document>)
+
+                state.SendTypeChars("_")
+                Await state.WaitForAsynchronousOperationsAsync()
+                Await state.AssertSelectedCompletionItem(displayText:="_", isHardSelected:=True)
+                state.SendTypeChars(" =")
+                Assert.Contains("_ =", state.GetLineTextFromCaretPosition(), StringComparison.Ordinal)
             End Using
         End Function
 

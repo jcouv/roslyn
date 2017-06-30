@@ -281,6 +281,7 @@
     <Compile Include="Recommendations\UnsafeKeywordRecommenderTests.cs" />
     <Compile Include="Recommendations\UShortKeywordRecommenderTests.cs" />
     <Compile Include="Recommendations\UsingKeywordRecommenderTests.cs" />
+    <Compile Include="Recommendations\DiscardDesignationRecommenderTests.cs" />
     <Compile Include="Recommendations\VarKeywordRecommenderTests.cs" />
     <Compile Include="Recommendations\VirtualKeywordRecommenderTests.cs" />
     <Compile Include="Recommendations\VoidKeywordRecommenderTests.cs" />

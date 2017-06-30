@@ -1906,6 +1906,44 @@ namespace Microsoft.CodeAnalysis.CSharp.Extensions.ContextQuery
             return false;
         }
 
+        public static bool IsPossibleDiscardContext(
+            this SyntaxTree syntaxTree,
+            int position,
+            SyntaxToken tokenOnLeftOfPosition,
+            CancellationToken cancellationToken)
+        {
+            var token = tokenOnLeftOfPosition.GetPreviousTokenIfTouchingWord(position);
+
+            // cases:
+            // M(out |
+            // M(x, out |
+            if (tokenOnLeftOfPosition.IsKind(SyntaxKind.OutKeyword) &&
+                tokenOnLeftOfPosition.Parent.IsParentKind(SyntaxKind.ArgumentList) &&
+                tokenOnLeftOfPosition.Parent.Parent.IsParentKind(SyntaxKind.InvocationExpression))
+            {
+                return true;
+            }
+
+            // cases:
+            // M(out System.Int32 |
+            // M(x, out var |
+            var argument = token.GetAncestor<ArgumentSyntax>();
+            if (argument != null && argument.RefOrOutKeyword != default && argument.RefOrOutKeyword.IsKind(SyntaxKind.OutKeyword) && 
+                argument.IsParentKind(SyntaxKind.ArgumentList) && argument.Parent.IsParentKind(SyntaxKind.InvocationExpression))
+            {
+                return true;
+            }
+
+            // cases:
+            // |
+            if (tokenOnLeftOfPosition.IsKind(SyntaxKind.SemicolonToken))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         public static bool IsExpressionContext(
             this SyntaxTree syntaxTree,
             int position,

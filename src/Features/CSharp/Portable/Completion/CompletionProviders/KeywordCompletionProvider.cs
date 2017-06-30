@@ -51,6 +51,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
                 new DelegateKeywordRecommender(),
                 new DescendingKeywordRecommender(),
                 new DisableKeywordRecommender(),
+                new DiscardDesignationRecommender(),
                 new DoKeywordRecommender(),
                 new DoubleKeywordRecommender(),
                 new DynamicKeywordRecommender(),
