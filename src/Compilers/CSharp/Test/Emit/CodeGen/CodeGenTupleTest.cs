@@ -23961,5 +23961,32 @@ public class C
                 Diagnostic(ErrorCode.ERR_AmbigCall, "M1").WithArguments("C.M1<T, U>((T, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, (U, int)))", "C.M1<T, U>(((T, int), int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, U))").WithLocation(7, 9)
                 );
         }
+
+        [Fact]
+        [WorkItem(21194, "https://github.com/dotnet/roslyn/issues/21194")]
+        public void AttributeStackoverflow()
+        {
+            var circularlib1_cs = @"public class Circular { }";
+            var circularlib2_cs = @"[assembly: Circular]";
+
+            var lib_cs =
+@"using System;
+public class CircularAttribute : Attribute
+{
+    public CircularAttribute() { }
+    public CircularAttribute(Circular c) { }
+}
+";
+
+
+            var comp1 = CreateStandardCompilation(circularlib1_cs, assemblyName: "lib");
+            comp1.VerifyDiagnostics();
+
+            var comp2 = CreateStandardCompilation(lib_cs, references: new[] { comp1.EmitToImageReference() });
+            comp2.VerifyDiagnostics();
+
+            var comp3 = CreateStandardCompilation(circularlib2_cs, references: new[] { comp2.EmitToImageReference() }, assemblyName: "lib");
+            comp3.VerifyDiagnostics();
+        }
     }
 }
