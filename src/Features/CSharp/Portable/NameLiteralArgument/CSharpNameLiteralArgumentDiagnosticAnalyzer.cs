@@ -30,7 +30,8 @@ namespace Microsoft.CodeAnalysis.CSharp.NameLiteralArgument
         protected override void InitializeWorker(AnalysisContext context)
             => context.RegisterSyntaxNodeAction(AnalyzeSyntax, SyntaxKind.InvocationExpression,
                 SyntaxKind.ObjectCreationExpression, SyntaxKind.BaseConstructorInitializer,
-                SyntaxKind.ThisConstructorInitializer, SyntaxKind.ElementAccessExpression);
+                SyntaxKind.ThisConstructorInitializer, SyntaxKind.ElementAccessExpression,
+                SyntaxKind.Attribute);
 
         private void AnalyzeSyntax(SyntaxNodeAnalysisContext context)
         {
@@ -48,18 +49,18 @@ namespace Microsoft.CodeAnalysis.CSharp.NameLiteralArgument
             {
                 return;
             }
-            if (!optionSet.GetOption(CSharpCodeStyleOptions.PreferNamingLiteralArguments).Value)
+            if (optionSet.GetOption(CodeStyleOptions.PreferNamedArguments, context.Compilation.Language).Value == NamedArgumentsPreference.Never)
             {
                 return;
             }
 
-            var symbolInfo = context.SemanticModel.GetSymbolInfo(context.Node);
-            if (symbolInfo.Symbol is null)
+            var symbol = context.SemanticModel.GetSymbolInfo(context.Node).Symbol;
+            if (symbol is null)
             {
                 return;
             }
 
-            var parameters = symbolInfo.Symbol.GetParameters();
+            var parameters = symbol.GetParameters();
             if (parameters.IsDefaultOrEmpty)
             {
                 return;
@@ -85,6 +86,10 @@ namespace Microsoft.CodeAnalysis.CSharp.NameLiteralArgument
                     arguments = access.ArgumentList.Arguments;
                     break;
 
+                case AttributeSyntax attribute:
+                    // TODO
+                    return;
+
                 default:
                     return;
             }
@@ -98,31 +103,39 @@ namespace Microsoft.CodeAnalysis.CSharp.NameLiteralArgument
             for (int i = 0; i < arguments.Count; i++)
             {
                 var argument = arguments[i];
-                if (!IsPositionalArgument(argument))
-                {
-                    continue;
-                }
-
-                if (!argument.Expression.IsAnyLiteralExpression())
-                {
-                    continue;
-                }
-
-                if (parameters[i].IsParams)
+                if (argument.NameColon != null ||
+                    !argument.Expression.IsAnyLiteralExpression() ||
+                    parameters[i].IsParams)
                 {
                     continue;
                 }
 
                 context.ReportDiagnostic(
                     Diagnostic.Create(GetDescriptorWithSeverity(
-                        optionSet.GetOption(CSharpCodeStyleOptions.PreferNamingLiteralArguments).Notification.Value),
+                        optionSet.GetOption(CodeStyleOptions.PreferNamedArguments, LanguageNames.CSharp).Notification.Value),
                         argument.GetLocation()));
             }
         }
 
-        private bool IsPositionalArgument(ArgumentSyntax argument)
+        private void ReportDiagnosticIfNeeded(SyntaxNodeAnalysisContext context, OptionSet optionSet,
+            ImmutableArray<IParameterSymbol> parameters, SeparatedSyntaxList<AttributeArgumentSyntax> arguments)
         {
-            return argument.NameColon == null;
+            for (int i = 0; i < arguments.Count; i++)
+            {
+                var argument = arguments[i];
+                if (argument.NameColon != null ||
+                    argument.NameEquals != null || // TODO needs test
+                    !argument.Expression.IsAnyLiteralExpression() ||
+                    parameters[i].IsParams)
+                {
+                    continue;
+                }
+
+                context.ReportDiagnostic(
+                    Diagnostic.Create(GetDescriptorWithSeverity(
+                        optionSet.GetOption(CodeStyleOptions.PreferNamedArguments, LanguageNames.CSharp).Notification.Value),
+                        argument.GetLocation()));
+            }
         }
     }
 }

@@ -69,18 +69,20 @@ class C
         {
             await TestAsync(
 @"
-[C(a, [||]2)]
-class C
+[C(C.a, [||]2)]
+public class C : System.Attribute
 {
-    C(int a, int b)
+    public static int a = 0;
+    public C(int a, int b)
     {
     }
 }",
 @"
-[C(a, b: 2)]
-class C
+[C(C.a, b: 2)]
+public class C : System.Attribute
 {
-    C(int a, int b)
+    public static int a = 0;
+    public C(int a, int b)
     {
     }
 }", parseOptions: s_parseOptions);
