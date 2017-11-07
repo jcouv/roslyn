@@ -154,7 +154,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             get
             {
                 var method = OriginalDefinition.ReducedFrom;
-                return ((object)method == null) ? null : method.Construct(this.TypeArguments);
+                return method?.Construct(this.TypeArguments);
             }
         }
 
@@ -220,7 +220,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             get
             {
                 Symbol underlying = OriginalDefinition.AssociatedSymbol;
-                return ((object)underlying == null) ? null : underlying.SymbolAsMember(ContainingType);
+                return underlying?.SymbolAsMember(ContainingType);
             }
         }
 

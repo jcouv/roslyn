@@ -485,7 +485,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         public TypeParameterSymbol GetOverriddenTypeParameter(int ordinal)
         {
             var overriddenMethod = this.OverriddenMethod;
-            return ((object)overriddenMethod != null) ? overriddenMethod.TypeParameters[ordinal] : null;
+            return overriddenMethod?.TypeParameters[ordinal];
         }
 
         public TypeMap TypeMap

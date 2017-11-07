@@ -154,7 +154,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // Default implementation gets the containers assembly.
 
                 var container = this.ContainingSymbol;
-                return (object)container != null ? container.ContainingAssembly : null;
+                return container?.ContainingAssembly;
             }
         }
 
@@ -188,7 +188,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
 
                 var sourceModuleSymbol = this.ContainingModule as SourceModuleSymbol;
-                return (object)sourceModuleSymbol == null ? null : sourceModuleSymbol.DeclaringCompilation;
+                return sourceModuleSymbol?.DeclaringCompilation;
             }
         }
 
@@ -203,7 +203,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // Default implementation gets the containers module.
 
                 var container = this.ContainingSymbol;
-                return (object)container != null ? container.ContainingModule : null;
+                return container?.ContainingModule;
             }
         }
 

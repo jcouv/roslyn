@@ -417,7 +417,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             get
             {
                 var method = _member as MethodSymbol;
-                return (object)method == null ? null : method.ThisParameter;
+                return method?.ThisParameter;
             }
         }
 

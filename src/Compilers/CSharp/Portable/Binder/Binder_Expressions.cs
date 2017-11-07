@@ -1816,7 +1816,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private BoundBaseReference BindBase(BaseExpressionSyntax node, DiagnosticBag diagnostics)
         {
-            NamedTypeSymbol baseType = (object)this.ContainingType == null ? null : this.ContainingType.BaseTypeNoUseSiteDiagnostics;
+            NamedTypeSymbol baseType = this.ContainingType?.BaseTypeNoUseSiteDiagnostics;
             bool hasErrors = true;
 
             bool inStaticContext;

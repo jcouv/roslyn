@@ -445,7 +445,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             Debug.Assert(symbolPart == AttributeLocation.None);
 
             var data = (CommonFieldWellKnownAttributeData)decodedData;
-            int? fieldOffset = data != null ? data.Offset : null;
+            int? fieldOffset = data?.Offset;
 
             if (fieldOffset.HasValue)
             {
@@ -532,7 +532,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             get
             {
                 var data = GetDecodedWellKnownAttributeData();
-                return data != null ? data.Offset : null;
+                return data?.Offset;
             }
         }
     }

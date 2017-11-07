@@ -122,7 +122,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         public static NamedTypeSymbol GetEnumUnderlyingType(this TypeSymbol type)
         {
             var namedType = type as NamedTypeSymbol;
-            return ((object)namedType != null) ? namedType.EnumUnderlyingType : null;
+            return namedType?.EnumUnderlyingType;
         }
 
         public static bool IsEnumType(this TypeSymbol type)
