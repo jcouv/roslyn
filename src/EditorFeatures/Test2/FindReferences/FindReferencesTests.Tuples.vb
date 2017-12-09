@@ -346,5 +346,27 @@ namespace System
 </Workspace>
             Await TestAPIAndFeature(input)
         End Function
+
+        <WpfFact, Trait(Traits.Feature, Traits.Features.FindReferences)>
+        Public Async Function TestExpressionInTuple() As Task
+            Dim input =
+<Workspace>
+    <Project Language="C#" CommonReferences="true">
+        <Document><![CDATA[
+class Program
+{
+    void M(int {|Definition:[|Alice|]|})
+    {
+        var tuple = ([|Al$$ice|], 2);
+        M(tuple.[|Alice|]);
+        M(tuple.[|Item1|]);
+    }
+}
+        ]]><%= tuple2 %>
+        </Document>
+    </Project>
+</Workspace>
+            Await TestAPIAndFeature(input)
+        End Function
     End Class
 End Namespace
