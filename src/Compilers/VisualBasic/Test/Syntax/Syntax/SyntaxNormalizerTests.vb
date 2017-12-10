@@ -919,5 +919,32 @@ End Module]]>.Value.Replace(vbLf, vbCrLf)
             Assert.Equal(expected, actual)
         End Sub
 
+        <Fact>
+        <WorkItem(13484, "https://github.com/dotnet/roslyn/issues/13484")>
+        Public Sub Bug()
+            Dim compilationUnit = SyntaxFactory.CompilationUnit()
+
+            Dim statements As SyntaxList(Of StatementSyntax) = Nothing
+            Dim statementList As String() = {"For i As Integer = 0 To 10", "Dim v = 0", "Next"}
+            For Each statement In statementList
+                statements = statements.Add(SyntaxFactory.ParseExecutableStatement(statement))
+            Next
+
+            Dim namespaceBlock =
+                SyntaxFactory.NamespaceBlock(SyntaxFactory.NamespaceStatement(SyntaxFactory.IdentifierName("Test"))).
+                WithMembers(SyntaxFactory.SingletonList(Of StatementSyntax)(
+                    SyntaxFactory.ClassBlock(
+                        SyntaxFactory.ClassStatement("VBCrash").
+                        WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))).
+                        WithImplements(SyntaxFactory.List(Of ImplementsStatementSyntax)()).
+                        WithMembers(
+                            SyntaxFactory.List(Of StatementSyntax)().
+                            Add(SyntaxFactory.SubBlock(
+                                SyntaxFactory.SubStatement("Main")).
+                                    AddStatements(statements.ToArray())))))
+
+            compilationUnit = compilationUnit.AddMembers(namespaceBlock)
+            compilationUnit = compilationUnit.NormalizeWhitespace(True, "\r\n", False)
+        End Sub
     End Class
 End Namespace
