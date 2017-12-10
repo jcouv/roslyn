@@ -2582,6 +2582,70 @@ class C
         }
 
         [Fact]
+        [WorkItem(22615, "https://github.com/dotnet/roslyn/issues/22615")]
+        public void Bug()
+        {
+            string source = @"
+using System;
+
+class Program
+{
+    static void Main()
+    {
+#warning bug report 1
+        new BugReport(""No error"");
+#warning bug report 2
+
+        Action bugreport1 = new Action(() =>
+        {
+            new BugReport(""No error"");
+        });
+
+        Action bugreport2 = new Action(() =>
+        {
+#warning bug report 3
+            new BugReport(""False error"");
+        });
+
+        Action bugreport3 = new Action(() =>
+        {
+            new BugReport(""False error"");
+#warning bug report 4
+        });
+    }
+}
+
+class BugReport
+{
+    public BugReport(string arg1, string optarg = null)
+    {
+    }
+}";
+            var comp = CreateStandardCompilation(source);
+            comp.VerifyDiagnostics(
+                // (8,10): warning CS1030: #warning: 'bug report 1'
+                // #warning bug report 1
+                Diagnostic(ErrorCode.WRN_WarningDirective, "bug report 1").WithArguments("bug report 1").WithLocation(8, 10),
+                // (10,10): warning CS1030: #warning: 'bug report 2'
+                // #warning bug report 2
+                Diagnostic(ErrorCode.WRN_WarningDirective, "bug report 2").WithArguments("bug report 2").WithLocation(10, 10),
+                // (19,10): warning CS1030: #warning: 'bug report 3'
+                // #warning bug report 3
+                Diagnostic(ErrorCode.WRN_WarningDirective, "bug report 3").WithArguments("bug report 3").WithLocation(19, 10),
+                // (26,10): warning CS1030: #warning: 'bug report 4'
+                // #warning bug report 4
+                Diagnostic(ErrorCode.WRN_WarningDirective, "bug report 4").WithArguments("bug report 4").WithLocation(26, 10)
+                );
+
+            var tree = comp.SyntaxTrees.Single();
+            var model = comp.GetSemanticModel(tree);
+            var third = tree.GetRoot().DescendantNodes().OfType<ObjectCreationExpressionSyntax>().ElementAt(4);
+            Assert.Equal("new BugReport(\"False error\")", third.ToString());
+
+            var symbol = model.GetAliasInfo(third.Type);
+        }
+
+        [Fact]
         public void ThrowExpression_Lambda()
         {
             var src = @"using System;
