@@ -219,6 +219,8 @@ namespace Microsoft.CodeAnalysis.Rename.ConflictEngine
                             _cancellationToken).ConfigureAwait(false);
                     }
 
+                    // PROTOTYPE I think we should add a check for discard conflicts here, based on _renameLocationSet.Locations
+
                     foreach (var relatedLocation in conflictResolution.RelatedLocations)
                     {
                         if (relatedLocation.Type == RelatedLocationType.PossiblyResolvableConflict)

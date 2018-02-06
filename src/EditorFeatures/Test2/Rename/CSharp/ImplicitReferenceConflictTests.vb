@@ -97,6 +97,30 @@ class C
             End Using
         End Sub
 
+        <Fact, Trait(Traits.Feature, Traits.Features.Rename)>
+        <WorkItem(24575, "https://github.com/dotnet/roslyn/issues/24575")>
+        Public Sub RenameToUnderscore()
+            Using result = RenameEngineResult.Create(_outputHelper,
+                    <Workspace>
+                        <Project Language="C#" CommonReferences="true">
+                            <Document>
+class C
+{
+    void M()
+    {
+        var _ = 0;
+        var ({|discardconflict:y1|}, y2) = (1, 2);
+        System.Console.Write([|y$$1|]);
+    }
+}
+                            </Document>
+                        </Project>
+                    </Workspace>, renameTo:="_")
+                ' BUG there is no conflict and the test framework lets it through
+                result.AssertLabeledSpansAre("discardconflict", type:=RelatedLocationType.NoConflict)
+            End Using
+        End Sub
+
         <WorkItem(528966, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/528966")>
         <Fact, Trait(Traits.Feature, Traits.Features.Rename)>
         Public Sub RenameMoveNextInVBCausesConflictInForEach()
