@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -90,7 +91,15 @@ namespace Microsoft.CodeAnalysis.Test.Utilities
 
                 string extension = mainModule.Kind == OutputKind.ConsoleApplication ? ".exe" : ".dll";
                 string modulePath = Path.Combine(dumpDir, mainModule.SimpleName + extension);
-                var decompiler = new ICSharpCode.Decompiler.CSharp.CSharpDecompiler(modulePath, new ICSharpCode.Decompiler.DecompilerSettings());
+                var formattingOptions = ICSharpCode.Decompiler.CSharp.OutputVisitor.FormattingOptionsFactory.CreateSharpDevelop();
+                formattingOptions.SpaceBeforeMethodCallParentheses = false;
+
+                var decompiler = new ICSharpCode.Decompiler.CSharp.CSharpDecompiler(modulePath,
+                    new ICSharpCode.Decompiler.DecompilerSettings()
+                    {
+                        AsyncAwait = false,
+                        CSharpFormattingOptions = formattingOptions
+                    });
                 var syntaxTree = decompiler.DecompileWholeModuleAsSingleFile();
                 return syntaxTree.ToString();
             }
