@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Microsoft.CodeAnalysis.Test.Utilities;
 using Roslyn.Test.Utilities;
@@ -5055,6 +5056,39 @@ public class C {
 
             compilation = CreateCompilation(source, options: TestOptions.ReleaseExe);
             base.CompileAndVerify(compilation, expectedOutput: expectedOutput);
+        }
+
+        [Fact, WorkItem(25030, "https://github.com/dotnet/roslyn/issues/25030")]
+        void Repro25030()
+        {
+            string source = @"
+using System.Threading.Tasks;
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        Task<int> task = null;
+        task.ContinueWith((t, s) => { var x = t.Result; });
+    }
+}
+";
+            var comp = CreateCompilationWithMscorlib46(source, options: TestOptions.DebugExe);
+
+            // PROTOTYPE there probably should be a diagnostic on `ContinueWith` too
+            comp.VerifyDiagnostics(
+                // (9,49): error CS1061: 'Task' does not contain a definition for 'Result' and no extension method 'Result' accepting a first argument of type 'Task' could be found (are you missing a using directive or an assembly reference?)
+                //         task.ContinueWith((t, s) => { var x = t.Result; });
+                Diagnostic(ErrorCode.ERR_NoSuchMemberOrExtension, "Result").WithArguments("System.Threading.Tasks.Task", "Result").WithLocation(9, 49)
+                );
+
+            var tree = comp.SyntaxTrees.Single();
+            var model = comp.GetSemanticModel(tree);
+            var result = tree.GetRoot().DescendantNodes().OfType<MemberAccessExpressionSyntax>().Last();
+            Assert.Equal("t.Result", result.ToString());
+
+            // PROTOTYPE this is misleading
+            Assert.Equal("System.Int32 System.Threading.Tasks.Task<System.Int32>.Result { get; }", model.GetSymbolInfo(result).Symbol.ToTestDisplayString());
         }
     }
 }
