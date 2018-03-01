@@ -36,6 +36,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal class Single : TupleBinaryOperatorInfo
         {
             internal readonly BinaryOperatorKind Kind;
+            internal readonly Conversion LeftConversion;
+            internal readonly Conversion RightConversion;
             internal readonly MethodSymbol MethodSymbolOpt; // User-defined comparison operator, if applicable
 
             // To convert the result of comparison to bool
@@ -43,9 +45,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             internal readonly UnaryOperatorSignature BoolOperator; // Information for op_true or op_false
 
             internal Single(TypeSymbol leftConvertedType, TypeSymbol rightConvertedType, BinaryOperatorKind kind,
+                Conversion leftConversion, Conversion rightConversion,
                 MethodSymbol methodSymbolOpt, Conversion boolConversion, UnaryOperatorSignature boolOperator) : base(leftConvertedType, rightConvertedType)
             {
                 Kind = kind;
+                LeftConversion = leftConversion;
+                RightConversion = rightConversion;
                 MethodSymbolOpt = methodSymbolOpt;
                 BoolConversion = boolConversion;
                 BoolOperator = boolOperator;

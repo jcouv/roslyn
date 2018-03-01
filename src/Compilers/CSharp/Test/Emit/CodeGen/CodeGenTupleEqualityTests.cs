@@ -33,7 +33,7 @@ class C
                 );
         }
 
-        [Theory]
+        [Theory(Skip = "PROTOTYPE(tuple-equality) Rework")]
         [InlineData("(1, 2)", "(1L, 2L)", true)]
         [InlineData("(1, 2)", "(1, 0)", false)]
         [InlineData("(1, 2)", "(0, 2)", false)]
@@ -107,7 +107,7 @@ class C
                 );
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestWithoutValueTuple()
         {
             var source = @"
@@ -138,7 +138,7 @@ class C
                 );
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestNestedNullableTuplesWithDifferentCardinalities()
         {
             var source = @"
@@ -315,19 +315,19 @@ class C
   // Code size       38 (0x26)
   .maxstack  3
   .locals init (int V_0,
-                int V_1,
-                int V_2)
+                byte V_1,
+                byte V_2)
   IL_0000:  ldstr      ""{0} ""
   IL_0005:  ldarg.0
   IL_0006:  ldarg.0
-  IL_0007:  stloc.1
+  IL_0007:  stloc.0
   IL_0008:  ldarg.1
-  IL_0009:  stloc.0
+  IL_0009:  stloc.1
   IL_000a:  ldarg.1
   IL_000b:  stloc.2
-  IL_000c:  ldloc.0
+  IL_000c:  ldloc.1
   IL_000d:  bne.un.s   IL_0015
-  IL_000f:  ldloc.1
+  IL_000f:  ldloc.0
   IL_0010:  ldloc.2
   IL_0011:  ceq
   IL_0013:  br.s       IL_0016
@@ -344,6 +344,9 @@ class C
             var tupleY = tree.GetCompilationUnitRoot().DescendantNodes().OfType<TupleExpressionSyntax>().Last();
             Assert.Equal("(y, y)", tupleY.ToString());
 
+            // PROTOTYPE(tuple-equality)
+            return;
+
             var tupleYSymbol = model.GetTypeInfo(tupleY);
             Assert.Equal("(System.Byte, System.Byte)", tupleYSymbol.Type.ToTestDisplayString());
             Assert.Equal("(System.Int32, System.Int32)", tupleYSymbol.ConvertedType.ToTestDisplayString());
@@ -354,7 +357,7 @@ class C
             Assert.Equal("System.Int32", ySymbol.ConvertedType.ToTestDisplayString());
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestILForNullableElementsEqualsToNull()
         {
             var source = @"
@@ -397,7 +400,7 @@ class C
 }");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestILForNullableElementsNotEqualsToNull()
         {
             var source = @"
@@ -438,7 +441,7 @@ class C
 }");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestILForNullableElementsComparedToNonNullValues()
         {
             var source = @"
@@ -500,7 +503,7 @@ class C
 }");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestSimpleEqualOnTypelessTupleLiteral()
         {
             var source = @"
@@ -527,7 +530,7 @@ class C
             Assert.Equal("(System.String, System.Int64)", symbol2.ConvertedType.ToTestDisplayString());
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestOtherOperatorsOnTuples()
         {
             var source = @"
@@ -559,7 +562,7 @@ class C
                 );
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestTypelessTuples()
         {
             var source = @"
@@ -591,7 +594,7 @@ class C
             Assert.Equal("(System.String, System.String)", tupleType2.ConvertedType.ToTestDisplayString());
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestSimpleTupleAndTupleType()
         {
             var source = @"
@@ -617,7 +620,7 @@ class C
             Assert.Equal("(System.Int64, System.Int64)", tupleType.ConvertedType.ToTestDisplayString());
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestNestedTupleAndTupleType()
         {
             var source = @"
@@ -644,7 +647,7 @@ class C
             Assert.Equal("(System.Int64, (System.Int64, System.String))", tupleType.ConvertedType.ToTestDisplayString());
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestTypelessTupleAndTupleType()
         {
             var source = @"
@@ -670,7 +673,7 @@ class C
             Assert.Equal("(System.String, System.String)", tupleType.ConvertedType.ToTestDisplayString());
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestTypedTupleAndDefault()
         {
             var source = @"
@@ -690,7 +693,7 @@ class C
                 );
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestMixedTupleLiteralsAndTypes()
         {
             var source = @"
@@ -717,7 +720,7 @@ class C
                 tupleType.ConvertedType.ToTestDisplayString());
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestFailedInference()
         {
             var source = @"
@@ -751,7 +754,7 @@ class C
             Assert.Equal("(System.Object, ?)", tupleType2.ConvertedType.ToTestDisplayString());
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestFailedConversion()
         {
             var source = @"
@@ -788,7 +791,7 @@ class C
             Assert.Equal("(System.Object, ?)", tupleType2.ConvertedType.ToTestDisplayString());
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestDynamic()
         {
             var source = @"
@@ -810,7 +813,7 @@ public class C
             CompileAndVerify(comp, expectedOutput: "True False False True");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestDynamic_WithTypelessExpression()
         {
             var source = @"
@@ -834,7 +837,7 @@ public class C
                 );
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestDynamic_WithBadType()
         {
             var source = @"
@@ -859,7 +862,7 @@ public class C
             CompileAndVerify(comp, expectedOutput: "Operator '==' cannot be applied to operands of type 'int' and 'string'");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestDynamic_WithNull()
         {
             var source = @"
@@ -878,7 +881,7 @@ public class C
             // PROTOTYPE(tuple-equality) verify converted type on null
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestBadConstraintOnTuple()
         {
             var source = @"
@@ -906,7 +909,7 @@ ref struct S
                 );
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestErrorInTuple()
         {
             var source = @"
@@ -928,7 +931,7 @@ public class C
                 );
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestWithTypelessTuple()
         {
             var source = @"
@@ -955,7 +958,7 @@ public class C
                 );
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestCustomOperatorPreferred()
         {
             var source = @"
@@ -1000,7 +1003,7 @@ public class C
             CompileAndVerify(comp, expectedOutput: "FalseTrue");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         void TestTupleEqualityPreferredOverCustomOperator_Nested()
         {
             string source = @"
@@ -1058,7 +1061,7 @@ namespace System
             CompileAndVerify(comp, expectedOutput: "True");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestNaN()
         {
             var source = @"
@@ -1077,7 +1080,7 @@ public class C
             CompileAndVerify(comp, expectedOutput: "False True True False");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestTopLevelDynamic()
         {
             var source = @"
@@ -1116,7 +1119,7 @@ public class C
 Operator '!=' cannot be applied to operands of type 'System.ValueTuple<int,int>' and 'System.ValueTuple<int,int>'");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestNestedDynamic()
         {
             var source = @"
@@ -1155,7 +1158,7 @@ public class C
 Operator '!=' cannot be applied to operands of type 'System.ValueTuple<int,int,int>' and 'System.ValueTuple<int,int,int>'");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestComparisonWithDeconstructionResult()
         {
             var source = @"
@@ -1184,7 +1187,7 @@ public class C
             CompileAndVerify(comp, expectedOutput: @"True True False True True False");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestComparisonWithDeconstruction()
         {
             var source = @"
@@ -1282,14 +1285,17 @@ public class Y : Base
 }
 ";
 
-            validate("(new A(1), new A(2)) == (new X(1), new Y(2))", "A:1, A:2, X:1, X -> Y:1, Y:2, A(1) == Y(1), A(2) == Y(2), True");
-            validate("(new A(1), new A(2)) == (new X(30), new Y(40))", "A:1, A:2, X:30, X -> Y:30, Y:40, A(1) == Y(30), False");
-            validate("(new A(1), new A(2)) == (new X(1), new Y(50))", "A:1, A:2, X:1, X -> Y:1, Y:50, A(1) == Y(1), A(2) == Y(50), False");
+            validate("(new A(1), new A(2)) == (new X(1), new Y(2))", "A:1, A:2, X:1, Y:2, X -> Y:1, A(1) == Y(1), A(2) == Y(2), True");
+            validate("(new A(1), new A(2)) == (new X(30), new Y(40))", "A:1, A:2, X:30, Y:40, X -> Y:30, A(1) == Y(30), False");
+            validate("(new A(1), new A(2)) == (new X(1), new Y(50))", "A:1, A:2, X:1, Y:50, X -> Y:1, A(1) == Y(1), A(2) == Y(50), False");
 
-            validate("(new A(1), new A(2)) != (new X(1), new Y(2))", "A:1, A:2, X:1, X -> Y:1, Y:2, A(1) != Y(1), A(2) != Y(2), False");
-            validate("(new A(1), new A(2)) != (new X(30), new Y(40))", "A:1, A:2, X:30, X -> Y:30, Y:40, A(1) != Y(30), True");
-            validate("(new A(1), new A(2)) != (new X(50), new Y(2))", "A:1, A:2, X:50, X -> Y:50, Y:2, A(1) != Y(50), True");
-            validate("(new A(1), new A(2)) != (new X(1), new Y(60))", "A:1, A:2, X:1, X -> Y:1, Y:60, A(1) != Y(1), A(2) != Y(60), True");
+            validate("(new A(1), new A(2)) != (new X(1), new Y(2))", "A:1, A:2, X:1, Y:2, X -> Y:1, A(1) != Y(1), A(2) != Y(2), False");
+            validate("(new A(1), new A(2)) != (new Y(1), new X(2))", "A:1, A:2, Y:1, X:2, A(1) != Y(1), X -> Y:2, A(2) != Y(2), False");
+            // PROTOTYPE(tuple-equality) test case where conversion is on last tuple element on the left side
+
+            validate("(new A(1), new A(2)) != (new X(30), new Y(40))", "A:1, A:2, X:30, Y:40, X -> Y:30, A(1) != Y(30), True");
+            validate("(new A(1), new A(2)) != (new X(50), new Y(2))", "A:1, A:2, X:50, Y:2, X -> Y:50, A(1) != Y(50), True");
+            validate("(new A(1), new A(2)) != (new X(1), new Y(60))", "A:1, A:2, X:1, Y:60, X -> Y:1, A(1) != Y(1), A(2) != Y(60), True");
 
             void validate(string expression, string expected)
             {
@@ -1303,18 +1309,6 @@ public class Y : Base
         public void TestEvaluationOrderOnTupleType()
         {
             var source = @"
-public class C
-{
-    public static void Main()
-    {
-        System.Console.WriteLine($""{(new A(1), GetTuple(), new A(4)) == (new X(5), (new X(6), new Y(7)), new Y(8))}"");
-    }
-    public static (A, A) GetTuple()
-    {
-        System.Console.WriteLine($""GetTuple"");
-        return (new A(30), new A(40));
-    }
-}
 namespace System
 {
     public struct ValueTuple<T1, T2>
@@ -1324,7 +1318,7 @@ namespace System
 
         public ValueTuple(T1 item1, T2 item2)
         {
-            System.Console.WriteLine(""ValueTuple2"");
+            System.Console.Write(""ValueTuple2, "");
             this.Item1 = item1;
             this.Item2 = item2;
         }
@@ -1347,11 +1341,11 @@ public class A : Base
 {
     public A(int i) : base(i)
     {
-        System.Console.WriteLine($""A:{i}"");
+        System.Console.Write($""A:{i}, "");
     }
     public static bool operator ==(A a, Y y)
     {
-        System.Console.WriteLine(""A == Y"");
+        System.Console.Write($""A({a.I}) == Y({y.I}), "");
         return true;
     }
     public static bool operator !=(A a, Y y)
@@ -1365,14 +1359,14 @@ public class X : Base
 {
     public X(int i) : base(i)
     {
-        System.Console.WriteLine($""X:{i}"");
+        System.Console.Write($""X:{i}, "");
     }
 }
 public class Y : Base
 {
     public Y(int i) : base(i)
     {
-        System.Console.WriteLine($""Y:{i}"");
+        System.Console.Write($""Y:{i}, "");
     }
     public static implicit operator Y(X x)
     {
@@ -1380,45 +1374,28 @@ public class Y : Base
         return new Y(x.I);
     }
 }
+public class C
+{
+    public static void Main()
+    {
+        System.Console.Write($""{(new A(1), GetTuple(), new A(4)) == (new X(5), (new X(6), new Y(7)), new Y(8))}"");
+    }
+    public static (A, A) GetTuple()
+    {
+        System.Console.Write($""GetTuple, "");
+        return (new A(30), new A(40));
+    }
+}
 ";
             var comp = CreateStandardCompilation(source, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput:
-@"A:1
-GetTuple
-A:30
-A:40
-ValueTuple2
-A:4
-X:5
-X -> Y:5
-X:6
-X -> Y:6
-Y:7
-Y:8
-A == Y
-A == Y
-A == Y
-A == Y
-True");
+            CompileAndVerify(comp, expectedOutput: "A:1, GetTuple, A:30, A:40, ValueTuple2, A:4, X:5, X:6, Y:7, Y:8, X -> Y:5, A(1) == Y(5), X -> Y:6, A(30) == Y(6), A(40) == Y(7), A(4) == Y(8), True");
         }
 
         [Fact]
         public void TestEvaluationOrderOnTupleType2()
         {
             var source = @"
-public class C
-{
-    public static void Main()
-    {
-        System.Console.WriteLine($""{(new A(1), (new A(2), new A(3)), new A(4)) == (new X(5), GetTuple(), new Y(8))}"");
-    }
-    public static (X, Y) GetTuple()
-    {
-        System.Console.WriteLine($""GetTuple"");
-        return (new X(6), new Y(7));
-    }
-}
 namespace System
 {
     public struct ValueTuple<T1, T2>
@@ -1428,7 +1405,7 @@ namespace System
 
         public ValueTuple(T1 item1, T2 item2)
         {
-            System.Console.WriteLine(""ValueTuple2"");
+            System.Console.Write(""ValueTuple2, "");
             this.Item1 = item1;
             this.Item2 = item2;
         }
@@ -1451,11 +1428,11 @@ public class A : Base
 {
     public A(int i) : base(i)
     {
-        System.Console.WriteLine($""A:{i}"");
+        System.Console.Write($""A:{i}, "");
     }
     public static bool operator ==(A a, Y y)
     {
-        System.Console.WriteLine(""A == Y"");
+        System.Console.Write($""A({a.I}) == Y({y.I}), "");
         return true;
     }
     public static bool operator !=(A a, Y y)
@@ -1469,14 +1446,14 @@ public class X : Base
 {
     public X(int i) : base(i)
     {
-        System.Console.WriteLine($""X:{i}"");
+        System.Console.Write($""X:{i}, "");
     }
 }
 public class Y : Base
 {
     public Y(int i) : base(i)
     {
-        System.Console.WriteLine($""Y:{i}"");
+        System.Console.Write($""Y:{i}, "");
     }
     public static implicit operator Y(X x)
     {
@@ -1484,46 +1461,28 @@ public class Y : Base
         return new Y(x.I);
     }
 }
+public class C
+{
+    public static void Main()
+    {
+        System.Console.Write($""{(new A(1), (new A(2), new A(3)), new A(4)) == (new X(5), GetTuple(), new Y(8))}"");
+    }
+    public static (X, Y) GetTuple()
+    {
+        System.Console.Write($""GetTuple, "");
+        return (new X(6), new Y(7));
+    }
+}
 ";
             var comp = CreateStandardCompilation(source, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: @"
-A:1
-A:2
-A:3
-A:4
-X:5
-X:5 -> Y:5
-GetTuple
-X:6
-Y:7
-ValueTuple2
-X:6 -> Y:6
-ValueTuple2
-Y:8
-A == Y
-A == Y
-A == Y
-A == Y
-True");
+            CompileAndVerify(comp, expectedOutput: @"A:1, A:2, A:3, A:4, X:5, GetTuple, X:6, Y:7, ValueTuple2, Y:8, X:5 -> Y:5, A(1) == Y(5), X:6 -> Y:6, A(2) == Y(6), A(3) == Y(7), A(4) == Y(8), True");
         }
 
         [Fact]
         public void TestEvaluationOrderOnTupleType3()
         {
             var source = @"
-public class C
-{
-    public static void Main()
-    {
-        System.Console.WriteLine($""{GetTuple() == (new X(6), new Y(7))}"");
-    }
-    public static (A, A) GetTuple()
-    {
-        System.Console.WriteLine($""GetTuple"");
-        return (new A(30), new A(40));
-    }
-}
 namespace System
 {
     public struct ValueTuple<T1, T2>
@@ -1533,7 +1492,7 @@ namespace System
 
         public ValueTuple(T1 item1, T2 item2)
         {
-            System.Console.WriteLine(""ValueTuple2"");
+            System.Console.Write(""ValueTuple2, "");
             this.Item1 = item1;
             this.Item2 = item2;
         }
@@ -1556,11 +1515,11 @@ public class A : Base
 {
     public A(int i) : base(i)
     {
-        System.Console.WriteLine($""A:{i}"");
+        System.Console.Write($""A:{i}, "");
     }
     public static bool operator ==(A a, Y y)
     {
-        System.Console.WriteLine(""A == Y"");
+        System.Console.Write($""A({a.I}) == Y({y.I}), "");
         return true;
     }
     public static bool operator !=(A a, Y y)
@@ -1574,14 +1533,14 @@ public class X : Base
 {
     public X(int i) : base(i)
     {
-        System.Console.WriteLine($""X:{i}"");
+        System.Console.Write($""X:{i}, "");
     }
 }
 public class Y : Base
 {
     public Y(int i) : base(i)
     {
-        System.Console.WriteLine($""Y:{i}"");
+        System.Console.Write($""Y:{i}, "");
     }
     public static implicit operator Y(X x)
     {
@@ -1589,20 +1548,22 @@ public class Y : Base
         return new Y(x.I);
     }
 }
+public class C
+{
+    public static void Main()
+    {
+        System.Console.Write($""{GetTuple() == (new X(6), new Y(7))}"");
+    }
+    public static (A, A) GetTuple()
+    {
+        System.Console.Write($""GetTuple, "");
+        return (new A(30), new A(40));
+    }
+}
 ";
             var comp = CreateStandardCompilation(source, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput:
-@"GetTuple
-A:30
-A:40
-ValueTuple2
-X:6
-X -> Y:6
-Y:7
-A == Y
-A == Y
-True");
+            CompileAndVerify(comp, expectedOutput: "GetTuple, A:30, A:40, ValueTuple2, X:6, Y:7, X -> Y:6, A(30) == Y(6), A(40) == Y(7), True");
         }
 
         [Fact]
@@ -1713,7 +1674,7 @@ class C
                 );
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestEqualityOfTypeConvertingFromTuple()
         {
             var source = @"
@@ -1746,7 +1707,7 @@ class C
             CompileAndVerify(comp, expectedOutput: "TrueTrue");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestEqualityOfTypeComparableWithTuple()
         {
             var source = @"
@@ -1776,7 +1737,7 @@ class C
             CompileAndVerify(comp, expectedOutput: "TrueFalse");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestOfTwoUnrelatedTypes()
         {
             var source = @"
@@ -1801,7 +1762,7 @@ class C
                 );
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestOfTwoUnrelatedTypes2()
         {
             var source = @"
@@ -1826,7 +1787,7 @@ class C
                 );
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestBadRefCompare()
         {
             var source = @"
@@ -1851,7 +1812,7 @@ class C
                 );
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestEqualOnNullableVsNullableTuples()
         {
             var source = @"
@@ -1944,7 +1905,7 @@ class C
 }");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestNotEqualOnNullableVsNullableTuples()
         {
             var source = @"
@@ -2039,7 +2000,7 @@ class C
 }");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestNotEqualOnNullableVsNullableNestedTuples()
         {
             var source = @"
@@ -2068,7 +2029,7 @@ class C
             CompileAndVerify(comp, expectedOutput: "Success");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestEqualOnNullableVsNullableTuples_WithImplicitConversion()
         {
             var source = @"
@@ -2201,7 +2162,7 @@ class C
 }");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestOnNullableVsNullableTuples_WithImplicitCustomConversion()
         {
             var source = @"
@@ -2342,7 +2303,7 @@ class C
 }");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestOnNullableVsNonNullableTuples()
         {
             var source = @"
@@ -2433,7 +2394,7 @@ class C
             Assert.Equal("(System.Int32, System.Int32)?", ntType.ConvertedType.ToTestDisplayString());
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestOnNullableVsNonNullableTuples_WithCustomConversion()
         {
             var source = @"
@@ -2481,7 +2442,7 @@ class C
             Assert.Equal("(System.Int32, System.Int32)?", ntType.ConvertedType.ToTestDisplayString());
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestOnNullableVsNonNullableTuples3()
         {
             var source = @"
@@ -2542,7 +2503,7 @@ class C
 }");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestOnNullableVsLiteralTuples()
         {
             var source = @"
@@ -2565,7 +2526,7 @@ class C
             CompileAndVerify(comp, expectedOutput: "True False False True");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestOnLongTuple()
         {
             var source = @"
@@ -2610,7 +2571,7 @@ class C
             CompileAndVerify(comp, expectedOutput: "Success");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestOn1Tuple_FromRest()
         {
             var source = @"
@@ -2659,7 +2620,7 @@ class C
             Assert.True(left.Type.IsTupleType); // PROTOTYPE(tuple-equality) Need to investigate this
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestOn1Tuple_FromValueTuple()
         {
             var source = @"
@@ -2689,7 +2650,7 @@ class C
                 );
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestOnTupleOfDecimals()
         {
             var source = @"
@@ -2741,7 +2702,7 @@ class C
 }");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestSideEffectsAreSavedToTemps()
         {
             var source = @"
@@ -2760,7 +2721,7 @@ class C
             var verifier = CompileAndVerify(comp, expectedOutput: "True");
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestNonBoolComparisonResult_WithTrueFalseOperators()
         {
             var source = @"
@@ -2860,7 +2821,7 @@ public class NotBool
             }
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestNonBoolComparisonResult_WithImplicitBoolConversion()
         {
             var source = @"
@@ -2950,7 +2911,7 @@ public class NotBool
             }
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestNonBoolComparisonResult_WithoutImplicitBoolConversion()
         {
             var source = @"
@@ -3018,7 +2979,7 @@ public class NotBool
             }
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         public void TestNonBoolComparisonResult_WithExplicitBoolConversion()
         {
             var source = @"
@@ -3080,7 +3041,7 @@ public class NotBool
                 );
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(tuple-equality) Rework")]
         void TestValueTupleWithObsoleteEqualityOperator()
         {
             string source = @"
