@@ -20,7 +20,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         private BoundTupleBinaryOperator BindTupleBinaryOperator(BinaryExpressionSyntax node, BinaryOperatorKind kind,
             BoundExpression left, BoundExpression right, DiagnosticBag diagnostics)
         {
-            TupleBinaryOperatorInfo operators = BindTupleBinaryOperatorNestedInfo(node, kind, left, right, diagnostics);
+            // PROTOTYPE(tuple-equality) Block in expression tree
+
+            TupleBinaryOperatorInfo.Multiple operators = BindTupleBinaryOperatorNestedInfo(node, kind, left, right, diagnostics);
 
             // PROTOTYPE(tuple-equality) We'll save the converted nodes separately, for the semantic model
             //BoundExpression convertedLeft = GenerateConversionForAssignment(operators.LeftConvertedType, left, diagnostics);
@@ -155,7 +157,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 methodSymbolOpt: null, boolConversion: Conversion.Identity, boolOperator: default);
         }
 
-        private TupleBinaryOperatorInfo BindTupleBinaryOperatorNestedInfo(BinaryExpressionSyntax node, BinaryOperatorKind kind,
+        private TupleBinaryOperatorInfo.Multiple BindTupleBinaryOperatorNestedInfo(BinaryExpressionSyntax node, BinaryOperatorKind kind,
             BoundExpression left, BoundExpression right, DiagnosticBag diagnostics)
         {
             TypeSymbol leftType = left.Type;
@@ -168,9 +170,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 Error(diagnostics, ErrorCode.ERR_TupleSizesMismatchForBinOps, node, leftCardinality, rightCardinality);
 
-                return new TupleBinaryOperatorInfo.Single(leftType ?? CreateErrorType(), rightType ?? CreateErrorType(),
-                    BinaryOperatorKind.Error, leftConversion: Conversion.NoConversion, rightConversion: Conversion.NoConversion,
-                    methodSymbolOpt: null, boolConversion: Conversion.NoConversion, boolOperator: default);
+                return new TupleBinaryOperatorInfo.Multiple(ImmutableArray<TupleBinaryOperatorInfo>.Empty, leftType ?? CreateErrorType(), rightType ?? CreateErrorType());
             }
 
             // typeless tuple literals are not nullable
@@ -193,8 +193,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             var compilation = this.Compilation;
             var operators = operatorsBuilder.ToImmutableAndFree();
             bool isNullable = leftNullable || rightNullable;
-            TypeSymbol leftTupleType = MakeConvertedType(operators.SelectAsArray(o => o.LeftConvertedType), node.Left, leftParts, isNullable, compilation, diagnostics, isRight: false);
-            TypeSymbol rightTupleType = MakeConvertedType(operators.SelectAsArray(o => o.RightConvertedType), node.Right, rightParts, isNullable, compilation, diagnostics, isRight: true);
+            TypeSymbol leftTupleType = MakeConvertedType(operators.SelectAsArray(o => o.LeftConvertedType), node.Left, leftParts, isNullable, compilation, diagnostics);
+            TypeSymbol rightTupleType = MakeConvertedType(operators.SelectAsArray(o => o.RightConvertedType), node.Right, rightParts, isNullable, compilation, diagnostics);
 
             return new TupleBinaryOperatorInfo.Multiple(operators, leftTupleType, rightTupleType);
         }
@@ -240,7 +240,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// from binding element-wise binary operators.
         /// </summary>
         private TypeSymbol MakeConvertedType(ImmutableArray<TypeSymbol> convertedTypes, CSharpSyntaxNode syntax,
-            ImmutableArray<BoundExpression> elements, bool isNullable, CSharpCompilation compilation, DiagnosticBag diagnostics, bool isRight)
+            ImmutableArray<BoundExpression> elements, bool isNullable, CSharpCompilation compilation, DiagnosticBag diagnostics)
         {
             ImmutableArray<Location> elementLocations = elements.SelectAsArray(e => e.Syntax.Location);
 
