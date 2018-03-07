@@ -1411,6 +1411,77 @@ struct MyType
             }
         }
 
+        [Fact, WorkItem(25318, "https://github.com/dotnet/roslyn/issues/25318")]
+        public void EqualityComparison_StructWithComparisonToAnotherType()
+        {
+            string template = @"
+struct MyType
+{
+    int i;
+    public MyType(int value)
+    {
+        i = value;
+    }
+    static void Main()
+    {
+        TYPE x = VALUE;
+
+        if ((x == default) != EQUAL) throw null;
+        if ((default == x) != EQUAL) throw null;
+
+        if ((x != default) == EQUAL) throw null;
+        if ((default != x) == EQUAL) throw null;
+
+        if ((x == default(TYPE)) != EQUAL) throw null;
+        if ((x != default(TYPE)) == EQUAL) throw null;
+
+        System.Console.Write(""Done"");
+    }
+    public static bool operator==(MyType x, int y)
+        => x.i == y;
+    public static bool operator!=(MyType x, int y)
+        => !(x == y);
+    public override bool Equals(object o) => throw null;
+    public override int GetHashCode() => throw null;
+}
+";
+
+            validate("MyType", "new MyType(0)", "true", "System.Int32");
+            validate("MyType", "new MyType(1)", "false", "System.Int32");
+
+            validate("MyType?", "new MyType(0)", "false", "System.Nullable<System.Int32>");
+            validate("MyType?", "new MyType(1)", "false", "System.Nullable<System.Int32>");
+            validate("MyType?", "null", "true", "System.Nullable<System.Int32>");
+
+            void validate(string type, string value, string equal, string semanticType, params DiagnosticDescription[] diagnostics)
+            {
+                var source = template.Replace("TYPE", type).Replace("VALUE", value).Replace("EQUAL", equal);
+                var comp = CreateCompilation(source, parseOptions: TestOptions.Regular, options: TestOptions.DebugExe);
+                if (diagnostics.Length == 0)
+                {
+                    comp.VerifyDiagnostics();
+                    CompileAndVerify(comp, expectedOutput: "Done");
+                }
+                else
+                {
+                    comp.VerifyDiagnostics(diagnostics);
+                }
+
+                var tree = comp.SyntaxTrees.First();
+                var model = comp.GetSemanticModel(tree);
+                var nodes = tree.GetCompilationUnitRoot().DescendantNodes();
+
+                var defaults = nodes.OfType<LiteralExpressionSyntax>().Where(l => l.ToString() == "default");
+                Assert.True(defaults.Count() == 4);
+                foreach (var @default in defaults)
+                {
+                    Assert.Equal("default", @default.ToString());
+                    Assert.Equal(semanticType, model.GetTypeInfo(@default).Type.ToTestDisplayString());
+                    Assert.Equal(semanticType, model.GetTypeInfo(@default).ConvertedType.ToTestDisplayString());
+                }
+            }
+        }
+
         [Fact]
         public void EqualityComparisonWithUserDefinedEqualityOperator()
         {
