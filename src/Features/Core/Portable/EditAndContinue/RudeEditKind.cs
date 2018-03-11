@@ -96,6 +96,8 @@ namespace Microsoft.CodeAnalysis.EditAndContinue
         RefStruct = 77,
         ReadOnlyStruct = 78,
         ReadOnlyReferences = 79,
+        ExpressionVariablesInQueriesAndInitializersUpdate = 80,
+        ConstructorInitializerUpdate = 81,
 
         // TODO: remove values below
         RUDE_EDIT_COMPLEX_QUERY_EXPRESSION = 0x103,

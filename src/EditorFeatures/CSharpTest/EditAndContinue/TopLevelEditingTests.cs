@@ -4952,6 +4952,64 @@ public class C
                 Diagnostic(RudeEditKind.ModifiersUpdate, "in int b", FeaturesResources.parameter));
         }
 
+        [Fact]
+        public void Construct_UpdateOutVarInBaseInitializer()
+        {
+            string src1 = @"
+public class Base
+{
+    public Base(bool b) { }
+}
+public class C : Base
+{
+    public C()
+    {
+    }
+}";
+            string src2 = @"
+public class Base
+{
+    public Base(bool b) { }
+}
+public class C : Base
+{
+    public C() : base(1 is var i)
+    {
+    }
+}";
+
+            var edits = GetTopEdits(src1, src2);
+
+            edits.VerifyRudeDiagnostics(
+                Diagnostic(RudeEditKind.ConstructorInitializerUpdate, "public C()", "constructor"));
+        }
+
+        [Fact]
+        public void Construct_UpdateOutVarInThisInitializer()
+        {
+            string src1 = @"
+public class C
+{
+    public C(bool b) { }
+    public C()
+    {
+    }
+}";
+            string src2 = @"
+public class C
+{
+    public C(bool b) { }
+    public C() : this(1 is var i)
+    {
+    }
+}";
+
+            var edits = GetTopEdits(src1, src2);
+
+            edits.VerifyRudeDiagnostics(
+                Diagnostic(RudeEditKind.ConstructorInitializerUpdate, "public C()", "constructor"));
+        }
+
         #endregion
 
         #region Fields and Properties with Initializers

@@ -1985,6 +1985,11 @@ This version used in: {2}</source>
         <target state="translated">인덱서</target>
         <note />
       </trans-unit>
+      <trans-unit id="Using_expression_variables_in_queries_or_initializers_will_prevent_the_debug_session_from_continuing">
+        <source>Using expression variables in queries or initializers will prevent the debug session from continuing.</source>
+        <target state="new">Using expression variables in queries or initializers will prevent the debug session from continuing.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

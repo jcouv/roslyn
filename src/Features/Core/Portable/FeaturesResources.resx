@@ -1334,4 +1334,7 @@ This version used in: {2}</value>
   <data name="indexer_" xml:space="preserve">
     <value>indexer</value>
   </data>
+  <data name="Using_expression_variables_in_queries_or_initializers_will_prevent_the_debug_session_from_continuing" xml:space="preserve">
+    <value>Using expression variables in queries or initializers will prevent the debug session from continuing.</value>
+  </data>
 </root>

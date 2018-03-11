@@ -2647,6 +2647,15 @@ namespace Microsoft.CodeAnalysis.CSharp.EditAndContinue
                     return;
                 }
 
+                if (!SyntaxFactory.AreEquivalent(oldNode.Initializer, newNode.Initializer))
+                {
+                    // PROTOTYPE(ExpressionVariables) This causes regressions, in FieldInitializerUpdate_Lambdas_AddCtorInitializer1
+                    // Should we extend ReportOtherRudeEditsAroundActiveStatement instead?
+                    // Or should we check the details of the initializer changes?
+                    ReportError(RudeEditKind.ConstructorInitializerUpdate);
+                    return;
+                }
+
                 ClassifyMethodBodyRudeUpdate(
                     (SyntaxNode)oldNode.Body ?? oldNode.ExpressionBody?.Expression,
                     (SyntaxNode)newNode.Body ?? newNode.ExpressionBody?.Expression,

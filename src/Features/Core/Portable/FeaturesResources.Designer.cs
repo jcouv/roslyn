@@ -3636,11 +3636,12 @@ namespace Microsoft.CodeAnalysis {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Variable declaration can be deconstructed.
+        ///   Looks up a localized string similar to Using expression variables in queries or initializers will prevent the debug session from continuing..
         /// </summary>
-        internal static string Variable_declaration_can_be_deconstructed {
+        internal static string Using_expression_variables_in_queries_or_initializers_will_prevent_the_debug_session_from_continuing {
             get {
-                return ResourceManager.GetString("Variable_declaration_can_be_deconstructed", resourceCulture);
+                return ResourceManager.GetString("Using_expression_variables_in_queries_or_initializers_will_prevent_the_debug_sess" +
+                        "ion_from_continuing", resourceCulture);
             }
         }
         
@@ -3668,6 +3669,15 @@ namespace Microsoft.CodeAnalysis {
         internal static string Using_ref_structs_will_prevent_the_debug_session_from_continuing {
             get {
                 return ResourceManager.GetString("Using_ref_structs_will_prevent_the_debug_session_from_continuing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Variable declaration can be deconstructed.
+        /// </summary>
+        internal static string Variable_declaration_can_be_deconstructed {
+            get {
+                return ResourceManager.GetString("Variable_declaration_can_be_deconstructed", resourceCulture);
             }
         }
         
