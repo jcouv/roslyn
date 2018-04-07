@@ -73,6 +73,19 @@ class MyClass
     }
 }";
 
+        private const string RegionDirectivePreview = @"
+//[
+class MyClass
+{
+    #region Public members
+    public int Method(){
+        return 0;
+    }
+    #endregion
+}
+//]
+";
+
         public IndentationViewModel(OptionSet options, IServiceProvider serviceProvider) : base(options, serviceProvider, LanguageNames.CSharp)
         {
             Items.Add(new CheckBoxOptionViewModel(CSharpFormattingOptions.IndentBlock, CSharpVSResources.Indent_block_contents, BlockContentPreview, this, options));
@@ -86,6 +99,11 @@ class MyClass
             Items.Add(new RadioButtonViewModel<LabelPositionOptions>(CSharpVSResources.Place_goto_labels_in_leftmost_column, GotoLabelPreview, "goto", LabelPositionOptions.LeftMost, CSharpFormattingOptions.LabelPositioning, this, options));
             Items.Add(new RadioButtonViewModel<LabelPositionOptions>(CSharpVSResources.Indent_labels_normally, GotoLabelPreview, "goto", LabelPositionOptions.NoIndent, CSharpFormattingOptions.LabelPositioning, this, options));
             Items.Add(new RadioButtonViewModel<LabelPositionOptions>(CSharpVSResources.Place_goto_labels_one_indent_less_than_current, GotoLabelPreview, "goto", LabelPositionOptions.OneLess, CSharpFormattingOptions.LabelPositioning, this, options));
+
+            Items.Add(new TextBlock() { Text = CSharpVSResources.Region_Directive_Indentation });
+
+            Items.Add(new RadioButtonViewModel<DirectivePositionOptions>(CSharpVSResources.Place_region_directives_in_leftmost_column, RegionDirectivePreview, "region", DirectivePositionOptions.LeftMost, CSharpFormattingOptions.RegionDirectivePositioning, this, options));
+            Items.Add(new RadioButtonViewModel<DirectivePositionOptions>(CSharpVSResources.Indent_region_directives_normally, RegionDirectivePreview, "region", DirectivePositionOptions.NoIndent, CSharpFormattingOptions.RegionDirectivePositioning, this, options));
         }
     }
 }

@@ -3980,6 +3980,209 @@ public       void       Method      (       )           {
             await AssertFormatAsync(expected, code);
         }
 
+        [Fact]
+        [Trait(Traits.Feature, Traits.Features.Formatting)]
+        public async Task IfDirective()
+        {
+            var code = @"
+namespace NS
+{
+class C
+{
+    #if hello
+    #endif
+}
+}
+";
+            var expected = @"
+namespace NS
+{
+    class C
+    {
+#if hello
+#endif
+    }
+}
+";
+            await AssertFormatAsync(expected, code);
+        }
+
+        [Fact]
+        [Trait(Traits.Feature, Traits.Features.Formatting)]
+        public async Task IfDirective_WithIrrelevantOption()
+        {
+            var code = @"
+namespace NS
+{
+class C
+{
+    #if hello
+    #endif
+}
+}
+";
+            var expected = @"
+namespace NS
+{
+    class C
+    {
+#if hello
+#endif
+    }
+}
+";
+            var changingOptions = new Dictionary<OptionKey, object>()
+                { { CSharpFormattingOptions.RegionDirectivePositioning, DirectivePositionOptions.NoIndent } };
+            await AssertFormatAsync(expected, code, changedOptionSet: changingOptions);
+        }
+
+        [Fact]
+        [Trait(Traits.Feature, Traits.Features.Formatting)]
+        public async Task RegionDirective_WithDefaultOption()
+        {
+            var code = @"
+namespace NS
+{
+class C
+{
+#region hello
+#endregion
+}
+}
+";
+            var expected = @"
+namespace NS
+{
+    class C
+    {
+        #region hello
+        #endregion
+    }
+}
+";
+            await AssertFormatAsync(expected, code);
+        }
+
+        [Fact]
+        [Trait(Traits.Feature, Traits.Features.Formatting)]
+        public async Task RegionDirective_WithLeftMostOption()
+        {
+            var code = @"
+namespace NS
+{
+class C
+{
+    #region hello
+    #endregion
+    #if DEBUG
+    #endif
+}
+}
+";
+            var expected = @"
+namespace NS
+{
+    class C
+    {
+#region hello
+#endregion
+#if DEBUG
+#endif
+    }
+}
+";
+            var changingOptions = new Dictionary<OptionKey, object>()
+                { { CSharpFormattingOptions.RegionDirectivePositioning, DirectivePositionOptions.LeftMost } };
+            await AssertFormatAsync(expected, code, changedOptionSet: changingOptions);
+        }
+
+        [Fact]
+        [Trait(Traits.Feature, Traits.Features.Formatting)]
+        public async Task RegionDirective_WithLeftMostOption2()
+        {
+            var code = @"
+namespace NS
+{
+    class C
+    {
+        #region hello
+        #endregion
+    }
+}
+";
+            var expected = @"
+namespace NS
+{
+    class C
+    {
+        #region hello
+        #endregion
+    }
+}
+";
+            // PROTOTYPE: Unclear why this is not left-most-aligned
+            var changingOptions = new Dictionary<OptionKey, object>()
+                { { CSharpFormattingOptions.RegionDirectivePositioning, DirectivePositionOptions.LeftMost } };
+            await AssertFormatAsync(expected, code, changedOptionSet: changingOptions);
+        }
+
+        [Fact]
+        [Trait(Traits.Feature, Traits.Features.Formatting)]
+        public async Task RegionDirective_WithLeftMostOption3()
+        {
+            var code = @"
+namespace NS
+{
+    class C
+    {
+        #if DEBUG
+        #endif
+    }
+}
+";
+            var expected = @"
+namespace NS
+{
+    class C
+    {
+#if DEBUG
+#endif
+    }
+}
+";
+            // PROTOTYPE remove this test
+            await AssertFormatAsync(expected, code);
+        }
+
+        [Fact]
+        [Trait(Traits.Feature, Traits.Features.Formatting)]
+        public async Task RegionDirective_WithNoIndentOption()
+        {
+            var code = @"
+namespace NS
+{
+class C
+{
+#region hello
+#endregion
+}
+}
+";
+            var expected = @"
+namespace NS
+{
+    class C
+    {
+        #region hello
+        #endregion
+    }
+}
+";
+            var changingOptions = new Dictionary<OptionKey, object>()
+                { { CSharpFormattingOptions.RegionDirectivePositioning, DirectivePositionOptions.NoIndent } };
+            await AssertFormatAsync(expected, code, changedOptionSet: changingOptions);
+        }
+
         [WorkItem(539542, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/539542")]
         [Fact]
         [Trait(Traits.Feature, Traits.Features.Formatting)]

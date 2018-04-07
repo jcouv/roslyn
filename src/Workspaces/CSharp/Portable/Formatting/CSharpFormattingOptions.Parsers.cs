@@ -35,9 +35,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Formatting
             }
         }
 
-        internal static LabelPositionOptions ParseEditorConfigLablePositioning(string lableIndentationValue)
+        internal static LabelPositionOptions ParseEditorConfigLabelPositioning(string labelIndentationValue)
         {
-            switch (lableIndentationValue)
+            switch (labelIndentationValue)
             {
                 case "flush_left": return LabelPositionOptions.LeftMost;
                 case "no_change": return LabelPositionOptions.NoIndent;
@@ -46,6 +46,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Formatting
             }
         }
 
+        internal static DirectivePositionOptions ParseEditorConfigDirectivePositioning(string lableIndentationValue)
+        {
+            switch (lableIndentationValue)
+            {
+                case "flush_left": return DirectivePositionOptions.LeftMost;
+                case "no_change": return DirectivePositionOptions.NoIndent;
+                default: return DirectivePositionOptions.NoIndent;
+            }
+        }
+ 
         internal static bool DetermineIfNewLineOptionIsSet(string value, NewLineOption optionName)
         {
             var values = value.Split(',');

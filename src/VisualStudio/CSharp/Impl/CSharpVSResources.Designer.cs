@@ -358,6 +358,15 @@ namespace Microsoft.VisualStudio.LanguageServices.CSharp {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Indent region directives normally.
+        /// </summary>
+        internal static string Indent_region_directives_normally {
+            get {
+                return ResourceManager.GetString("Indent_region_directives_normally", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to _Insert * at the start of new lines when writing /* */ comments.
         /// </summary>
         internal static string Insert_at_the_start_of_new_lines_when_writing_comments {
@@ -889,6 +898,15 @@ namespace Microsoft.VisualStudio.LanguageServices.CSharp {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Place region directives in leftmost column.
+        /// </summary>
+        internal static string Place_region_directives_in_leftmost_column {
+            get {
+                return ResourceManager.GetString("Place_region_directives_in_leftmost_column", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to _Place &apos;System&apos; directives first when sorting usings.
         /// </summary>
         internal static string Place_System_directives_first_when_sorting_usings {
@@ -1029,6 +1047,15 @@ namespace Microsoft.VisualStudio.LanguageServices.CSharp {
         internal static string Qualify_property_access_with_this {
             get {
                 return ResourceManager.GetString("Qualify_property_access_with_this", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Region Directive Indentation.
+        /// </summary>
+        internal static string Region_Directive_Indentation {
+            get {
+                return ResourceManager.GetString("Region_Directive_Indentation", resourceCulture);
             }
         }
         

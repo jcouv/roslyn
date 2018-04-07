@@ -697,6 +697,21 @@
         <target state="new">Generate Event Subscription Command Handler</target>
         <note />
       </trans-unit>
+      <trans-unit id="Place_region_directives_in_leftmost_column">
+        <source>Place region directives in leftmost column</source>
+        <target state="new">Place region directives in leftmost column</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Indent_region_directives_normally">
+        <source>Indent region directives normally</source>
+        <target state="new">Indent region directives normally</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Region_Directive_Indentation">
+        <source>Region Directive Indentation</source>
+        <target state="new">Region Directive Indentation</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

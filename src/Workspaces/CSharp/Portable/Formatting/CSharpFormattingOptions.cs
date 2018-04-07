@@ -155,8 +155,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Formatting
 
         public static Option<LabelPositionOptions> LabelPositioning { get; } = new Option<LabelPositionOptions>(nameof(CSharpFormattingOptions), nameof(LabelPositioning), defaultValue: LabelPositionOptions.OneLess,
             storageLocations: new OptionStorageLocation[] {
-                new EditorConfigStorageLocation<LabelPositionOptions>("csharp_indent_labels", s => ParseEditorConfigLablePositioning(s)),
+                new EditorConfigStorageLocation<LabelPositionOptions>("csharp_indent_labels", s => ParseEditorConfigLabelPositioning(s)),
                 new RoamingProfileStorageLocation("TextEditor.CSharp.Specific.LabelPositioning")});
+
+        public static Option<DirectivePositionOptions> RegionDirectivePositioning { get; } = new Option<DirectivePositionOptions>(nameof(CSharpFormattingOptions), nameof(RegionDirectivePositioning), defaultValue: DirectivePositionOptions.NoIndent,
+            storageLocations: new OptionStorageLocation[] {
+                new EditorConfigStorageLocation<DirectivePositionOptions>("csharp_indent_preprocessor_region", s => ParseEditorConfigDirectivePositioning(s)),
+                new RoamingProfileStorageLocation("TextEditor.CSharp.Specific.RegionDirectivePositioning")});
 
         public static Option<bool> WrappingPreserveSingleLine { get; } = new Option<bool>(nameof(CSharpFormattingOptions), nameof(WrappingPreserveSingleLine), defaultValue: true,
             storageLocations: new OptionStorageLocation[] {
@@ -254,6 +259,18 @@ namespace Microsoft.CodeAnalysis.CSharp.Formatting
 
         /// Placed at the same indent as the current context
         NoIndent = 2
+    }
+
+    /// <summary>
+    /// Options for preprocessor directive
+    /// </summary>
+    public enum DirectivePositionOptions
+    {
+        /// Placed at the same indent as the current context
+        NoIndent = 0,
+
+        /// Placed in the Zeroth column of the text editor
+        LeftMost = 1
     }
 
     public enum BinaryOperatorSpacingOptions

@@ -114,9 +114,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Formatting
                 // if current line is the first line of the file, don't put extra line 1
                 var lines = (trivia1.IsKind(SyntaxKind.None) && this.Token1.IsKind(SyntaxKind.None)) ? 0 : 1;
 
+                var regionPositioningOption = this.Context.OptionSet.GetOption(CSharpFormattingOptions.RegionDirectivePositioning);
+
                 if (trivia2.IsKind(SyntaxKind.RegionDirectiveTrivia) || trivia2.IsKind(SyntaxKind.EndRegionDirectiveTrivia))
                 {
-                    return LineColumnRule.PreserveLinesWithDefaultIndentation(lines);
+                    switch (regionPositioningOption)
+                    {
+                        case DirectivePositionOptions.LeftMost:
+                            return LineColumnRule.PreserveLinesWithAbsoluteIndentation(lines, indentation: 0);
+                        default:
+                            return LineColumnRule.PreserveLinesWithDefaultIndentation(lines);
+                    }
                 }
 
                 return LineColumnRule.PreserveLinesWithAbsoluteIndentation(lines, indentation: 0);

@@ -1,0 +1,4 @@
+Microsoft.CodeAnalysis.CSharp.Formatting.DirectivePositionOptions
+Microsoft.CodeAnalysis.CSharp.Formatting.DirectivePositionOptions.LeftMost = 1 -> Microsoft.CodeAnalysis.CSharp.Formatting.DirectivePositionOptions
+Microsoft.CodeAnalysis.CSharp.Formatting.DirectivePositionOptions.NoIndent = 0 -> Microsoft.CodeAnalysis.CSharp.Formatting.DirectivePositionOptions
+static Microsoft.CodeAnalysis.CSharp.Formatting.CSharpFormattingOptions.RegionDirectivePositioning.get -> Microsoft.CodeAnalysis.Options.Option<Microsoft.CodeAnalysis.CSharp.Formatting.DirectivePositionOptions>

@@ -162,6 +162,12 @@
   <data name="Place_finally_on_new_line" xml:space="preserve">
     <value>Place "finally" on new line</value>
   </data>
+  <data name="Place_region_directives_in_leftmost_column" xml:space="preserve">
+    <value>Place region directives in leftmost column</value>
+  </data>
+  <data name="Indent_region_directives_normally" xml:space="preserve">
+    <value>Indent region directives normally</value>
+  </data>
   <data name="Place_goto_labels_in_leftmost_column" xml:space="preserve">
     <value>Place goto labels in leftmost column</value>
   </data>
@@ -173,6 +179,9 @@
   </data>
   <data name="Label_Indentation" xml:space="preserve">
     <value>Label Indentation</value>
+  </data>
+  <data name="Region_Directive_Indentation" xml:space="preserve">
+    <value>Region Directive Indentation</value>
   </data>
   <data name="Place_members_in_object_initializers_on_new_line" xml:space="preserve">
     <value>Place members in object initializers on new line</value>
