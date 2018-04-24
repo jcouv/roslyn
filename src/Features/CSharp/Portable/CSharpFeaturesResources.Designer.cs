@@ -513,6 +513,15 @@ namespace Microsoft.CodeAnalysis.CSharp {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Inline simple method.
+        /// </summary>
+        internal static string Inline_simple_method {
+            get {
+                return ResourceManager.GetString("Inline_simple_method", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Inline temporary variable.
         /// </summary>
         internal static string Inline_temporary_variable {
@@ -554,6 +563,15 @@ namespace Microsoft.CodeAnalysis.CSharp {
         internal static string Invalid_selection {
             get {
                 return ResourceManager.GetString("Invalid_selection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invert if statement.
+        /// </summary>
+        internal static string Invert_if_statement {
+            get {
+                return ResourceManager.GetString("Invert_if_statement", resourceCulture);
             }
         }
         

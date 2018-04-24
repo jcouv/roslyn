@@ -23,5 +23,6 @@ namespace Microsoft.CodeAnalysis.CodeRefactorings
         public const string ReplaceDocCommentTextWithTag = "Replace Documentation Comment Text With Tag Code Action Provider";
         public const string UseExplicitType = "Use Explicit Type Code Action Provider";
         public const string UseExpressionBody = "Use Expression Body Code Action Provider";
+        public const string InlineMethod = "Inline Simple Method Code Action Provider";
     }
 }

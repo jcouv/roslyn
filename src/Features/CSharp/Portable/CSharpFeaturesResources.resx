@@ -120,6 +120,9 @@
   <data name="Inline_temporary_variable" xml:space="preserve">
     <value>Inline temporary variable</value>
   </data>
+  <data name="Inline_simple_method" xml:space="preserve">
+    <value>Inline simple method</value>
+  </data>
   <data name="Conflict_s_detected" xml:space="preserve">
     <value>Conflict(s) detected.</value>
   </data>
