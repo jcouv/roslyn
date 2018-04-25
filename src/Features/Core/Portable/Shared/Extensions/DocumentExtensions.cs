@@ -94,5 +94,15 @@ namespace Microsoft.CodeAnalysis.Shared.Extensions
                 yield return solution.GetDocument(linkedDocumentId);
             }
         }
+
+        public static async Task<T> FindNodeWithAnnotationAsync<T>(this Document document, SyntaxAnnotation annotation, CancellationToken cancellationToken)
+            where T : SyntaxNode
+        {
+            var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            return root
+                .GetAnnotatedNodesAndTokens(annotation)
+                .Single()
+                .AsNode() as T;
+        }
     }
 }
