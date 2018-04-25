@@ -252,14 +252,14 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeRefactorings.InlineTemporary
             return updatedDocument;
         }
 
-        private static async Task<VariableDeclaratorSyntax> FindDeclaratorAsync(Document document, CancellationToken cancellationToken)
+        private static Task<VariableDeclaratorSyntax> FindDeclaratorAsync(Document document, CancellationToken cancellationToken)
         {
-            return await document.FindNodeWithAnnotationAsync<VariableDeclaratorSyntax>(DefinitionAnnotation, cancellationToken).ConfigureAwait(false);
+            return document.FindNodeWithAnnotationAsync<VariableDeclaratorSyntax>(DefinitionAnnotation, cancellationToken);
         }
 
-        private static async Task<ExpressionSyntax> FindInitializerAsync(Document document, CancellationToken cancellationToken)
+        private static Task<ExpressionSyntax> FindInitializerAsync(Document document, CancellationToken cancellationToken)
         {
-            return await document.FindNodeWithAnnotationAsync<ExpressionSyntax>(InitializerAnnotation, cancellationToken).ConfigureAwait(false);
+            return document.FindNodeWithAnnotationAsync<ExpressionSyntax>(InitializerAnnotation, cancellationToken);
         }
 
         private static async Task<IEnumerable<IdentifierNameSyntax>> FindReferenceAnnotatedNodesAsync(Document document, CancellationToken cancellationToken)
