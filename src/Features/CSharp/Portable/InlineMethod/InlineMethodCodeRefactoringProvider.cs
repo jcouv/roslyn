@@ -25,8 +25,6 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
     {
         internal static readonly SyntaxAnnotation DefinitionAnnotation = new SyntaxAnnotation();
         internal static readonly SyntaxAnnotation ReferenceAnnotation = new SyntaxAnnotation();
-        //internal static readonly SyntaxAnnotation InitializerAnnotation = new SyntaxAnnotation();
-        //internal static readonly SyntaxAnnotation ExpressionToInlineAnnotation = new SyntaxAnnotation();
 
         public InlineMethodCodeRefactoringProvider()
         {
@@ -35,17 +33,20 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
         /// <summary>
         /// Converse of ExtractMethod. Look at IntroduceLocalDeclarationIntoBlockAsync for ideas (FindMatches helper, ComplexifyParentStatements)
         /// https://github.com/dotnet/roslyn/issues/22052
+        /// Need to complexify the body of the method (so that `this` becomes explicit)
+        /// Declaration is expression bodied, versus single expression, versus single return, versus more complicated
+        /// Parameters, including ref/out/in/params/optional
+        /// Ensure expression in method body contains no locals
         /// Locals should be introduced for the parameters to the original function.
+        ///     But I think it's useful to offer an option that doesn't add locals for parameters
         /// Identifiers in the method body need to be renamed if they conflict with any identifiers in the target method body.
         /// Complexification/simplification needs to be applied to avoid conflicts since this refactoring can potentially affect a large code base.
         /// Lambdas?
         /// Invoke from a method usage?
-        /// I think it's useful to offer an option that doesn't add locals for parameters
         /// Local functions
         /// Methods with locals
         /// Call site is an expression vs. an expression statement with just an invocation vs. a method group conversion
-        /// Declaration is expression bodied, versus single expression, versus single return, versus more complicated
-        /// Trigger refactoring with cursor placement (no selection)
+        /// Local function
         /// </summary>
         public override async Task ComputeRefactoringsAsync(CodeRefactoringContext context)
         {
@@ -137,7 +138,8 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
             declaration = await FindDeclarationAsync(document, cancellationToken).ConfigureAwait(false);
 
             // Create the expression that we're actually going to inline.
-            _ = IsBodyBlockWithSingleExpression(declaration.Body, out var expressionToInline);
+            _ = IsBodyBlockWithSingleExpression(declaration.Body, out var bodyExpression);
+            var expressionToInline = Simplifier.Expand(bodyExpression, semanticModel, workspace, cancellationToken: cancellationToken);
 
             // Collect the references.
             var method = semanticModel.GetDeclaredSymbol(declaration, cancellationToken);

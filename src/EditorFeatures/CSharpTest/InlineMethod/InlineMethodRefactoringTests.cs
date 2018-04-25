@@ -15,7 +15,7 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.InlineMethod
             => new InlineMethodCodeRefactoringProvider();
 
         [Fact, Trait(Traits.Feature, Traits.Features.CodeActionsInlineMethod)]
-        public async Task TestStaticVoidMethod()
+        public async Task TestStaticVoidMethodInBody()
         {
             await TestInRegularAndScript1Async(
 @"class C
@@ -38,5 +38,94 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.InlineMethod
 }");
         }
 
+        [Fact, Trait(Traits.Feature, Traits.Features.CodeActionsInlineMethod)]
+        public async Task TestInstanceVoidMethodInBody()
+        {
+            await TestInRegularAndScript1Async(
+@"class C
+{
+    void M()
+    {
+        this.InlineMe();
+    }
+    void [||]InlineMe()
+    {
+        Print();
+    }
+    void Print() => throw null;
+}",
+@"class C
+{
+    void M()
+    {
+        this.Print();
+    }
+    void Print() => throw null;
+}");
+        }
+
+        [Fact, Trait(Traits.Feature, Traits.Features.CodeActionsInlineMethod)]
+        public async Task TestInstanceVoidMethodInBody_CalledFromAnotherType()
+        {
+            await TestInRegularAndScript1Async(
+@"class C
+{
+    void M(D d)
+    {
+        d.InlineMe();
+    }
+}
+public class D
+{
+    public void [||]InlineMe()
+    {
+        this.Print();
+    }
+    public void Print() => throw null;
+}",
+@"class C
+{
+    void M(D d)
+    {
+        d.Print();
+    }
+}
+public class D
+{
+    public void Print() => throw null;
+}");
+        }
+
+        [Fact, Trait(Traits.Feature, Traits.Features.CodeActionsInlineMethod)]
+        public async Task TestInstanceVoidMethodInBody_CalledFromAnotherType_Inaccessible()
+        {
+            await TestInRegularAndScript1Async(
+@"class C
+{
+    void M(D d)
+    {
+        d.InlineMe();
+    }
+}
+public class D
+{
+    public void [||]InlineMe()
+    {
+        this.Print();
+    }
+    private void Print() => throw null;
+}",
+@"class C
+{
+    void M(D d)
+    {
+        d.Print(); // error
+    }
+}
+public class D
+{
+    private void Print() => throw null;
+}");
+        }
     }
 }
