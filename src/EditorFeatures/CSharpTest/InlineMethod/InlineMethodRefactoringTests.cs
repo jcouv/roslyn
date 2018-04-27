@@ -46,7 +46,7 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.InlineMethod
 {
     void M()
     {
-        this.InlineMe();
+        this.InlineMe(); // bug: this is not recognized as a call-site
     }
     void [||]InlineMe()
     {
@@ -62,6 +62,33 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.InlineMethod
     }
     void Print() => throw null;
 }");
+        }
+
+        [Fact, Trait(Traits.Feature, Traits.Features.CodeActionsInlineMethod)]
+        public async Task TestInstanceVoidMethodInBody2()
+        {
+            await TestInRegularAndScript1Async(
+@"class C
+{
+    void M()
+    {
+        InlineMe();
+    }
+    void [||]InlineMe()
+    {
+        InstanceMethod();
+    }
+    void InstanceMethod() => throw null;
+}",
+@"class C
+{
+    void M()
+    {
+        InstanceMethod();
+    }
+    void InstanceMethod() => throw null;
+}");
+            // TODO: there should be a conflict reported because `this.InstanceMethod()`. Maybe the simplifier should leave nodes with conflict annotation?
         }
 
         [Fact, Trait(Traits.Feature, Traits.Features.CodeActionsInlineMethod)]

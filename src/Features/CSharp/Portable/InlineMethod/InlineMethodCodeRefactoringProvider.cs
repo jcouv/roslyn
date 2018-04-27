@@ -24,7 +24,8 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
     internal partial class InlineMethodCodeRefactoringProvider : CodeRefactoringProvider
     {
         internal static readonly SyntaxAnnotation DefinitionAnnotation = new SyntaxAnnotation();
-        internal static readonly SyntaxAnnotation ReferenceAnnotation = new SyntaxAnnotation();
+        internal static readonly SyntaxAnnotation InvocationAnnotation = new SyntaxAnnotation();
+        internal static readonly SyntaxAnnotation ThisAnnotation = new SyntaxAnnotation();
 
         public InlineMethodCodeRefactoringProvider()
         {
@@ -32,21 +33,26 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
 
         /// <summary>
         /// Converse of ExtractMethod. Look at IntroduceLocalDeclarationIntoBlockAsync for ideas (FindMatches helper, ComplexifyParentStatements)
+        /// See InlineTemporary for ideas.
         /// https://github.com/dotnet/roslyn/issues/22052
-        /// Need to complexify the body of the method (so that `this` becomes explicit)
-        /// Declaration is expression bodied, versus single expression, versus single return, versus more complicated
-        /// Parameters, including ref/out/in/params/optional
+        ///
+        /// Pri0:
         /// Ensure expression in method body contains no locals
+        /// Declaration is expression bodied, versus single expression, versus single return, versus more complicated
+        /// Call site is an expression vs. an expression statement with just an invocation vs. a method group conversion
+        ///
+        /// Pri1:
+        /// Parameters, including ref/out/in/params/optional
         /// Locals should be introduced for the parameters to the original function.
         ///     But I think it's useful to offer an option that doesn't add locals for parameters
-        /// Identifiers in the method body need to be renamed if they conflict with any identifiers in the target method body.
+        ///
+        /// Pri2:
         /// Complexification/simplification needs to be applied to avoid conflicts since this refactoring can potentially affect a large code base.
         /// Lambdas?
         /// Invoke from a method usage?
         /// Local functions
+        /// Identifiers in the method body need to be renamed if they conflict with any identifiers in the target method body.
         /// Methods with locals
-        /// Call site is an expression vs. an expression statement with just an invocation vs. a method group conversion
-        /// Local function
         /// </summary>
         public override async Task ComputeRefactoringsAsync(CodeRefactoringContext context)
         {
@@ -79,12 +85,12 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
                 return;
             }
 
-            var parameters = methodDeclaration.ParameterList;
-            if (parameters == null ||
-                parameters.Parameters.Count != 0)
-            {
-                return;
-            }
+            //var parameters = methodDeclaration.ParameterList;
+            //if (parameters == null ||
+            //    parameters.Parameters.Count != 0)
+            //{
+            //    return;
+            //}
 
             var typeParameters = methodDeclaration.TypeParameterList;
             if (typeParameters != null)
@@ -102,6 +108,8 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
             {
                 return;
             }
+
+            // TODO: detect any locals and bail out
 
             context.RegisterRefactoring(
                 new MyCodeAction(
@@ -141,6 +149,17 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
             _ = IsBodyBlockWithSingleExpression(declaration.Body, out var bodyExpression);
             var expressionToInline = Simplifier.Expand(bodyExpression, semanticModel, workspace, cancellationToken: cancellationToken);
 
+            document = await document.ReplaceNodeAsync(bodyExpression, expressionToInline, cancellationToken).ConfigureAwait(false);
+            declaration = await FindDeclarationAsync(document, cancellationToken).ConfigureAwait(false);
+            _ = IsBodyBlockWithSingleExpression(declaration.Body, out expressionToInline);
+            semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+
+            // Create annotations for parameter declarations
+            // TODO
+
+            // Annotate `this`, `base`, parameter references
+            expressionToInline = AnnotationRewriter.Visit(semanticModel, expressionToInline, cancellationToken);
+
             // Collect the references.
             var method = semanticModel.GetDeclaredSymbol(declaration, cancellationToken);
             var symbolRefs = await SymbolFinder.FindReferencesAsync(method, document.Project.Solution, cancellationToken).ConfigureAwait(false);
@@ -154,10 +173,10 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
 
             // TODO: handle a reference that isn't an invocation
 
-            //// Add referenceAnnotations to identifier nodes being replaced.
+            // Add InvocationAnnotations to identifier nodes being replaced.
             document = await document.ReplaceNodesAsync(
                 callSites,
-                (o, n) => n.WithAdditionalAnnotations(ReferenceAnnotation),
+                (o, n) => n.WithAdditionalAnnotations(InvocationAnnotation),
                 cancellationToken).ConfigureAwait(false);
 
             semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
@@ -186,7 +205,7 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
             semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
             declaration = await FindDeclarationAsync(document, cancellationToken).ConfigureAwait(false);
 
-            // TODO: deal with conflicts annotated by the InvocationRewriter 
+            // TODO: deal with conflicts annotated by the InvocationRewriter
 
             // No semantic conflicts, we can remove the declaration.
             document = await document.ReplaceNodeAsync(declaration.Parent, RemoveDeclarationFromScope(declaration, declaration.Parent), cancellationToken).ConfigureAwait(false);
@@ -270,7 +289,7 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
         private static async Task<IEnumerable<InvocationExpressionSyntax>> FindReferenceAnnotatedNodesAsync(Document document, CancellationToken cancellationToken)
         {
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            return FindReferenceAnnotatedNodes<InvocationExpressionSyntax>(root, ReferenceAnnotation);
+            return FindReferenceAnnotatedNodes<InvocationExpressionSyntax>(root, InvocationAnnotation);
         }
 
         // TODO: factor this method out of InlineTemporaryCodeRefactoringProvider
@@ -367,8 +386,20 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
 
 namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
 {
+    internal static class SyntaxNodeExtensions
+    {
+        // TODO: a number of existing places could use this extension
+        public static T WithConflictAnnotation<T>(this T node) where T : SyntaxNode
+        {
+            return node.WithAdditionalAnnotations(ConflictAnnotation.Create(CSharpFeaturesResources.Conflict_s_detected));
+        }
+    }
+
     internal partial class InlineMethodCodeRefactoringProvider
     {
+        /// <summary>
+        /// Rewrites invocations of a given method using an inlined expression
+        /// </summary>
         private class InvocationRewriter : CSharpSyntaxRewriter
         {
             private readonly SemanticModel _semanticModel;
@@ -443,6 +474,56 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
             {
                 var rewriter = new InvocationRewriter(semanticModel, methodDeclaration, expressionToInline, cancellationToken);
                 return rewriter.Visit(scope);
+            }
+        }
+
+        /// <summary>
+        /// Annotate `this`, `base`, parameter references
+        /// </summary>
+        private class AnnotationRewriter : CSharpSyntaxRewriter
+        {
+            private readonly SemanticModel _semanticModel;
+            private readonly CancellationToken _cancellationToken;
+
+            private AnnotationRewriter(
+                SemanticModel semanticModel,
+                CancellationToken cancellationToken)
+            {
+                _semanticModel = semanticModel;
+                _cancellationToken = cancellationToken;
+            }
+
+            public override SyntaxNode VisitThisExpression(ThisExpressionSyntax node)
+            {
+                return node.WithConflictAnnotation();
+                //return node.WithAdditionalAnnotations(ThisAnnotation);
+            }
+
+            public override SyntaxNode VisitBaseExpression(BaseExpressionSyntax node)
+            {
+                return node.WithConflictAnnotation();
+            }
+
+            public override SyntaxNode VisitIdentifierName(IdentifierNameSyntax node)
+            {
+                var symbol = _semanticModel.GetSymbolInfo(node).Symbol;
+                if (symbol?.IsKind(SymbolKind.Parameter) == true)
+                {
+                    return node.WithConflictAnnotation();
+                }
+
+                return node;
+            }
+
+            public static ExpressionSyntax Visit(
+                SemanticModel semanticModel,
+                ExpressionSyntax expressionToInline,
+                CancellationToken cancellationToken)
+            {
+                // TODO: this method should probably accept a map of parameter symbol to annotation
+
+                var rewriter = new AnnotationRewriter(semanticModel, cancellationToken);
+                return (ExpressionSyntax)rewriter.Visit(expressionToInline);
             }
         }
     }
