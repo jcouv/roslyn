@@ -56,7 +56,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             else
             {
                 _shouldReleaseRCW = true;
-                _rcwForCurrentCtx = objInCurrentCtx as T;
+                _rcwForCurrentCtx = (objInCurrentCtx as T)!; // PROTOTYPE(NullableDogfood): class? constraint not yet implemented
             }
         }
 
@@ -116,7 +116,9 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             }
             finally
             {
-                _rcwForCurrentCtx = null;
+                // PROTOTYPE(NullableDogfood): T should be constrained to class? 
+                // 1>RCWForCurrentContext.cs(119,37,119,41): warning CS8625: Cannot convert null literal to non-nullable reference or unconstrained type parameter.
+                _rcwForCurrentCtx = null!;
             }
         }
     }

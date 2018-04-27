@@ -22,7 +22,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         }
 
         #region Properties - Please keep these alphabetized.
-        public string[] AdditionalLibPaths
+        public string[]? AdditionalLibPaths
         {
             set
             {
@@ -35,7 +35,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             }
         }
 
-        public string[] AdditionalLoadPaths
+        public string[]? AdditionalLoadPaths
         {
             set
             {
@@ -49,7 +49,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         }
 
         [Output]
-        public ITaskItem[] CommandLineArgs
+        public ITaskItem[]? CommandLineArgs
         {
             set
             {
@@ -62,7 +62,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             }
         }
 
-        public string Features
+        public string? Features
         {
             set
             {
@@ -75,7 +75,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             }
         }
 
-        public ITaskItem[] Imports
+        public ITaskItem[]? Imports
         {
             set
             {
@@ -101,7 +101,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             }
         }
 
-        public ITaskItem[] References
+        public ITaskItem[]? References
         {
             set
             {
@@ -114,7 +114,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             }
         }
 
-        public ITaskItem[] ResponseFiles
+        public ITaskItem[]? ResponseFiles
         {
             set
             {
@@ -127,7 +127,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             }
         }
 
-        public string[] ScriptArguments
+        public string[]? ScriptArguments
         {
             set
             {
@@ -140,7 +140,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             }
         }
 
-        public ITaskItem[] ScriptResponseFiles
+        public ITaskItem[]? ScriptResponseFiles
         {
             set
             {
@@ -166,7 +166,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             }
         }
 
-        public ITaskItem Source
+        public ITaskItem? Source
         {
             set
             {
@@ -187,7 +187,8 @@ namespace Microsoft.CodeAnalysis.BuildTasks
 
         protected sealed override bool IsManagedTool => !HasToolBeenOverridden;
 
-        protected sealed override string PathToManagedTool => Utilities.GenerateFullPathToTool(ToolName);
+        // PROTOTYPE(NullableDogfood): Need to follow-up, possible compiler bug
+        protected sealed override string PathToManagedTool => Utilities.GenerateFullPathToTool(ToolName)!;
 
         protected sealed override string PathToNativeTool => Path.Combine(ToolPath ?? "", ToolExe);
 

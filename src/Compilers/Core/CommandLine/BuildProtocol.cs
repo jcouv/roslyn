@@ -60,12 +60,21 @@ namespace Microsoft.CodeAnalysis.CommandLine
             }
         }
 
+#if USES_ANNOTATIONS
+        public static BuildRequest Create(RequestLanguage language,
+                                          string workingDirectory,
+                                          string tempDirectory,
+                                          IList<string> args,
+                                          string? keepAlive = null,
+                                          string? libDirectory = null)
+#else
         public static BuildRequest Create(RequestLanguage language,
                                           string workingDirectory,
                                           string tempDirectory,
                                           IList<string> args,
                                           string keepAlive = null,
                                           string libDirectory = null)
+#endif
         {
             Log("Creating BuildRequest");
             Log($"Working directory: {workingDirectory}");
@@ -104,13 +113,18 @@ namespace Microsoft.CodeAnalysis.CommandLine
             return new BuildRequest(BuildProtocolConstants.ProtocolVersion, RequestLanguage.CSharpCompile, requestArgs);
         }
 
+        // PROTOTYPE(NullableDogfood): no need for ? on Task. See https://github.com/dotnet/roslyn/issues/26614
         /// <summary>
         /// Read a Request from the given stream.
         /// 
         /// The total request size must be less than 1MB.
         /// </summary>
         /// <returns>null if the Request was too large, the Request otherwise.</returns>
+#if USES_ANNOTATIONS
+        public static async Task<BuildRequest?>? ReadAsync(Stream inStream, CancellationToken cancellationToken)
+#else
         public static async Task<BuildRequest> ReadAsync(Stream inStream, CancellationToken cancellationToken)
+#endif
         {
             // Read the length of the request
             var lengthBuffer = new byte[4];

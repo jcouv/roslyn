@@ -34,13 +34,13 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             get { return _store.GetOrDefault(nameof(AllowUnsafeBlocks), false); }
         }
 
-        public string ApplicationConfiguration
+        public string? ApplicationConfiguration
         {
             set { _store[nameof(ApplicationConfiguration)] = value; }
             get { return (string)_store[nameof(ApplicationConfiguration)]; }
         }
 
-        public string BaseAddress
+        public string? BaseAddress
         {
             set { _store[nameof(BaseAddress)] = value; }
             get { return (string)_store[nameof(BaseAddress)]; }
@@ -52,13 +52,13 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             get { return _store.GetOrDefault(nameof(CheckForOverflowUnderflow), false); }
         }
 
-        public string DocumentationFile
+        public string? DocumentationFile
         {
             set { _store[nameof(DocumentationFile)] = value; }
             get { return (string)_store[nameof(DocumentationFile)]; }
         }
 
-        public string DisabledWarnings
+        public string? DisabledWarnings
         {
             set { _store[nameof(DisabledWarnings)] = value; }
             get { return (string)_store[nameof(DisabledWarnings)]; }
@@ -70,7 +70,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             get { return _store.GetOrDefault(nameof(ErrorEndLocation), false); }
         }
 
-        public string ErrorReport
+        public string? ErrorReport
         {
             set { _store[nameof(ErrorReport)] = value; }
             get { return (string)_store[nameof(ErrorReport)]; }
@@ -82,7 +82,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             get { return _store.GetOrDefault(nameof(GenerateFullPaths), false); }
         }
 
-        public string ModuleAssemblyName
+        public string? ModuleAssemblyName
         {
             set { _store[nameof(ModuleAssemblyName)] = value; }
             get { return (string)_store[nameof(ModuleAssemblyName)]; }
@@ -94,7 +94,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             get { return _store.GetOrDefault(nameof(NoStandardLib), false); }
         }
 
-        public string PdbFile
+        public string? PdbFile
         {
             set { _store[nameof(PdbFile)] = value; }
             get { return (string)_store[nameof(PdbFile)]; }
@@ -107,13 +107,13 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         /// If set to null, "/preferreduilang" option is omitted, and csc.exe uses its default setting.
         /// Otherwise, the value is passed to "/preferreduilang" as is.
         /// </remarks>
-        public string PreferredUILang
+        public string? PreferredUILang
         {
             set { _store[nameof(PreferredUILang)] = value; }
             get { return (string)_store[nameof(PreferredUILang)]; }
         }
 
-        public string VsSessionGuid
+        public string? VsSessionGuid
         {
             set { _store[nameof(VsSessionGuid)] = value; }
             get { return (string)_store[nameof(VsSessionGuid)]; }
@@ -131,13 +131,13 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             get { return _store.GetOrDefault(nameof(WarningLevel), 4); }
         }
 
-        public string WarningsAsErrors
+        public string? WarningsAsErrors
         {
             set { _store[nameof(WarningsAsErrors)] = value; }
             get { return (string)_store[nameof(WarningsAsErrors)]; }
         }
 
-        public string WarningsNotAsErrors
+        public string? WarningsNotAsErrors
         {
             set { _store[nameof(WarningsNotAsErrors)] = value; }
             get { return (string)_store[nameof(WarningsNotAsErrors)]; }
@@ -270,7 +270,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         /// </summary>
         internal static void AddReferencesToCommandLine(
             CommandLineBuilderExtension commandLine,
-            ITaskItem[] references,
+            ITaskItem[]? references,
             bool isInteractive = false)
         {
             // If there were no references passed in, don't add any /reference: switches
@@ -371,7 +371,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         /// other words, a constant is either defined or not defined ... it can't have
         /// an actual value.
         /// </summary>
-        internal static string GetDefineConstantsSwitch(string originalDefineConstants, TaskLoggingHelper log)
+        internal static string? GetDefineConstantsSwitch(string? originalDefineConstants, TaskLoggingHelper log)
         {
             if (originalDefineConstants == null)
             {
@@ -524,7 +524,8 @@ namespace Microsoft.CodeAnalysis.BuildTasks
                 ICscHostObject5 cscHostObject5 = cscHostObject as ICscHostObject5;
                 if (cscHostObject5 != null)
                 {
-                    CheckHostObjectSupport(param = nameof(ErrorLog), cscHostObject5.SetErrorLog(ErrorLog));
+                    // PROTOTYPE(NullableDogfood): Unusre about SetErrorLog API
+                    CheckHostObjectSupport(param = nameof(ErrorLog), cscHostObject5.SetErrorLog(ErrorLog!));
                     CheckHostObjectSupport(param = nameof(ReportAnalyzer), cscHostObject5.SetReportAnalyzer(ReportAnalyzer));
                 }
 
@@ -544,6 +545,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
                 if (cscHostObject is ICscHostObject2)
                 {
                     ICscHostObject2 cscHostObject2 = (ICscHostObject2)cscHostObject;
+                    // PROTOTYPE(NullableDogfood): Not sure
                     CheckHostObjectSupport(param = nameof(Win32Manifest), cscHostObject2.SetWin32Manifest(GetWin32ManifestSwitch(NoWin32Manifest, Win32Manifest)));
                 }
                 else
@@ -724,7 +726,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
 
             ICscHostObject cscHostObject = HostObject as ICscHostObject;
             Debug.Assert(cscHostObject != null, "Wrong kind of host object passed in!");
-            return cscHostObject.Compile();
+            return cscHostObject!.Compile();
         }
     }
 }

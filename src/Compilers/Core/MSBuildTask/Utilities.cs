@@ -148,7 +148,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             return new ArgumentException(string.Format(CultureInfo.CurrentCulture, errorString, args));
         }
 
-        internal static string TryGetAssemblyPath(Assembly assembly)
+        internal static string? TryGetAssemblyPath(Assembly assembly)
         {
             if ((bool?)typeof(Assembly).GetTypeInfo()
                 .GetDeclaredProperty("GlobalAssemblyCache")
@@ -194,7 +194,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         /// Try to get the directory this assembly is in. Returns null if assembly
         /// was in the GAC or DLL location can not be retrieved.
         /// </summary>
-        public static string GenerateFullPathToTool(string toolName)
+        public static string? GenerateFullPathToTool(string toolName)
         {
             string toolLocation = null;
 

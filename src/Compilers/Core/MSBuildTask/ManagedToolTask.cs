@@ -97,7 +97,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             }
         }
 
-        private static string PrependFileToArgs(string pathToTool, string commandLineArgs)
+        private static string PrependFileToArgs(string? pathToTool, string commandLineArgs)
         {
             var builder = new CommandLineBuilderExtension();
             builder.AppendFileNameIfNotNull(pathToTool);

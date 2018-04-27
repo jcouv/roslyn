@@ -43,25 +43,25 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         // ones shared between Vbc and Csc are defined in ManagedCompiler.cs, which is
         // the base class.
 
-        public string BaseAddress
+        public string? BaseAddress
         {
             set { _store[nameof(BaseAddress)] = value; }
             get { return (string)_store[nameof(BaseAddress)]; }
         }
 
-        public string DisabledWarnings
+        public string? DisabledWarnings
         {
             set { _store[nameof(DisabledWarnings)] = value; }
             get { return (string)_store[nameof(DisabledWarnings)]; }
         }
 
-        public string DocumentationFile
+        public string? DocumentationFile
         {
             set { _store[nameof(DocumentationFile)] = value; }
             get { return (string)_store[nameof(DocumentationFile)]; }
         }
 
-        public string ErrorReport
+        public string? ErrorReport
         {
             set { _store[nameof(ErrorReport)] = value; }
             get { return (string)_store[nameof(ErrorReport)]; }
@@ -73,13 +73,13 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             get { return _store.GetOrDefault(nameof(GenerateDocumentation), false); }
         }
 
-        public ITaskItem[] Imports
+        public ITaskItem[]? Imports
         {
             set { _store[nameof(Imports)] = value; }
             get { return (ITaskItem[])_store[nameof(Imports)]; }
         }
 
-        public string ModuleAssemblyName
+        public string? ModuleAssemblyName
         {
             set { _store[nameof(ModuleAssemblyName)] = value; }
             get { return (string)_store[nameof(ModuleAssemblyName)]; }
@@ -108,7 +108,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             get { return _store.GetOrDefault(nameof(NoWarnings), false); }
         }
 
-        public string OptionCompare
+        public string? OptionCompare
         {
             set { _store[nameof(OptionCompare)] = value; }
             get { return (string)_store[nameof(OptionCompare)]; }
@@ -133,7 +133,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         }
 
         // Currently only /optionstrict:custom
-        public string OptionStrictType
+        public string? OptionStrictType
         {
             set { _store[nameof(OptionStrictType)] = value; }
             get { return (string)_store[nameof(OptionStrictType)]; }
@@ -145,13 +145,13 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             get { return _store.GetOrDefault(nameof(RemoveIntegerChecks), false); }
         }
 
-        public string RootNamespace
+        public string? RootNamespace
         {
             set { _store[nameof(RootNamespace)] = value; }
             get { return (string)_store[nameof(RootNamespace)]; }
         }
 
-        public string SdkPath
+        public string? SdkPath
         {
             set { _store[nameof(SdkPath)] = value; }
             get { return (string)_store[nameof(SdkPath)]; }
@@ -164,13 +164,13 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         /// If set to null, "/preferreduilang" option is omitted, and vbc.exe uses its default setting.
         /// Otherwise, the value is passed to "/preferreduilang" as is.
         /// </remarks>
-        public string PreferredUILang
+        public string? PreferredUILang
         {
             set { _store[nameof(PreferredUILang)] = value; }
             get { return (string)_store[nameof(PreferredUILang)]; }
         }
 
-        public string VsSessionGuid
+        public string? VsSessionGuid
         {
             set { _store[nameof(VsSessionGuid)] = value; }
             get { return (string)_store[nameof(VsSessionGuid)]; }
@@ -188,37 +188,37 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             get { return _useHostCompilerIfAvailable; }
         }
 
-        public string VBRuntimePath
+        public string? VBRuntimePath
         {
             set { _store[nameof(VBRuntimePath)] = value; }
             get { return (string)_store[nameof(VBRuntimePath)]; }
         }
 
-        public string Verbosity
+        public string? Verbosity
         {
             set { _store[nameof(Verbosity)] = value; }
             get { return (string)_store[nameof(Verbosity)]; }
         }
 
-        public string WarningsAsErrors
+        public string? WarningsAsErrors
         {
             set { _store[nameof(WarningsAsErrors)] = value; }
             get { return (string)_store[nameof(WarningsAsErrors)]; }
         }
 
-        public string WarningsNotAsErrors
+        public string? WarningsNotAsErrors
         {
             set { _store[nameof(WarningsNotAsErrors)] = value; }
             get { return (string)_store[nameof(WarningsNotAsErrors)]; }
         }
 
-        public string VBRuntime
+        public string? VBRuntime
         {
             set { _store[nameof(VBRuntime)] = value; }
             get { return (string)_store[nameof(VBRuntime)]; }
         }
 
-        public string PdbFile
+        public string? PdbFile
         {
             set { _store[nameof(PdbFile)] = value; }
             get { return (string)_store[nameof(PdbFile)]; }
@@ -267,7 +267,8 @@ namespace Microsoft.CodeAnalysis.BuildTasks
 
             if (!SkipCompilerExecution)
             {
-                MovePdbFileIfNecessary(OutputAssembly.ItemSpec);
+                // PROTOTYPE(NullableDogfood): Not sure
+                MovePdbFileIfNecessary(OutputAssembly!.ItemSpec);
             }
 
             return !Log.HasLoggedErrors;
@@ -281,8 +282,9 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         /// 
         /// If at some future point VBC.exe offers a /pdbfile switch, this function can be removed.
         /// </summary>
-        internal void MovePdbFileIfNecessary(string outputAssembly)
+        internal void MovePdbFileIfNecessary(string? outputAssembly)
         {
+            // PROTOTYPE(NullableDogfood): Annotate string.IsNullOrEmpty
             // Get the name of the output assembly because the pdb will be written beside it and will have the same name
             if (String.IsNullOrEmpty(PdbFile) || String.IsNullOrEmpty(outputAssembly))
             {
@@ -295,7 +297,8 @@ namespace Microsoft.CodeAnalysis.BuildTasks
 
                 FileInfo actualPdbInfo = new FileInfo(actualPdb);
 
-                string desiredLocation = PdbFile;
+                // PROTOTYPE(NullableDogfood): Annotate string.IsNullOrEmpty
+                string desiredLocation = PdbFile!;
                 if (!desiredLocation.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase))
                 {
                     desiredLocation += ".pdb";
@@ -331,7 +334,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         /// of the task to pass in the BaseAddress in either decimal or hexadecimal format.
         /// Examples of supported hex formats include "0x10000000" or "&amp;H10000000".
         /// </summary>
-        internal string GetBaseAddressInHex()
+        internal string? GetBaseAddressInHex()
         {
             string originalBaseAddress = this.BaseAddress;
 
@@ -749,9 +752,9 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         /// switch.  It does that by quoting the entire string, and escaping the embedded
         /// quotes.
         /// </summary>
-        internal static string GetDefineConstantsSwitch
+        internal static string? GetDefineConstantsSwitch
             (
-            string originalDefineConstants
+            string? originalDefineConstants
             )
         {
             if ((originalDefineConstants == null) || (originalDefineConstants.Length == 0))
@@ -859,7 +862,8 @@ namespace Microsoft.CodeAnalysis.BuildTasks
                 IVbcHostObject6 vbcHostObject6 = vbcHostObject as IVbcHostObject6;
                 if (vbcHostObject6 != null)
                 {
-                    CheckHostObjectSupport(param = nameof(ErrorLog), vbcHostObject6.SetErrorLog(ErrorLog));
+                    // PROTOTYPE(NullableDogfood): Unsure
+                    CheckHostObjectSupport(param = nameof(ErrorLog), vbcHostObject6.SetErrorLog(ErrorLog!));
                     CheckHostObjectSupport(param = nameof(ReportAnalyzer), vbcHostObject6.SetReportAnalyzer(ReportAnalyzer));
                 }
 
@@ -966,7 +970,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
 
         // VbcHostObject doesn't support VB versions beyond 15,
         // so the LangVersion will be passed through ICompilerOptionsHostObject.SetCompilerOptions instead
-        private static bool DeferToICompilerOptionsHostObject(string langVersion, IVbcHostObject vbcHostObject)
+        private static bool DeferToICompilerOptionsHostObject(string? langVersion, IVbcHostObject vbcHostObject)
         {
             if (!(vbcHostObject is ICompilerOptionsHostObject))
             {
@@ -1094,10 +1098,10 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         {
             Debug.Assert(this.HostObject != null, "We should not be here if the host object has not been set.");
 
-            IVbcHostObject vbcHostObject = this.HostObject as IVbcHostObject;
+            IVbcHostObject vbcHostObject = (IVbcHostObject)this.HostObject;
             Debug.Assert(vbcHostObject != null, "Wrong kind of host object passed in!");
 
-            IVbcHostObject5 vbcHostObject5 = vbcHostObject as IVbcHostObject5;
+            IVbcHostObject5 vbcHostObject5 = (IVbcHostObject5)vbcHostObject;
             Debug.Assert(vbcHostObject5 != null, "Wrong kind of host object passed in!");
 
             // IVbcHostObjectFreeThreaded::Compile is the preferred way to compile the host object
