@@ -103,18 +103,34 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
                 return;
             }
 
+            if (!IsSimple(expression))
+            {
+                return;
+            }
+
             var references = await GetReferencesAsync(document, methodDeclaration, cancellationToken).ConfigureAwait(false);
             if (!references.Any())
             {
                 return;
             }
 
-            // TODO: detect any locals and bail out
-
             context.RegisterRefactoring(
                 new MyCodeAction(
                     CSharpFeaturesResources.Inline_simple_method,
                     c => this.InlineMethodAsync(document, methodDeclaration, c)));
+        }
+
+        /// <summary>
+        /// Checks that the expression is simple, ie. that it doesn't use `base` or locals.
+        /// </summary>
+        public static bool IsSimple(SyntaxNode node)
+        {
+            if (node.IsKind(SyntaxKind.BaseExpression, SyntaxKind.DeclarationExpression, SyntaxKind.DeclarationPattern))
+            {
+                return false;
+            }
+
+            return node.ChildNodes().All(n => IsSimple(n));
         }
 
         private bool IsBodyBlockWithSingleExpression(BlockSyntax body, out ExpressionSyntax expression)
@@ -157,7 +173,7 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
             // Create annotations for parameter declarations
             // TODO
 
-            // Annotate `this`, `base`, parameter references
+            // Annotate `this`, parameter references
             expressionToInline = AnnotationRewriter.Visit(semanticModel, expressionToInline, cancellationToken);
 
             // Collect the references.
@@ -478,7 +494,7 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
         }
 
         /// <summary>
-        /// Annotate `this`, `base`, parameter references
+        /// Annotate `this`, parameter references
         /// </summary>
         private class AnnotationRewriter : CSharpSyntaxRewriter
         {
@@ -495,13 +511,7 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
 
             public override SyntaxNode VisitThisExpression(ThisExpressionSyntax node)
             {
-                return node.WithConflictAnnotation();
-                //return node.WithAdditionalAnnotations(ThisAnnotation);
-            }
-
-            public override SyntaxNode VisitBaseExpression(BaseExpressionSyntax node)
-            {
-                return node.WithConflictAnnotation();
+                return node.WithAdditionalAnnotations(ThisAnnotation);
             }
 
             public override SyntaxNode VisitIdentifierName(IdentifierNameSyntax node)
