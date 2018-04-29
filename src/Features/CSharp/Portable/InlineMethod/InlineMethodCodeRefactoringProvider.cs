@@ -37,12 +37,11 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
         /// https://github.com/dotnet/roslyn/issues/22052
         ///
         /// Pri0:
-        /// Ensure expression in method body contains no locals
-        /// Declaration is expression bodied, versus single expression, versus single return, versus more complicated
         /// Call site is an expression vs. an expression statement with just an invocation vs. a method group conversion
+        /// Parameters, including ref/out/in/params/optional
+        /// Deal with multiple call-sites
         ///
         /// Pri1:
-        /// Parameters, including ref/out/in/params/optional
         /// Locals should be introduced for the parameters to the original function.
         ///     But I think it's useful to offer an option that doesn't add locals for parameters
         ///
@@ -78,9 +77,8 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
                 return;
             }
 
-            var body = methodDeclaration.Body;
-            if (body is null ||
-                !methodDeclaration.ReturnType.IsVoid())
+            var expression = TryGetSimpleBody(methodDeclaration);
+            if (expression == null)
             {
                 return;
             }
@@ -94,11 +92,6 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
 
             var typeParameters = methodDeclaration.TypeParameterList;
             if (typeParameters != null)
-            {
-                return;
-            }
-
-            if (!IsBodyBlockWithSingleExpression(body, out var expression))
             {
                 return;
             }
@@ -120,6 +113,7 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
                     c => this.InlineMethodAsync(document, methodDeclaration, c)));
         }
 
+
         /// <summary>
         /// Checks that the expression is simple, ie. that it doesn't use `base` or locals.
         /// </summary>
@@ -133,22 +127,34 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
             return node.ChildNodes().All(n => IsSimple(n));
         }
 
-        private bool IsBodyBlockWithSingleExpression(BlockSyntax body, out ExpressionSyntax expression)
+        private ExpressionSyntax TryGetSimpleBody(MethodDeclarationSyntax methodDeclaration)
         {
-            expression = null;
-            if (body.Statements.Count != 1)
+            var blockBody = methodDeclaration.Body;
+            if (blockBody == null)
             {
-                return false;
+                // `=> expr;`
+                return methodDeclaration.ExpressionBody.Expression;
             }
 
-            var statement = body.Statements[0];
-            if (!statement.IsKind(SyntaxKind.ExpressionStatement))
+            if (blockBody.Statements.Count != 1)
             {
-                return false;
+                return null;
             }
 
-            expression = ((ExpressionStatementSyntax)statement).Expression;
-            return true;
+            var statement = blockBody.Statements[0];
+            if (statement.IsKind(SyntaxKind.ExpressionStatement))
+            {
+                // `{ expr; }`
+                return ((ExpressionStatementSyntax)statement).Expression;
+            }
+
+            if (statement.IsKind(SyntaxKind.ReturnStatement))
+            {
+                // `{ return expr; }`
+                return ((ReturnStatementSyntax)statement).Expression;
+            }
+
+            return null;
         }
 
         private async Task<Document> InlineMethodAsync(Document document, MethodDeclarationSyntax declaration, CancellationToken cancellationToken)
@@ -162,12 +168,12 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
             declaration = await FindDeclarationAsync(document, cancellationToken).ConfigureAwait(false);
 
             // Create the expression that we're actually going to inline.
-            _ = IsBodyBlockWithSingleExpression(declaration.Body, out var bodyExpression);
+            var bodyExpression = TryGetSimpleBody(declaration);
             var expressionToInline = Simplifier.Expand(bodyExpression, semanticModel, workspace, cancellationToken: cancellationToken);
 
             document = await document.ReplaceNodeAsync(bodyExpression, expressionToInline, cancellationToken).ConfigureAwait(false);
             declaration = await FindDeclarationAsync(document, cancellationToken).ConfigureAwait(false);
-            _ = IsBodyBlockWithSingleExpression(declaration.Body, out expressionToInline);
+            expressionToInline = TryGetSimpleBody(declaration);
             semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
 
             // Create annotations for parameter declarations
