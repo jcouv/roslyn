@@ -9,12 +9,14 @@ namespace Microsoft.CodeAnalysis.Operations
     {
         protected T Visit<T>(T node) where T : IOperation
         {
-            return (T)Visit(node, argument: null);
+            // PROTOTYPE(NullableDogfood): unconstrained T
+            return (T)Visit(node, argument: null!);
         }
 
         public IOperation Visit(IOperation operation)
         {
-            return Visit(operation, argument: null);
+            // PROTOTYPE(NullableDogfood): unconstrained T
+            return Visit(operation, argument: null!);
         }
 
         public override IOperation DefaultVisit(IOperation operation, object argument)

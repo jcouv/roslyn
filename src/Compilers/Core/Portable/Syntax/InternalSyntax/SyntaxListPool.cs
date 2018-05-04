@@ -26,7 +26,8 @@ namespace Microsoft.CodeAnalysis.Syntax.InternalSyntax
             {
                 _freeIndex--;
                 item = _freeList[_freeIndex].Value;
-                _freeList[_freeIndex].Value = null;
+                // PROTOTYPE(NullableDogfood): unconstrained T
+                _freeList[_freeIndex].Value = null!;
             }
             else
             {

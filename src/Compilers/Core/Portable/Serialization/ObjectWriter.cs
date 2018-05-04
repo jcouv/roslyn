@@ -726,7 +726,7 @@ namespace Roslyn.Utilities
             this.WriteInt32(_binderSnapshot.GetTypeId(type));
         }
 
-        private void WriteObject(object instance, IObjectWritable instanceAsWritableOpt)
+        private void WriteObject(object instance, IObjectWritable? instanceAsWritableOpt)
         {
             Debug.Assert(instance != null);
             Debug.Assert(instanceAsWritableOpt == null || instance == instanceAsWritableOpt);

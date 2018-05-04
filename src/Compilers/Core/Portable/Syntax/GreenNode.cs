@@ -154,7 +154,7 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
-        internal abstract GreenNode GetSlot(int index);
+        internal abstract GreenNode? GetSlot(int index);
 
         // for slot counts >= byte.MaxValue
         protected virtual int GetSlotCount()
@@ -923,7 +923,7 @@ namespace Microsoft.CodeAnalysis
             return CreateRed(null, 0);
         }
 
-        internal abstract SyntaxNode CreateRed(SyntaxNode parent, int position);
+        internal abstract SyntaxNode CreateRed(SyntaxNode? parent, int position);
 
         #endregion
 

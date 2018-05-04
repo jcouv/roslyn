@@ -125,7 +125,7 @@ namespace Roslyn.Utilities
         /// If path does not end with an extension, the new extension is appended to the path.
         /// If extension is null, equivalent to <see cref="RemoveExtension"/>.
         /// </returns>
-        internal static string ChangeExtension(string path, string extension)
+        internal static string ChangeExtension(string? path, string? extension)
         {
             if (path == null)
             {

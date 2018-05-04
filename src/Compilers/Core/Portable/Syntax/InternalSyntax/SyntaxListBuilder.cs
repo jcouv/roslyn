@@ -124,7 +124,8 @@ namespace Microsoft.CodeAnalysis.Syntax.InternalSyntax
         public void RemoveLast()
         {
             Count--;
-            _nodes[Count].Value = null;
+            // PROTOTYPE(NullableDogfood): unconstrained T
+            _nodes[Count].Value = null!;
         }
 
         private void EnsureAdditionalCapacity(int additionalCount)
@@ -167,7 +168,7 @@ namespace Microsoft.CodeAnalysis.Syntax.InternalSyntax
             return array;
         }
 
-        internal GreenNode ToListNode()
+        internal GreenNode? ToListNode()
         {
             switch (this.Count)
             {

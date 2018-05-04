@@ -204,7 +204,7 @@ namespace Microsoft.CodeAnalysis.Operations
         /// </summary>
         /// <param name="dynamicOperation">Dynamic or late bound operation.</param>
         /// <param name="index">Argument index.</param>
-        internal static string GetArgumentName(this HasDynamicArgumentsExpression dynamicOperation, int index)
+        internal static string? GetArgumentName(this HasDynamicArgumentsExpression dynamicOperation, int index)
         {
             if (dynamicOperation.Arguments.IsDefaultOrEmpty)
             {

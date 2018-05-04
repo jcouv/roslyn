@@ -201,7 +201,7 @@ namespace Microsoft.CodeAnalysis
     /// </summary>
     internal sealed class TreeDumperNode
     {
-        public TreeDumperNode(string text, object value, IEnumerable<TreeDumperNode> children)
+        public TreeDumperNode(string text, object? value, IEnumerable<TreeDumperNode>? children)
         {
             this.Text = text;
             this.Value = value;
@@ -209,9 +209,9 @@ namespace Microsoft.CodeAnalysis
         }
 
         public TreeDumperNode(string text) : this(text, null, null) { }
-        public object Value { get; }
+        public object? Value { get; }
         public string Text { get; }
-        public IEnumerable<TreeDumperNode> Children { get; }
+        public IEnumerable<TreeDumperNode>? Children { get; }
         public TreeDumperNode this[string child]
         {
             get

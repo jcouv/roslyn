@@ -274,8 +274,8 @@ namespace Microsoft.CodeAnalysis
 
             private ChildSyntaxListEnumeratorStack _nodeStack;
             private TriviaListEnumeratorStack _triviaStack;
-            private readonly ArrayBuilder<SyntaxNodeOrToken> _tokenStack;
-            private readonly ArrayBuilder<Which> _discriminatorStack;
+            private readonly ArrayBuilder<SyntaxNodeOrToken>? _tokenStack;
+            private readonly ArrayBuilder<Which>? _discriminatorStack;
 
             public ThreeEnumeratorListStack(SyntaxNode startingNode, Func<SyntaxNode, bool> descendIntoChildren)
             {

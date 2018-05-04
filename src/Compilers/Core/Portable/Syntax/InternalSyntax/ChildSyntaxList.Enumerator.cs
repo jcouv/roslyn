@@ -8,9 +8,9 @@ namespace Microsoft.CodeAnalysis.Syntax.InternalSyntax
         {
             private readonly GreenNode _node;
             private int _childIndex;
-            private GreenNode _list;
+            private GreenNode? _list;
             private int _listIndex;
-            private GreenNode _currentChild;
+            private GreenNode? _currentChild;
 
             internal Enumerator(GreenNode node)
             {
@@ -84,7 +84,7 @@ namespace Microsoft.CodeAnalysis.Syntax.InternalSyntax
                 return false;
             }
 
-            public GreenNode Current
+            public GreenNode? Current
             {
                 get { return _currentChild; }
             }

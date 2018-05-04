@@ -35,10 +35,10 @@ namespace Roslyn.Utilities
         /// <returns>
         /// The resolved path or null if the path can't be resolved or does not exist.
         /// </returns>
-        internal static string ResolveRelativePath(
+        internal static string? ResolveRelativePath(
             string path,
             string basePath,
-            string baseDirectory,
+            string? baseDirectory,
             IEnumerable<string> searchPaths,
             Func<string, bool> fileExists)
         {
@@ -94,7 +94,7 @@ namespace Roslyn.Utilities
             return ResolveRelativePath(path, null, baseDirectory);
         }
 
-        internal static string ResolveRelativePath(string path, string basePath, string baseDirectory)
+        internal static string ResolveRelativePath(string path, string? basePath, string baseDirectory)
         {
             Debug.Assert(baseDirectory == null || PathUtilities.IsAbsolute(baseDirectory));
             return ResolveRelativePath(PathUtilities.GetPathKind(path), path, basePath, baseDirectory);

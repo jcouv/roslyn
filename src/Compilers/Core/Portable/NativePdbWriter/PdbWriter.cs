@@ -23,7 +23,7 @@ namespace Microsoft.Cci
         internal const uint Age = 1;
 
         private readonly HashAlgorithmName _hashAlgorithmNameOpt;
-        private readonly string _fileName;
+        private readonly string? _fileName;
         private readonly Func<ISymWriterMetadataProvider, SymUnmanagedWriter> _symWriterFactory;
         private readonly Dictionary<DebugSourceDocument, int> _documentIndex;
         private MetadataWriter _metadataWriter;
@@ -37,7 +37,7 @@ namespace Microsoft.Cci
         private bool IsDeterministic { get => _hashAlgorithmNameOpt.Name != null; }
 
 
-        public PdbWriter(string fileName, Func<ISymWriterMetadataProvider, SymUnmanagedWriter> symWriterFactory, HashAlgorithmName hashAlgorithmNameOpt)
+        public PdbWriter(string? fileName, Func<ISymWriterMetadataProvider, SymUnmanagedWriter> symWriterFactory, HashAlgorithmName hashAlgorithmNameOpt)
         {
             _fileName = fileName;
             _symWriterFactory = symWriterFactory;

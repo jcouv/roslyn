@@ -72,7 +72,7 @@ namespace Microsoft.CodeAnalysis
                 private readonly int _count;
 
                 private int _index;
-                private GreenNode _current;
+                private GreenNode? _current;
                 private int _position;
 
                 internal Enumerator(in SyntaxTriviaList list)

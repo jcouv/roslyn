@@ -47,10 +47,10 @@ namespace Microsoft.CodeAnalysis.Syntax.InternalSyntax
                 }
             }
 
-            private NodeIteration[] _stack;
+            private NodeIteration[]? _stack;
             private int _count;
 
-            public DiagnosticInfo Current { get; private set; }
+            public DiagnosticInfo? Current { get; private set; }
 
             internal Enumerator(GreenNode node) 
             {

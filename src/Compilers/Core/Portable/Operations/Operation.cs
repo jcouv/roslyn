@@ -24,7 +24,7 @@ namespace Microsoft.CodeAnalysis
         // but once initialized, will never change
         private IOperation _parentDoNotAccessDirectly;
 
-        public Operation(OperationKind kind, SemanticModel semanticModel, SyntaxNode syntax, ITypeSymbol type, Optional<object> constantValue, bool isImplicit)
+        public Operation(OperationKind kind, SemanticModel semanticModel, SyntaxNode syntax, ITypeSymbol? type, Optional<object> constantValue, bool isImplicit)
         {
             SemanticModel = semanticModel;
 
@@ -69,7 +69,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Result type of the operation, or null if the operation does not produce a result.
         /// </summary>
-        public ITypeSymbol Type { get; }
+        public ITypeSymbol? Type { get; }
 
         /// <summary>
         /// The source language of the IOperation. Possible values are <see cref="LanguageNames.CSharp"/> and <see cref="LanguageNames.VisualBasic"/>.

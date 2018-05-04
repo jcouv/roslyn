@@ -92,7 +92,8 @@ namespace Microsoft.DiaSymReader
 
         private void CloseSymWriter()
         {
-            var symWriter = Interlocked.Exchange(ref _symWriter, null);
+            // PROTOTYPE(NullableDogfood): Interlocked should have been treated as oblivious but wasn't
+            var symWriter = Interlocked.Exchange(ref _symWriter, null!);
             if (symWriter == null)
             {
                 return;

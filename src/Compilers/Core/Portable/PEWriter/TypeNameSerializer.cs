@@ -140,28 +140,28 @@ namespace Microsoft.Cci
 
         private static void AppendAssemblyQualifierIfNecessary(StringBuilder sb, ITypeReference typeReference, out bool isAssemQualified, EmitContext context)
         {
-            INestedTypeReference nestedType = typeReference.AsNestedTypeReference;
+            INestedTypeReference? nestedType = typeReference.AsNestedTypeReference;
             if (nestedType != null)
             {
                 AppendAssemblyQualifierIfNecessary(sb, nestedType.GetContainingType(context), out isAssemQualified, context);
                 return;
             }
 
-            IGenericTypeInstanceReference genInst = typeReference.AsGenericTypeInstanceReference;
+            IGenericTypeInstanceReference? genInst = typeReference.AsGenericTypeInstanceReference;
             if (genInst != null)
             {
                 AppendAssemblyQualifierIfNecessary(sb, genInst.GetGenericType(context), out isAssemQualified, context);
                 return;
             }
 
-            IArrayTypeReference arrType = typeReference as IArrayTypeReference;
+            IArrayTypeReference? arrType = typeReference as IArrayTypeReference;
             if (arrType != null)
             {
                 AppendAssemblyQualifierIfNecessary(sb, arrType.GetElementType(context), out isAssemQualified, context);
                 return;
             }
 
-            IPointerTypeReference pointer = typeReference as IPointerTypeReference;
+            IPointerTypeReference? pointer = typeReference as IPointerTypeReference;
             if (pointer != null)
             {
                 AppendAssemblyQualifierIfNecessary(sb, pointer.GetTargetType(context), out isAssemQualified, context);
@@ -169,8 +169,8 @@ namespace Microsoft.Cci
             }
 
             isAssemQualified = false;
-            IAssemblyReference referencedAssembly = null;
-            INamespaceTypeReference namespaceType = typeReference.AsNamespaceTypeReference;
+            IAssemblyReference? referencedAssembly = null;
+            INamespaceTypeReference? namespaceType = typeReference.AsNamespaceTypeReference;
             if (namespaceType != null)
             {
                 referencedAssembly = namespaceType.GetUnit(context) as IAssemblyReference;
@@ -220,14 +220,14 @@ namespace Microsoft.Cci
         {
             while (true)
             {
-                IArrayTypeReference arrType = typeReference as IArrayTypeReference;
+                IArrayTypeReference? arrType = typeReference as IArrayTypeReference;
                 if (arrType != null)
                 {
                     typeReference = arrType.GetElementType(context);
                     continue;
                 }
 
-                IPointerTypeReference pointer = typeReference as IPointerTypeReference;
+                IPointerTypeReference? pointer = typeReference as IPointerTypeReference;
                 if (pointer != null)
                 {
                     typeReference = pointer.GetTargetType(context);

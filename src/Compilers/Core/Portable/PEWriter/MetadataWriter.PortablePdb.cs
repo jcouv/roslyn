@@ -687,7 +687,7 @@ namespace Microsoft.Cci
             return _debugMetadataOpt.GetOrAddBlob(writer);
         }
 
-        private static DebugSourceDocument TryGetSingleDocument(ImmutableArray<SequencePoint> sequencePoints)
+        private static DebugSourceDocument? TryGetSingleDocument(ImmutableArray<SequencePoint> sequencePoints)
         {
             DebugSourceDocument singleDocument = sequencePoints[0].Document;
             for (int i = 1; i < sequencePoints.Length; i++)

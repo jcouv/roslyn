@@ -348,7 +348,8 @@ namespace Microsoft.CodeAnalysis
             }
             else
             {
-                return null;
+                // PROTOTYPE(NullableDogfood): constrain TNode to class?
+                return null!;
             }
         }
 
@@ -371,7 +372,8 @@ namespace Microsoft.CodeAnalysis
             }
             else
             {
-                return null;
+                // PROTOTYPE(NullableDogfood): TNode should be constrained to class? 
+                return null!;
             }
         }
 

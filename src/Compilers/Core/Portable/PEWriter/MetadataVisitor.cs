@@ -567,56 +567,56 @@ namespace Microsoft.Cci
         /// <param name="typeReference">A reference to a type definition. Note that a type definition can serve as a reference to itself.</param>
         protected void DispatchAsReference(ITypeReference typeReference)
         {
-            INamespaceTypeReference namespaceTypeReference = typeReference.AsNamespaceTypeReference;
+            INamespaceTypeReference? namespaceTypeReference = typeReference.AsNamespaceTypeReference;
             if (namespaceTypeReference != null)
             {
                 this.Visit(namespaceTypeReference);
                 return;
             }
 
-            IGenericTypeInstanceReference genericTypeInstanceReference = typeReference.AsGenericTypeInstanceReference;
+            IGenericTypeInstanceReference? genericTypeInstanceReference = typeReference.AsGenericTypeInstanceReference;
             if (genericTypeInstanceReference != null)
             {
                 this.Visit(genericTypeInstanceReference);
                 return;
             }
 
-            INestedTypeReference nestedTypeReference = typeReference.AsNestedTypeReference;
+            INestedTypeReference? nestedTypeReference = typeReference.AsNestedTypeReference;
             if (nestedTypeReference != null)
             {
                 this.Visit(nestedTypeReference);
                 return;
             }
 
-            IArrayTypeReference arrayTypeReference = typeReference as IArrayTypeReference;
+            IArrayTypeReference? arrayTypeReference = typeReference as IArrayTypeReference;
             if (arrayTypeReference != null)
             {
                 this.Visit(arrayTypeReference);
                 return;
             }
 
-            IGenericTypeParameterReference genericTypeParameterReference = typeReference.AsGenericTypeParameterReference;
+            IGenericTypeParameterReference? genericTypeParameterReference = typeReference.AsGenericTypeParameterReference;
             if (genericTypeParameterReference != null)
             {
                 this.Visit(genericTypeParameterReference);
                 return;
             }
 
-            IGenericMethodParameterReference genericMethodParameterReference = typeReference.AsGenericMethodParameterReference;
+            IGenericMethodParameterReference? genericMethodParameterReference = typeReference.AsGenericMethodParameterReference;
             if (genericMethodParameterReference != null)
             {
                 this.Visit(genericMethodParameterReference);
                 return;
             }
 
-            IPointerTypeReference pointerTypeReference = typeReference as IPointerTypeReference;
+            IPointerTypeReference? pointerTypeReference = typeReference as IPointerTypeReference;
             if (pointerTypeReference != null)
             {
                 this.Visit(pointerTypeReference);
                 return;
             }
 
-            IModifiedTypeReference modifiedTypeReference = typeReference as IModifiedTypeReference;
+            IModifiedTypeReference? modifiedTypeReference = typeReference as IModifiedTypeReference;
             if (modifiedTypeReference != null)
             {
                 this.Visit(modifiedTypeReference);
@@ -645,14 +645,14 @@ namespace Microsoft.Cci
         /// <param name="unitReference">A reference to a unit. Note that a unit can serve as a reference to itself.</param>
         private void DispatchAsReference(IUnitReference unitReference)
         {
-            IAssemblyReference assemblyReference = unitReference as IAssemblyReference;
+            IAssemblyReference? assemblyReference = unitReference as IAssemblyReference;
             if (assemblyReference != null)
             {
                 this.Visit(assemblyReference);
                 return;
             }
 
-            IModuleReference moduleReference = unitReference as IModuleReference;
+            IModuleReference? moduleReference = unitReference as IModuleReference;
             if (moduleReference != null)
             {
                 this.Visit(moduleReference);

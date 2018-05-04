@@ -735,9 +735,9 @@ namespace Microsoft.CodeAnalysis
         private struct ChangeRangeWithText
         {
             public readonly TextChangeRange Range;
-            public readonly string NewText;
+            public readonly string? NewText;
 
-            public ChangeRangeWithText(TextChangeRange range, string newText)
+            public ChangeRangeWithText(TextChangeRange range, string? newText)
             {
                 this.Range = range;
                 this.NewText = newText;
