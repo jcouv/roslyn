@@ -196,7 +196,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         /// </summary>
         public static string? GenerateFullPathToTool(string toolName)
         {
-            string toolLocation = null;
+            string? toolLocation = null;
 
             var buildTask = typeof(Utilities).GetTypeInfo().Assembly;
             var assemblyPath = TryGetAssemblyPath(buildTask);

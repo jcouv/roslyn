@@ -42,25 +42,25 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public string[]? AdditionalLibPaths
         {
             set { _store[nameof(AdditionalLibPaths)] = value; }
-            get { return (string[])_store[nameof(AdditionalLibPaths)]; }
+            get { return (string[]?)_store[nameof(AdditionalLibPaths)]; }
         }
 
         public string[]? AddModules
         {
             set { _store[nameof(AddModules)] = value; }
-            get { return (string[])_store[nameof(AddModules)]; }
+            get { return (string[]?)_store[nameof(AddModules)]; }
         }
 
         public ITaskItem[]? AdditionalFiles
         {
             set { _store[nameof(AdditionalFiles)] = value; }
-            get { return (ITaskItem[])_store[nameof(AdditionalFiles)]; }
+            get { return (ITaskItem[]?)_store[nameof(AdditionalFiles)]; }
         }
 
         public ITaskItem[]? EmbeddedFiles
         {
             set { _store[nameof(EmbeddedFiles)] = value; }
-            get { return (ITaskItem[])_store[nameof(EmbeddedFiles)]; }
+            get { return (ITaskItem[]?)_store[nameof(EmbeddedFiles)]; }
         }
 
         public bool EmbedAllSources
@@ -72,7 +72,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public ITaskItem[]? Analyzers
         {
             set { _store[nameof(Analyzers)] = value; }
-            get { return (ITaskItem[])_store[nameof(Analyzers)]; }
+            get { return (ITaskItem[]?)_store[nameof(Analyzers)]; }
         }
 
         // We do not support BugReport because it always requires user interaction,
@@ -100,7 +100,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public ITaskItem[]? CommandLineArgs
         {
             set { _store[nameof(CommandLineArgs)] = value; }
-            get { return (ITaskItem[])_store[nameof(CommandLineArgs)]; }
+            get { return (ITaskItem[]?)_store[nameof(CommandLineArgs)]; }
         }
 
         public string? DebugType
@@ -193,13 +193,13 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public ITaskItem[]? LinkResources
         {
             set { _store[nameof(LinkResources)] = value; }
-            get { return (ITaskItem[])_store[nameof(LinkResources)]; }
+            get { return (ITaskItem[]?)_store[nameof(LinkResources)]; }
         }
 
         public string? MainEntryPoint
         {
             set { _store[nameof(MainEntryPoint)] = value; }
-            get { return (string)_store[nameof(MainEntryPoint)]; }
+            get { return (string?)_store[nameof(MainEntryPoint)]; }
         }
 
         public bool NoConfig
@@ -261,7 +261,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public ITaskItem[]? References
         {
             set { _store[nameof(References)] = value; }
-            get { return (ITaskItem[])_store[nameof(References)]; }
+            get { return (ITaskItem[]?)_store[nameof(References)]; }
         }
 
         public bool RefOnly
@@ -279,7 +279,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public ITaskItem[]? Resources
         {
             set { _store[nameof(Resources)] = value; }
-            get { return (ITaskItem[])_store[nameof(Resources)]; }
+            get { return (ITaskItem[]?)_store[nameof(Resources)]; }
         }
 
         public string? RuntimeMetadataVersion
@@ -317,7 +317,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
 
                 _store[nameof(Sources)] = value;
             }
-            get { return (ITaskItem[])_store[nameof(Sources)]; }
+            get { return (ITaskItem[]?)_store[nameof(Sources)]; }
         }
 
         public string? SubsystemVersion
@@ -411,7 +411,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public string? LangVersion
         {
             set { _store[nameof(LangVersion)] = value; }
-            get { return (string)_store[nameof(LangVersion)]; }
+            get { return (string?)_store[nameof(LangVersion)]; }
         }
 
         #endregion

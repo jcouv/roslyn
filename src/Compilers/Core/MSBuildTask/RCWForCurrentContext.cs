@@ -34,7 +34,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             // the caching behavior of the marshaled pointer. 
             // See RCW::GetComIPForMethodTableFromCache in ndp\clr\src\VM\RuntimeCallableWrapper.cpp
             IntPtr iunknownPtr = Marshal.GetIUnknownForObject(rcw);
-            Object objInCurrentCtx = null;
+            Object? objInCurrentCtx = null;
 
             try
             {

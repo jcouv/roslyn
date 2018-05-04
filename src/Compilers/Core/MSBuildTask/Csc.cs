@@ -37,13 +37,13 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public string? ApplicationConfiguration
         {
             set { _store[nameof(ApplicationConfiguration)] = value; }
-            get { return (string)_store[nameof(ApplicationConfiguration)]; }
+            get { return (string?)_store[nameof(ApplicationConfiguration)]; }
         }
 
         public string? BaseAddress
         {
             set { _store[nameof(BaseAddress)] = value; }
-            get { return (string)_store[nameof(BaseAddress)]; }
+            get { return (string?)_store[nameof(BaseAddress)]; }
         }
 
         public bool CheckForOverflowUnderflow
@@ -55,13 +55,13 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public string? DocumentationFile
         {
             set { _store[nameof(DocumentationFile)] = value; }
-            get { return (string)_store[nameof(DocumentationFile)]; }
+            get { return (string?)_store[nameof(DocumentationFile)]; }
         }
 
         public string? DisabledWarnings
         {
             set { _store[nameof(DisabledWarnings)] = value; }
-            get { return (string)_store[nameof(DisabledWarnings)]; }
+            get { return (string?)_store[nameof(DisabledWarnings)]; }
         }
 
         public bool ErrorEndLocation
@@ -73,7 +73,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public string? ErrorReport
         {
             set { _store[nameof(ErrorReport)] = value; }
-            get { return (string)_store[nameof(ErrorReport)]; }
+            get { return (string?)_store[nameof(ErrorReport)]; }
         }
 
         public bool GenerateFullPaths
@@ -85,7 +85,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public string? ModuleAssemblyName
         {
             set { _store[nameof(ModuleAssemblyName)] = value; }
-            get { return (string)_store[nameof(ModuleAssemblyName)]; }
+            get { return (string?)_store[nameof(ModuleAssemblyName)]; }
         }
 
         public bool NoStandardLib
@@ -97,7 +97,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public string? PdbFile
         {
             set { _store[nameof(PdbFile)] = value; }
-            get { return (string)_store[nameof(PdbFile)]; }
+            get { return (string?)_store[nameof(PdbFile)]; }
         }
 
         /// <summary>
@@ -110,13 +110,13 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public string? PreferredUILang
         {
             set { _store[nameof(PreferredUILang)] = value; }
-            get { return (string)_store[nameof(PreferredUILang)]; }
+            get { return (string?)_store[nameof(PreferredUILang)]; }
         }
 
         public string? VsSessionGuid
         {
             set { _store[nameof(VsSessionGuid)] = value; }
-            get { return (string)_store[nameof(VsSessionGuid)]; }
+            get { return (string?)_store[nameof(VsSessionGuid)]; }
         }
 
         public bool UseHostCompilerIfAvailable
@@ -134,13 +134,13 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public string? WarningsAsErrors
         {
             set { _store[nameof(WarningsAsErrors)] = value; }
-            get { return (string)_store[nameof(WarningsAsErrors)]; }
+            get { return (string?)_store[nameof(WarningsAsErrors)]; }
         }
 
         public string? WarningsNotAsErrors
         {
             set { _store[nameof(WarningsNotAsErrors)] = value; }
-            get { return (string)_store[nameof(WarningsNotAsErrors)]; }
+            get { return (string?)_store[nameof(WarningsNotAsErrors)]; }
         }
 
         #endregion
@@ -453,7 +453,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
                 CheckHostObjectSupport(param = nameof(Sources), cscHostObject.SetSources(Sources));
 
                 // For host objects which support it, pass the list of analyzers.
-                IAnalyzerHostObject analyzerHostObject = cscHostObject as IAnalyzerHostObject;
+                IAnalyzerHostObject? analyzerHostObject = cscHostObject as IAnalyzerHostObject;
                 if (analyzerHostObject != null)
                 {
                     CheckHostObjectSupport(param = nameof(Analyzers), analyzerHostObject.SetAnalyzers(Analyzers));
@@ -501,7 +501,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
                 CheckHostObjectSupport(param = nameof(PdbFile), cscHostObject.SetPdbFile(PdbFile));
 
                 // For host objects which support it, set platform with 32BitPreference, HighEntropyVA, and SubsystemVersion
-                ICscHostObject4 cscHostObject4 = cscHostObject as ICscHostObject4;
+                ICscHostObject4? cscHostObject4 = cscHostObject as ICscHostObject4;
                 if (cscHostObject4 != null)
                 {
                     CheckHostObjectSupport(param = nameof(PlatformWith32BitPreference), cscHostObject4.SetPlatformWith32BitPreference(PlatformWith32BitPreference));
@@ -514,14 +514,14 @@ namespace Microsoft.CodeAnalysis.BuildTasks
                 }
 
                 // For host objects which support it, set the analyzer ruleset and additional files.
-                IAnalyzerHostObject analyzerHostObject = cscHostObject as IAnalyzerHostObject;
+                IAnalyzerHostObject? analyzerHostObject = cscHostObject as IAnalyzerHostObject;
                 if (analyzerHostObject != null)
                 {
                     CheckHostObjectSupport(param = nameof(CodeAnalysisRuleSet), analyzerHostObject.SetRuleSet(CodeAnalysisRuleSet));
                     CheckHostObjectSupport(param = nameof(AdditionalFiles), analyzerHostObject.SetAdditionalFiles(AdditionalFiles));
                 }
 
-                ICscHostObject5 cscHostObject5 = cscHostObject as ICscHostObject5;
+                ICscHostObject5? cscHostObject5 = cscHostObject as ICscHostObject5;
                 if (cscHostObject5 != null)
                 {
                     // PROTOTYPE(NullableDogfood): Unusre about SetErrorLog API
@@ -724,9 +724,8 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         {
             Debug.Assert(HostObject != null, "We should not be here if the host object has not been set.");
 
-            ICscHostObject cscHostObject = HostObject as ICscHostObject;
-            Debug.Assert(cscHostObject != null, "Wrong kind of host object passed in!");
-            return cscHostObject!.Compile();
+            var cscHostObject = (ICscHostObject)HostObject;
+            return cscHostObject.Compile();
         }
     }
 }

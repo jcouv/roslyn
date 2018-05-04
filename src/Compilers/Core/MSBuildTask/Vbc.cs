@@ -46,25 +46,25 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public string? BaseAddress
         {
             set { _store[nameof(BaseAddress)] = value; }
-            get { return (string)_store[nameof(BaseAddress)]; }
+            get { return (string?)_store[nameof(BaseAddress)]; }
         }
 
         public string? DisabledWarnings
         {
             set { _store[nameof(DisabledWarnings)] = value; }
-            get { return (string)_store[nameof(DisabledWarnings)]; }
+            get { return (string?)_store[nameof(DisabledWarnings)]; }
         }
 
         public string? DocumentationFile
         {
             set { _store[nameof(DocumentationFile)] = value; }
-            get { return (string)_store[nameof(DocumentationFile)]; }
+            get { return (string?)_store[nameof(DocumentationFile)]; }
         }
 
         public string? ErrorReport
         {
             set { _store[nameof(ErrorReport)] = value; }
-            get { return (string)_store[nameof(ErrorReport)]; }
+            get { return (string?)_store[nameof(ErrorReport)]; }
         }
 
         public bool GenerateDocumentation
@@ -76,13 +76,13 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public ITaskItem[]? Imports
         {
             set { _store[nameof(Imports)] = value; }
-            get { return (ITaskItem[])_store[nameof(Imports)]; }
+            get { return (ITaskItem[]?)_store[nameof(Imports)]; }
         }
 
         public string? ModuleAssemblyName
         {
             set { _store[nameof(ModuleAssemblyName)] = value; }
-            get { return (string)_store[nameof(ModuleAssemblyName)]; }
+            get { return (string?)_store[nameof(ModuleAssemblyName)]; }
         }
 
         public bool NoStandardLib
@@ -111,7 +111,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public string? OptionCompare
         {
             set { _store[nameof(OptionCompare)] = value; }
-            get { return (string)_store[nameof(OptionCompare)]; }
+            get { return (string?)_store[nameof(OptionCompare)]; }
         }
 
         public bool OptionExplicit
@@ -136,7 +136,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public string? OptionStrictType
         {
             set { _store[nameof(OptionStrictType)] = value; }
-            get { return (string)_store[nameof(OptionStrictType)]; }
+            get { return (string?)_store[nameof(OptionStrictType)]; }
         }
 
         public bool RemoveIntegerChecks
@@ -148,13 +148,13 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public string? RootNamespace
         {
             set { _store[nameof(RootNamespace)] = value; }
-            get { return (string)_store[nameof(RootNamespace)]; }
+            get { return (string?)_store[nameof(RootNamespace)]; }
         }
 
         public string? SdkPath
         {
             set { _store[nameof(SdkPath)] = value; }
-            get { return (string)_store[nameof(SdkPath)]; }
+            get { return (string?)_store[nameof(SdkPath)]; }
         }
 
         /// <summary>
@@ -167,13 +167,13 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public string? PreferredUILang
         {
             set { _store[nameof(PreferredUILang)] = value; }
-            get { return (string)_store[nameof(PreferredUILang)]; }
+            get { return (string?)_store[nameof(PreferredUILang)]; }
         }
 
         public string? VsSessionGuid
         {
             set { _store[nameof(VsSessionGuid)] = value; }
-            get { return (string)_store[nameof(VsSessionGuid)]; }
+            get { return (string?)_store[nameof(VsSessionGuid)]; }
         }
 
         public bool TargetCompactFramework
@@ -191,37 +191,37 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         public string? VBRuntimePath
         {
             set { _store[nameof(VBRuntimePath)] = value; }
-            get { return (string)_store[nameof(VBRuntimePath)]; }
+            get { return (string?)_store[nameof(VBRuntimePath)]; }
         }
 
         public string? Verbosity
         {
             set { _store[nameof(Verbosity)] = value; }
-            get { return (string)_store[nameof(Verbosity)]; }
+            get { return (string?)_store[nameof(Verbosity)]; }
         }
 
         public string? WarningsAsErrors
         {
             set { _store[nameof(WarningsAsErrors)] = value; }
-            get { return (string)_store[nameof(WarningsAsErrors)]; }
+            get { return (string?)_store[nameof(WarningsAsErrors)]; }
         }
 
         public string? WarningsNotAsErrors
         {
             set { _store[nameof(WarningsNotAsErrors)] = value; }
-            get { return (string)_store[nameof(WarningsNotAsErrors)]; }
+            get { return (string?)_store[nameof(WarningsNotAsErrors)]; }
         }
 
         public string? VBRuntime
         {
             set { _store[nameof(VBRuntime)] = value; }
-            get { return (string)_store[nameof(VBRuntime)]; }
+            get { return (string?)_store[nameof(VBRuntime)]; }
         }
 
         public string? PdbFile
         {
             set { _store[nameof(PdbFile)] = value; }
-            get { return (string)_store[nameof(PdbFile)]; }
+            get { return (string?)_store[nameof(PdbFile)]; }
         }
         #endregion
 
@@ -336,7 +336,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         /// </summary>
         internal string? GetBaseAddressInHex()
         {
-            string originalBaseAddress = this.BaseAddress;
+            string? originalBaseAddress = this.BaseAddress;
 
             if (originalBaseAddress != null)
             {
@@ -409,7 +409,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
              */
 
             // Decide whether we are Option Strict+ or Option Strict:custom
-            object optionStrictSetting = this._store["OptionStrict"];
+            object? optionStrictSetting = this._store["OptionStrict"];
             bool optionStrict = optionStrictSetting != null ? (bool)optionStrictSetting : false;
             if (optionStrict)
             {
@@ -700,7 +700,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
                         return;
                     }
 
-                    string newLine = null;
+                    string? newLine = null;
                     newLine = originalVBErrorString.Substring(0, endParenthesisLocation) + "," + column + originalVBErrorString.Substring(endParenthesisLocation);
 
                     // Output all of the lines of the error, but with the modified first line as well.
@@ -715,7 +715,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             }
             else
             {
-                CanonicalError.Parts parts = CanonicalError.Parse(singleLine);
+                CanonicalError.Parts? parts = CanonicalError.Parse(singleLine);
                 if (parts == null)
                 {
                     base.LogEventsFromTextOutput(singleLine, messageImportance);
@@ -815,7 +815,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
                 CheckHostObjectSupport(param = nameof(AddModules), vbcHostObject.SetAddModules(AddModules));
 
                 // For host objects which support them, set the analyzers, ruleset and additional files.
-                IAnalyzerHostObject analyzerHostObject = vbcHostObject as IAnalyzerHostObject;
+                IAnalyzerHostObject? analyzerHostObject = vbcHostObject as IAnalyzerHostObject;
                 if (analyzerHostObject != null)
                 {
                     CheckHostObjectSupport(param = nameof(Analyzers), analyzerHostObject.SetAnalyzers(Analyzers));
@@ -847,7 +847,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
                 CheckHostObjectSupport(param = nameof(OutputAssembly), vbcHostObject.SetOutputAssembly(OutputAssembly?.ItemSpec));
 
                 // For host objects which support them, set platform with 32BitPreference, HighEntropyVA, and SubsystemVersion
-                IVbcHostObject5 vbcHostObject5 = vbcHostObject as IVbcHostObject5;
+                IVbcHostObject5? vbcHostObject5 = vbcHostObject as IVbcHostObject5;
                 if (vbcHostObject5 != null)
                 {
                     CheckHostObjectSupport(param = nameof(PlatformWith32BitPreference), vbcHostObject5.SetPlatformWith32BitPreference(PlatformWith32BitPreference));
@@ -859,7 +859,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
                     CheckHostObjectSupport(param = nameof(Platform), vbcHostObject.SetPlatform(Platform));
                 }
 
-                IVbcHostObject6 vbcHostObject6 = vbcHostObject as IVbcHostObject6;
+                IVbcHostObject6? vbcHostObject6 = vbcHostObject as IVbcHostObject6;
                 if (vbcHostObject6 != null)
                 {
                     // PROTOTYPE(NullableDogfood): Unsure

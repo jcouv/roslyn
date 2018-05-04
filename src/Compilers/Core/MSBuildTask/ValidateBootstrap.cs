@@ -52,7 +52,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             var comparer = StringComparer.OrdinalIgnoreCase;
             foreach (var dependency in dependencies)
             {
-                var path = GetDirectory(dependency);
+                string? path = GetDirectory(dependency);
                 path = NormalizePath(path);
                 if (!comparer.Equals(path, toolsPath))
                 {

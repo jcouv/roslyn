@@ -24,7 +24,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             string parameterName
             )
         {
-            object obj = bag[parameterName];
+            object? obj = bag[parameterName];
             // If the switch isn't set, don't add it to the command line.
             if (obj != null)
             {
@@ -47,7 +47,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             string parameterName
             )
         {
-            object obj = bag[parameterName];
+            object? obj = bag[parameterName];
             // If the switch isn't set, don't add it to the command line.
             if (obj != null)
             {
@@ -70,7 +70,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             string choice2
             )
         {
-            object obj = bag[parameterName];
+            object? obj = bag[parameterName];
             // If the switch isn't set, don't add it to the command line.
             if (obj != null)
             {
@@ -89,7 +89,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             string parameterName
             )
         {
-            object obj = bag[parameterName];
+            object? obj = bag[parameterName];
             // If the switch isn't set, don't add it to the command line.
             if (obj != null)
             {
