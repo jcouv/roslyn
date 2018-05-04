@@ -56,7 +56,7 @@ namespace Microsoft.CodeAnalysis
             public readonly int MappedLine;
 
             // raw value from #line or #ExternalDirective, may be null
-            public readonly string MappedPathOpt;
+            public readonly string? MappedPathOpt;
 
             // the state of this line
             public readonly PositionState State;

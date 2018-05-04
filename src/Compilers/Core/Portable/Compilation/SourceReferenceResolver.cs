@@ -25,7 +25,7 @@ namespace Microsoft.CodeAnalysis
         /// <param name="path">The source path to normalize. May be absolute or relative.</param>
         /// <param name="baseFilePath">Path of the source file that contains the <paramref name="path"/> (may also be relative), or null if not available.</param>
         /// <returns>Normalized path, or null if <paramref name="path"/> can't be normalized. The resulting path doesn't need to exist.</returns>
-        public abstract string NormalizePath(string path, string baseFilePath);
+        public abstract string NormalizePath(string path, string? baseFilePath);
 
         /// <summary>
         /// Resolves specified path with respect to base file path.
@@ -33,7 +33,7 @@ namespace Microsoft.CodeAnalysis
         /// <param name="path">The path to resolve. May be absolute or relative.</param>
         /// <param name="baseFilePath">Path of the source file that contains the <paramref name="path"/> (may also be relative), or null if not available.</param>
         /// <returns>Normalized path, or null if the file can't be resolved.</returns>
-        public abstract string ResolveReference(string path, string baseFilePath);
+        public abstract string ResolveReference(string path, string? baseFilePath);
 
         /// <summary>
         /// Opens a <see cref="Stream"/> that allows reading the content of the specified file.
@@ -42,7 +42,7 @@ namespace Microsoft.CodeAnalysis
         /// <exception cref="ArgumentNullException"><paramref name="resolvedPath"/> is null.</exception>
         /// <exception cref="ArgumentException"><paramref name="resolvedPath"/> is not a valid absolute path.</exception>
         /// <exception cref="IOException">Error reading file <paramref name="resolvedPath"/>. See <see cref="Exception.InnerException"/> for details.</exception>
-        public abstract Stream OpenRead(string resolvedPath);
+        public abstract Stream? OpenRead(string resolvedPath);
 
         internal Stream OpenReadChecked(string fullPath)
         {

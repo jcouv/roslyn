@@ -425,10 +425,10 @@ namespace Microsoft.Cci
         private bool _tableIndicesAreComplete;
 
         private EntityHandle[] _pseudoSymbolTokenToTokenMap;
-        private IReference[] _pseudoSymbolTokenToReferenceMap;
+        private IReference?[] _pseudoSymbolTokenToReferenceMap;
         private UserStringHandle[] _pseudoStringTokenToTokenMap;
         private bool _userStringTokenOverflow;
-        private List<string> _pseudoStringTokenToStringMap;
+        private List<string?> _pseudoStringTokenToStringMap;
         private ReferenceIndexer _referenceVisitor;
 
         protected readonly MetadataBuilder metadata;
@@ -2892,7 +2892,7 @@ namespace Microsoft.Cci
             {
                 _cancellationToken.ThrowIfCancellationRequested();
                 int bodyOffset;
-                IMethodBody body;
+                IMethodBody? body;
                 StandaloneSignatureHandle localSignatureHandleOpt;
 
                 if (method.HasBody())
@@ -3441,7 +3441,7 @@ namespace Microsoft.Cci
             else
             {
                 ScalarEncoder scalarEncoder;
-                MetadataConstant c = expression as MetadataConstant;
+                MetadataConstant? c = expression as MetadataConstant;
 
                 if (this.module.IsPlatformType(targetType, PlatformType.SystemObject))
                 {
@@ -3502,7 +3502,7 @@ namespace Microsoft.Cci
                     writer.WriteUInt16(0); // padding
 
                     object marshaller = marshallingInformation.GetCustomMarshaller(Context);
-                    ITypeReference marshallerTypeRef = marshaller as ITypeReference;
+                    ITypeReference? marshallerTypeRef = marshaller as ITypeReference;
                     if (marshallerTypeRef != null)
                     {
                         this.SerializeTypeName(marshallerTypeRef, writer);

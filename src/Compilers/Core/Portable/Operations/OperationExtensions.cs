@@ -14,7 +14,7 @@ namespace Microsoft.CodeAnalysis.Operations
         /// <summary>
         /// This will check whether context around the operation has any error such as syntax or semantic error
         /// </summary>
-        internal static bool HasErrors(this IOperation operation, Compilation compilation, CancellationToken cancellationToken = default(CancellationToken))
+        internal static bool HasErrors(this IOperation? operation, Compilation? compilation, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (operation == null)
             {
@@ -55,7 +55,7 @@ namespace Microsoft.CodeAnalysis.Operations
             return Descendants(operation, includeSelf: true);
         }
 
-        private static IEnumerable<IOperation> Descendants(IOperation operation, bool includeSelf)
+        private static IEnumerable<IOperation> Descendants(IOperation? operation, bool includeSelf)
         {
             if (operation == null)
             {
@@ -99,7 +99,7 @@ namespace Microsoft.CodeAnalysis.Operations
         /// Gets all the declared local variables in the given <paramref name="declarationGroup"/>.
         /// </summary>
         /// <param name="declarationGroup">Variable declaration group</param>
-        public static ImmutableArray<ILocalSymbol> GetDeclaredVariables(this IVariableDeclarationGroupOperation declarationGroup)
+        public static ImmutableArray<ILocalSymbol> GetDeclaredVariables(this IVariableDeclarationGroupOperation? declarationGroup)
         {
             if (declarationGroup == null)
             {
@@ -119,7 +119,7 @@ namespace Microsoft.CodeAnalysis.Operations
         /// Gets all the declared local variables in the given <paramref name="declaration"/>.
         /// </summary>
         /// <param name="declaration">Variable declaration</param>
-        public static ImmutableArray<ILocalSymbol> GetDeclaredVariables(this IVariableDeclarationOperation declaration)
+        public static ImmutableArray<ILocalSymbol> GetDeclaredVariables(this IVariableDeclarationOperation? declaration)
         {
             if (declaration == null)
             {
@@ -144,7 +144,7 @@ namespace Microsoft.CodeAnalysis.Operations
         /// if the single variable initializer is null.
         /// </summary>
         /// <param name="declarationOperation">Single variable declaration to retrieve initializer for.</param>
-        public static IVariableInitializerOperation GetVariableInitializer(this IVariableDeclaratorOperation declarationOperation)
+        public static IVariableInitializerOperation? GetVariableInitializer(this IVariableDeclaratorOperation? declarationOperation)
         {
             if (declarationOperation == null)
             {
@@ -159,7 +159,7 @@ namespace Microsoft.CodeAnalysis.Operations
         /// </summary>
         /// <param name="dynamicOperation">Dynamic or late bound operation.</param>
         /// <param name="index">Argument index.</param>
-        public static string GetArgumentName(this IDynamicInvocationOperation dynamicOperation, int index)
+        public static string GetArgumentName(this IDynamicInvocationOperation? dynamicOperation, int index)
         {
             if (dynamicOperation == null)
             {
@@ -174,7 +174,7 @@ namespace Microsoft.CodeAnalysis.Operations
         /// </summary>
         /// <param name="dynamicOperation">Dynamic or late bound operation.</param>
         /// <param name="index">Argument index.</param>
-        public static string GetArgumentName(this IDynamicIndexerAccessOperation dynamicOperation, int index)
+        public static string GetArgumentName(this IDynamicIndexerAccessOperation? dynamicOperation, int index)
         {
             if (dynamicOperation == null)
             {
@@ -189,7 +189,7 @@ namespace Microsoft.CodeAnalysis.Operations
         /// </summary>
         /// <param name="dynamicOperation">Dynamic or late bound operation.</param>
         /// <param name="index">Argument index.</param>
-        public static string GetArgumentName(this IDynamicObjectCreationOperation dynamicOperation, int index)
+        public static string? GetArgumentName(this IDynamicObjectCreationOperation? dynamicOperation, int index)
         {
             if (dynamicOperation == null)
             {
@@ -227,7 +227,7 @@ namespace Microsoft.CodeAnalysis.Operations
         /// </summary>
         /// <param name="dynamicOperation">Dynamic or late bound operation.</param>
         /// <param name="index">Argument index.</param>
-        public static RefKind? GetArgumentRefKind(this IDynamicInvocationOperation dynamicOperation, int index)
+        public static RefKind? GetArgumentRefKind(this IDynamicInvocationOperation? dynamicOperation, int index)
         {
             if (dynamicOperation == null)
             {
@@ -244,7 +244,7 @@ namespace Microsoft.CodeAnalysis.Operations
         /// </summary>
         /// <param name="dynamicOperation">Dynamic or late bound operation.</param>
         /// <param name="index">Argument index.</param>
-        public static RefKind? GetArgumentRefKind(this IDynamicIndexerAccessOperation dynamicOperation, int index)
+        public static RefKind? GetArgumentRefKind(this IDynamicIndexerAccessOperation? dynamicOperation, int index)
         {
             if (dynamicOperation == null)
             {
@@ -261,7 +261,7 @@ namespace Microsoft.CodeAnalysis.Operations
         /// </summary>
         /// <param name="dynamicOperation">Dynamic or late bound operation.</param>
         /// <param name="index">Argument index.</param>
-        public static RefKind? GetArgumentRefKind(this IDynamicObjectCreationOperation dynamicOperation, int index)
+        public static RefKind? GetArgumentRefKind(this IDynamicObjectCreationOperation? dynamicOperation, int index)
         {
             if (dynamicOperation == null)
             {

@@ -85,7 +85,7 @@ namespace Microsoft.Cci
         /// <summary>
         /// The method used to call the event handlers when the event occurs. May be null.
         /// </summary>
-        IMethodReference/*?*/ Caller { get; }
+        IMethodReference? Caller { get; }
 
         /// <summary>
         /// True if the event gets special treatment from the runtime.
@@ -373,7 +373,7 @@ namespace Microsoft.Cci
         /// the namespace type name. For instance namespace type x.y.z will have two namespace scopes, the first is for the x and the second
         /// is for the y.
         /// </remarks>
-        IImportScope ImportScope { get; }
+        IImportScope? ImportScope { get; }
 
         DebugId MethodId { get; }
 
@@ -397,7 +397,7 @@ namespace Microsoft.Cci
         /// The name of the state machine generated for the method, 
         /// or null if the method isn't the kickoff method of a state machine.
         /// </summary>
-        string StateMachineTypeName { get; }
+        string? StateMachineTypeName { get; }
 
         /// <summary>
         /// Returns information relevant to EnC on slots of local variables hoisted to state machine fields, 
@@ -428,7 +428,7 @@ namespace Microsoft.Cci
         /// <remarks>
         /// When emitting metadata-only assemblies this returns null even if <see cref="Cci.Extensions.HasBody"/> returns true.
         /// </remarks>
-        IMethodBody GetBody(EmitContext context);
+        IMethodBody? GetBody(EmitContext context);
 
         /// <summary>
         /// If the method is generic then this list contains the type parameters.
@@ -593,7 +593,7 @@ namespace Microsoft.Cci
         /// A compile time constant value that should be supplied as the corresponding argument value by callers that do not explicitly specify an argument value for this parameter.
         /// Null if the parameter doesn't have default value.
         /// </summary>
-        MetadataConstant GetDefaultValue(EmitContext context);
+        MetadataConstant? GetDefaultValue(EmitContext context);
 
         /// <summary>
         /// True if the parameter has a default value that should be supplied as the argument value by a caller for which the argument value has not been explicitly specified.
@@ -666,7 +666,7 @@ namespace Microsoft.Cci
         /// <summary>
         /// The method used to get the value of this property. May be absent (null).
         /// </summary>
-        IMethodReference/*?*/ Getter { get; }
+        IMethodReference? Getter { get; }
 
         /// <summary>
         /// True if this property has a compile time constant associated with that serves as a default value for the property. (Who uses this and why?)
@@ -691,7 +691,7 @@ namespace Microsoft.Cci
         /// <summary>
         /// The method used to set the value of this property. May be absent (null).
         /// </summary>
-        IMethodReference/*?*/ Setter { get; }
+        IMethodReference? Setter { get; }
     }
 
     /// <summary>
@@ -751,7 +751,7 @@ namespace Microsoft.Cci
         /// <summary>
         /// The type definition that contains this member.
         /// </summary>
-        ITypeDefinition ContainingTypeDefinition { get; }
+        ITypeDefinition? ContainingTypeDefinition { get; }
 
         /// <summary>
         /// Indicates if the member is public or confined to its containing type, derived types and/or declaring assembly.

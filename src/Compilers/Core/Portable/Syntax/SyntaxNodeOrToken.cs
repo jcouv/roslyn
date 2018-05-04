@@ -23,10 +23,10 @@ namespace Microsoft.CodeAnalysis
     {
         // In a case if we are wrapping a SyntaxNode this is the SyntaxNode itself.
         // In a case where we are wrapping a token, this is the token's parent.
-        private readonly SyntaxNode _nodeOrParent;
+        private readonly SyntaxNode? _nodeOrParent;
 
         // Green node for the token. 
-        private readonly GreenNode _token;
+        private readonly GreenNode? _token;
 
         // Used in both node and token cases.
         // When we have a node, _position == _nodeOrParent.Position.
@@ -37,7 +37,7 @@ namespace Microsoft.CodeAnalysis
         // For regular nodes it is set to -1 to distinguish from default(SyntaxToken)
         private readonly int _tokenIndex;
 
-        internal SyntaxNodeOrToken(SyntaxNode node)
+        internal SyntaxNodeOrToken(SyntaxNode? node)
             : this()
         {
             if (node != null)
@@ -50,7 +50,7 @@ namespace Microsoft.CodeAnalysis
             _tokenIndex = -1;
         }
 
-        internal SyntaxNodeOrToken(SyntaxNode parent, GreenNode token, int position, int index)
+        internal SyntaxNodeOrToken(SyntaxNode? parent, GreenNode? token, int position, int index)
         {
             Debug.Assert(parent == null || !parent.Green.IsList, "parent cannot be a list");
             Debug.Assert(token != null || (parent == null && position == 0 && index == 0), "parts must form a token");
@@ -124,7 +124,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// The node that contains the underlying node or token in its Children collection.
         /// </summary>
-        public SyntaxNode Parent => _token != null ? _nodeOrParent : _nodeOrParent?.Parent;
+        public SyntaxNode? Parent => _token != null ? _nodeOrParent : _nodeOrParent?.Parent;
 
         internal GreenNode UnderlyingNode => _token ?? _nodeOrParent?.Green;
 
@@ -164,7 +164,7 @@ namespace Microsoft.CodeAnalysis
         /// <returns>
         /// The underlying node if this <see cref="SyntaxNodeOrToken"/> is wrapping a node.
         /// </returns>
-        public SyntaxNode AsNode()
+        public SyntaxNode? AsNode()
         {
             if (_token != null)
             {

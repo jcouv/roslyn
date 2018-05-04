@@ -706,7 +706,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         /// <summary>
         /// Return a task that completes when the driver is initialized.
         /// </summary>
-        public Task WhenInitializedTask => _initializeTask;
+        public Task? WhenInitializedTask => _initializeTask;
 
         /// <summary>
         /// Return a task that completes when the driver is done producing diagnostics.

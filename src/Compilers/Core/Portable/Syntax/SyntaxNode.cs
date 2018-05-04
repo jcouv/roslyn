@@ -24,7 +24,7 @@ namespace Microsoft.CodeAnalysis
         private readonly SyntaxNode? _parent;
         internal SyntaxTree _syntaxTree;
 
-        internal SyntaxNode(GreenNode green, SyntaxNode parent, int position)
+        internal SyntaxNode(GreenNode green, SyntaxNode? parent, int position)
         {
             Debug.Assert(position >= 0, "position cannot be negative");
             Debug.Assert(parent?.Green.IsList != true, "list cannot be a parent");
@@ -129,8 +129,9 @@ namespace Microsoft.CodeAnalysis
         /// somewhat more efficient.</remarks>
         internal int FullWidth => this.Green.FullWidth;
 
+        // PROTOTYPE(NullableDogfood): Some annotation on field would be useful 
         // this is used in cases where we know that a child is a node of particular type.
-        internal SyntaxNode GetRed(ref SyntaxNode field, int slot)
+        internal SyntaxNode GetRed(ref SyntaxNode? field, int slot)
         {
             var result = field;
 
@@ -139,6 +140,7 @@ namespace Microsoft.CodeAnalysis
                 var green = this.Green.GetSlot(slot);
                 if (green != null)
                 {
+                    // PROTOTYPE(NullableDogfood): Some annotation on CompareExchange would be useful 
                     Interlocked.CompareExchange(ref field, green.CreateRed(this, this.GetChildPosition(slot)), null);
                     result = field;
                 }
@@ -147,8 +149,9 @@ namespace Microsoft.CodeAnalysis
             return result;
         }
 
+        // PROTOTYPE(NullableDogfood): Some annotation on field would be useful 
         // special case of above function where slot = 0, does not need GetChildPosition 
-        internal SyntaxNode GetRedAtZero(ref SyntaxNode field)
+        internal SyntaxNode GetRedAtZero(ref SyntaxNode? field)
         {
             var result = field;
 
@@ -157,6 +160,7 @@ namespace Microsoft.CodeAnalysis
                 var green = this.Green.GetSlot(0);
                 if (green != null)
                 {
+                    // PROTOTYPE(NullableDogfood): Some annotation on CompareExchange would be useful 
                     Interlocked.CompareExchange(ref field, green.CreateRed(this, this.Position), null);
                     result = field;
                 }
@@ -165,7 +169,7 @@ namespace Microsoft.CodeAnalysis
             return result;
         }
 
-        protected T GetRed<T>(ref T field, int slot) where T : SyntaxNode
+        protected T GetRed<T>(ref T? field, int slot) where T : SyntaxNode
         {
             var result = field;
 
@@ -183,7 +187,7 @@ namespace Microsoft.CodeAnalysis
         }
 
         // special case of above function where slot = 0, does not need GetChildPosition 
-        protected T GetRedAtZero<T>(ref T field) where T : SyntaxNode
+        protected T GetRedAtZero<T>(ref T? field) where T : SyntaxNode
         {
             var result = field;
 
@@ -205,7 +209,7 @@ namespace Microsoft.CodeAnalysis
         /// The only difference is that the public parent of the node is not the list, 
         /// but the list's parent. (element's grand parent).
         /// </summary>
-        internal SyntaxNode GetRedElement(ref SyntaxNode element, int slot)
+        internal SyntaxNode GetRedElement(ref SyntaxNode? element, int slot)
         {
             Debug.Assert(this.IsList);
 
@@ -225,7 +229,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// special cased helper for 2 and 3 children lists where child #1 may map to a token
         /// </summary>
-        internal SyntaxNode GetRedElementIfNotToken(ref SyntaxNode element)
+        internal SyntaxNode GetRedElementIfNotToken(ref SyntaxNode? element)
         {
             Debug.Assert(this.IsList);
 
@@ -245,9 +249,9 @@ namespace Microsoft.CodeAnalysis
             return result;
         }
 
-        internal SyntaxNode GetWeakRedElement(ref WeakReference<SyntaxNode> slot, int index)
+        internal SyntaxNode GetWeakRedElement(ref WeakReference<SyntaxNode>? slot, int index)
         {
-            SyntaxNode value = null;
+            SyntaxNode? value = null;
             if (slot?.TryGetTarget(out value) == true)
             {
                 return value;
@@ -257,7 +261,7 @@ namespace Microsoft.CodeAnalysis
         }
 
         // handle a miss
-        private SyntaxNode CreateWeakItem(ref WeakReference<SyntaxNode> slot, int index)
+        private SyntaxNode CreateWeakItem(ref WeakReference<SyntaxNode>? slot, int index)
         {
             var greenChild = this.Green.GetSlot(index);
             var newNode = greenChild.CreateRed(this.Parent, GetChildPosition(index));
@@ -320,7 +324,7 @@ namespace Microsoft.CodeAnalysis
         /// Hash algorithm to use to calculate checksum of the text that's saved to PDB.
         /// </param>
         /// <exception cref="ArgumentException"><paramref name="checksumAlgorithm"/> is not supported.</exception>
-        public SourceText GetText(Encoding encoding = null, SourceHashAlgorithm checksumAlgorithm = SourceHashAlgorithm.Sha1)
+        public SourceText GetText(Encoding? encoding = null, SourceHashAlgorithm checksumAlgorithm = SourceHashAlgorithm.Sha1)
         {
             var builder = new StringBuilder();
             this.WriteTo(new StringWriter(builder));
@@ -330,7 +334,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Determine whether this node is structurally equivalent to another.
         /// </summary>
-        public bool IsEquivalentTo(SyntaxNode other)
+        public bool IsEquivalentTo(SyntaxNode? other)
         {
             if (this == other)
             {
@@ -364,6 +368,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         public bool IsPartOfStructuredTrivia()
         {
+            // PROTOTYPE(NullableDogfood): I expect a warning here, as this var is non-nullable
             for (var node = this; node != null; node = node.Parent)
             {
                 if (node.IsStructuredTrivia)
@@ -431,7 +436,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Determines if the specified node is a descendant of this node.
         /// </summary>
-        public bool Contains(SyntaxNode node)
+        public bool Contains(SyntaxNode? node)
         {
             if (node == null || !this.FullSpan.Contains(node.FullSpan))
             {
@@ -488,7 +493,7 @@ namespace Microsoft.CodeAnalysis
         /// Gets a node at given node index without forcing its creation.
         /// If node was not created it would return null.
         /// </summary>
-        internal abstract SyntaxNode GetCachedSlot(int index);
+        internal abstract SyntaxNode? GetCachedSlot(int index);
 
         internal int GetChildIndex(int slot)
         {
@@ -672,13 +677,14 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         public IEnumerable<SyntaxNode> AncestorsAndSelf(bool ascendOutOfTrivia = true)
         {
+            // PROTOTYPE(NullableDogfood): I expect a warning here for var that is non-nullable
             for (var node = this; node != null; node = GetParent(node, ascendOutOfTrivia))
             {
                 yield return node;
             }
         }
 
-        private static SyntaxNode GetParent(SyntaxNode node, bool ascendOutOfTrivia)
+        private static SyntaxNode? GetParent(SyntaxNode node, bool ascendOutOfTrivia)
         {
             var parent = node.Parent;
             if (parent == null && ascendOutOfTrivia)
@@ -696,7 +702,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Gets the first node of type TNode that matches the predicate.
         /// </summary>
-        public TNode FirstAncestorOrSelf<TNode>(Func<TNode, bool> predicate = null, bool ascendOutOfTrivia = true)
+        public TNode FirstAncestorOrSelf<TNode>(Func<TNode, bool>? predicate = null, bool ascendOutOfTrivia = true)
             where TNode : SyntaxNode
         {
             for (var node = this; node != null; node = GetParent(node, ascendOutOfTrivia))
@@ -716,7 +722,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         /// <param name="descendIntoChildren">An optional function that determines if the search descends into the argument node's children.</param>
         /// <param name="descendIntoTrivia">Determines if nodes that are part of structured trivia are included in the list.</param>
-        public IEnumerable<SyntaxNode> DescendantNodes(Func<SyntaxNode, bool> descendIntoChildren = null, bool descendIntoTrivia = false)
+        public IEnumerable<SyntaxNode> DescendantNodes(Func<SyntaxNode, bool>? descendIntoChildren = null, bool descendIntoTrivia = false)
         {
             return DescendantNodesImpl(this.FullSpan, descendIntoChildren, descendIntoTrivia, includeSelf: false);
         }
@@ -727,7 +733,7 @@ namespace Microsoft.CodeAnalysis
         /// <param name="span">The span the node's full span must intersect.</param>
         /// <param name="descendIntoChildren">An optional function that determines if the search descends into the argument node's children.</param>
         /// <param name="descendIntoTrivia">Determines if nodes that are part of structured trivia are included in the list.</param>
-        public IEnumerable<SyntaxNode> DescendantNodes(TextSpan span, Func<SyntaxNode, bool> descendIntoChildren = null, bool descendIntoTrivia = false)
+        public IEnumerable<SyntaxNode> DescendantNodes(TextSpan span, Func<SyntaxNode, bool>? descendIntoChildren = null, bool descendIntoTrivia = false)
         {
             return DescendantNodesImpl(span, descendIntoChildren, descendIntoTrivia, includeSelf: false);
         }
@@ -737,7 +743,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         /// <param name="descendIntoChildren">An optional function that determines if the search descends into the argument node's children.</param>
         /// <param name="descendIntoTrivia">Determines if nodes that are part of structured trivia are included in the list.</param>
-        public IEnumerable<SyntaxNode> DescendantNodesAndSelf(Func<SyntaxNode, bool> descendIntoChildren = null, bool descendIntoTrivia = false)
+        public IEnumerable<SyntaxNode> DescendantNodesAndSelf(Func<SyntaxNode, bool>? descendIntoChildren = null, bool descendIntoTrivia = false)
         {
             return DescendantNodesImpl(this.FullSpan, descendIntoChildren, descendIntoTrivia, includeSelf: true);
         }
@@ -748,7 +754,7 @@ namespace Microsoft.CodeAnalysis
         /// <param name="span">The span the node's full span must intersect.</param>
         /// <param name="descendIntoChildren">An optional function that determines if the search descends into the argument node's children.</param>
         /// <param name="descendIntoTrivia">Determines if nodes that are part of structured trivia are included in the list.</param>
-        public IEnumerable<SyntaxNode> DescendantNodesAndSelf(TextSpan span, Func<SyntaxNode, bool> descendIntoChildren = null, bool descendIntoTrivia = false)
+        public IEnumerable<SyntaxNode> DescendantNodesAndSelf(TextSpan span, Func<SyntaxNode, bool>? descendIntoChildren = null, bool descendIntoTrivia = false)
         {
             return DescendantNodesImpl(span, descendIntoChildren, descendIntoTrivia, includeSelf: true);
         }
@@ -758,7 +764,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         /// <param name="descendIntoChildren">An optional function that determines if the search descends into the argument node's children.</param>
         /// <param name="descendIntoTrivia">Determines if nodes that are part of structured trivia are included in the list.</param>
-        public IEnumerable<SyntaxNodeOrToken> DescendantNodesAndTokens(Func<SyntaxNode, bool> descendIntoChildren = null, bool descendIntoTrivia = false)
+        public IEnumerable<SyntaxNodeOrToken> DescendantNodesAndTokens(Func<SyntaxNode, bool>? descendIntoChildren = null, bool descendIntoTrivia = false)
         {
             return DescendantNodesAndTokensImpl(this.FullSpan, descendIntoChildren, descendIntoTrivia, includeSelf: false);
         }
@@ -769,7 +775,7 @@ namespace Microsoft.CodeAnalysis
         /// <param name="span">The span the node's full span must intersect.</param>
         /// <param name="descendIntoChildren">An optional function that determines if the search descends into the argument node's children.</param>
         /// <param name="descendIntoTrivia">Determines if nodes that are part of structured trivia are included in the list.</param>
-        public IEnumerable<SyntaxNodeOrToken> DescendantNodesAndTokens(TextSpan span, Func<SyntaxNode, bool> descendIntoChildren = null, bool descendIntoTrivia = false)
+        public IEnumerable<SyntaxNodeOrToken> DescendantNodesAndTokens(TextSpan span, Func<SyntaxNode, bool>? descendIntoChildren = null, bool descendIntoTrivia = false)
         {
             return DescendantNodesAndTokensImpl(span, descendIntoChildren, descendIntoTrivia, includeSelf: false);
         }
@@ -779,7 +785,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         /// <param name="descendIntoChildren">An optional function that determines if the search descends into the argument node's children.</param>
         /// <param name="descendIntoTrivia">Determines if nodes that are part of structured trivia are included in the list.</param>
-        public IEnumerable<SyntaxNodeOrToken> DescendantNodesAndTokensAndSelf(Func<SyntaxNode, bool> descendIntoChildren = null, bool descendIntoTrivia = false)
+        public IEnumerable<SyntaxNodeOrToken> DescendantNodesAndTokensAndSelf(Func<SyntaxNode, bool>? descendIntoChildren = null, bool descendIntoTrivia = false)
         {
             return DescendantNodesAndTokensImpl(this.FullSpan, descendIntoChildren, descendIntoTrivia, includeSelf: true);
         }
@@ -790,7 +796,7 @@ namespace Microsoft.CodeAnalysis
         /// <param name="span">The span the node's full span must intersect.</param>
         /// <param name="descendIntoChildren">An optional function that determines if the search descends into the argument node's children.</param>
         /// <param name="descendIntoTrivia">Determines if nodes that are part of structured trivia are included in the list.</param>
-        public IEnumerable<SyntaxNodeOrToken> DescendantNodesAndTokensAndSelf(TextSpan span, Func<SyntaxNode, bool> descendIntoChildren = null, bool descendIntoTrivia = false)
+        public IEnumerable<SyntaxNodeOrToken> DescendantNodesAndTokensAndSelf(TextSpan span, Func<SyntaxNode, bool>? descendIntoChildren = null, bool descendIntoTrivia = false)
         {
             return DescendantNodesAndTokensImpl(span, descendIntoChildren, descendIntoTrivia, includeSelf: true);
         }
@@ -886,7 +892,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Gets a list of all the tokens in the span of this node.
         /// </summary>
-        public IEnumerable<SyntaxToken> DescendantTokens(Func<SyntaxNode, bool> descendIntoChildren = null, bool descendIntoTrivia = false)
+        public IEnumerable<SyntaxToken> DescendantTokens(Func<SyntaxNode, bool>? descendIntoChildren = null, bool descendIntoTrivia = false)
         {
             return this.DescendantNodesAndTokens(descendIntoChildren, descendIntoTrivia).Where(sn => sn.IsToken).Select(sn => sn.AsToken());
         }
@@ -894,7 +900,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Gets a list of all the tokens in the full span of this node.
         /// </summary>
-        public IEnumerable<SyntaxToken> DescendantTokens(TextSpan span, Func<SyntaxNode, bool> descendIntoChildren = null, bool descendIntoTrivia = false)
+        public IEnumerable<SyntaxToken> DescendantTokens(TextSpan span, Func<SyntaxNode, bool>? descendIntoChildren = null, bool descendIntoTrivia = false)
         {
             return this.DescendantNodesAndTokens(span, descendIntoChildren, descendIntoTrivia).Where(sn => sn.IsToken).Select(sn => sn.AsToken());
         }
@@ -942,7 +948,7 @@ namespace Microsoft.CodeAnalysis
         /// <param name="stepInto">Specifies a function that determines per trivia node, whether to
         /// descend into structured trivia of that node.</param>
         /// <returns></returns>
-        public SyntaxTrivia FindTrivia(int position, Func<SyntaxTrivia, bool> stepInto)
+        public SyntaxTrivia FindTrivia(int position, Func<SyntaxTrivia, bool>? stepInto)
         {
             if (this.FullSpan.Contains(position))
             {
@@ -952,7 +958,7 @@ namespace Microsoft.CodeAnalysis
             return default(SyntaxTrivia);
         }
 
-        internal static SyntaxTrivia FindTriviaByOffset(SyntaxNode node, int textOffset, Func<SyntaxTrivia, bool> stepInto = null)
+        internal static SyntaxTrivia FindTriviaByOffset(SyntaxNode node, int textOffset, Func<SyntaxTrivia, bool>? stepInto = null)
         {
             recurse:
             if (textOffset >= 0)
@@ -964,7 +970,7 @@ namespace Microsoft.CodeAnalysis
                     {
                         if (element.IsNode)
                         {
-                            node = element.AsNode();
+                            node = element.AsNode()!;
                             goto recurse;
                         }
                         else if (element.IsToken)
@@ -1023,7 +1029,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Get a list of all the trivia associated with the descendant nodes and tokens.
         /// </summary>
-        public IEnumerable<SyntaxTrivia> DescendantTrivia(Func<SyntaxNode, bool> descendIntoChildren = null, bool descendIntoTrivia = false)
+        public IEnumerable<SyntaxTrivia> DescendantTrivia(Func<SyntaxNode, bool>? descendIntoChildren = null, bool descendIntoTrivia = false)
         {
             return DescendantTriviaImpl(this.FullSpan, descendIntoChildren, descendIntoTrivia);
         }
@@ -1031,7 +1037,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Get a list of all the trivia associated with the descendant nodes and tokens.
         /// </summary>
-        public IEnumerable<SyntaxTrivia> DescendantTrivia(TextSpan span, Func<SyntaxNode, bool> descendIntoChildren = null, bool descendIntoTrivia = false)
+        public IEnumerable<SyntaxTrivia> DescendantTrivia(TextSpan span, Func<SyntaxNode, bool>? descendIntoChildren = null, bool descendIntoTrivia = false)
         {
             return DescendantTriviaImpl(span, descendIntoChildren, descendIntoTrivia);
         }
@@ -1125,7 +1131,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         public IEnumerable<SyntaxNode> GetAnnotatedNodes(SyntaxAnnotation syntaxAnnotation)
         {
-            return this.GetAnnotatedNodesAndTokens(syntaxAnnotation).Where(n => n.IsNode).Select(n => n.AsNode());
+            return this.GetAnnotatedNodesAndTokens(syntaxAnnotation).Where(n => n.IsNode).Select(n => n.AsNode()!);
         }
 
         /// <summary>
@@ -1135,7 +1141,7 @@ namespace Microsoft.CodeAnalysis
         /// <returns></returns>
         public IEnumerable<SyntaxNode> GetAnnotatedNodes(string annotationKind)
         {
-            return this.GetAnnotatedNodesAndTokens(annotationKind).Where(n => n.IsNode).Select(n => n.AsNode());
+            return this.GetAnnotatedNodesAndTokens(annotationKind).Where(n => n.IsNode).Select(n => n.AsNode()!);
         }
 
         /// <summary>
@@ -1203,7 +1209,7 @@ namespace Microsoft.CodeAnalysis
         /// modification, even if the type of a node changes.
         /// </para>
         /// </remarks>
-        public T CopyAnnotationsTo<T>(T node) where T : SyntaxNode
+        public T? CopyAnnotationsTo<T>(T? node) where T : SyntaxNode
         {
             if (node == null)
             {
@@ -1234,7 +1240,7 @@ namespace Microsoft.CodeAnalysis
             return IsEquivalentToCore(node, topLevel);
         }
 
-        public virtual void SerializeTo(Stream stream, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual void SerializeTo(Stream? stream, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (stream == null)
             {
@@ -1352,7 +1358,7 @@ namespace Microsoft.CodeAnalysis
         /// Applied on every structured trivia. Return false if the tokens included in the trivia should be skipped. 
         /// Pass null to skip all structured trivia.
         /// </param>
-        protected virtual SyntaxToken FindTokenCore(int position, Func<SyntaxTrivia, bool> stepInto)
+        protected virtual SyntaxToken FindTokenCore(int position, Func<SyntaxTrivia, bool>? stepInto)
         {
             var token = this.FindToken(position, findInsideTrivia: false);
             if (stepInto != null)
@@ -1416,12 +1422,12 @@ namespace Microsoft.CodeAnalysis
         /// Creates a new tree of nodes with the specified nodes, tokens or trivia replaced.
         /// </summary>
         protected internal abstract SyntaxNode ReplaceCore<TNode>(
-            IEnumerable<TNode> nodes = null,
-            Func<TNode, TNode, SyntaxNode> computeReplacementNode = null,
-            IEnumerable<SyntaxToken> tokens = null,
-            Func<SyntaxToken, SyntaxToken, SyntaxToken> computeReplacementToken = null,
-            IEnumerable<SyntaxTrivia> trivia = null,
-            Func<SyntaxTrivia, SyntaxTrivia, SyntaxTrivia> computeReplacementTrivia = null)
+            IEnumerable<TNode>? nodes = null,
+            Func<TNode, TNode, SyntaxNode>? computeReplacementNode = null,
+            IEnumerable<SyntaxToken>? tokens = null,
+            Func<SyntaxToken, SyntaxToken, SyntaxToken>? computeReplacementToken = null,
+            IEnumerable<SyntaxTrivia>? trivia = null,
+            Func<SyntaxTrivia, SyntaxTrivia, SyntaxTrivia>? computeReplacementTrivia = null)
             where TNode : SyntaxNode;
 
         protected internal abstract SyntaxNode ReplaceNodeInListCore(SyntaxNode originalNode, IEnumerable<SyntaxNode> replacementNodes);

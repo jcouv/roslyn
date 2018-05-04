@@ -16,7 +16,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
     /// </summary>
     internal class AnalysisScope
     {
-        public SyntaxTree FilterTreeOpt { get; }
+        public SyntaxTree? FilterTreeOpt { get; }
         public TextSpan? FilterSpanOpt { get; }
 
         public ImmutableArray<DiagnosticAnalyzer> Analyzers { get; }

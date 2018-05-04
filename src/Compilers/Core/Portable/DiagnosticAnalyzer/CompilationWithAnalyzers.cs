@@ -52,8 +52,8 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         /// Lock to track the set of active tasks computing tree diagnostics and task computing compilation diagnostics.
         /// </summary>
         private readonly object _executingTasksLock = new object();
-        private readonly Dictionary<SyntaxTree, Tuple<Task, CancellationTokenSource>> _executingConcurrentTreeTasksOpt;
-        private Tuple<Task, CancellationTokenSource> _executingCompilationOrNonConcurrentTreeTask;
+        private readonly Dictionary<SyntaxTree, Tuple<Task, CancellationTokenSource>>? _executingConcurrentTreeTasksOpt;
+        private Tuple<Task, CancellationTokenSource>? _executingCompilationOrNonConcurrentTreeTask;
 
         /// <summary>
         /// Used to generate a unique token for each tree diagnostics request.
@@ -609,8 +609,8 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         {
             try
             {
-                AnalyzerDriver driver = null;
-                Task computeTask = null;
+                AnalyzerDriver? driver = null;
+                Task? computeTask = null;
                 CancellationTokenSource cts;
 
                 try
@@ -740,7 +740,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         {
             if (_compilation.EventQueue.Count > 0)
             {
-                AnalyzerDriver driver = null;
+                AnalyzerDriver? driver = null;
                 try
                 {
                     driver = await GetAnalyzerDriverAsync(cancellationToken).ConfigureAwait(false);
@@ -919,7 +919,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                 while (true)
                 {
                     // For concurrent analysis, we must wait for any executing tree task with higher tokens.
-                    Tuple<Task, CancellationTokenSource> executingTreeTask = null;
+                    Tuple<Task, CancellationTokenSource>? executingTreeTask = null;
 
                     lock (_executingTasksLock)
                     {
@@ -1040,7 +1040,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             return eventQueue;
         }
 
-        private static void FreeEventQueue(AsyncQueue<CompilationEvent> eventQueue, ObjectPool<AsyncQueue<CompilationEvent>> eventQueuePool)
+        private static void FreeEventQueue(AsyncQueue<CompilationEvent>? eventQueue, ObjectPool<AsyncQueue<CompilationEvent>> eventQueuePool)
         {
             if (eventQueue == null || ReferenceEquals(eventQueue, s_EmptyEventQueue))
             {
@@ -1080,7 +1080,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         /// 3) Diagnostic suppression through applied <see cref="System.Diagnostics.CodeAnalysis.SuppressMessageAttribute"/>.
         /// 4) Pragma directives for the given <paramref name="compilation"/>.
         /// </summary>
-        public static IEnumerable<Diagnostic> GetEffectiveDiagnostics(ImmutableArray<Diagnostic> diagnostics, Compilation compilation)
+        public static IEnumerable<Diagnostic> GetEffectiveDiagnostics(ImmutableArray<Diagnostic> diagnostics, Compilation? compilation)
         {
             if (diagnostics.IsDefault)
             {

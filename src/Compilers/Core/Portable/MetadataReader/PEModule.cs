@@ -1686,9 +1686,9 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
-        internal List<AttributeInfo> FindTargetAttributes(EntityHandle hasAttribute, AttributeDescription description)
+        internal List<AttributeInfo>? FindTargetAttributes(EntityHandle hasAttribute, AttributeDescription description)
         {
-            List<AttributeInfo> result = null;
+            List<AttributeInfo>? result = null;
 
             try
             {
@@ -1826,18 +1826,20 @@ namespace Microsoft.CodeAnalysis
         {
             if (_lazyNoPiaLocalTypeCheckBitMap == null)
             {
+                // PROTOTYPE(NullableDogfood): CompareExchange
                 Interlocked.CompareExchange(
                     ref _lazyNoPiaLocalTypeCheckBitMap,
                     new int[(MetadataReader.TypeDefinitions.Count + 32) / 32],
-                    null);
+                    null!);
             }
 
             if (_lazyTypeDefToTypeIdentifierMap == null)
             {
+                // PROTOTYPE(NullableDogfood): CompareExchange
                 Interlocked.CompareExchange(
                     ref _lazyTypeDefToTypeIdentifierMap,
                     new ConcurrentDictionary<TypeDefinitionHandle, AttributeInfo>(),
-                    null);
+                    null!);
             }
 
             _lazyTypeDefToTypeIdentifierMap.TryAdd(typeDef, new AttributeInfo(customAttribute, signatureIndex));
@@ -2778,7 +2780,7 @@ namespace Microsoft.CodeAnalysis
                 byte firstByte = MetadataReader.GetBlobReader(blob).ReadByte();
 
                 // return only valid types, other values are not interesting for the compiler:
-                // PROTOTYPE(NullableDogfood):
+                // PROTOTYPE(NullableDogfood): Strange
                 // warning CS8626: No best nullability for operands of conditional expression 'UnmanagedType' and 'int'.
                 return firstByte <= 0x50 ? (UnmanagedType)firstByte : 0;
             }

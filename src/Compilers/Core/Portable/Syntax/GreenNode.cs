@@ -773,7 +773,7 @@ namespace Microsoft.CodeAnalysis
 
         internal GreenNode? GetLastTerminal()
         {
-            GreenNode node = this;
+            GreenNode? node = this;
 
             do
             {
@@ -795,7 +795,7 @@ namespace Microsoft.CodeAnalysis
 
         internal GreenNode? GetLastNonmissingTerminal()
         {
-            GreenNode node = this;
+            GreenNode? node = this;
 
             do
             {
@@ -882,7 +882,7 @@ namespace Microsoft.CodeAnalysis
         }
         #endregion
 
-        public abstract SyntaxNode GetStructure(SyntaxTrivia parentTrivia);
+        public abstract SyntaxNode? GetStructure(SyntaxTrivia parentTrivia);
 
         #region Factories 
 
