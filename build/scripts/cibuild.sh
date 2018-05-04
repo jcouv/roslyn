@@ -24,4 +24,6 @@ export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 echo "Building this commit:"
 git show --no-patch --pretty=raw HEAD
 
-"${root_path}"/build.sh --restore --bootstrap --build --packall --stop-vbcscompiler --test "$@"
+# PROTOTYPE(NullableDogfood): Skipping boostrap process since this branch is based off `master` and so the compiler doesn't support C# 8.0 or nullable feature.
+"${root_path}"/build.sh --restore --build --packall --stop-vbcscompiler --test "$@"
+# "${root_path}"/build.sh --restore --bootstrap --build --packall --stop-vbcscompiler --test "$@"
