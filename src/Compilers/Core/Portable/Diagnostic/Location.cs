@@ -34,7 +34,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// The syntax tree this location is located in or <c>null</c> if not in a syntax tree.
         /// </summary>
-        public virtual SyntaxTree SourceTree { get { return null; } }
+        public virtual SyntaxTree? SourceTree { get { return null; } }
 
         /// <summary>
         /// Returns the metadata module the location is associated with or <c>null</c> if the module is not available.

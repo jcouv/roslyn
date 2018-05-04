@@ -207,7 +207,7 @@ namespace Microsoft.CodeAnalysis
         /// Resolves paths to metadata references specified in source via #r directives.
         /// Null if the compilation can't contain references to metadata other than those explicitly passed to its factory (such as #r directives in sources). 
         /// </summary>
-        public MetadataReferenceResolver MetadataReferenceResolver { get; protected set; }
+        public MetadataReferenceResolver? MetadataReferenceResolver { get; protected set; }
 
         /// <summary>
         /// Gets the resolver for resolving XML document references for the compilation.

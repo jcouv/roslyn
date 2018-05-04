@@ -43,7 +43,7 @@ namespace Microsoft.CodeAnalysis
         {
             private static readonly ObjectPool<ChildSyntaxList.Enumerator[]> s_stackPool = new ObjectPool<ChildSyntaxList.Enumerator[]>(() => new ChildSyntaxList.Enumerator[16]);
 
-            private ChildSyntaxList.Enumerator[] _stack;
+            private ChildSyntaxList.Enumerator[]? _stack;
             private int _stackPtr;
 
             public ChildSyntaxListEnumeratorStack(SyntaxNode startingNode, Func<SyntaxNode, bool> descendIntoChildren)
@@ -77,7 +77,7 @@ namespace Microsoft.CodeAnalysis
                 return false;
             }
 
-            public SyntaxNode TryGetNextAsNodeInSpan(in TextSpan span)
+            public SyntaxNode? TryGetNextAsNodeInSpan(in TextSpan span)
             {
                 SyntaxNode nodeValue;
                 while ((nodeValue = _stack[_stackPtr].TryMoveNextAndGetCurrentAsNode()) != null)
@@ -188,7 +188,7 @@ namespace Microsoft.CodeAnalysis
 
             private ChildSyntaxListEnumeratorStack _nodeStack;
             private TriviaListEnumeratorStack _triviaStack;
-            private readonly ArrayBuilder<Which> _discriminatorStack;
+            private readonly ArrayBuilder<Which>? _discriminatorStack;
 
             public TwoEnumeratorListStack(SyntaxNode startingNode, Func<SyntaxNode, bool> descendIntoChildren)
             {

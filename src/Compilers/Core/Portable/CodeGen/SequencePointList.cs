@@ -48,14 +48,14 @@ namespace Microsoft.CodeAnalysis.CodeGen
         /// Create a SequencePointList with the raw sequence points from an ArrayBuilder.
         /// A linked list of instances for each syntax tree is created (almost always of length one).
         /// </summary>
-        public static SequencePointList Create(ArrayBuilder<RawSequencePoint> seqPointBuilder, ILBuilder builder)
+        public static SequencePointList? Create(ArrayBuilder<RawSequencePoint> seqPointBuilder, ILBuilder builder)
         {
             if (seqPointBuilder.Count == 0)
             {
                 return SequencePointList.s_empty;
             }
 
-            SequencePointList first = null, current = null;
+            SequencePointList? first = null, current = null;
             int totalPoints = seqPointBuilder.Count;
             int last = 0;
 
@@ -117,7 +117,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
         {
             bool lastPathIsMapped = false;
             string lastPath = null;
-            Cci.DebugSourceDocument lastDebugDocument = null;
+            Cci.DebugSourceDocument? lastDebugDocument = null;
 
             FileLinePositionSpan? firstReal = FindFirstRealSequencePoint();
             if (!firstReal.HasValue)

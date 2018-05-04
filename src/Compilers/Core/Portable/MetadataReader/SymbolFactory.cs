@@ -9,7 +9,7 @@ namespace Microsoft.CodeAnalysis
     internal abstract class SymbolFactory<ModuleSymbol, TypeSymbol>
         where TypeSymbol : class
     {
-        internal abstract TypeSymbol GetUnsupportedMetadataTypeSymbol(ModuleSymbol moduleSymbol, BadImageFormatException exception);
+        internal abstract TypeSymbol GetUnsupportedMetadataTypeSymbol(ModuleSymbol moduleSymbol, BadImageFormatException? exception);
 
         /// <summary>
         /// Produce unbound generic type symbol if the type is a generic type.

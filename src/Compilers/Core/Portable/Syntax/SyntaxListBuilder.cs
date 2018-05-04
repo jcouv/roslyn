@@ -162,7 +162,7 @@ namespace Microsoft.CodeAnalysis.Syntax
             return false;
         }
 
-        internal GreenNode ToListNode()
+        internal GreenNode? ToListNode()
         {
             switch (this.Count)
             {

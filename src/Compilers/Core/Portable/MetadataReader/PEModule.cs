@@ -1524,7 +1524,7 @@ namespace Microsoft.CodeAnalysis
                 CrackIntInAttributeValue(out value.IntValue, ref sig);
         }
 
-        internal static bool CrackStringInAttributeValue(out string value, ref BlobReader sig)
+        internal static bool CrackStringInAttributeValue(out string? value, ref BlobReader sig)
         {
             try
             {
@@ -2527,7 +2527,7 @@ namespace Microsoft.CodeAnalysis
             return MetadataReader.GetMethodDefinition(methodDef).GetParameters();
         }
 
-        internal DllImportData GetDllImportData(MethodDefinitionHandle methodDef)
+        internal DllImportData? GetDllImportData(MethodDefinitionHandle methodDef)
         {
             try
             {
@@ -2778,6 +2778,8 @@ namespace Microsoft.CodeAnalysis
                 byte firstByte = MetadataReader.GetBlobReader(blob).ReadByte();
 
                 // return only valid types, other values are not interesting for the compiler:
+                // PROTOTYPE(NullableDogfood):
+                // warning CS8626: No best nullability for operands of conditional expression 'UnmanagedType' and 'int'.
                 return firstByte <= 0x50 ? (UnmanagedType)firstByte : 0;
             }
             catch (BadImageFormatException)
@@ -2884,7 +2886,7 @@ namespace Microsoft.CodeAnalysis
             return ConstantValue.Bad;
         }
 
-        internal (int FirstIndex, int SecondIndex) GetAssemblyRefsForForwardedType(string fullName, bool ignoreCase, out string matchedName)
+        internal (int FirstIndex, int SecondIndex) GetAssemblyRefsForForwardedType(string fullName, bool ignoreCase, out string? matchedName)
         {
             EnsureForwardTypeToAssemblyMap();
 
@@ -3054,7 +3056,7 @@ namespace Microsoft.CodeAnalysis
         }
 
         /// <exception cref="BadImageFormatException">Invalid metadata.</exception>
-        internal MethodBodyBlock GetMethodBodyOrThrow(MethodDefinitionHandle methodHandle)
+        internal MethodBodyBlock? GetMethodBodyOrThrow(MethodDefinitionHandle methodHandle)
         {
             // we shouldn't ask for method IL if we don't have PE image
             Debug.Assert(_peReaderOpt != null);

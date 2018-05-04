@@ -44,14 +44,14 @@ namespace Microsoft.CodeAnalysis.CodeGen
         {
             Debug.Assert(typeReference != null);
 
-            Cci.IArrayTypeReference arrayType = typeReference as Cci.IArrayTypeReference;
+            Cci.IArrayTypeReference? arrayType = typeReference as Cci.IArrayTypeReference;
             if (arrayType != null)
             {
                 VisitTypeReference(arrayType.GetElementType(context), context);
                 return;
             }
 
-            Cci.IPointerTypeReference pointerType = typeReference as Cci.IPointerTypeReference;
+            Cci.IPointerTypeReference? pointerType = typeReference as Cci.IPointerTypeReference;
             if (pointerType != null)
             {
                 VisitTypeReference(pointerType.GetTargetType(context), context);
@@ -65,7 +65,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
             //    return;
             //}
 
-            Cci.IModifiedTypeReference modifiedType = typeReference as Cci.IModifiedTypeReference;
+            Cci.IModifiedTypeReference? modifiedType = typeReference as Cci.IModifiedTypeReference;
             if (modifiedType != null)
             {
                 foreach (var custModifier in modifiedType.CustomModifiers)

@@ -31,7 +31,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// A diagnostic created in the process of determining the key.
         /// </summary>
-        internal readonly Diagnostic DiagnosticOpt;
+        internal readonly Diagnostic? DiagnosticOpt;
 
         /// <summary>
         /// The CSP key container containing the public key used to produce the key,
@@ -41,7 +41,7 @@ namespace Microsoft.CodeAnalysis
         /// The original value as specified by <see cref="System.Reflection.AssemblyKeyNameAttribute"/> or 
         /// <see cref="CompilationOptions.CryptoKeyContainer"/>.
         /// </remarks>
-        internal readonly string KeyContainer;
+        internal readonly string? KeyContainer;
 
         /// <summary>
         /// Original key file path, or null if the key is provided by the <see cref="KeyContainer"/>.
@@ -50,7 +50,7 @@ namespace Microsoft.CodeAnalysis
         /// The original value as specified by <see cref="System.Reflection.AssemblyKeyFileAttribute"/> or 
         /// <see cref="CompilationOptions.CryptoKeyFile"/>
         /// </remarks>
-        internal readonly string KeyFilePath;
+        internal readonly string? KeyFilePath;
 
         internal static readonly StrongNameKeys None = new StrongNameKeys();
 
@@ -64,7 +64,7 @@ namespace Microsoft.CodeAnalysis
             this.DiagnosticOpt = diagnostic;
         }
 
-        internal StrongNameKeys(ImmutableArray<byte> keyPair, ImmutableArray<byte> publicKey, RSAParameters? privateKey, string keyContainerName, string keyFilePath)
+        internal StrongNameKeys(ImmutableArray<byte> keyPair, ImmutableArray<byte> publicKey, RSAParameters? privateKey, string? keyContainerName, string? keyFilePath)
         {
             Debug.Assert(keyContainerName == null || keyPair.IsDefault);
             Debug.Assert(keyPair.IsDefault || keyFilePath != null);

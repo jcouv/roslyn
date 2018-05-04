@@ -18,7 +18,7 @@ namespace Microsoft.CodeAnalysis.Emit
         private readonly SymbolMatcher _symbolMap;
 
         // syntax:
-        private readonly Func<SyntaxNode, SyntaxNode> _syntaxMapOpt;
+        private readonly Func<SyntaxNode, SyntaxNode>? _syntaxMapOpt;
         private readonly IMethodSymbolInternal _previousTopLevelMethod;
         private readonly DebugId _methodId;
 
@@ -27,31 +27,31 @@ namespace Microsoft.CodeAnalysis.Emit
         private readonly ImmutableArray<EncLocalInfo> _previousLocals;
 
         // previous state machine:
-        private readonly string _stateMachineTypeNameOpt;
+        private readonly string? _stateMachineTypeNameOpt;
         private readonly int _hoistedLocalSlotCount;
-        private readonly IReadOnlyDictionary<EncHoistedLocalInfo, int> _hoistedLocalSlotsOpt;
+        private readonly IReadOnlyDictionary<EncHoistedLocalInfo, int>? _hoistedLocalSlotsOpt;
         private readonly int _awaiterCount;
-        private readonly IReadOnlyDictionary<Cci.ITypeReference, int> _awaiterMapOpt;
+        private readonly IReadOnlyDictionary<Cci.ITypeReference, int>? _awaiterMapOpt;
 
         // closures:
-        private readonly IReadOnlyDictionary<int, KeyValuePair<DebugId, int>> _lambdaMapOpt; // SyntaxOffset -> (Lambda Id, Closure Ordinal)
-        private readonly IReadOnlyDictionary<int, DebugId> _closureMapOpt; // SyntaxOffset -> Id
+        private readonly IReadOnlyDictionary<int, KeyValuePair<DebugId, int>>? _lambdaMapOpt; // SyntaxOffset -> (Lambda Id, Closure Ordinal)
+        private readonly IReadOnlyDictionary<int, DebugId>? _closureMapOpt; // SyntaxOffset -> Id
 
         private readonly LambdaSyntaxFacts _lambdaSyntaxFacts;
 
         public EncVariableSlotAllocator(
             SymbolMatcher symbolMap,
-            Func<SyntaxNode, SyntaxNode> syntaxMapOpt,
+            Func<SyntaxNode, SyntaxNode>? syntaxMapOpt,
             IMethodSymbolInternal previousTopLevelMethod,
             DebugId methodId,
             ImmutableArray<EncLocalInfo> previousLocals,
-            IReadOnlyDictionary<int, KeyValuePair<DebugId, int>> lambdaMapOpt,
-            IReadOnlyDictionary<int, DebugId> closureMapOpt,
-            string stateMachineTypeNameOpt,
+            IReadOnlyDictionary<int, KeyValuePair<DebugId, int>>? lambdaMapOpt,
+            IReadOnlyDictionary<int, DebugId>? closureMapOpt,
+            string? stateMachineTypeNameOpt,
             int hoistedLocalSlotCount,
-            IReadOnlyDictionary<EncHoistedLocalInfo, int> hoistedLocalSlotsOpt,
+            IReadOnlyDictionary<EncHoistedLocalInfo, int>? hoistedLocalSlotsOpt,
             int awaiterCount,
-            IReadOnlyDictionary<Cci.ITypeReference, int> awaiterMapOpt,
+            IReadOnlyDictionary<Cci.ITypeReference, int>? awaiterMapOpt,
             LambdaSyntaxFacts lambdaSyntaxFacts)
         {
             Debug.Assert(symbolMap != null);

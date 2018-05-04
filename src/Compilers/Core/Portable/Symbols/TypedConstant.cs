@@ -18,9 +18,9 @@ namespace Microsoft.CodeAnalysis
     {
         private readonly TypedConstantKind _kind;
         private readonly ITypeSymbol _type;
-        private readonly object _value;
+        private readonly object? _value;
 
-        internal TypedConstant(ITypeSymbol type, TypedConstantKind kind, object value)
+        internal TypedConstant(ITypeSymbol type, TypedConstantKind kind, object? value)
         {
             Debug.Assert(kind == TypedConstantKind.Array || !(value is ImmutableArray<TypedConstant>));
             _kind = kind;
@@ -102,7 +102,8 @@ namespace Microsoft.CodeAnalysis
         {
             if (_kind == TypedConstantKind.Error)
             {
-                return default(T);
+                // PROTOTYPE(NullableDogfood): unconstrained T
+                return default(T)!;
             }
 
             if (_type.SpecialType == specialType || (_type.TypeKind == TypeKind.Enum && specialType == SpecialType.System_Enum))
@@ -110,8 +111,9 @@ namespace Microsoft.CodeAnalysis
                 return (T)_value;
             }
 
+            // PROTOTYPE(NullableDogfood): unconstrained T
             // the actual argument type doesn't match the type of the parameter - an error has already been reported by the binder
-            return default(T);
+            return default(T)!;
         }
 
         /// <remarks>

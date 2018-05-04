@@ -53,7 +53,7 @@ namespace Microsoft.CodeAnalysis
             return GetTypeSymbol(fullName, out refersToNoPiaLocalType);
         }
 
-        protected TypeSymbol GetUnsupportedMetadataTypeSymbol(BadImageFormatException exception = null)
+        protected TypeSymbol GetUnsupportedMetadataTypeSymbol(BadImageFormatException? exception = null)
         {
             return _factory.GetUnsupportedMetadataTypeSymbol(this.moduleSymbol, exception);
         }

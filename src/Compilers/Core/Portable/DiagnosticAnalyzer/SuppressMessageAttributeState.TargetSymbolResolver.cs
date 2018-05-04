@@ -848,7 +848,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             private struct TypeInfo
             {
                 // The type, may be null if unbound.
-                public readonly ITypeSymbol Type;
+                public readonly ITypeSymbol? Type;
 
                 // The start index into this.name for parsing this type if the type is not known
                 // This index is used when rebinding later when the method context is known
@@ -856,7 +856,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
 
                 public bool IsBound => this.Type != null;
 
-                private TypeInfo(ITypeSymbol type, int startIndex)
+                private TypeInfo(ITypeSymbol? type, int startIndex)
                 {
                     this.Type = type;
                     this.StartIndex = startIndex;

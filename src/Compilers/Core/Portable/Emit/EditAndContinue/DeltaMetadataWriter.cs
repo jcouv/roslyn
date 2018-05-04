@@ -579,7 +579,8 @@ namespace Microsoft.CodeAnalysis.Emit
         private bool AddDefIfNecessary<T>(DefinitionIndex<T> defIndex, T def)
             where T : IDefinition
         {
-            switch (_changes.GetChange(def))
+            // PROTOTYPE(NullableDogfood): Unconstrained T
+            switch (_changes.GetChange(def!))
             {
                 case SymbolChange.Added:
                     defIndex.Add(def);
@@ -615,7 +616,7 @@ namespace Microsoft.CodeAnalysis.Emit
             }
         }
 
-        private void ReportReferencesToAddedSymbol(ISymbol symbolOpt)
+        private void ReportReferencesToAddedSymbol(ISymbol? symbolOpt)
         {
             if (symbolOpt != null && _changes.IsAdded(symbolOpt))
             {
@@ -689,7 +690,7 @@ namespace Microsoft.CodeAnalysis.Emit
 
             // local type is already translated, but not recursively
             ITypeReference translatedType = localDef.Type;
-            ITypeSymbol typeSymbol = translatedType as ITypeSymbol;
+            ITypeSymbol? typeSymbol = translatedType as ITypeSymbol;
             if (typeSymbol != null)
             {
                 translatedType = Context.Module.EncTranslateType(typeSymbol, Context.Diagnostics);
@@ -752,7 +753,8 @@ namespace Microsoft.CodeAnalysis.Emit
             {
                 if (index.IsAddedNotChanged(member))
                 {
-                    int typeIndex = _typeDefs[member.ContainingTypeDefinition];
+                    // PROTOTYPE(NullableDogfood): Unconstrained T 
+                    int typeIndex = _typeDefs[member!.ContainingTypeDefinition];
                     Debug.Assert(typeIndex > 0);
 
                     int mapRowId;
@@ -1121,7 +1123,9 @@ namespace Microsoft.CodeAnalysis.Emit
                 {
 #if DEBUG
                     T other;
-                    Debug.Assert(!_map.TryGetValue(index, out other) || ((object)other == (object)item));
+                    // PROTOTYPE(NullableDogfood): Constrain T
+                    // PROTOTYPE(NullableDogfood): Annotate TryGetValue 
+                    Debug.Assert(!_map.TryGetValue(index, out other) || ((object)other! == (object)item!));
 #endif
                     _map[index] = item;
                     return true;

@@ -21,7 +21,7 @@ namespace Microsoft.CodeAnalysis
     [DebuggerDisplay("{GetDebuggerDisplay(), nq}")]
     public abstract partial class SyntaxNode
     {
-        private readonly SyntaxNode _parent;
+        private readonly SyntaxNode? _parent;
         internal SyntaxTree _syntaxTree;
 
         internal SyntaxNode(GreenNode green, SyntaxNode parent, int position)
@@ -591,7 +591,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// The node that contains this node in its <see cref="ChildNodes"/> collection.
         /// </summary>
-        public SyntaxNode Parent
+        public SyntaxNode? Parent
         {
             get
             {

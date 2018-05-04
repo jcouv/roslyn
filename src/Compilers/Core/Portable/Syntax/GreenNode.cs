@@ -733,31 +733,32 @@ namespace Microsoft.CodeAnalysis
         #region Tokens 
 
         public virtual int RawContextualKind { get { return this.RawKind; } }
-        public virtual object GetValue() { return null; }
+        public virtual object? GetValue() { return null; }
         public virtual string GetValueText() { return string.Empty; }
-        public virtual GreenNode GetLeadingTriviaCore() { return null; }
-        public virtual GreenNode GetTrailingTriviaCore() { return null; }
+        public virtual GreenNode? GetLeadingTriviaCore() { return null; }
+        public virtual GreenNode? GetTrailingTriviaCore() { return null; }
 
         public virtual GreenNode WithLeadingTrivia(GreenNode trivia)
         {
             return this;
         }
 
-        public virtual GreenNode WithTrailingTrivia(GreenNode trivia)
+        public virtual GreenNode WithTrailingTrivia(GreenNode? trivia)
         {
             return this;
         }
 
-        internal GreenNode GetFirstTerminal()
+        internal GreenNode? GetFirstTerminal()
         {
-            GreenNode node = this;
+            GreenNode? node = this;
 
             do
             {
-                GreenNode firstChild = null;
+                GreenNode? firstChild = null;
                 for (int i = 0, n = node.SlotCount; i < n; i++)
                 {
-                    var child = node.GetSlot(i);
+                    // PROTOTYPE(NullableDogfood): GetSlot always returns a value for the indexes we query
+                    var child = node.GetSlot(i)!;
                     if (child != null)
                     {
                         firstChild = child;
@@ -770,13 +771,13 @@ namespace Microsoft.CodeAnalysis
             return node;
         }
 
-        internal GreenNode GetLastTerminal()
+        internal GreenNode? GetLastTerminal()
         {
             GreenNode node = this;
 
             do
             {
-                GreenNode lastChild = null;
+                GreenNode? lastChild = null;
                 for (int i = node.SlotCount - 1; i >= 0; i--)
                 {
                     var child = node.GetSlot(i);
@@ -792,13 +793,13 @@ namespace Microsoft.CodeAnalysis
             return node;
         }
 
-        internal GreenNode GetLastNonmissingTerminal()
+        internal GreenNode? GetLastNonmissingTerminal()
         {
             GreenNode node = this;
 
             do
             {
-                GreenNode nonmissingChild = null;
+                GreenNode? nonmissingChild = null;
                 for (int i = node.SlotCount - 1; i >= 0; i--)
                 {
                     var child = node.GetSlot(i);
@@ -834,6 +835,7 @@ namespace Microsoft.CodeAnalysis
 
         private static bool EquivalentToInternal(GreenNode node1, GreenNode node2)
         {
+            // PROTOTYPE(NullableDogfood): GetSlot doesn't return null for the indexes we query
             if (node1.RawKind != node2.RawKind)
             {
                 // A single-element list is usually represented as just a single node,
@@ -841,12 +843,12 @@ namespace Microsoft.CodeAnalysis
                 // child if necessary.
                 if (node1.IsList && node1.SlotCount == 1)
                 {
-                    node1 = node1.GetSlot(0);
+                    node1 = node1.GetSlot(0)!;
                 }
 
                 if (node2.IsList && node2.SlotCount == 1)
                 {
-                    node2 = node2.GetSlot(0);
+                    node2 = node2.GetSlot(0)!;
                 }
 
                 if (node1.RawKind != node2.RawKind)
@@ -868,8 +870,8 @@ namespace Microsoft.CodeAnalysis
 
             for (int i = 0; i < n; i++)
             {
-                var node1Child = node1.GetSlot(i);
-                var node2Child = node2.GetSlot(i);
+                var node1Child = node1.GetSlot(i)!;
+                var node2Child = node2.GetSlot(i)!;
                 if (node1Child != null && node2Child != null && !node1Child.IsEquivalentTo(node2Child))
                 {
                     return false;
@@ -887,7 +889,7 @@ namespace Microsoft.CodeAnalysis
         public abstract SyntaxToken CreateSeparator<TNode>(SyntaxNode element) where TNode : SyntaxNode;
         public abstract bool IsTriviaWithEndOfLine(); // trivia node has end of line
 
-        public virtual GreenNode CreateList(IEnumerable<GreenNode> nodes, bool alwaysCreateListNode = false)
+        public virtual GreenNode? CreateList(IEnumerable<GreenNode> nodes, bool alwaysCreateListNode = false)
         {
             if (nodes == null)
             {

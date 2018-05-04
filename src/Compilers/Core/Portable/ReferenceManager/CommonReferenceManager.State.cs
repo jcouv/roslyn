@@ -39,7 +39,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         internal abstract IEnumerable<(IAssemblySymbol, ImmutableArray<string>)> GetReferencedAssemblyAliases();
 
-        internal abstract MetadataReference GetMetadataReference(IAssemblySymbol assemblySymbol);
+        internal abstract MetadataReference? GetMetadataReference(IAssemblySymbol assemblySymbol);
         internal abstract ImmutableArray<MetadataReference> ExplicitReferences { get; }
         internal abstract ImmutableArray<MetadataReference> ImplicitReferences { get; }
         internal abstract IEnumerable<KeyValuePair<AssemblyIdentity, PortableExecutableReference>> GetImplicitlyResolvedAssemblyReferences();
@@ -85,7 +85,7 @@ namespace Microsoft.CodeAnalysis
         /// A map from a metadata reference to an index to <see cref="_lazyReferencedAssemblies"/> array. Do not access
         /// directly, use <see cref="_lazyReferencedAssembliesMap"/> property instead.
         /// </summary>
-        private Dictionary<MetadataReference, int> _lazyReferencedAssembliesMap;
+        private Dictionary<MetadataReference, int>? _lazyReferencedAssembliesMap;
 
         /// <summary>
         /// A map from a net-module metadata reference to the index of the corresponding module
@@ -95,13 +95,13 @@ namespace Microsoft.CodeAnalysis
         /// Subtract one from the index (for the manifest module) to find the corresponding elements
         /// of <see cref="_lazyReferencedModules"/> and <see cref="_lazyReferencedModulesReferences"/>.
         /// </remarks>
-        private Dictionary<MetadataReference, int> _lazyReferencedModuleIndexMap;
+        private Dictionary<MetadataReference, int>? _lazyReferencedModuleIndexMap;
 
         /// <summary>
         /// Maps (containing syntax tree file name, reference string) of #r directive to a resolved metadata reference.
         /// If multiple #r's in the same tree use the same value as a reference the resolved metadata reference is the same as well.
         /// </summary>
-        private IDictionary<(string, string), MetadataReference> _lazyReferenceDirectiveMap;
+        private IDictionary<(string, string), MetadataReference>? _lazyReferenceDirectiveMap;
 
         /// <summary>
         /// Array of unique bound #r references.
@@ -135,7 +135,7 @@ namespace Microsoft.CodeAnalysis
         /// here since we wouldn't be able to share the state among subsequent compilations that are derived from it
         /// (each of them has its own source assembly symbol).
         /// </remarks>
-        private TAssemblySymbol _lazyCorLibraryOpt;
+        private TAssemblySymbol? _lazyCorLibraryOpt;
 
         /// <summary>
         /// Standalone modules referenced by the compilation (doesn't include the manifest module of the compilation).
@@ -498,7 +498,7 @@ namespace Microsoft.CodeAnalysis
         {
             Debug.Assert(originalIdentities.Length == symbols.Length);
 
-            ImmutableDictionary<AssemblyIdentity, AssemblyIdentity>.Builder lazyBuilder = null;
+            ImmutableDictionary<AssemblyIdentity, AssemblyIdentity>.Builder? lazyBuilder = null;
             for (int i = 0; i < originalIdentities.Length; i++)
             {
                 var symbolIdentity = symbols[i].Identity;
@@ -635,7 +635,7 @@ namespace Microsoft.CodeAnalysis
             return ReferencedAssembliesMap.Select(ra => KeyValuePair.Create(ra.Key, (IAssemblySymbol)ReferencedAssemblies[ra.Value]));
         }
 
-        internal TAssemblySymbol GetReferencedAssemblySymbol(MetadataReference reference)
+        internal TAssemblySymbol? GetReferencedAssemblySymbol(MetadataReference reference)
         {
             int index;
             return ReferencedAssembliesMap.TryGetValue(reference, out index) ? ReferencedAssemblies[index] : null;
@@ -650,7 +650,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Gets the <see cref="MetadataReference"/> that corresponds to the assembly symbol. 
         /// </summary>
-        internal override MetadataReference GetMetadataReference(IAssemblySymbol assemblySymbol)
+        internal override MetadataReference? GetMetadataReference(IAssemblySymbol assemblySymbol)
         {
             foreach (var entry in ReferencedAssembliesMap)
             {

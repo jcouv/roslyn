@@ -796,7 +796,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             }
         }
 
-        private void FreeDriver(AnalyzerDriver driver)
+        private void FreeDriver(AnalyzerDriver? driver)
         {
             if (driver != null)
             {
@@ -1122,11 +1122,13 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         /// </summary>
         public static bool IsDiagnosticAnalyzerSuppressed(
             DiagnosticAnalyzer analyzer,
-            CompilationOptions options,
-            Action<Exception, DiagnosticAnalyzer, Diagnostic> onAnalyzerException = null)
+            CompilationOptions? options,
+            Action<Exception, DiagnosticAnalyzer, Diagnostic>? onAnalyzerException = null)
         {
             VerifyAnalyzerArgumentForStaticApis(analyzer);
 
+            // PROTOTYPE(NullableDogfood): Strange
+            // warning CS8625: Cannot convert null literal to non-nullable reference or unconstrained type parameter.
             if (options == null)
             {
                 throw new ArgumentNullException(nameof(options));
@@ -1171,7 +1173,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         /// </summary>
         private async Task<AnalyzerActionCounts> GetAnalyzerActionCountsAsync(DiagnosticAnalyzer analyzer, CancellationToken cancellationToken)
         {
-            AnalyzerDriver driver = null;
+            AnalyzerDriver? driver = null;
             try
             {
                 driver = await GetAnalyzerDriverAsync(cancellationToken).ConfigureAwait(false);

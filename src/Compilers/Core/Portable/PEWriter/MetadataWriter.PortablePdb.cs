@@ -782,10 +782,11 @@ namespace Microsoft.Cci
 
                 encInfo.SerializeLocalSlots(writer);
 
-                _debugMetadataOpt.AddCustomDebugInformation(
+                // PROTOTYPE(NullableDogfood): Need to follow-up
+                _debugMetadataOpt!.AddCustomDebugInformation(
                     parent: method,
-                    kind: _debugMetadataOpt.GetOrAddGuid(PortableCustomDebugInfoKinds.EncLocalSlotMap),
-                    value: _debugMetadataOpt.GetOrAddBlob(writer));
+                    kind: _debugMetadataOpt!.GetOrAddGuid(PortableCustomDebugInfoKinds.EncLocalSlotMap),
+                    value: _debugMetadataOpt!.GetOrAddBlob(writer));
             }
 
             if (!encInfo.Lambdas.IsDefaultOrEmpty)
@@ -794,10 +795,11 @@ namespace Microsoft.Cci
 
                 encInfo.SerializeLambdaMap(writer);
 
-                _debugMetadataOpt.AddCustomDebugInformation(
+                // PROTOTYPE(NullableDogfood): Need to follow-up
+                _debugMetadataOpt!.AddCustomDebugInformation(
                     parent: method,
-                    kind: _debugMetadataOpt.GetOrAddGuid(PortableCustomDebugInfoKinds.EncLambdaAndClosureMap),
-                    value: _debugMetadataOpt.GetOrAddBlob(writer));
+                    kind: _debugMetadataOpt!.GetOrAddGuid(PortableCustomDebugInfoKinds.EncLambdaAndClosureMap),
+                    value: _debugMetadataOpt!.GetOrAddBlob(writer));
             }
         }
 
@@ -816,10 +818,11 @@ namespace Microsoft.Cci
                 throw new SymUnmanagedWriterException(e.Message, e);
             }
 
-            _debugMetadataOpt.AddCustomDebugInformation(
+            // PROTOTYPE(NullableDogfood): Need to follow-up
+            _debugMetadataOpt!.AddCustomDebugInformation(
                 parent: EntityHandle.ModuleDefinition,
-                kind: _debugMetadataOpt.GetOrAddGuid(PortableCustomDebugInfoKinds.SourceLink),
-                value: _debugMetadataOpt.GetOrAddBlob(bytes));
+                kind: _debugMetadataOpt!.GetOrAddGuid(PortableCustomDebugInfoKinds.SourceLink),
+                value: _debugMetadataOpt!.GetOrAddBlob(bytes));
         }
     }
 }

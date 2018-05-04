@@ -747,13 +747,13 @@ namespace Microsoft.CodeAnalysis
             TCompilation compilation,
             DiagnosticBag diagnostics,
             out ImmutableArray<MetadataReference> references,
-            out IDictionary<(string, string), MetadataReference> boundReferenceDirectives,
+            out IDictionary<(string, string), MetadataReference>? boundReferenceDirectives,
             out ImmutableArray<Location> referenceDirectiveLocations)
         {
             boundReferenceDirectives = null;
 
             ArrayBuilder<MetadataReference> referencesBuilder = ArrayBuilder<MetadataReference>.GetInstance();
-            ArrayBuilder<Location> referenceDirectiveLocationsBuilder = null;
+            ArrayBuilder<Location>? referenceDirectiveLocationsBuilder = null;
 
             try
             {
@@ -819,10 +819,10 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// For each given directive return a bound PE reference, or null if the binding fails.
         /// </summary>
-        private static PortableExecutableReference ResolveReferenceDirective(string reference, Location location, TCompilation compilation)
+        private static PortableExecutableReference? ResolveReferenceDirective(string reference, Location location, TCompilation compilation)
         {
             var tree = location.SourceTree;
-            string basePath = (tree != null && tree.FilePath.Length > 0) ? tree.FilePath : null;
+            string? basePath = (tree != null && tree.FilePath.Length > 0) ? tree.FilePath : null;
 
             // checked earlier:
             Debug.Assert(compilation.Options.MetadataReferenceResolver != null);

@@ -349,12 +349,12 @@ namespace Roslyn.Utilities
             return e;
         }
 
-        private static unsafe string FindSharedEntryASCII(int hashCode, byte* asciiChars, int length)
+        private static unsafe string? FindSharedEntryASCII(int hashCode, byte* asciiChars, int length)
         {
             var arr = s_sharedTable;
             int idx = SharedIdxFromHash(hashCode);
 
-            string e = null;
+            string? e = null;
             // we use quadratic probing here
             // bucket positions are (n^2 + n)/2 relative to the masked hashcode
             for (int i = 1; i < SharedBucketSize + 1; i++)
@@ -384,12 +384,12 @@ namespace Roslyn.Utilities
             return e;
         }
 
-        private static string FindSharedEntry(char chars, int hashCode)
+        private static string? FindSharedEntry(char chars, int hashCode)
         {
             var arr = s_sharedTable;
             int idx = SharedIdxFromHash(hashCode);
 
-            string e = null;
+            string? e = null;
             // we use quadratic probing here
             // bucket positions are (n^2 + n)/2 relative to the masked hashcode
             for (int i = 1; i < SharedBucketSize + 1; i++)
@@ -418,12 +418,12 @@ namespace Roslyn.Utilities
             return e;
         }
 
-        private static string FindSharedEntry(StringBuilder chars, int hashCode)
+        private static string? FindSharedEntry(StringBuilder chars, int hashCode)
         {
             var arr = s_sharedTable;
             int idx = SharedIdxFromHash(hashCode);
 
-            string e = null;
+            string? e = null;
             // we use quadratic probing here
             // bucket positions are (n^2 + n)/2 relative to the masked hashcode
             for (int i = 1; i < SharedBucketSize + 1; i++)
@@ -453,12 +453,12 @@ namespace Roslyn.Utilities
             return e;
         }
 
-        private static string FindSharedEntry(string chars, int hashCode)
+        private static string? FindSharedEntry(string chars, int hashCode)
         {
             var arr = s_sharedTable;
             int idx = SharedIdxFromHash(hashCode);
 
-            string e = null;
+            string? e = null;
             // we use quadratic probing here
             // bucket positions are (n^2 + n)/2 relative to the masked hashcode
             for (int i = 1; i < SharedBucketSize + 1; i++)

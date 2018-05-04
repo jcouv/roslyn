@@ -47,15 +47,17 @@ namespace Microsoft.CodeAnalysis.Syntax.InternalSyntax
                 }
             }
 
-            private NodeIteration[]? _stack;
+            private NodeIteration[] _stack;
             private int _count;
 
-            public DiagnosticInfo? Current { get; private set; }
+            public DiagnosticInfo Current { get; private set; }
 
             internal Enumerator(GreenNode node) 
             {
-                Current = null;
-                _stack = null;
+                // PROTOTYPE(NullableDogfood): By the time we use Current, it won't be null
+                Current = null!;
+                // PROTOTYPE(NullableDogfood): By the time we use _stack, it won't be null
+                _stack = null!;
                 _count = 0;
                 if (node != null && node.ContainsDiagnostics)
                 {

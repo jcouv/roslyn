@@ -138,27 +138,28 @@ namespace Microsoft.CodeAnalysis
             return id;
         }
 
-        private static SyntaxNode GetRoot(SyntaxNode node)
+        private static SyntaxNode? GetRoot(SyntaxNode node)
         {
+            SyntaxNode? current = node;
             while (true)
             {
-                while (node.Parent != null)
+                while (current.Parent != null)
                 {
-                    node = node.Parent;
+                    current = current.Parent;
                 }
 
-                if (!node.IsStructuredTrivia)
+                if (!current.IsStructuredTrivia)
                 {
-                    return node;
+                    return current;
                 }
                 else
                 {
-                    node = ((IStructuredTriviaSyntax)node).ParentTrivia.Token.Parent;
+                    current = ((IStructuredTriviaSyntax)current).ParentTrivia.Token.Parent;
                 }
             }
         }
 
-        private static bool IsDescendant(SyntaxNode root, SyntaxNode node)
+        private static bool IsDescendant(SyntaxNode root, SyntaxNode? node)
         {
             while (node != null)
             {

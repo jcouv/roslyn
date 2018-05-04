@@ -2,5 +2,5 @@
 
 namespace Microsoft.CodeAnalysis.CodeGen
 {
-    internal delegate Cci.DebugSourceDocument DebugDocumentProvider(string path, string basePath);
+    internal delegate Cci.DebugSourceDocument DebugDocumentProvider(string path, string? basePath);
 }

@@ -83,8 +83,8 @@ namespace Microsoft.Cci
 
         protected MetadataWriter(
             MetadataBuilder metadata,
-            MetadataBuilder debugMetadataOpt,
-            DynamicAnalysisDataWriter dynamicAnalysisDataWriterOpt,
+            MetadataBuilder? debugMetadataOpt,
+            DynamicAnalysisDataWriter? dynamicAnalysisDataWriterOpt,
             EmitContext context,
             CommonMessageProvider messageProvider,
             bool metadataOnly,
@@ -434,11 +434,11 @@ namespace Microsoft.Cci
         protected readonly MetadataBuilder metadata;
 
         // A builder for Portable or Embedded PDB metadata, or null if we are not emitting Portable/Embedded PDB.
-        protected readonly MetadataBuilder _debugMetadataOpt;
+        protected readonly MetadataBuilder? _debugMetadataOpt;
 
         internal bool EmitPortableDebugMetadata => _debugMetadataOpt != null;
 
-        private readonly DynamicAnalysisDataWriter _dynamicAnalysisDataWriterOpt;
+        private readonly DynamicAnalysisDataWriter? _dynamicAnalysisDataWriterOpt;
 
         private readonly Dictionary<ICustomAttribute, BlobHandle> _customAttributeSignatureIndex = new Dictionary<ICustomAttribute, BlobHandle>();
         private readonly Dictionary<ITypeReference, BlobHandle> _typeSpecSignatureIndex = new Dictionary<ITypeReference, BlobHandle>();

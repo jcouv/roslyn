@@ -16,9 +16,9 @@ namespace Microsoft.CodeAnalysis
     {
         // Simple value or ImmutableArray<TypedConstant>.
         // Null array is represented by a null reference.
-        private readonly object _value;
+        private readonly object? _value;
 
-        internal TypedConstantValue(object value)
+        internal TypedConstantValue(object? value)
         {
             Debug.Assert(value == null || value is string || value.GetType().GetTypeInfo().IsEnum || (value.GetType().GetTypeInfo().IsPrimitive && !(value is System.IntPtr) && !(value is System.UIntPtr)) || value is ITypeSymbol);
             _value = value;

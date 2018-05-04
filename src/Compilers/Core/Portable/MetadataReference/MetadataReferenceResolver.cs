@@ -12,7 +12,7 @@ namespace Microsoft.CodeAnalysis
     {
         public abstract override bool Equals(object other);
         public abstract override int GetHashCode();
-        public abstract ImmutableArray<PortableExecutableReference> ResolveReference(string reference, string baseFilePath, MetadataReferenceProperties properties);
+        public abstract ImmutableArray<PortableExecutableReference> ResolveReference(string reference, string? baseFilePath, MetadataReferenceProperties properties);
 
         /// <summary>
         /// True to instruct the compiler to invoke <see cref="ResolveMissingAssembly(MetadataReference, AssemblyIdentity)"/> for each assembly reference that

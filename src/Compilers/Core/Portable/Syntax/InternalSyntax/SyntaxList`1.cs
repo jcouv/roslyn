@@ -102,7 +102,8 @@ namespace Microsoft.CodeAnalysis.Syntax.InternalSyntax
                 var node = this._node;
                 if (node.IsList)
                 {
-                    return (TNode)node.GetSlot(node.SlotCount - 1);
+                    // PROTOTYPE(NullableDogfood): Should constrain TNode to be nullable
+                    return (TNode)node.GetSlot(node.SlotCount - 1)!;
                 }
 
                 return (TNode)node;

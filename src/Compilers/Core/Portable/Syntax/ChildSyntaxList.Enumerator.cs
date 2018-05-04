@@ -74,7 +74,7 @@ namespace Microsoft.CodeAnalysis
                 return true;
             }
 
-            internal SyntaxNode TryMoveNextAndGetCurrentAsNode()
+            internal SyntaxNode? TryMoveNextAndGetCurrentAsNode()
             {
                 while (MoveNext())
                 {

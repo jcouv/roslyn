@@ -1502,7 +1502,7 @@ namespace Microsoft.CodeAnalysis
         private TypedConstant DecodeCustomAttributeElementArrayOrThrow(ref BlobReader argReader, SerializationTypeCode elementTypeCode, TypeSymbol elementType, TypeSymbol arrayType)
         {
             int count = argReader.ReadInt32();
-            TypedConstant[] values;
+            TypedConstant[]? values;
 
             if (count == -1)
             {
@@ -1577,8 +1577,8 @@ namespace Microsoft.CodeAnalysis
                     return CreateTypedConstant(type, kind, s);
 
                 case SerializationTypeCode.Type:
-                    string typeName;
-                    TypeSymbol serializedType = PEModule.CrackStringInAttributeValue(out typeName, ref argReader) ?
+                    string? typeName;
+                    TypeSymbol? serializedType = PEModule.CrackStringInAttributeValue(out typeName, ref argReader) ?
                         (typeName != null ? GetTypeSymbolForSerializedType(typeName) : null) :
                         GetUnsupportedMetadataTypeSymbol();
 
@@ -1740,7 +1740,8 @@ namespace Microsoft.CodeAnalysis
             return false;
         }
 
-        internal bool GetCustomAttribute(CustomAttributeHandle handle, out TypeSymbol attributeClass, out MethodSymbol attributeCtor)
+        // PROTOTYPE(NullableDogfood): Annotate like TryGetValue 
+        internal bool GetCustomAttribute(CustomAttributeHandle handle, out TypeSymbol? attributeClass, out MethodSymbol? attributeCtor)
         {
             EntityHandle attributeType;
             EntityHandle ctor;
@@ -1967,7 +1968,7 @@ namespace Microsoft.CodeAnalysis
                     // methods defined in the current module as MemberRefs rather than MethodDefs.
                     if (methodDebugHandle.Kind == HandleKind.MemberReference)
                     {
-                        MethodSymbol methodBodySymbol = GetMethodSymbolForMemberRef((MemberReferenceHandle)methodDebugHandle, implementingTypeSymbol);
+                        MethodSymbol? methodBodySymbol = GetMethodSymbolForMemberRef((MemberReferenceHandle)methodDebugHandle, implementingTypeSymbol);
                         if (methodBodySymbol != null)
                         {
                             // Note: this might have a nil row ID, but that won't cause a problem
@@ -1982,7 +1983,7 @@ namespace Microsoft.CodeAnalysis
                         {
                             HandleKind implementedMethodTokenType = implementedMethodHandle.Kind;
 
-                            MethodSymbol methodSymbol = null;
+                            MethodSymbol? methodSymbol = null;
 
                             if (implementedMethodTokenType == HandleKind.MethodDefinition)
                             {
@@ -2018,7 +2019,7 @@ namespace Microsoft.CodeAnalysis
         /// <param name="searchTypeDef">TypeDef token of the type from which the search should begin.</param>
         /// <param name="targetMethodDef">MethodDef token of the target method.</param>
         /// <returns>Corresponding <typeparamref name="MethodSymbol"/> or null, if none is found.</returns>
-        private MethodSymbol FindMethodSymbolInSuperType(TypeDefinitionHandle searchTypeDef, MethodDefinitionHandle targetMethodDef)
+        private MethodSymbol? FindMethodSymbolInSuperType(TypeDefinitionHandle searchTypeDef, MethodDefinitionHandle targetMethodDef)
         {
             try
             {
@@ -2166,7 +2167,7 @@ namespace Microsoft.CodeAnalysis
         /// <returns>The corresponding MethodSymbol or null.</returns>
         internal abstract Symbol GetSymbolForMemberRef(MemberReferenceHandle memberRef, TypeSymbol implementingTypeSymbol = null, bool methodsOnly = false);
 
-        internal MethodSymbol GetMethodSymbolForMemberRef(MemberReferenceHandle methodRef, TypeSymbol implementingTypeSymbol)
+        internal MethodSymbol? GetMethodSymbolForMemberRef(MemberReferenceHandle methodRef, TypeSymbol implementingTypeSymbol)
         {
             return (MethodSymbol)GetSymbolForMemberRef(methodRef, implementingTypeSymbol, methodsOnly: true);
         }
@@ -2210,7 +2211,7 @@ namespace Microsoft.CodeAnalysis
             return new TypedConstant(type, array);
         }
 
-        private static TypedConstant CreateTypedConstant(TypeSymbol type, TypedConstantKind kind, object value)
+        private static TypedConstant CreateTypedConstant(TypeSymbol type, TypedConstantKind kind, object? value)
         {
             if (type.TypeKind == TypeKind.Error)
             {
@@ -2229,7 +2230,7 @@ namespace Microsoft.CodeAnalysis
         /// Returns a symbol that given token resolves to or null of the token represents an entity that isn't represented by a symbol,
         /// such as vararg MemberRef.
         /// </summary>
-        internal Symbol GetSymbolForILToken(EntityHandle token)
+        internal Symbol? GetSymbolForILToken(EntityHandle token)
         {
             try
             {
@@ -2308,7 +2309,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Given a MemberRef token, return the TypeSymbol for its Class field.
         /// </summary>
-        internal TypeSymbol GetMemberRefTypeSymbol(MemberReferenceHandle memberRef)
+        internal TypeSymbol? GetMemberRefTypeSymbol(MemberReferenceHandle memberRef)
         {
             try
             {

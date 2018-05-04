@@ -93,9 +93,9 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         private sealed class CategorizedDiagnosticQueue : DiagnosticQueue
         {
             private readonly object _gate = new object();
-            private Dictionary<DiagnosticAnalyzer, SimpleDiagnosticQueue> _lazyLocalSemanticDiagnostics;
-            private Dictionary<DiagnosticAnalyzer, SimpleDiagnosticQueue> _lazyLocalSyntaxDiagnostics;
-            private Dictionary<DiagnosticAnalyzer, SimpleDiagnosticQueue> _lazyNonLocalDiagnostics;
+            private Dictionary<DiagnosticAnalyzer, SimpleDiagnosticQueue>? _lazyLocalSemanticDiagnostics;
+            private Dictionary<DiagnosticAnalyzer, SimpleDiagnosticQueue>? _lazyLocalSyntaxDiagnostics;
+            private Dictionary<DiagnosticAnalyzer, SimpleDiagnosticQueue>? _lazyNonLocalDiagnostics;
 
             public CategorizedDiagnosticQueue()
             {
@@ -168,7 +168,8 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                     TryDequeue_NoLock(_lazyNonLocalDiagnostics, out d);
             }
 
-            private static bool TryDequeue_NoLock(Dictionary<DiagnosticAnalyzer, SimpleDiagnosticQueue> lazyDiagnosticsMap, out Diagnostic d)
+            // PROTOTYPE(NullableDogfood): Need annotation like TryGetValue
+            private static bool TryDequeue_NoLock(Dictionary<DiagnosticAnalyzer, SimpleDiagnosticQueue> lazyDiagnosticsMap, out Diagnostic? d)
             {
                 Diagnostic diag = null;
                 if (lazyDiagnosticsMap != null && lazyDiagnosticsMap.Any(kvp => kvp.Value.TryDequeue(out diag)))
@@ -214,7 +215,8 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                 return ImmutableArray<Diagnostic>.Empty;
             }
 
-            private bool TryGetDiagnosticsQueue(DiagnosticAnalyzer analyzer, Dictionary<DiagnosticAnalyzer, SimpleDiagnosticQueue> diagnosticsMap, out SimpleDiagnosticQueue queue)
+            // PROTOTYPE(NullableDogfood): Need annotation like TryGetValue
+            private bool TryGetDiagnosticsQueue(DiagnosticAnalyzer analyzer, Dictionary<DiagnosticAnalyzer, SimpleDiagnosticQueue> diagnosticsMap, out SimpleDiagnosticQueue? queue)
             {
                 queue = null;
 

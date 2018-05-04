@@ -67,7 +67,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
         public Location Location => Location.None;
 
-        public string Name => null;
+        public string? Name => null;
 
         public int SlotIndex => _slot;
 

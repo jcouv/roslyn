@@ -27,8 +27,8 @@ namespace Microsoft.CodeAnalysis.Emit
         internal Cci.ResourceSection Win32ResourceSection;
         internal Stream SourceLinkStreamOpt;
         
-        internal Cci.IMethodReference PEEntryPoint;
-        internal Cci.IMethodReference DebugEntryPoint;
+        internal Cci.IMethodReference? PEEntryPoint;
+        internal Cci.IMethodReference? DebugEntryPoint;
        
         private readonly ConcurrentDictionary<IMethodSymbol, Cci.IMethodBody> _methodBodyMap;
         private readonly TokenMap<Cci.IReference> _referencesInILMap = new TokenMap<Cci.IReference>();
@@ -40,7 +40,7 @@ namespace Microsoft.CodeAnalysis.Emit
         private IEnumerable<EmbeddedText> _embeddedTexts = SpecializedCollections.EmptyEnumerable<EmbeddedText>();
 
         // Only set when running tests to allow realized IL for a given method to be looked up by method.
-        internal ConcurrentDictionary<IMethodSymbol, CompilationTestData.MethodData> TestData { get; private set; }
+        internal ConcurrentDictionary<IMethodSymbol, CompilationTestData.MethodData>? TestData { get; private set; }
 
         internal readonly DebugInformationFormat DebugInformationFormat;
         internal readonly HashAlgorithmName PdbChecksumAlgorithm;
@@ -178,7 +178,7 @@ namespace Microsoft.CodeAnalysis.Emit
         /// </summary>
         public int HintNumberOfMethodDefinitions => _methodBodyMap.Count;
 
-        internal Cci.IMethodBody GetMethodBody(IMethodSymbol methodSymbol)
+        internal Cci.IMethodBody? GetMethodBody(IMethodSymbol methodSymbol)
         {
             Debug.Assert(methodSymbol.ContainingModule == CommonSourceModule);
             Debug.Assert(methodSymbol.IsDefinition);
@@ -232,7 +232,7 @@ namespace Microsoft.CodeAnalysis.Emit
             return Translate(CommonCorLibrary, context.Diagnostics);
         }
 
-        public Cci.IAssemblyReference GetContainingAssembly(EmitContext context)
+        public Cci.IAssemblyReference? GetContainingAssembly(EmitContext context)
         {
             return OutputKind == OutputKind.NetModule ? null : (Cci.IAssemblyReference)this;
         }
@@ -618,10 +618,10 @@ namespace Microsoft.CodeAnalysis.Emit
         /// </summary>
         private sealed class SynthesizedDefinitions
         {
-            public ConcurrentQueue<Cci.INestedTypeDefinition> NestedTypes;
-            public ConcurrentQueue<Cci.IMethodDefinition> Methods;
-            public ConcurrentQueue<Cci.IPropertyDefinition> Properties;
-            public ConcurrentQueue<Cci.IFieldDefinition> Fields;
+            public ConcurrentQueue<Cci.INestedTypeDefinition>? NestedTypes;
+            public ConcurrentQueue<Cci.IMethodDefinition>? Methods;
+            public ConcurrentQueue<Cci.IPropertyDefinition>? Properties;
+            public ConcurrentQueue<Cci.IFieldDefinition>? Fields;
 
             public ImmutableArray<Cci.ITypeDefinitionMember> GetAllMembers()
             {
