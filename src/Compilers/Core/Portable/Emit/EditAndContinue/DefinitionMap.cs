@@ -154,7 +154,7 @@ namespace Microsoft.CodeAnalysis.Emit
         protected abstract ImmutableArray<EncLocalInfo> GetLocalSlotMapFromMetadata(StandaloneSignatureHandle handle, EditAndContinueMethodDebugInformation debugInfo);
         protected abstract ITypeSymbol TryGetStateMachineType(EntityHandle methodHandle);
 
-        internal VariableSlotAllocator TryCreateVariableSlotAllocator(EmitBaseline baseline, Compilation compilation, IMethodSymbolInternal method, IMethodSymbol topLevelMethod, DiagnosticBag diagnostics)
+        internal VariableSlotAllocator? TryCreateVariableSlotAllocator(EmitBaseline baseline, Compilation compilation, IMethodSymbolInternal method, IMethodSymbol topLevelMethod, DiagnosticBag diagnostics)
         {
             // Top-level methods are always included in the semantic edit list. Lambda methods are not.
             MappedMethod mappedMethod;
@@ -174,14 +174,14 @@ namespace Microsoft.CodeAnalysis.Emit
             }
 
             ImmutableArray<EncLocalInfo> previousLocals;
-            IReadOnlyDictionary<EncHoistedLocalInfo, int> hoistedLocalMap = null;
-            IReadOnlyDictionary<Cci.ITypeReference, int> awaiterMap = null;
-            IReadOnlyDictionary<int, KeyValuePair<DebugId, int>> lambdaMap = null;
-            IReadOnlyDictionary<int, DebugId> closureMap = null;
+            IReadOnlyDictionary<EncHoistedLocalInfo, int>? hoistedLocalMap = null;
+            IReadOnlyDictionary<Cci.ITypeReference, int>? awaiterMap = null;
+            IReadOnlyDictionary<int, KeyValuePair<DebugId, int>>? lambdaMap = null;
+            IReadOnlyDictionary<int, DebugId>? closureMap = null;
 
             int hoistedLocalSlotCount = 0;
             int awaiterSlotCount = 0;
-            string stateMachineTypeNameOpt = null;
+            string? stateMachineTypeNameOpt = null;
             TSymbolMatcher symbolMap;
 
             int methodIndex = MetadataTokens.GetRowNumber(previousHandle);

@@ -169,7 +169,7 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
-        Cci.ITypeReference Cci.IMarshallingInformation.GetSafeArrayElementUserDefinedSubtype(EmitContext context)
+        Cci.ITypeReference? Cci.IMarshallingInformation.GetSafeArrayElementUserDefinedSubtype(EmitContext context)
         {
             Debug.Assert(_marshalType == Cci.Constants.UnmanagedType_SafeArray);
 

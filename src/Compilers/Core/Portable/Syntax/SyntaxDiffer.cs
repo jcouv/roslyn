@@ -683,7 +683,7 @@ namespace Microsoft.CodeAnalysis
             return first;
         }
 
-        private static Queue<SyntaxNodeOrToken> CopyFirst(Stack<SyntaxNodeOrToken> stack, int n)
+        private static Queue<SyntaxNodeOrToken>? CopyFirst(Stack<SyntaxNodeOrToken> stack, int n)
         {
             if (n == 0)
             {

@@ -43,7 +43,7 @@ namespace Microsoft.CodeAnalysis
         /// Might return null even if <see cref="IsInMetadata"/> returns true. The module symbol might not be available anymore, 
         /// for example, if the location is serialized and deserialized.
         /// </remarks>
-        public virtual IModuleSymbol MetadataModule { get { return null; } }
+        public virtual IModuleSymbol? MetadataModule { get { return null; } }
 
         /// <summary>
         /// The location within the syntax tree that this location is associated with.

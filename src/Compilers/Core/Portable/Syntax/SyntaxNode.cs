@@ -140,13 +140,13 @@ namespace Microsoft.CodeAnalysis
                 var green = this.Green.GetSlot(slot);
                 if (green != null)
                 {
-                    // PROTOTYPE(NullableDogfood): Some annotation on CompareExchange would be useful 
                     Interlocked.CompareExchange(ref field, green.CreateRed(this, this.GetChildPosition(slot)), null);
                     result = field;
                 }
             }
 
-            return result;
+            // PROTOTYPE(NullableDogfood): Some annotation on CompareExchange would be useful 
+            return result!;
         }
 
         // PROTOTYPE(NullableDogfood): Some annotation on field would be useful 
@@ -269,7 +269,7 @@ namespace Microsoft.CodeAnalysis
 
             while (true)
             {
-                SyntaxNode previousNode = null;
+                SyntaxNode? previousNode = null;
                 WeakReference<SyntaxNode> previousWeakReference = slot;
                 if (previousWeakReference?.TryGetTarget(out previousNode) == true)
                 {

@@ -100,7 +100,7 @@ namespace Roslyn.Utilities
             return ResolveRelativePath(PathUtilities.GetPathKind(path), path, basePath, baseDirectory);
         }
 
-        private static string ResolveRelativePath(PathKind kind, string path, string basePath, string baseDirectory)
+        private static string? ResolveRelativePath(PathKind kind, string path, string basePath, string baseDirectory)
         {
             switch (kind)
             {
@@ -181,7 +181,7 @@ namespace Roslyn.Utilities
             }
         }
 
-        private static string GetBaseDirectory(string basePath, string baseDirectory)
+        private static string? GetBaseDirectory(string basePath, string baseDirectory)
         {
             // relative base paths are relative to the base directory:
             string resolvedBasePath = ResolveRelativePath(basePath, baseDirectory);
@@ -204,7 +204,7 @@ namespace Roslyn.Utilities
 
         private static readonly char[] s_invalidPathChars = Path.GetInvalidPathChars();
 
-        internal static string NormalizeRelativePath(string path, string basePath, string baseDirectory)
+        internal static string? NormalizeRelativePath(string path, string basePath, string baseDirectory)
         {
             // Does this look like a URI at all or does it have any invalid path characters? If so, just use it as is.
             if (path.IndexOf("://", StringComparison.Ordinal) >= 0 || path.IndexOfAny(s_invalidPathChars) >= 0)
@@ -261,7 +261,7 @@ namespace Roslyn.Utilities
             return NormalizeAbsolutePath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         }
 
-        internal static string TryNormalizeAbsolutePath(string path)
+        internal static string? TryNormalizeAbsolutePath(string path)
         {
             Debug.Assert(PathUtilities.IsAbsolute(path));
 

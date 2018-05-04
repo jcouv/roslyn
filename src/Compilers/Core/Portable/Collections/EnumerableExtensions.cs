@@ -55,7 +55,7 @@ namespace Microsoft.CodeAnalysis
             {
                 while (true)
                 {
-                    T[] line = null;
+                    T[]? line = null;
                     for (int i = 0; i < width; i++)
                     {
                         var e = enumerators[i];

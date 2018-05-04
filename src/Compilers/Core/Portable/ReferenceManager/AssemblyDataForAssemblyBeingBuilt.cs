@@ -129,7 +129,7 @@ namespace Microsoft.CodeAnalysis
                 }
             }
 
-            public override Compilation SourceCompilation => null;
+            public override Compilation? SourceCompilation => null;
         }
     }
 }

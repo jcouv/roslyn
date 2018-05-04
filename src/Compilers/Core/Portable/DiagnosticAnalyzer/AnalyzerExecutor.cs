@@ -257,7 +257,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         {
             Debug.Assert(compilationEvent is CompilationStartedEvent || compilationEvent is CompilationCompletedEvent);
 
-            AnalyzerStateData analyzerStateOpt = null;
+            AnalyzerStateData? analyzerStateOpt = null;
 
             try
             {
@@ -413,7 +413,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             AnalysisState? analysisStateOpt,
             bool isGeneratedCode)
         {
-            AnalyzerStateData analyzerStateOpt = null;
+            AnalyzerStateData? analyzerStateOpt = null;
 
             try
             {
@@ -1200,7 +1200,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             {
                 _cancellationToken.ThrowIfCancellationRequested();
 
-                PooledStopwatch timer = null;
+                PooledStopwatch? timer = null;
                 if (_analyzerExecutionTimeMapOpt != null)
                 {
                     timer = PooledStopwatch.StartInstance();

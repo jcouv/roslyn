@@ -44,7 +44,7 @@ namespace Microsoft.Cci
             get { return 0; }
         }
 
-        public ITypeReference GetBaseClass(EmitContext context)
+        public ITypeReference? GetBaseClass(EmitContext context)
         {
             return null;
         }
@@ -225,7 +225,7 @@ namespace Microsoft.Cci
             }
         }
 
-        IGenericMethodParameterReference ITypeReference.AsGenericMethodParameterReference
+        IGenericMethodParameterReference? ITypeReference.AsGenericMethodParameterReference
         {
             get
             {
@@ -233,7 +233,7 @@ namespace Microsoft.Cci
             }
         }
 
-        IGenericTypeInstanceReference ITypeReference.AsGenericTypeInstanceReference
+        IGenericTypeInstanceReference? ITypeReference.AsGenericTypeInstanceReference
         {
             get
             {
@@ -241,7 +241,7 @@ namespace Microsoft.Cci
             }
         }
 
-        IGenericTypeParameterReference ITypeReference.AsGenericTypeParameterReference
+        IGenericTypeParameterReference? ITypeReference.AsGenericTypeParameterReference
         {
             get
             {
@@ -262,12 +262,12 @@ namespace Microsoft.Cci
             }
         }
 
-        INestedTypeDefinition ITypeReference.AsNestedTypeDefinition(EmitContext context)
+        INestedTypeDefinition? ITypeReference.AsNestedTypeDefinition(EmitContext context)
         {
             return null;
         }
 
-        INestedTypeReference ITypeReference.AsNestedTypeReference
+        INestedTypeReference? ITypeReference.AsNestedTypeReference
         {
             get
             {
@@ -275,7 +275,7 @@ namespace Microsoft.Cci
             }
         }
 
-        ISpecializedNestedTypeReference ITypeReference.AsSpecializedNestedTypeReference
+        ISpecializedNestedTypeReference? ITypeReference.AsSpecializedNestedTypeReference
         {
             get
             {

@@ -118,7 +118,7 @@ namespace Roslyn.Utilities
         }
 
         // Exposed for testing purposes only.
-        internal static string GetDirectoryName(string path, bool isUnixLike)
+        internal static string? GetDirectoryName(string path, bool isUnixLike)
         {
             if (path != null)
             {
@@ -174,7 +174,7 @@ namespace Roslyn.Utilities
             return GetPathRoot(path, IsUnixLikePlatform);
         }
 
-        private static string GetPathRoot(string path, bool isUnixLike)
+        private static string? GetPathRoot(string path, bool isUnixLike)
         {
             if (path == null)
             {
@@ -397,7 +397,7 @@ namespace Roslyn.Utilities
         /// <param name="relativePath">Second path: relative and non-null.</param>
         /// <returns>null, if <paramref name="rootOpt"/> is null; a combined path, otherwise.</returns>
         /// <seealso cref="CombineAbsoluteAndRelativePaths"/>
-        public static string CombinePossiblyRelativeAndRelativePaths(string rootOpt, string relativePath)
+        public static string? CombinePossiblyRelativeAndRelativePaths(string rootOpt, string relativePath)
         {
             if (string.IsNullOrEmpty(rootOpt))
             {

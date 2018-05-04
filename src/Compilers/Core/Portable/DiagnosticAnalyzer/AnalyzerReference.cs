@@ -28,7 +28,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         /// <remarks>
         /// Should not be null.
         /// </remarks>
-        public virtual string Display
+        public virtual string? Display
         {
             get { return null; }
         }

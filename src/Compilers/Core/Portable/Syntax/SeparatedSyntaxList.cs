@@ -182,7 +182,7 @@ namespace Microsoft.CodeAnalysis
             return this[0];
         }
 
-        public TNode FirstOrDefault()
+        public TNode? FirstOrDefault()
         {
             if (this.Any())
             {
@@ -197,7 +197,7 @@ namespace Microsoft.CodeAnalysis
             return this[this.Count - 1];
         }
 
-        public TNode LastOrDefault()
+        public TNode? LastOrDefault()
         {
             if (this.Any())
             {

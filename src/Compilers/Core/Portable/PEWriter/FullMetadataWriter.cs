@@ -337,7 +337,7 @@ namespace Microsoft.Cci
 
         protected override void PopulateEventMapTableRows()
         {
-            ITypeDefinition lastParent = null;
+            ITypeDefinition? lastParent = null;
             foreach (IEventDefinition eventDef in this.GetEventDefs())
             {
                 if (eventDef.ContainingTypeDefinition == lastParent)
@@ -355,7 +355,7 @@ namespace Microsoft.Cci
 
         protected override void PopulatePropertyMapTableRows()
         {
-            ITypeDefinition lastParent = null;
+            ITypeDefinition? lastParent = null;
             foreach (IPropertyDefinition propertyDef in this.GetPropertyDefs())
             {
                 if (propertyDef.ContainingTypeDefinition == lastParent)

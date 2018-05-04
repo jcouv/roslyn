@@ -65,7 +65,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Create a RuleSet with a global effective action applied on it.
         /// </summary>
-        public RuleSet WithEffectiveAction(ReportDiagnostic action)
+        public RuleSet? WithEffectiveAction(ReportDiagnostic action)
         {
             if (!_includes.IsEmpty)
             {
@@ -248,7 +248,7 @@ namespace Microsoft.CodeAnalysis
         /// <returns>
         /// A ruleset that contains resolved rules or null if there were errors.
         /// </returns>
-        public static RuleSet LoadEffectiveRuleSetFromFile(string filePath)
+        public static RuleSet? LoadEffectiveRuleSetFromFile(string filePath)
         {
             var ruleSet = RuleSetProcessor.LoadFromFile(filePath);
             if (ruleSet != null)

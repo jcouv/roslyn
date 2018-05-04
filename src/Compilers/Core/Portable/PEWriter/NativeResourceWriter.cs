@@ -171,12 +171,12 @@ namespace Microsoft.Cci
             theResources = SortResources(theResources);
 
             Directory typeDirectory = new Directory(string.Empty, 0);
-            Directory nameDirectory = null;
-            Directory languageDirectory = null;
+            Directory? nameDirectory = null;
+            Directory? languageDirectory = null;
             int lastTypeID = int.MinValue;
-            string lastTypeName = null;
+            string? lastTypeName = null;
             int lastID = int.MinValue;
-            string lastName = null;
+            string? lastName = null;
             uint sizeOfDirectoryTree = 16;
 
             //EDMAURER note that this list is assumed to be sorted lowest to highest 

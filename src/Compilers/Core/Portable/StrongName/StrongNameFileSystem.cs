@@ -24,7 +24,7 @@ namespace Microsoft.CodeAnalysis
         /// Resolves assembly strong name key file path.
         /// </summary>
         /// <returns>Normalized key file path or null if not found.</returns>
-        internal string ResolveStrongNameKeyFile(string path, ImmutableArray<string> keyFileSearchPaths)
+        internal string? ResolveStrongNameKeyFile(string path, ImmutableArray<string> keyFileSearchPaths)
         {
             // Dev11: key path is simply appended to the search paths, even if it starts with the current (parent) directory ("." or "..").
             // This is different from PathUtilities.ResolveRelativePath.

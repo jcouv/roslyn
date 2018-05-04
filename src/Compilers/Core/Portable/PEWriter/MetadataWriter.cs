@@ -544,7 +544,7 @@ namespace Microsoft.Cci
             }
         }
 
-        protected IEnumerable<IGenericTypeParameter> GetConsolidatedTypeParameters(ITypeDefinition typeDef)
+        protected IEnumerable<IGenericTypeParameter>? GetConsolidatedTypeParameters(ITypeDefinition typeDef)
         {
             INestedTypeDefinition nestedTypeDef = typeDef.AsNestedTypeDefinition(Context);
             if (nestedTypeDef == null)
@@ -562,7 +562,7 @@ namespace Microsoft.Cci
 
         private List<IGenericTypeParameter> GetConsolidatedTypeParameters(ITypeDefinition typeDef, ITypeDefinition owner)
         {
-            List<IGenericTypeParameter> result = null;
+            List<IGenericTypeParameter>? result = null;
             INestedTypeDefinition nestedTypeDef = typeDef.AsNestedTypeDefinition(Context);
             if (nestedTypeDef != null)
             {
@@ -609,7 +609,7 @@ namespace Microsoft.Cci
 
         private ImmutableArray<IParameterDefinition> GetParametersToEmitCore(IMethodDefinition methodDef)
         {
-            ArrayBuilder<IParameterDefinition> builder = null;
+            ArrayBuilder<IParameterDefinition>? builder = null;
             var parameters = methodDef.Parameters;
 
             if (methodDef.ReturnValueIsMarshalledExplicitly || IteratorHelper.EnumerableIsNotEmpty(methodDef.GetReturnValueAttributes(Context)))
@@ -651,7 +651,7 @@ namespace Microsoft.Cci
         /// Returns a reference to the unit that defines the given referenced type. If the referenced type is a structural type, such as a pointer or a generic type instance,
         /// then the result is null.
         /// </summary>
-        public static IUnitReference GetDefiningUnitReference(ITypeReference typeReference, EmitContext context)
+        public static IUnitReference? GetDefiningUnitReference(ITypeReference typeReference, EmitContext context)
         {
             INestedTypeReference nestedTypeReference = typeReference.AsNestedTypeReference;
             while (nestedTypeReference != null)
@@ -735,7 +735,7 @@ namespace Microsoft.Cci
 
         private EntityHandle GetCustomAttributeTypeCodedIndex(IMethodReference methodReference)
         {
-            IMethodDefinition methodDef = null;
+            IMethodDefinition? methodDef = null;
             IUnitReference definingUnit = GetDefiningUnitReference(methodReference.GetContainingType(Context), Context);
             if (definingUnit != null && ReferenceEquals(definingUnit, this.module))
             {
@@ -838,7 +838,7 @@ namespace Microsoft.Cci
 
         internal EntityHandle GetFieldHandle(IFieldReference fieldReference)
         {
-            IFieldDefinition fieldDef = null;
+            IFieldDefinition? fieldDef = null;
             IUnitReference definingUnit = GetDefiningUnitReference(fieldReference.GetContainingType(Context), Context);
             if (definingUnit != null && ReferenceEquals(definingUnit, this.module))
             {
@@ -993,7 +993,7 @@ namespace Microsoft.Cci
 
         internal EntityHandle GetMethodDefinitionOrReferenceHandle(IMethodReference methodReference)
         {
-            IMethodDefinition methodDef = null;
+            IMethodDefinition? methodDef = null;
             IUnitReference definingUnit = GetDefiningUnitReference(methodReference.GetContainingType(Context), Context);
             if (definingUnit != null && ReferenceEquals(definingUnit, this.module))
             {
@@ -1197,7 +1197,7 @@ namespace Microsoft.Cci
         internal EntityHandle GetMethodHandle(IMethodReference methodReference)
         {
             MethodDefinitionHandle methodDefHandle;
-            IMethodDefinition methodDef = null;
+            IMethodDefinition? methodDef = null;
             IUnitReference definingUnit = GetDefiningUnitReference(methodReference.GetContainingType(Context), Context);
             if (definingUnit != null && ReferenceEquals(definingUnit, this.module))
             {
@@ -1829,7 +1829,7 @@ namespace Microsoft.Cci
 
             ReportReferencesToAddedSymbols();
 
-            BlobBuilder dynamicAnalysisDataOpt = null;
+            BlobBuilder? dynamicAnalysisDataOpt = null;
             if (_dynamicAnalysisDataWriterOpt != null)
             {
                 dynamicAnalysisDataOpt = new BlobBuilder();
@@ -2178,7 +2178,7 @@ namespace Microsoft.Cci
 
         private void PopulateDeclSecurityTableRowsFor(EntityHandle parentHandle, IEnumerable<SecurityAttribute> attributes)
         {
-            OrderPreservingMultiDictionary<DeclarativeSecurityAction, ICustomAttribute> groupedSecurityAttributes = null;
+            OrderPreservingMultiDictionary<DeclarativeSecurityAction, ICustomAttribute>? groupedSecurityAttributes = null;
 
             foreach (SecurityAttribute securityAttribute in attributes)
             {

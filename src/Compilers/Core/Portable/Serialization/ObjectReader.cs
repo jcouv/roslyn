@@ -83,7 +83,7 @@ namespace Roslyn.Utilities
         /// If the <paramref name="stream"/> does not start with a valid header, then <code>null</code> will
         /// be returned.
         /// </summary>
-        public static ObjectReader TryGetReader(
+        public static ObjectReader? TryGetReader(
             Stream stream,
             CancellationToken cancellationToken = default)
         {
@@ -171,7 +171,7 @@ namespace Roslyn.Utilities
             return value;
         }
 
-        private object ReadValueWorker()
+        private object? ReadValueWorker()
         {
             var kind = (EncodingKind)_reader.ReadByte();
             switch (kind)

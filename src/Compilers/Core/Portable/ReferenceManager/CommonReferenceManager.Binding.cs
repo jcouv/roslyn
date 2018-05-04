@@ -212,7 +212,7 @@ namespace Microsoft.CodeAnalysis
             // tracks identities we already asked the resolver to resolve:
             var requestedIdentities = PooledHashSet<AssemblyIdentity>.GetInstance();
 
-            PooledDictionary<AssemblyIdentity, PortableExecutableReference> previouslyResolvedAssembliesOpt = null;
+            PooledDictionary<AssemblyIdentity, PortableExecutableReference>? previouslyResolvedAssembliesOpt = null;
 
             // Avoid resolving previously resolved missing references. If we call to the resolver again we would create new assembly symbols for them,
             // which would not match the previously created ones. As a result we would get duplicate PE types and conversion errors.
@@ -228,7 +228,7 @@ namespace Microsoft.CodeAnalysis
 
             var metadataReferencesBuilder = ArrayBuilder<MetadataReference>.GetInstance();
 
-            Dictionary<MetadataReference, MergedAliases> lazyAliasMap = null;
+            Dictionary<MetadataReference, MergedAliases>? lazyAliasMap = null;
 
             // metadata references and corresponding bindings of their references, used to calculate a fixed point:
             var referenceBindingsToProcess = ArrayBuilder<(MetadataReference, ArraySegment<AssemblyReferenceBinding>)>.GetInstance();
@@ -464,7 +464,7 @@ namespace Microsoft.CodeAnalysis
             referenceBindings[0] = bindingsOfAssemblyBeingBuilt.ToArrayAndFree();
         }
 
-        internal AssemblyData ResolveMissingAssembly(
+        internal AssemblyData? ResolveMissingAssembly(
             AssemblyIdentity referenceIdentity,
             PortableExecutableReference peReference,
             MetadataImportOptions importOptions,
@@ -883,7 +883,7 @@ namespace Microsoft.CodeAnalysis
         private static int IndexOfCorLibrary(ImmutableArray<AssemblyData> assemblies, IReadOnlyDictionary<string, List<ReferencedAssemblyIdentity>> assemblyReferencesBySimpleName, bool supersedeLowerVersions)
         {
             // Figure out COR library for this compilation.
-            ArrayBuilder<int> corLibraryCandidates = null;
+            ArrayBuilder<int>? corLibraryCandidates = null;
 
             for (int i = 1; i < assemblies.Length; i++)
             {

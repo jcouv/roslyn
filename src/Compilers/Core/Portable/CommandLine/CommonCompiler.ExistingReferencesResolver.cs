@@ -45,7 +45,7 @@ namespace Microsoft.CodeAnalysis
                 return resolvedReferences.WhereAsArray(r => _lazyAvailableReferences.Value.Contains(TryGetIdentity(r)));
             }
 
-            private static AssemblyIdentity TryGetIdentity(MetadataReference metadataReference)
+            private static AssemblyIdentity? TryGetIdentity(MetadataReference metadataReference)
             {
                 var peReference = metadataReference as PortableExecutableReference;
                 if (peReference == null || peReference.Properties.Kind != MetadataImageKind.Assembly)

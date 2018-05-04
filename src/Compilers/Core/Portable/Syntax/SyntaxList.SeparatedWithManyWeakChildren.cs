@@ -18,7 +18,7 @@ namespace Microsoft.CodeAnalysis.Syntax
 
             internal override SyntaxNode GetNodeSlot(int i)
             {
-                SyntaxNode result = null;
+                SyntaxNode? result = null;
 
                 if ((i & 1) == 0)
                 {
@@ -31,7 +31,7 @@ namespace Microsoft.CodeAnalysis.Syntax
 
             internal override SyntaxNode GetCachedSlot(int i)
             {
-                SyntaxNode result = null;
+                SyntaxNode? result = null;
 
                 if ((i & 1) == 0)
                 {

@@ -17,7 +17,7 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
             _name = name;
         }
 
-        Cci.IMethodBody Cci.IMethodDefinition.GetBody(EmitContext context)
+        Cci.IMethodBody? Cci.IMethodDefinition.GetBody(EmitContext context)
         {
             return null;
         }
@@ -107,7 +107,7 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
             get { return ImmutableArray<Cci.IParameterDefinition>.Empty; }
         }
 
-        Cci.IPlatformInvokeInformation Cci.IMethodDefinition.PlatformInvokeData
+        Cci.IPlatformInvokeInformation? Cci.IMethodDefinition.PlatformInvokeData
         {
             get { return null; }
         }
@@ -127,7 +127,7 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
             get { return false; }
         }
 
-        Cci.IMarshallingInformation Cci.IMethodDefinition.ReturnValueMarshallingInformation
+        Cci.IMarshallingInformation? Cci.IMethodDefinition.ReturnValueMarshallingInformation
         {
             get { return null; }
         }
@@ -147,7 +147,7 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
             get { return ContainingType; }
         }
 
-        Cci.INamespace Cci.IMethodDefinition.ContainingNamespace
+        Cci.INamespace? Cci.IMethodDefinition.ContainingNamespace
         {
             get
             {
@@ -211,12 +211,12 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
             get { return ImmutableArray<Cci.IParameterTypeInformation>.Empty; }
         }
 
-        Cci.IGenericMethodInstanceReference Cci.IMethodReference.AsGenericMethodInstanceReference
+        Cci.IGenericMethodInstanceReference? Cci.IMethodReference.AsGenericMethodInstanceReference
         {
             get { return null; }
         }
 
-        Cci.ISpecializedMethodReference Cci.IMethodReference.AsSpecializedMethodReference
+        Cci.ISpecializedMethodReference? Cci.IMethodReference.AsSpecializedMethodReference
         {
             get { return null; }
         }

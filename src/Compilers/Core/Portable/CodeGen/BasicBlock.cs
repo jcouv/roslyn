@@ -148,7 +148,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
 
             //nearest enclosing exception handler if any
-            public virtual ExceptionHandlerScope EnclosingHandler => null;
+            public virtual ExceptionHandlerScope? EnclosingHandler => null;
 
             internal virtual void Free()
             {
@@ -192,7 +192,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
             {
                 get
                 {
-                    BasicBlock result = null;
+                    BasicBlock? result = null;
 
                     if (BranchLabel != null)
                     {

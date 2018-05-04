@@ -64,7 +64,7 @@ namespace Roslyn.Utilities
             }
         }
 
-        internal static XElement[] TrySelectElements(XNode node, string xpath, out string errorMessage, out bool invalidXPath)
+        internal static XElement[]? TrySelectElements(XNode node, string xpath, out string errorMessage, out bool invalidXPath)
         {
             errorMessage = null;
             invalidXPath = false;

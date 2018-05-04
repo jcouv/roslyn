@@ -129,7 +129,7 @@ namespace Microsoft.CodeAnalysis.Emit
             return true;
         }
 
-        public override LocalDefinition GetPreviousLocal(
+        public override LocalDefinition? GetPreviousLocal(
             Cci.ITypeReference currentType,
             ILocalSymbolInternal currentLocalSymbol,
             string nameOpt,

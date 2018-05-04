@@ -117,7 +117,7 @@ namespace Microsoft.CodeAnalysis
         /// Filter a <see cref="DiagnosticInfo"/> based on the compilation options so that /nowarn and /warnaserror etc. take effect.options
         /// </summary>
         /// <returns>A <see cref="DiagnosticInfo"/> with effective severity based on option or null if suppressed.</returns>
-        public DiagnosticInfo FilterDiagnosticInfo(DiagnosticInfo diagnosticInfo, CompilationOptions options)
+        public DiagnosticInfo? FilterDiagnosticInfo(DiagnosticInfo diagnosticInfo, CompilationOptions options)
         {
             var report = this.GetDiagnosticReport(diagnosticInfo, options);
             switch (report)

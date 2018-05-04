@@ -231,7 +231,7 @@ namespace Microsoft.CodeAnalysis
         {
             outputFileName = null;
             outputDirectory = null;
-            string invalidPath = null;
+            string? invalidPath = null;
 
             string unquoted = RemoveQuotesAndSlashes(value);
             ParseAndNormalizeFile(unquoted, baseDirectory, out outputFileName, out outputDirectory, out invalidPath);
@@ -249,10 +249,10 @@ namespace Microsoft.CodeAnalysis
             IList<Diagnostic> errors,
             string baseDirectory)
         {
-            string outputFileName = null;
-            string outputDirectory = null;
-            string pdbPath = null;
-            string invalidPath = null;
+            string? outputFileName = null;
+            string? outputDirectory = null;
+            string? pdbPath = null;
+            string? invalidPath = null;
 
             string unquoted = RemoveQuotesAndSlashes(value);
             ParseAndNormalizeFile(unquoted, baseDirectory, out outputFileName, out outputDirectory, out invalidPath);
@@ -275,10 +275,10 @@ namespace Microsoft.CodeAnalysis
             string baseDirectory,
             bool generateDiagnostic = true)
         {
-            string outputFileName = null;
-            string outputDirectory = null;
-            string genericPath = null;
-            string invalidPath = null;
+            string? outputFileName = null;
+            string? outputDirectory = null;
+            string? genericPath = null;
+            string? invalidPath = null;
 
             ParseAndNormalizeFile(unquoted, baseDirectory, out outputFileName, out outputDirectory, out invalidPath);
             if (string.IsNullOrWhiteSpace(outputFileName))
@@ -856,7 +856,7 @@ namespace Microsoft.CodeAnalysis
             return ExpandFileNamePattern(arg, baseDirectory, SearchOption.AllDirectories, errors);
         }
 
-        internal static Encoding TryParseEncodingName(string arg)
+        internal static Encoding? TryParseEncodingName(string arg)
         {
             long codepage;
             if (!string.IsNullOrWhiteSpace(arg)
@@ -904,7 +904,7 @@ namespace Microsoft.CodeAnalysis
 
             var resolvedDirectoryPath = (directory.Length == 0) ? baseDirectory : FileUtilities.ResolveRelativePath(directory, baseDirectory);
 
-            IEnumerator<string> enumerator = null;
+            IEnumerator<string>? enumerator = null;
             try
             {
                 bool yielded = false;
@@ -919,7 +919,7 @@ namespace Microsoft.CodeAnalysis
                 {
                     while (true)
                     {
-                        string resolvedPath = null;
+                        string? resolvedPath = null;
                         try
                         {
                             if (enumerator == null)

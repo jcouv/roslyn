@@ -56,7 +56,7 @@ namespace Microsoft.CodeAnalysis.SymbolDisplay
 
         private static ISymbol SingleSymbolWithArity(ImmutableArray<ISymbol> candidates, int desiredArity)
         {
-            ISymbol singleSymbol = null;
+            ISymbol? singleSymbol = null;
             foreach (ISymbol candidate in candidates)
             {
                 int arity;

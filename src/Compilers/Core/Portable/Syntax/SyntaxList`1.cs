@@ -42,7 +42,7 @@ namespace Microsoft.CodeAnalysis
         {
         }
 
-        private static SyntaxNode CreateNode(IEnumerable<TNode> nodes)
+        private static SyntaxNode? CreateNode(IEnumerable<TNode> nodes)
         {
             if (nodes == null)
             {

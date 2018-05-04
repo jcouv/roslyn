@@ -796,7 +796,7 @@ namespace Microsoft.CodeAnalysis
         internal IList<TDirective> GetDirectives<TDirective>(Func<TDirective, bool> filter = null)
             where TDirective : SyntaxNode
         {
-            List<TDirective> directives = null;
+            List<TDirective>? directives = null;
             GetDirectives(this, filter, ref directives);
             return directives ?? SpecializedCollections.EmptyList<TDirective>();
         }

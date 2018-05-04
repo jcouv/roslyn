@@ -61,7 +61,7 @@ namespace Microsoft.CodeAnalysis
             Debug.Assert(PathUtilities.IsAbsolute(fullPath));
 
             // Check if we have already loaded an assembly with the same identity or from the given path.
-            Assembly loadedAssembly = null;
+            Assembly? loadedAssembly = null;
             lock (_guard)
             {
                 if (_loadedAssembliesByPath.TryGetValue(fullPath, out var existingAssembly))
@@ -150,7 +150,7 @@ namespace Microsoft.CodeAnalysis
             return identity;
         }
 
-        public Assembly Load(string displayName)
+        public Assembly? Load(string displayName)
         {
             if (!AssemblyIdentity.TryParseDisplayName(displayName, out var requestedIdentity))
             {

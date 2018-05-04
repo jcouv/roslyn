@@ -359,7 +359,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
         // if branch is blocked by a nonterminating finally,
         // returns label for a landing block used as a target of blocked branches
         // Otherwise returns null
-        private static object BlockedBranchDestination(BasicBlock src, BasicBlock dest)
+        private static object? BlockedBranchDestination(BasicBlock src, BasicBlock dest)
         {
             var srcHandler = src.EnclosingHandler;
 
@@ -372,9 +372,9 @@ namespace Microsoft.CodeAnalysis.CodeGen
             return BlockedBranchDestinationSlow(dest.EnclosingHandler, srcHandler);
         }
 
-        private static object BlockedBranchDestinationSlow(ExceptionHandlerScope destHandler, ExceptionHandlerScope srcHandler)
+        private static object? BlockedBranchDestinationSlow(ExceptionHandlerScope destHandler, ExceptionHandlerScope srcHandler)
         {
-            ScopeInfo destHandlerScope = null;
+            ScopeInfo? destHandlerScope = null;
             if (destHandler != null)
             {
                 destHandlerScope = destHandler.ContainingExceptionScope;
@@ -501,7 +501,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
                     if (targetBlock.HasNoRegularInstructions)
                     {
-                        BasicBlock targetsTarget = null;
+                        BasicBlock? targetsTarget = null;
                         switch (targetBlock.BranchCode)
                         {
                             case ILOpCode.Br:
@@ -561,7 +561,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
                     if (targetBlock.HasNoRegularInstructions)
                     {
-                        BasicBlock targetsTarget = null;
+                        BasicBlock? targetsTarget = null;
                         switch (targetBlock.BranchCode)
                         {
                             case ILOpCode.Br:

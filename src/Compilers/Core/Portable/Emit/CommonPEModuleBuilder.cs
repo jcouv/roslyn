@@ -477,7 +477,7 @@ namespace Microsoft.CodeAnalysis.Emit
         /// </summary>
         public override IEnumerable<Cci.INamespaceTypeDefinition> GetTopLevelTypes(EmitContext context)
         {
-            Cci.NoPiaReferenceIndexer noPiaIndexer = null;
+            Cci.NoPiaReferenceIndexer? noPiaIndexer = null;
             HashSet<string> names;
 
             // First time through, we need to collect emitted names of all top level types.
@@ -687,7 +687,7 @@ namespace Microsoft.CodeAnalysis.Emit
         public IEnumerable<Cci.INestedTypeDefinition> GetSynthesizedTypes(TNamedTypeSymbol container)
         {
             IEnumerable<Cci.INestedTypeDefinition> declareTypes = GetSynthesizedNestedTypes(container);
-            IEnumerable<Cci.INestedTypeDefinition> compileEmitTypes = null;
+            IEnumerable<Cci.INestedTypeDefinition>? compileEmitTypes = null;
 
             SynthesizedDefinitions defs = GetCacheOfSynthesizedDefinitions(container, addIfNotFound: false);
             if (defs != null)

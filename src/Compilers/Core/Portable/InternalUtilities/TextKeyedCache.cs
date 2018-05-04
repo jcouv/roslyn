@@ -88,7 +88,7 @@ namespace Roslyn.Utilities
 
         private static ObjectPool<TextKeyedCache<T>> CreatePool()
         {
-            ObjectPool<TextKeyedCache<T>> pool = null;
+            ObjectPool<TextKeyedCache<T>>? pool = null;
             pool = new ObjectPool<TextKeyedCache<T>>(() => new TextKeyedCache<T>(pool), Environment.ProcessorCount * 4);
             return pool;
         }
@@ -109,7 +109,7 @@ namespace Roslyn.Utilities
 
         #endregion // Poolable
 
-        internal T FindItem(char[] chars, int start, int len, int hashCode)
+        internal T? FindItem(char[] chars, int start, int len, int hashCode)
         {
             // get direct element reference to avoid extra range checks
             ref var localSlot = ref _localTable[LocalIdxFromHash(hashCode)];
@@ -144,7 +144,7 @@ namespace Roslyn.Utilities
             var arr = _sharedTableInst;
             int idx = SharedIdxFromHash(hashCode);
 
-            SharedEntryValue e = null;
+            SharedEntryValue? e = null;
             int hash;
 
             // we use quadratic probing here

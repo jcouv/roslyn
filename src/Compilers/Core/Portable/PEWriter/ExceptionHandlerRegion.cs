@@ -63,7 +63,7 @@ namespace Microsoft.Cci
         /// If HandlerKind == HandlerKind.Catch, this is the type of exception to catch. If HandlerKind == HandlerKind.Filter, this is System.Object.
         /// Otherwise this is a Dummy.TypeReference.
         /// </summary>
-        public virtual ITypeReference ExceptionType
+        public virtual ITypeReference? ExceptionType
         {
             get
             {

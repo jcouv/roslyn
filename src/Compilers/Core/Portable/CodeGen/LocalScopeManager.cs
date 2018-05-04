@@ -69,7 +69,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
             internal ExceptionHandlerScope EnclosingExceptionHandler => _enclosingExceptionHandler;
 
-            private ExceptionHandlerScope GetEnclosingExceptionHandler()
+            private ExceptionHandlerScope? GetEnclosingExceptionHandler()
             {
                 foreach (var scope in _scopes)
                 {
@@ -742,7 +742,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
             {
                 Debug.Assert(_handlers.Count > 1);
 
-                ExceptionHandlerScope tryScope = null;
+                ExceptionHandlerScope? tryScope = null;
                 ScopeBounds tryBounds = new ScopeBounds();
 
                 foreach (var handlerScope in _handlers)

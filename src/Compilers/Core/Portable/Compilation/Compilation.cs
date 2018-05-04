@@ -79,7 +79,7 @@ namespace Microsoft.CodeAnalysis
 
         protected static IReadOnlyDictionary<string, string> SyntaxTreeCommonFeatures(IEnumerable<SyntaxTree> trees)
         {
-            IReadOnlyDictionary<string, string> set = null;
+            IReadOnlyDictionary<string, string>? set = null;
 
             foreach (var tree in trees)
             {
@@ -831,7 +831,7 @@ namespace Microsoft.CodeAnalysis
         /// full name of the container class stored in <see cref="CompilationOptions.ScriptClassName"/> to find the symbol.
         /// </summary>
         /// <returns>The Script class symbol or null if it is not defined.</returns>
-        protected INamedTypeSymbol CommonBindScriptClass()
+        protected INamedTypeSymbol? CommonBindScriptClass()
         {
             string scriptClassName = this.Options.ScriptClassName ?? "";
 
@@ -1291,7 +1291,7 @@ namespace Microsoft.CodeAnalysis
                 return Win32ResourceForm.UNKNOWN;
         }
 
-        internal Cci.ResourceSection MakeWin32ResourcesFromCOFF(Stream win32Resources, DiagnosticBag diagnostics)
+        internal Cci.ResourceSection? MakeWin32ResourcesFromCOFF(Stream win32Resources, DiagnosticBag diagnostics)
         {
             if (win32Resources == null)
             {
@@ -1323,7 +1323,7 @@ namespace Microsoft.CodeAnalysis
             return resources;
         }
 
-        internal List<Win32Resource> MakeWin32ResourceList(Stream win32Resources, DiagnosticBag diagnostics)
+        internal List<Win32Resource>? MakeWin32ResourceList(Stream win32Resources, DiagnosticBag diagnostics)
         {
             if (win32Resources == null)
             {
@@ -2343,7 +2343,7 @@ namespace Microsoft.CodeAnalysis
         /// Check compilation options and create <see cref="CommonPEModuleBuilder"/>.
         /// </summary>
         /// <returns><see cref="CommonPEModuleBuilder"/> if successful.</returns>
-        internal CommonPEModuleBuilder CheckOptionsAndCreateModuleBuilder(
+        internal CommonPEModuleBuilder? CheckOptionsAndCreateModuleBuilder(
             DiagnosticBag diagnostics,
             IEnumerable<ResourceDescription> manifestResources,
             EmitOptions options,
@@ -2417,11 +2417,11 @@ namespace Microsoft.CodeAnalysis
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            Cci.PdbWriter nativePdbWriter = null;
-            Stream signingInputStream = null;
-            DiagnosticBag metadataDiagnostics = null;
-            DiagnosticBag pdbBag = null;
-            Stream peStream = null;
+            Cci.PdbWriter? nativePdbWriter = null;
+            Stream? signingInputStream = null;
+            DiagnosticBag? metadataDiagnostics = null;
+            DiagnosticBag? pdbBag = null;
+            Stream? peStream = null;
 
             bool deterministic = IsEmitDeterministic;
 
@@ -2563,7 +2563,7 @@ namespace Microsoft.CodeAnalysis
             return true;
         }
 
-        private static Stream ConditionalGetOrCreateStream(EmitStreamProvider metadataPEStreamProvider, DiagnosticBag metadataDiagnostics)
+        private static Stream? ConditionalGetOrCreateStream(EmitStreamProvider metadataPEStreamProvider, DiagnosticBag metadataDiagnostics)
         {
             if (metadataDiagnostics.HasAnyErrors())
             {
@@ -2583,9 +2583,9 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         private (Stream peStream, Stream signingStream, Stream selectedStream) GetPeStream(DiagnosticBag metadataDiagnostics, EmitStreamProvider peStreamProvider, bool metadataOnly)
         {
-            Stream peStream = null;
-            Stream signingStream = null;
-            Stream selectedStream = null;
+            Stream? peStream = null;
+            Stream? signingStream = null;
+            Stream? selectedStream = null;
 
             if (metadataDiagnostics.HasAnyErrors())
             {
@@ -2689,7 +2689,7 @@ namespace Microsoft.CodeAnalysis
             return true;
         }
 
-        internal EmitBaseline SerializeToDeltaStreams(
+        internal EmitBaseline? SerializeToDeltaStreams(
             CommonPEModuleBuilder moduleBeingBuilt,
             EmitBaseline baseline,
             DefinitionMap definitionMap,
@@ -2855,7 +2855,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Return the lexically first of multiple locations.
         /// </summary>
-        internal TLocation FirstSourceLocation<TLocation>(ImmutableArray<TLocation> locations)
+        internal TLocation? FirstSourceLocation<TLocation>(ImmutableArray<TLocation> locations)
             where TLocation : Location
         {
             if (locations.IsEmpty)
@@ -3016,7 +3016,7 @@ namespace Microsoft.CodeAnalysis
             }
 
             bool found = false;
-            string foundVersion = null;
+            string? foundVersion = null;
             if (diagnostic.Arguments != null)
             {
                 foreach (var argument in diagnostic.Arguments)

@@ -165,8 +165,8 @@ namespace Roslyn.Utilities
         //
         private static string EscapeString(string value)
         {
-            PooledStringBuilder pooledBuilder = null;
-            StringBuilder b = null;
+            PooledStringBuilder? pooledBuilder = null;
+            StringBuilder? b = null;
 
             if (string.IsNullOrEmpty(value))
             {

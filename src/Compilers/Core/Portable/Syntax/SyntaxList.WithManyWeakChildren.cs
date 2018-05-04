@@ -47,7 +47,7 @@ namespace Microsoft.CodeAnalysis.Syntax
 
             internal override SyntaxNode GetCachedSlot(int index)
             {
-                SyntaxNode value = null;
+                SyntaxNode? value = null;
                 _children[index].Value?.TryGetTarget(out value);
                 return value;
             }

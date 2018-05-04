@@ -36,7 +36,7 @@ namespace Microsoft.CodeAnalysis.Debugging
         public int RecordCount => _recordCount;
 
         /// <exception cref="InvalidOperationException">More than <see cref="byte.MaxValue"/> records added.</exception>
-        public byte[] ToArray()
+        public byte[]? ToArray()
         {
             if (_recordCount == 0)
             {

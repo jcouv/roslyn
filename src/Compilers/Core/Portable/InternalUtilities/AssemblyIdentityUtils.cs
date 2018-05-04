@@ -12,7 +12,7 @@ namespace Microsoft.CodeAnalysis
 {
     internal static class AssemblyIdentityUtils
     {
-        public static AssemblyIdentity TryGetAssemblyIdentity(string filePath)
+        public static AssemblyIdentity? TryGetAssemblyIdentity(string filePath)
         {
             try
             {

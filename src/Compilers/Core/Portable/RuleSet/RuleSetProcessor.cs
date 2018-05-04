@@ -64,8 +64,8 @@ So we suppress this error until the reporting for CA3053 has been updated to acc
             filePath = FileUtilities.NormalizeAbsolutePath(filePath);
             XmlReaderSettings settings = GetDefaultXmlReaderSettings();
 
-            XDocument ruleSetDocument = null;
-            XElement ruleSetNode = null;
+            XDocument? ruleSetDocument = null;
+            XElement? ruleSetNode = null;
 
             using (Stream stream = FileUtilities.OpenRead(filePath))
             using (XmlReader xmlReader = XmlReader.Create(stream, settings))

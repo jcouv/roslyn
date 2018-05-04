@@ -429,7 +429,7 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
-        public object Value
+        public object? Value
         {
             get
             {

@@ -679,7 +679,7 @@ namespace Microsoft.CodeAnalysis
             out bool requiredModifierFound)
         {
             requiredModifierFound = false;
-            ArrayBuilder<ModifierInfo<TypeSymbol>> modifiers = null;
+            ArrayBuilder<ModifierInfo<TypeSymbol>>? modifiers = null;
 
             for (; ; )
             {
@@ -1188,7 +1188,7 @@ namespace Microsoft.CodeAnalysis
         // MetaImport::DecodeMethodSignature
         internal ParamInfo<TypeSymbol>[] GetSignatureForMethod(MethodDefinitionHandle methodDef, out SignatureHeader signatureHeader, out BadImageFormatException metadataException, bool setParamHandles = true)
         {
-            ParamInfo<TypeSymbol>[] paramInfo = null;
+            ParamInfo<TypeSymbol>[]? paramInfo = null;
             signatureHeader = default(SignatureHeader);
 
             try
@@ -1246,7 +1246,7 @@ namespace Microsoft.CodeAnalysis
 
         internal ParamInfo<TypeSymbol>[] GetSignatureForProperty(PropertyDefinitionHandle handle, out SignatureHeader signatureHeader, out BadImageFormatException BadImageFormatException)
         {
-            ParamInfo<TypeSymbol>[] paramInfo = null;
+            ParamInfo<TypeSymbol>[]? paramInfo = null;
             signatureHeader = default(SignatureHeader);
 
             try

@@ -332,7 +332,7 @@ namespace Microsoft.CodeAnalysis
         /// Gets the <see cref="SuppressionInfo"/> for suppressed diagnostics, i.e. <see cref="IsSuppressed"/> = true.
         /// Otherwise, returns null.
         /// </summary>
-        public SuppressionInfo GetSuppressionInfo(Compilation compilation)
+        public SuppressionInfo? GetSuppressionInfo(Compilation compilation)
         {
             if (!IsSuppressed)
             {
@@ -490,7 +490,7 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
-        internal Diagnostic WithReportDiagnostic(ReportDiagnostic reportAction)
+        internal Diagnostic? WithReportDiagnostic(ReportDiagnostic reportAction)
         {
             switch (reportAction)
             {

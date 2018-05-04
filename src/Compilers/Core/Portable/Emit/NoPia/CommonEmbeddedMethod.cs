@@ -71,7 +71,7 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
 
             public TMethodSymbol UnderlyingMethod => this.UnderlyingSymbol;
 
-            protected sealed override TAttributeData PortAttributeIfNeedTo(TAttributeData attrData, TSyntaxNode syntaxNodeOpt, DiagnosticBag diagnostics)
+            protected sealed override TAttributeData? PortAttributeIfNeedTo(TAttributeData attrData, TSyntaxNode syntaxNodeOpt, DiagnosticBag diagnostics)
             {
                 // Note, when porting attributes, we are not using constructors from original symbol.
                 // The constructors might be missing (for example, in metadata case) and doing lookup
@@ -88,7 +88,7 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
                 return null;
             }
 
-            Cci.IMethodBody Cci.IMethodDefinition.GetBody(EmitContext context)
+            Cci.IMethodBody? Cci.IMethodDefinition.GetBody(EmitContext context)
             {
                 if (Cci.Extensions.HasBody(this))
                 {
@@ -128,19 +128,19 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
 
                 bool Cci.IMethodBody.HasDynamicLocalVariables => false;
 
-                StateMachineMoveNextBodyDebugInfo Cci.IMethodBody.MoveNextBodyInfo => null;
+                StateMachineMoveNextBodyDebugInfo? Cci.IMethodBody.MoveNextBodyInfo => null;
 
-                DynamicAnalysisMethodBodyData Cci.IMethodBody.DynamicAnalysisData => null;
+                DynamicAnalysisMethodBodyData? Cci.IMethodBody.DynamicAnalysisData => null;
 
                 ImmutableArray<Cci.LocalScope> Cci.IMethodBody.LocalScopes =>
                     ImmutableArray<Cci.LocalScope>.Empty;
 
-                Cci.IImportScope Cci.IMethodBody.ImportScope => null;
+                Cci.IImportScope? Cci.IMethodBody.ImportScope => null;
 
                 ImmutableArray<StateMachineHoistedLocalScope> Cci.IMethodBody.StateMachineHoistedLocalScopes =>
                     default(ImmutableArray<StateMachineHoistedLocalScope>);
 
-                string Cci.IMethodBody.StateMachineTypeName => null;
+                string? Cci.IMethodBody.StateMachineTypeName => null;
 
                 ImmutableArray<EncHoistedLocalInfo> Cci.IMethodBody.StateMachineHoistedLocalSlots =>
                     default(ImmutableArray<EncHoistedLocalInfo>);
@@ -262,9 +262,9 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
                 }
             }
 
-            Cci.IGenericMethodInstanceReference Cci.IMethodReference.AsGenericMethodInstanceReference => null;
+            Cci.IGenericMethodInstanceReference? Cci.IMethodReference.AsGenericMethodInstanceReference => null;
 
-            Cci.ISpecializedMethodReference Cci.IMethodReference.AsSpecializedMethodReference => null;
+            Cci.ISpecializedMethodReference? Cci.IMethodReference.AsSpecializedMethodReference => null;
 
             Cci.CallingConvention Cci.ISignature.CallingConvention => UnderlyingMethodSignature.CallingConvention;
 

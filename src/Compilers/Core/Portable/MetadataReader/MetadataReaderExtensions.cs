@@ -36,7 +36,7 @@ namespace Microsoft.CodeAnalysis
         }
 
         /// <exception cref="BadImageFormatException">An exception from metadata reader.</exception>
-        internal static AssemblyIdentity ReadAssemblyIdentityOrThrow(this MetadataReader reader)
+        internal static AssemblyIdentity? ReadAssemblyIdentityOrThrow(this MetadataReader reader)
         {
             if (!reader.IsAssembly)
             {

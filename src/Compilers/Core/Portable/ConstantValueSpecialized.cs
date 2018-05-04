@@ -64,7 +64,7 @@ namespace Microsoft.CodeAnalysis
                 get { return SpecialType.None; }
             }
 
-            public override string StringValue
+            public override string? StringValue
             {
                 get
                 {

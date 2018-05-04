@@ -86,7 +86,7 @@ namespace Roslyn.Utilities
 
         private static ObjectPool<StringTable> CreatePool()
         {
-            ObjectPool<StringTable> pool = null;
+            ObjectPool<StringTable>? pool = null;
             pool = new ObjectPool<StringTable>(() => new StringTable(pool), Environment.ProcessorCount * 2);
             return pool;
         }
@@ -284,7 +284,7 @@ namespace Roslyn.Utilities
             var arr = s_sharedTable;
             int idx = SharedIdxFromHash(hashCode);
 
-            string e = null;
+            string? e = null;
             // we use quadratic probing here
             // bucket positions are (n^2 + n)/2 relative to the masked hashcode
             for (int i = 1; i < SharedBucketSize + 1; i++)
@@ -319,7 +319,7 @@ namespace Roslyn.Utilities
             var arr = s_sharedTable;
             int idx = SharedIdxFromHash(hashCode);
 
-            string e = null;
+            string? e = null;
             // we use quadratic probing here
             // bucket positions are (n^2 + n)/2 relative to the masked hashcode
             for (int i = 1; i < SharedBucketSize + 1; i++)

@@ -296,7 +296,7 @@ namespace Microsoft.CodeAnalysis.Emit
         /// field and the accessor methods. By default, the containing
         /// symbol is simply Symbol.ContainingSymbol.
         /// </summary>
-        private static ISymbol GetContainingSymbol(ISymbol symbol)
+        private static ISymbol? GetContainingSymbol(ISymbol symbol)
         {
             // This approach of walking up the symbol hierarchy towards the
             // root, rather than walking down to the leaf symbols, seems

@@ -75,7 +75,7 @@ namespace Roslyn.Utilities
         /// The same functionality as <see cref="System.IO.Path.GetExtension(string)"/> but doesn't throw an exception
         /// if there are invalid characters in the path.
         /// </remarks>
-        internal static string GetExtension(string path)
+        internal static string? GetExtension(string path)
         {
             if (path == null)
             {
@@ -93,7 +93,7 @@ namespace Roslyn.Utilities
         /// Returns "goo" for path "goo.".
         /// Returns "goo.." for path "goo...".
         /// </remarks>
-        private static string RemoveExtension(string path)
+        private static string? RemoveExtension(string path)
         {
             if (path == null)
             {
@@ -125,7 +125,7 @@ namespace Roslyn.Utilities
         /// If path does not end with an extension, the new extension is appended to the path.
         /// If extension is null, equivalent to <see cref="RemoveExtension"/>.
         /// </returns>
-        internal static string ChangeExtension(string? path, string? extension)
+        internal static string? ChangeExtension(string? path, string? extension)
         {
             if (path == null)
             {

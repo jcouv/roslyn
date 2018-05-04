@@ -110,9 +110,9 @@ namespace Microsoft.CodeAnalysis
         {
             Debug.Assert((object)arguments.AttributeSyntaxOpt != null);
 
-            ITypeSymbol typeSymbol = null;
-            string typeName = null;
-            string cookie = null;
+            ITypeSymbol? typeSymbol = null;
+            string? typeName = null;
+            string? cookie = null;
             bool hasTypeName = false;
             bool hasTypeSymbol = false;
             bool hasErrors = false;
@@ -282,7 +282,7 @@ namespace Microsoft.CodeAnalysis
             Debug.Assert((object)arguments.AttributeSyntaxOpt != null);
 
             Cci.VarEnum? elementTypeVariant = null;
-            ITypeSymbol elementTypeSymbol = null;
+            ITypeSymbol? elementTypeSymbol = null;
             int symbolIndex = -1;
             bool hasErrors = false;
 

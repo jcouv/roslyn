@@ -31,7 +31,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Path or name used in error messages to identity the reference.
         /// </summary>
-        public virtual string Display { get { return null; } }
+        public virtual string? Display { get { return null; } }
 
         /// <summary>
         /// Returns true if this reference is an unresolved reference.

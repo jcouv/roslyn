@@ -49,7 +49,7 @@ namespace Microsoft.CodeAnalysis
         public RuleSet LoadRuleSet(RuleSet parent)
         {
             // Try to load the rule set
-            RuleSet ruleSet = null;
+            RuleSet? ruleSet = null;
 
             string path = _includePath;
             try
@@ -102,7 +102,7 @@ namespace Microsoft.CodeAnalysis
             return resolvedIncludePath;
         }
 
-        private static string ResolveIncludePathCore(string includePath, string parentRulesetPath)
+        private static string? ResolveIncludePathCore(string includePath, string parentRulesetPath)
         {
             includePath = Environment.ExpandEnvironmentVariables(includePath);
             

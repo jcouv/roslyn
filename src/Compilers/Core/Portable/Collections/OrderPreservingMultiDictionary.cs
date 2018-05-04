@@ -52,7 +52,7 @@ namespace Microsoft.CodeAnalysis.Collections
         // if someone needs to create a pool;
         public static ObjectPool<OrderPreservingMultiDictionary<K, V>> CreatePool()
         {
-            ObjectPool<OrderPreservingMultiDictionary<K, V>> pool = null;
+            ObjectPool<OrderPreservingMultiDictionary<K, V>>? pool = null;
             pool = new ObjectPool<OrderPreservingMultiDictionary<K, V>>(() => new OrderPreservingMultiDictionary<K, V>(pool), 16); // Size is a guess.
             return pool;
         }

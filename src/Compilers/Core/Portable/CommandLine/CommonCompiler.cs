@@ -225,7 +225,7 @@ namespace Microsoft.CodeAnalysis
         /// <param name="diagnostics">Storage for diagnostics.</param>
         /// <param name="normalizedFilePath">If given <paramref name="file"/> opens successfully, set to normalized absolute path of the file, null otherwise.</param>
         /// <returns>File content or null on failure.</returns>
-        internal SourceText TryReadFileContent(CommandLineSourceFile file, IList<DiagnosticInfo> diagnostics, out string normalizedFilePath)
+        internal SourceText? TryReadFileContent(CommandLineSourceFile file, IList<DiagnosticInfo> diagnostics, out string normalizedFilePath)
         {
             var filePath = file.Path;
             try
@@ -258,7 +258,7 @@ namespace Microsoft.CodeAnalysis
                 options: FileOptions.None);
         }
 
-        internal EmbeddedText TryReadEmbeddedFileContent(string filePath, DiagnosticBag diagnostics)
+        internal EmbeddedText? TryReadEmbeddedFileContent(string filePath, DiagnosticBag diagnostics)
         {
             try
             {
@@ -482,7 +482,7 @@ namespace Microsoft.CodeAnalysis
         public virtual int Run(TextWriter consoleOutput, CancellationToken cancellationToken = default(CancellationToken))
         {
             var saveUICulture = CultureInfo.CurrentUICulture;
-            StreamErrorLogger errorLogger = null;
+            StreamErrorLogger? errorLogger = null;
 
             try
             {
@@ -653,7 +653,7 @@ namespace Microsoft.CodeAnalysis
                 return;
             }
 
-            DiagnosticBag analyzerExceptionDiagnostics = null;
+            DiagnosticBag? analyzerExceptionDiagnostics = null;
 
             if (!analyzers.IsEmpty)
             {
@@ -686,7 +686,7 @@ namespace Microsoft.CodeAnalysis
             var finalPdbFilePath = Arguments.PdbPath ?? Path.ChangeExtension(finalPeFilePath, ".pdb");
             var finalXmlFilePath = Arguments.DocumentationPath;
 
-            NoThrowStreamDisposer sourceLinkStreamDisposerOpt = null;
+            NoThrowStreamDisposer? sourceLinkStreamDisposerOpt = null;
 
             try
             {
@@ -751,7 +751,7 @@ namespace Microsoft.CodeAnalysis
                         {
                             // NOTE: as native compiler does, we generate the documentation file
                             // NOTE: 'in place', replacing the contents of the file if it exists
-                            NoThrowStreamDisposer xmlStreamDisposerOpt = null;
+                            NoThrowStreamDisposer? xmlStreamDisposerOpt = null;
 
                             if (finalXmlFilePath != null)
                             {
@@ -930,7 +930,7 @@ namespace Microsoft.CodeAnalysis
                     return false;
                 }
 
-                string filePath = null;
+                string? filePath = null;
                 try
                 {
                     filePath = readFilesPath;
@@ -1057,7 +1057,7 @@ namespace Microsoft.CodeAnalysis
         }
         private Func<string, FileMode, FileAccess, FileShare, Stream> _fileOpen;
 
-        private Stream OpenFile(
+        private Stream? OpenFile(
             string filePath,
             DiagnosticBag diagnostics,
             FileMode mode = FileMode.Open,
@@ -1088,7 +1088,7 @@ namespace Microsoft.CodeAnalysis
             return stream;
         }
         
-        private static Stream GetWin32Resources(
+        private static Stream? GetWin32Resources(
             CommonMessageProvider messageProvider,
             CommandLineArguments arguments,
             Compilation compilation,
@@ -1124,7 +1124,7 @@ namespace Microsoft.CodeAnalysis
                 : OpenStream(messageProvider, arguments.Win32Manifest, arguments.BaseDirectory, messageProvider.ERR_CantOpenWin32Manifest, diagnostics);
         }
 
-        private static Stream OpenStream(CommonMessageProvider messageProvider, string path, string baseDirectory, int errorCode, DiagnosticBag diagnostics)
+        private static Stream? OpenStream(CommonMessageProvider messageProvider, string path, string baseDirectory, int errorCode, DiagnosticBag diagnostics)
         {
             if (path == null)
             {

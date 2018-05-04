@@ -212,9 +212,9 @@ namespace Microsoft.CodeAnalysis.Diagnostics
 
             var diagnosticQueue = DiagnosticQueue.Create(categorizeDiagnostics);
 
-            Action<Diagnostic> addNotCategorizedDiagnosticOpt = null;
-            Action<Diagnostic, DiagnosticAnalyzer, bool> addCategorizedLocalDiagnosticOpt = null;
-            Action<Diagnostic, DiagnosticAnalyzer> addCategorizedNonLocalDiagnosticOpt = null;
+            Action<Diagnostic>? addNotCategorizedDiagnosticOpt = null;
+            Action<Diagnostic, DiagnosticAnalyzer, bool>? addCategorizedLocalDiagnosticOpt = null;
+            Action<Diagnostic, DiagnosticAnalyzer>? addCategorizedNonLocalDiagnosticOpt = null;
             if (categorizeDiagnostics)
             {
                 addCategorizedLocalDiagnosticOpt = GetDiagnosticSink(diagnosticQueue.EnqueueLocal, compilation);
@@ -254,7 +254,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             Initialize(analyzerExecutor, diagnosticQueue, compilationData, cancellationToken);
         }
 
-        private SemaphoreSlim GetAnalyzerGate(DiagnosticAnalyzer analyzer)
+        private SemaphoreSlim? GetAnalyzerGate(DiagnosticAnalyzer analyzer)
         {
             SemaphoreSlim gate;
             if (_analyzerGateMap.TryGetValue(analyzer, out gate))
@@ -498,7 +498,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             Action<Exception, DiagnosticAnalyzer, Diagnostic> onAnalyzerException =
                 (ex, analyzer, diagnostic) => addExceptionDiagnostic?.Invoke(diagnostic);
 
-            Func<Exception, bool> nullFilter = null;
+            Func<Exception, bool>? nullFilter = null;
             return CreateAndAttachToCompilation(compilation, analyzers, options, analyzerManager, onAnalyzerException, nullFilter, reportAnalyzer, out newCompilation, cancellationToken: cancellationToken);
         }
 
@@ -687,7 +687,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             var declarationInfoBuilder = ArrayBuilder<DeclarationInfo>.GetInstance();
             model.ComputeDeclarationsInSpan(span, getSymbol: true, builder: declarationInfoBuilder, cancellationToken: cancellationToken);
 
-            ImmutableHashSet<ISymbol>.Builder generatedSymbolsBuilderOpt = null;
+            ImmutableHashSet<ISymbol>.Builder? generatedSymbolsBuilderOpt = null;
             foreach (var declarationInfo in declarationInfoBuilder)
             {
                 var symbol = declarationInfo.DeclaredSymbol;
@@ -785,7 +785,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         {
             try
             {
-                CompilationCompletedEvent completedEvent = null;
+                CompilationCompletedEvent? completedEvent = null;
 
                 if (analysisScope.ConcurrentAnalysis)
                 {
@@ -841,7 +841,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         {
             try
             {
-                CompilationCompletedEvent completedEvent = null;
+                CompilationCompletedEvent? completedEvent = null;
 
                 while (true)
                 {
@@ -1770,7 +1770,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             {
                 // Compute the executable code blocks of interest.
                 var executableCodeBlocks = ImmutableArray<SyntaxNode>.Empty;
-                IEnumerable<CodeBlockAnalyzerActions> codeBlockActions = null;
+                IEnumerable<CodeBlockAnalyzerActions>? codeBlockActions = null;
                 foreach (var declInNode in declarationAnalysisData.DeclarationsInNode)
                 {
                     if (declInNode.DeclaredNode == declarationAnalysisData.TopmostNodeForAnalysis || declInNode.DeclaredNode == declarationAnalysisData.DeclaringReferenceSyntax)
@@ -1973,7 +1973,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         {
             // Eliminate descendant member declarations within declarations.
             // There will be separate symbols declared for the members.
-            HashSet<SyntaxNode> descendantDeclsToSkipOpt = null;
+            HashSet<SyntaxNode>? descendantDeclsToSkipOpt = null;
             bool first = true;
             foreach (var declInNode in declarationsInNode)
             {

@@ -72,7 +72,7 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
-        internal static HashAlgorithm TryGetAlgorithm(SourceHashAlgorithm algorithmId)
+        internal static HashAlgorithm? TryGetAlgorithm(SourceHashAlgorithm algorithmId)
         {
             switch (algorithmId)
             {
@@ -102,7 +102,7 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
-        internal static HashAlgorithm TryGetAlgorithm(AssemblyHashAlgorithm algorithmId)
+        internal static HashAlgorithm? TryGetAlgorithm(AssemblyHashAlgorithm algorithmId)
         {
             switch (algorithmId)
             {

@@ -165,7 +165,7 @@ namespace Microsoft.CodeAnalysis
         {
             var keyPair = default(ImmutableArray<byte>);
             var publicKey = default(ImmutableArray<byte>);
-            string container = null;
+            string? container = null;
 
             if (!string.IsNullOrEmpty(keyFilePath))
             {

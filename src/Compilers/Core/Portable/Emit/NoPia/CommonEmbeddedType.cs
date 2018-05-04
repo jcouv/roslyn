@@ -580,7 +580,7 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
                 }
             }
 
-            Cci.IGenericMethodParameterReference Cci.ITypeReference.AsGenericMethodParameterReference
+            Cci.IGenericMethodParameterReference? Cci.ITypeReference.AsGenericMethodParameterReference
             {
                 get
                 {
@@ -588,7 +588,7 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
                 }
             }
 
-            Cci.IGenericTypeInstanceReference Cci.ITypeReference.AsGenericTypeInstanceReference
+            Cci.IGenericTypeInstanceReference? Cci.ITypeReference.AsGenericTypeInstanceReference
             {
                 get
                 {
@@ -596,7 +596,7 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
                 }
             }
 
-            Cci.IGenericTypeParameterReference Cci.ITypeReference.AsGenericTypeParameterReference
+            Cci.IGenericTypeParameterReference? Cci.ITypeReference.AsGenericTypeParameterReference
             {
                 get
                 {
@@ -617,12 +617,12 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
                 }
             }
 
-            Cci.INestedTypeDefinition Cci.ITypeReference.AsNestedTypeDefinition(EmitContext context)
+            Cci.INestedTypeDefinition? Cci.ITypeReference.AsNestedTypeDefinition(EmitContext context)
             {
                 return null;
             }
 
-            Cci.INestedTypeReference Cci.ITypeReference.AsNestedTypeReference
+            Cci.INestedTypeReference? Cci.ITypeReference.AsNestedTypeReference
             {
                 get
                 {
@@ -630,7 +630,7 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
                 }
             }
 
-            Cci.ISpecializedNestedTypeReference Cci.ITypeReference.AsSpecializedNestedTypeReference
+            Cci.ISpecializedNestedTypeReference? Cci.ITypeReference.AsSpecializedNestedTypeReference
             {
                 get
                 {

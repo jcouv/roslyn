@@ -364,7 +364,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
         public override string ToString() => $"{_type} {_containingType}.{this.Name}";
 
-        public MetadataConstant GetCompileTimeValue(EmitContext context) => null;
+        public MetadataConstant? GetCompileTimeValue(EmitContext context) => null;
 
         public abstract ImmutableArray<byte> MappedData { get; }
 
@@ -382,7 +382,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
         public bool IsMarshalledExplicitly => false;
 
-        public Cci.IMarshallingInformation MarshallingInformation => null;
+        public Cci.IMarshallingInformation? MarshallingInformation => null;
 
         public ImmutableArray<byte> MarshallingDescriptor => default(ImmutableArray<byte>);
 
@@ -420,7 +420,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
         public Cci.IFieldDefinition GetResolvedField(EmitContext context) => this;
 
-        public Cci.ISpecializedFieldReference AsSpecializedFieldReference => null;
+        public Cci.ISpecializedFieldReference? AsSpecializedFieldReference => null;
 
         public MetadataConstant Constant
         {
@@ -540,21 +540,21 @@ namespace Microsoft.CodeAnalysis.CodeGen
             get { throw ExceptionUtilities.Unreachable; }
         }
 
-        public Cci.IGenericMethodParameterReference AsGenericMethodParameterReference => null;
+        public Cci.IGenericMethodParameterReference? AsGenericMethodParameterReference => null;
 
-        public Cci.IGenericTypeInstanceReference AsGenericTypeInstanceReference => null;
+        public Cci.IGenericTypeInstanceReference? AsGenericTypeInstanceReference => null;
 
-        public Cci.IGenericTypeParameterReference AsGenericTypeParameterReference => null;
+        public Cci.IGenericTypeParameterReference? AsGenericTypeParameterReference => null;
 
-        public virtual Cci.INamespaceTypeDefinition AsNamespaceTypeDefinition(EmitContext context) => null;
+        public virtual Cci.INamespaceTypeDefinition? AsNamespaceTypeDefinition(EmitContext context) => null;
 
-        public virtual Cci.INamespaceTypeReference AsNamespaceTypeReference => null;
+        public virtual Cci.INamespaceTypeReference? AsNamespaceTypeReference => null;
 
-        public Cci.ISpecializedNestedTypeReference AsSpecializedNestedTypeReference => null;
+        public Cci.ISpecializedNestedTypeReference? AsSpecializedNestedTypeReference => null;
 
-        public virtual Cci.INestedTypeDefinition AsNestedTypeDefinition(EmitContext context) => null;
+        public virtual Cci.INestedTypeDefinition? AsNestedTypeDefinition(EmitContext context) => null;
 
-        public virtual Cci.INestedTypeReference AsNestedTypeReference => null;
+        public virtual Cci.INestedTypeReference? AsNestedTypeReference => null;
 
         public Cci.ITypeDefinition AsTypeDefinition(EmitContext context) => this;
 

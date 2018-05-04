@@ -18,7 +18,7 @@ namespace Microsoft.CodeAnalysis.Syntax
             {
             }
 
-            internal override SyntaxNode GetNodeSlot(int index)
+            internal override SyntaxNode? GetNodeSlot(int index)
             {
                 switch (index)
                 {
@@ -31,7 +31,7 @@ namespace Microsoft.CodeAnalysis.Syntax
                 }
             }
 
-            internal override SyntaxNode GetCachedSlot(int index)
+            internal override SyntaxNode? GetCachedSlot(int index)
             {
                 switch (index)
                 {

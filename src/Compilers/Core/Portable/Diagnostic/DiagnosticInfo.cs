@@ -336,7 +336,7 @@ namespace Microsoft.CodeAnalysis
 
         protected object[] GetArgumentsToUse(IFormatProvider formatProvider)
         {
-            object[] argumentsToUse = null;
+            object[]? argumentsToUse = null;
             for (int i = 0; i < _arguments.Length; i++)
             {
                 var embedded = _arguments[i] as DiagnosticInfo;

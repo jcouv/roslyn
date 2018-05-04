@@ -115,7 +115,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                     }
 
                     int? arity = null;
-                    ParameterInfo[] parameters = null;
+                    ParameterInfo[]? parameters = null;
 
                     // Check for generic arity
                     if (_scope != TargetScope.Namespace && PeekNextChar() == '`')
@@ -292,7 +292,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                 return n;
             }
 
-            private ParameterInfo[] ParseParameterList()
+            private ParameterInfo[]? ParseParameterList()
             {
                 // Consume the opening parenthesis or bracket
                 Debug.Assert(PeekNextChar() == '(' || PeekNextChar() == '[');
@@ -577,7 +577,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                     }
 
                     int arity = 0;
-                    TypeInfo[] typeArguments = null;
+                    TypeInfo[]? typeArguments = null;
 
                     // Check for generic arity
                     if (PeekNextChar() == '`')
@@ -642,7 +642,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                 }
             }
 
-            private TypeInfo[] ParseTypeArgumentList(ISymbol bindingContext)
+            private TypeInfo[]? ParseTypeArgumentList(ISymbol bindingContext)
             {
                 Debug.Assert(PeekNextChar() == '<');
                 ++_index;
@@ -683,7 +683,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                 return builder.ToArrayAndFree();
             }
 
-            private ITypeSymbol ParseArrayType(ITypeSymbol typeSymbol)
+            private ITypeSymbol? ParseArrayType(ITypeSymbol typeSymbol)
             {
                 Debug.Assert(PeekNextChar() == '[');
                 ++_index;
@@ -711,7 +711,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                 }
             }
 
-            private ISymbol GetFirstMatchingIndexer(ImmutableArray<ISymbol> candidateMembers, ParameterInfo[] parameters)
+            private ISymbol? GetFirstMatchingIndexer(ImmutableArray<ISymbol> candidateMembers, ParameterInfo[] parameters)
             {
                 foreach (var symbol in candidateMembers)
                 {

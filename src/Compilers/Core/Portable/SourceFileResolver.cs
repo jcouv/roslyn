@@ -98,7 +98,7 @@ namespace Microsoft.CodeAnalysis
             return (normalizedPath == null || _pathMap.IsDefaultOrEmpty) ? normalizedPath : PathUtilities.NormalizePathPrefix(normalizedPath, _pathMap);
         }
 
-        public override string ResolveReference(string path, string baseFilePath)
+        public override string? ResolveReference(string path, string baseFilePath)
         {
             string resolvedPath = FileUtilities.ResolveRelativePath(path, baseFilePath, _baseDirectory, _searchPaths, FileExists);
             if (resolvedPath == null)

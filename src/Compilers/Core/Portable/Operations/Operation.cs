@@ -202,7 +202,7 @@ namespace Microsoft.CodeAnalysis
         private static readonly ObjectPool<Queue<IOperation>> s_queuePool =
             new ObjectPool<Queue<IOperation>>(() => new Queue<IOperation>(), 10);
 
-        private IOperation WalkDownOperationToFindParent(HashSet<IOperation> operationAlreadyProcessed, IOperation root)
+        private IOperation? WalkDownOperationToFindParent(HashSet<IOperation> operationAlreadyProcessed, IOperation root)
         {
             void EnqueueChildOperations(Queue<IOperation> queue, IOperation parent)
             {
@@ -257,7 +257,7 @@ namespace Microsoft.CodeAnalysis
         }
 
         // internal for testing
-        internal IOperation SearchParentOperation()
+        internal IOperation? SearchParentOperation()
         {
             var operationAlreadyProcessed = PooledHashSet<IOperation>.GetInstance();
 

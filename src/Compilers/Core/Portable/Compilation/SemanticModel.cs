@@ -70,7 +70,7 @@ namespace Microsoft.CodeAnalysis
         /// <param name="node">The expression or statement syntax node.</param>
         /// <param name="cancellationToken">An optional cancellation token.</param>
         /// <returns></returns>
-        public IOperation GetOperation(SyntaxNode node, CancellationToken cancellationToken = default(CancellationToken))
+        public IOperation? GetOperation(SyntaxNode node, CancellationToken cancellationToken = default(CancellationToken))
         {
             try
             {

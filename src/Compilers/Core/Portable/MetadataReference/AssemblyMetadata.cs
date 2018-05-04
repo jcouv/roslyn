@@ -303,7 +303,7 @@ namespace Microsoft.CodeAnalysis
             if (_lazyData == null)
             {
                 ImmutableArray<ModuleMetadata> modules = _initialModules;
-                ImmutableArray<ModuleMetadata>.Builder moduleBuilder = null;
+                ImmutableArray<ModuleMetadata>.Builder? moduleBuilder = null;
 
                 bool createdModulesUsed = false;
                 try

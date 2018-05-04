@@ -154,7 +154,7 @@ namespace Microsoft.Cci
 
             var namespaceScopes = methodBody.ImportScope;
 
-            PooledHashSet<string> lazyDeclaredExternAliases = null;
+            PooledHashSet<string>? lazyDeclaredExternAliases = null;
             if (!isVisualBasic)
             {
                 for (var scope = namespaceScopes; scope != null; scope = scope.Parent)
@@ -230,7 +230,7 @@ namespace Microsoft.Cci
             }
         }
 
-        private string TryEncodeImport(UsedNamespaceOrType import, HashSet<string> declaredExternAliasesOpt, bool isProjectLevel)
+        private string? TryEncodeImport(UsedNamespaceOrType import, HashSet<string> declaredExternAliasesOpt, bool isProjectLevel)
         {
             // NOTE: Dev12 has related cases "I" and "O" in EMITTER::ComputeDebugNamespace,
             // but they were probably implementation details that do not affect Roslyn.
@@ -637,7 +637,7 @@ namespace Microsoft.Cci
         private void EmitSequencePoints(ImmutableArray<SequencePoint> sequencePoints)
         {
             int lastDocumentIndex = -1;
-            DebugSourceDocument lastDocument = null;
+            DebugSourceDocument? lastDocument = null;
 
             foreach (var sequencePoint in sequencePoints)
             {

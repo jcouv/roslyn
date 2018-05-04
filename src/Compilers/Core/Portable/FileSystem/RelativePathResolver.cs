@@ -31,7 +31,7 @@ namespace Microsoft.CodeAnalysis
             BaseDirectory = baseDirectory;
         }
 
-        public string ResolvePath(string reference, string baseFilePath)
+        public string? ResolvePath(string reference, string baseFilePath)
         {
             string resolvedPath = FileUtilities.ResolveRelativePath(reference, baseFilePath, BaseDirectory, SearchPaths, FileExists);
             if (resolvedPath == null)

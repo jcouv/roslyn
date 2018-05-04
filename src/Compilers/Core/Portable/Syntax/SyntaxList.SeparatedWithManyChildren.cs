@@ -16,7 +16,7 @@ namespace Microsoft.CodeAnalysis.Syntax
                 _children = new ArrayElement<SyntaxNode>[(green.SlotCount + 1) >> 1];
             }
 
-            internal override SyntaxNode GetNodeSlot(int i)
+            internal override SyntaxNode? GetNodeSlot(int i)
             {
                 if ((i & 1) != 0)
                 {
@@ -27,7 +27,7 @@ namespace Microsoft.CodeAnalysis.Syntax
                 return this.GetRedElement(ref _children[i >> 1].Value, i);
             }
 
-            internal override SyntaxNode GetCachedSlot(int i)
+            internal override SyntaxNode? GetCachedSlot(int i)
             {
                 if ((i & 1) != 0)
                 {

@@ -135,7 +135,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
         public string Name => _nameOpt;
 
-        public byte[] Signature => null;
+        public byte[]? Signature => null;
 
         public LocalSlotDebugInfo SlotInfo => _slotInfo;
     }

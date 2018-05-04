@@ -24,7 +24,7 @@ namespace Microsoft.CodeAnalysis.PooledObjects
 
         public static ObjectPool<PooledStopwatch> CreatePool()
         {
-            ObjectPool<PooledStopwatch> pool = null;
+            ObjectPool<PooledStopwatch>? pool = null;
             pool = new ObjectPool<PooledStopwatch>(() => new PooledStopwatch(pool), 128);
             return pool;
         }

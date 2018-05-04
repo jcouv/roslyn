@@ -232,7 +232,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             AddToEventsMap_NoLock(compilationEvents, filterTreeOpt);
 
             // Mark the events for analysis for each analyzer.
-            ArrayBuilder<ISymbol> newPartialSymbols = null;
+            ArrayBuilder<ISymbol>? newPartialSymbols = null;
             Debug.Assert(_pooledEventsWithAnyActionsSet.Count == 0);
             foreach (var kvp in _analyzerStateMap)
             {
@@ -512,7 +512,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             {
                 if (compilationEventsForTree?.Count > 0)
                 {
-                    HashSet<CompilationEvent> pendingEvents = null;
+                    HashSet<CompilationEvent>? pendingEvents = null;
                     try
                     {
                         pendingEvents = GetPendingEvents_NoLock(analyzers);

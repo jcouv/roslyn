@@ -122,7 +122,7 @@ namespace Microsoft.CodeAnalysis
                 this.Value = value;
             }
 
-            public virtual Node Next => null;
+            public virtual Node? Next => null;
         }
 
         private sealed class NodeLinked : Node
@@ -252,9 +252,9 @@ namespace Microsoft.CodeAnalysis
                 return;
             }
 
-            AvlNode currentNodeParent = null;
+            AvlNode? currentNodeParent = null;
             AvlNode unbalanced = currentNode;
-            AvlNode unbalancedParent = null;
+            AvlNode? unbalancedParent = null;
 
             // ====== insert new node
             // also make a note of the last unbalanced node and its parent (for rotation if needed)

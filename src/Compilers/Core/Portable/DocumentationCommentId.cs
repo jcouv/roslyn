@@ -810,7 +810,7 @@ namespace Microsoft.CodeAnalysis
                 }
             }
 
-            private static ITypeSymbol ParseTypeSymbol(string id, ref int index, Compilation compilation, ISymbol typeParameterContext)
+            private static ITypeSymbol? ParseTypeSymbol(string id, ref int index, Compilation compilation, ISymbol typeParameterContext)
             {
                 var results = s_symbolListPool.Allocate();
                 try
@@ -968,7 +968,7 @@ namespace Microsoft.CodeAnalysis
                     {
                         var name = ParseName(id, ref index);
 
-                        List<ITypeSymbol> typeArguments = null;
+                        List<ITypeSymbol>? typeArguments = null;
                         int arity = 0;
 
                         // type arguments
@@ -1248,7 +1248,7 @@ namespace Microsoft.CodeAnalysis
                 int startIndex = index;
                 int endIndex = index;
 
-                List<ParameterInfo> parameters = null;
+                List<ParameterInfo>? parameters = null;
                 try
                 {
                     for (int i = 0, n = containers.Count; i < n; i++)

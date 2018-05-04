@@ -213,14 +213,14 @@ namespace Microsoft.CodeAnalysis
 
             // Maps references that were added to the reference set (i.e. not filtered out as duplicates) to a set of names that 
             // can be used to alias these references. Duplicate assemblies contribute their aliases into this set.
-            Dictionary<MetadataReference, MergedAliases> lazyAliasMap = null;
+            Dictionary<MetadataReference, MergedAliases>? lazyAliasMap = null;
 
             // Used to filter out duplicate references that reference the same file (resolve to the same full normalized path).
             var boundReferences = new Dictionary<MetadataReference, MetadataReference>(MetadataReferenceEqualityComparer.Instance);
 
             ArrayBuilder<MetadataReference> uniqueDirectiveReferences = (referenceDirectiveLocations != null) ? ArrayBuilder<MetadataReference>.GetInstance() : null;
             var assembliesBuilder = ArrayBuilder<AssemblyData>.GetInstance();
-            ArrayBuilder<PEModule> lazyModulesBuilder = null;
+            ArrayBuilder<PEModule>? lazyModulesBuilder = null;
 
             bool supersedeLowerVersions = compilation.Options.ReferencesSupersedeLowerVersions;
 
@@ -465,7 +465,7 @@ namespace Microsoft.CodeAnalysis
             }
 
             Metadata newMetadata;
-            Diagnostic newDiagnostic = null;
+            Diagnostic? newDiagnostic = null;
             try
             {
                 newMetadata = peReference.GetMetadataNoCopy();
@@ -621,7 +621,7 @@ namespace Microsoft.CodeAnalysis
         /// - both assembly names are strong (have keys) and are either equal or FX unified 
         /// - both assembly names are weak (no keys) and have the same simple name.
         /// </summary>
-        private MetadataReference TryAddAssembly(
+        private MetadataReference? TryAddAssembly(
             AssemblyIdentity identity,
             MetadataReference reference,
             int assemblyIndex,

@@ -249,7 +249,7 @@ namespace Microsoft.CodeAnalysis
                 return identity;
             }
 
-            Version newVersion = null;
+            Version? newVersion = null;
             ImmutableArray<byte> newPublicKeyToken = default(ImmutableArray<byte>);
 
             var version = (AssemblyVersion)identity.Version;

@@ -365,7 +365,7 @@ namespace Microsoft.CodeAnalysis.PooledObjects
 
         public static ObjectPool<ArrayBuilder<T>> CreatePool(int size)
         {
-            ObjectPool<ArrayBuilder<T>> pool = null;
+            ObjectPool<ArrayBuilder<T>>? pool = null;
             pool = new ObjectPool<ArrayBuilder<T>>(() => new ArrayBuilder<T>(pool), size);
             return pool;
         }

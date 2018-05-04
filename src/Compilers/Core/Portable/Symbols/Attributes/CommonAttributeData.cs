@@ -217,7 +217,7 @@ namespace Microsoft.CodeAnalysis
             ImmutableArray<TypedConstant> args = this.CommonConstructorArguments;
 
             // ObsoleteAttribute() 
-            string message = null;
+            string? message = null;
             bool isError = false;
 
             if (args.Length > 0)
@@ -245,7 +245,7 @@ namespace Microsoft.CodeAnalysis
             var args = this.CommonConstructorArguments;
 
             // DeprecatedAttribute() 
-            string message = null;
+            string? message = null;
             bool isError = false;
 
             if (args.Length == 3 || args.Length == 4)

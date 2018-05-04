@@ -171,7 +171,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             // PROTOTYPE(NullableDogfood): Need annotation like TryGetValue
             private static bool TryDequeue_NoLock(Dictionary<DiagnosticAnalyzer, SimpleDiagnosticQueue> lazyDiagnosticsMap, out Diagnostic? d)
             {
-                Diagnostic diag = null;
+                Diagnostic? diag = null;
                 if (lazyDiagnosticsMap != null && lazyDiagnosticsMap.Any(kvp => kvp.Value.TryDequeue(out diag)))
                 {
                     d = diag;

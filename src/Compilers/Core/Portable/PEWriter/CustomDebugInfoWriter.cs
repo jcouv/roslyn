@@ -140,7 +140,7 @@ namespace Microsoft.Cci
             Func<ILocalDefinition, bool> filter,
             Func<LocalScope, ILocalDefinition, T> getInfo)
         {
-            ArrayBuilder<T> builder = null;
+            ArrayBuilder<T>? builder = null;
 
             foreach (var currentScope in methodBody.LocalScopes)
             {

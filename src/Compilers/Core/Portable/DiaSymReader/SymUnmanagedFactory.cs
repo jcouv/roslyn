@@ -79,7 +79,7 @@ namespace Microsoft.DiaSymReader
 #endif
 
         // internal for testing
-        internal static string GetEnvironmentVariable(string name)
+        internal static string? GetEnvironmentVariable(string name)
         {
             try
             {
@@ -95,7 +95,7 @@ namespace Microsoft.DiaSymReader
             }
         }
 
-        private static object TryLoadFromAlternativePath(Guid clsid, string factoryName)
+        private static object? TryLoadFromAlternativePath(Guid clsid, string factoryName)
         {
             var dir = GetEnvironmentVariable(AlternateLoadPathEnvironmentVariableName);
             if (string.IsNullOrEmpty(dir))
@@ -109,7 +109,7 @@ namespace Microsoft.DiaSymReader
                 Marshal.ThrowExceptionForHR(Marshal.GetHRForLastWin32Error());
             }
 
-            object instance = null;
+            object? instance = null;
             try
             {
                 var createAddress = GetProcAddress(moduleHandle, factoryName);
@@ -152,7 +152,7 @@ namespace Microsoft.DiaSymReader
 
         internal static object CreateObject(bool createReader, bool useAlternativeLoadPath, bool useComRegistry, out string moduleName, out Exception loadException)
         {
-            object instance = null;
+            object? instance = null;
             loadException = null;
             moduleName = null;
 

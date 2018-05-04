@@ -1049,7 +1049,7 @@ namespace Microsoft.CodeAnalysis.Text
         /// <param name="length">The length of valid data in the buffer.</param>
         /// <param name="preambleLength">The length of any detected byte order marks.</param>
         /// <returns>The detected encoding or null if no recognized byte order mark was present.</returns>
-        internal static Encoding TryReadByteOrderMark(byte[] source, int length, out int preambleLength)
+        internal static Encoding? TryReadByteOrderMark(byte[] source, int length, out int preambleLength)
         {
             Debug.Assert(source != null);
             Debug.Assert(length <= source.Length);

@@ -281,7 +281,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public static string ToLower(string value)
+        public static string? ToLower(string value)
         {
             if ((object)value == null)
                 return null;

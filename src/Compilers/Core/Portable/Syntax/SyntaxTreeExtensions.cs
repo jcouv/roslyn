@@ -20,7 +20,7 @@ namespace Microsoft.CodeAnalysis
             var root = tree.GetRoot();
             var text = tree.GetText();
             var fullSpan = new TextSpan(0, text.Length);
-            SyntaxNode node = null;
+            SyntaxNode? node = null;
 
             // If only a subset of the document has changed,
             // just check that subset to reduce verification cost.

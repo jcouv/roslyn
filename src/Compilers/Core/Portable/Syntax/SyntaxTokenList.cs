@@ -57,7 +57,7 @@ namespace Microsoft.CodeAnalysis
         {
         }
 
-        private static GreenNode CreateNode(SyntaxToken[] tokens)
+        private static GreenNode? CreateNode(SyntaxToken[] tokens)
         {
             if (tokens == null)
             {
@@ -75,7 +75,7 @@ namespace Microsoft.CodeAnalysis
             return builder.ToList().Node;
         }
 
-        private static GreenNode CreateNode(IEnumerable<SyntaxToken> tokens)
+        private static GreenNode? CreateNode(IEnumerable<SyntaxToken> tokens)
         {
             if (tokens == null)
             {

@@ -67,7 +67,7 @@ namespace Microsoft.CodeAnalysis.Emit
             }
         }
 
-        Cci.ITypeDefinition Cci.ITypeReference.GetResolvedType(EmitContext context)
+        Cci.ITypeDefinition? Cci.ITypeReference.GetResolvedType(EmitContext context)
         {
             return null;
         }
@@ -88,7 +88,7 @@ namespace Microsoft.CodeAnalysis.Emit
             }
         }
 
-        Cci.IGenericMethodParameterReference Cci.ITypeReference.AsGenericMethodParameterReference
+        Cci.IGenericMethodParameterReference? Cci.ITypeReference.AsGenericMethodParameterReference
         {
             get
             {
@@ -96,7 +96,7 @@ namespace Microsoft.CodeAnalysis.Emit
             }
         }
 
-        Cci.IGenericTypeInstanceReference Cci.ITypeReference.AsGenericTypeInstanceReference
+        Cci.IGenericTypeInstanceReference? Cci.ITypeReference.AsGenericTypeInstanceReference
         {
             get
             {
@@ -104,7 +104,7 @@ namespace Microsoft.CodeAnalysis.Emit
             }
         }
 
-        Cci.IGenericTypeParameterReference Cci.ITypeReference.AsGenericTypeParameterReference
+        Cci.IGenericTypeParameterReference? Cci.ITypeReference.AsGenericTypeParameterReference
         {
             get
             {
@@ -112,7 +112,7 @@ namespace Microsoft.CodeAnalysis.Emit
             }
         }
 
-        Cci.INamespaceTypeDefinition Cci.ITypeReference.AsNamespaceTypeDefinition(EmitContext context)
+        Cci.INamespaceTypeDefinition? Cci.ITypeReference.AsNamespaceTypeDefinition(EmitContext context)
         {
             return null;
         }
@@ -125,12 +125,12 @@ namespace Microsoft.CodeAnalysis.Emit
             }
         }
 
-        Cci.INestedTypeDefinition Cci.ITypeReference.AsNestedTypeDefinition(EmitContext context)
+        Cci.INestedTypeDefinition? Cci.ITypeReference.AsNestedTypeDefinition(EmitContext context)
         {
             return null;
         }
 
-        Cci.INestedTypeReference Cci.ITypeReference.AsNestedTypeReference
+        Cci.INestedTypeReference? Cci.ITypeReference.AsNestedTypeReference
         {
             get
             {
@@ -138,7 +138,7 @@ namespace Microsoft.CodeAnalysis.Emit
             }
         }
 
-        Cci.ISpecializedNestedTypeReference Cci.ITypeReference.AsSpecializedNestedTypeReference
+        Cci.ISpecializedNestedTypeReference? Cci.ITypeReference.AsSpecializedNestedTypeReference
         {
             get
             {
@@ -146,7 +146,7 @@ namespace Microsoft.CodeAnalysis.Emit
             }
         }
 
-        Cci.ITypeDefinition Cci.ITypeReference.AsTypeDefinition(EmitContext context)
+        Cci.ITypeDefinition? Cci.ITypeReference.AsTypeDefinition(EmitContext context)
         {
             return null;
         }
@@ -161,7 +161,7 @@ namespace Microsoft.CodeAnalysis.Emit
             visitor.Visit((Cci.INamespaceTypeReference)this);
         }
 
-        Cci.IDefinition Cci.IReference.AsDefinition(EmitContext context)
+        Cci.IDefinition? Cci.IReference.AsDefinition(EmitContext context)
         {
             return null;
         }
@@ -194,7 +194,7 @@ namespace Microsoft.CodeAnalysis.Emit
                 contentType: AssemblyContentType.Default);
 
             AssemblyIdentity Cci.IAssemblyReference.Identity => s_identity;
-            Version Cci.IAssemblyReference.AssemblyVersionPattern => null;
+            Version? Cci.IAssemblyReference.AssemblyVersionPattern => null;
 
             Cci.IAssemblyReference Cci.IModuleReference.GetContainingAssembly(EmitContext context)
             {
@@ -211,7 +211,7 @@ namespace Microsoft.CodeAnalysis.Emit
                 visitor.Visit((Cci.IAssemblyReference)this);
             }
 
-            Cci.IDefinition Cci.IReference.AsDefinition(EmitContext context)
+            Cci.IDefinition? Cci.IReference.AsDefinition(EmitContext context)
             {
                 return null;
             }

@@ -202,7 +202,7 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
                 return this;
             }
 
-            Cci.ISpecializedFieldReference Cci.IFieldReference.AsSpecializedFieldReference
+            Cci.ISpecializedFieldReference? Cci.IFieldReference.AsSpecializedFieldReference
             {
                 get
                 {

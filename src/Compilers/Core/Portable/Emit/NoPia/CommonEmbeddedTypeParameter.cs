@@ -103,7 +103,7 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
                 }
             }
 
-            Cci.IGenericTypeParameter Cci.IGenericParameter.AsGenericTypeParameter
+            Cci.IGenericTypeParameter? Cci.IGenericParameter.AsGenericTypeParameter
             {
                 get
                 {
@@ -121,7 +121,7 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
                 get { return false; }
             }
 
-            Cci.ITypeDefinition Cci.ITypeReference.GetResolvedType(EmitContext context)
+            Cci.ITypeDefinition? Cci.ITypeReference.GetResolvedType(EmitContext context)
             {
                 return null;
             }
@@ -144,42 +144,42 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
                 get { return this; }
             }
 
-            Cci.IGenericTypeInstanceReference Cci.ITypeReference.AsGenericTypeInstanceReference
+            Cci.IGenericTypeInstanceReference? Cci.ITypeReference.AsGenericTypeInstanceReference
             {
                 get { return null; }
             }
 
-            Cci.IGenericTypeParameterReference Cci.ITypeReference.AsGenericTypeParameterReference
+            Cci.IGenericTypeParameterReference? Cci.ITypeReference.AsGenericTypeParameterReference
             {
                 get { return null; }
             }
 
-            Cci.INamespaceTypeDefinition Cci.ITypeReference.AsNamespaceTypeDefinition(EmitContext context)
+            Cci.INamespaceTypeDefinition? Cci.ITypeReference.AsNamespaceTypeDefinition(EmitContext context)
             {
                 return null;
             }
 
-            Cci.INamespaceTypeReference Cci.ITypeReference.AsNamespaceTypeReference
+            Cci.INamespaceTypeReference? Cci.ITypeReference.AsNamespaceTypeReference
             {
                 get { return null; }
             }
 
-            Cci.INestedTypeDefinition Cci.ITypeReference.AsNestedTypeDefinition(EmitContext context)
+            Cci.INestedTypeDefinition? Cci.ITypeReference.AsNestedTypeDefinition(EmitContext context)
             {
                 return null;
             }
 
-            Cci.INestedTypeReference Cci.ITypeReference.AsNestedTypeReference
+            Cci.INestedTypeReference? Cci.ITypeReference.AsNestedTypeReference
             {
                 get { return null; }
             }
 
-            Cci.ISpecializedNestedTypeReference Cci.ITypeReference.AsSpecializedNestedTypeReference
+            Cci.ISpecializedNestedTypeReference? Cci.ITypeReference.AsSpecializedNestedTypeReference
             {
                 get { return null; }
             }
 
-            Cci.ITypeDefinition Cci.ITypeReference.AsTypeDefinition(EmitContext context)
+            Cci.ITypeDefinition? Cci.ITypeReference.AsTypeDefinition(EmitContext context)
             {
                 return null;
             }
@@ -195,7 +195,7 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
                 throw ExceptionUtilities.Unreachable;
             }
 
-            Cci.IDefinition Cci.IReference.AsDefinition(EmitContext context)
+            Cci.IDefinition? Cci.IReference.AsDefinition(EmitContext context)
             {
                 return null;
             }

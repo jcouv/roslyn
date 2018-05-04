@@ -99,7 +99,7 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
                 get { return false; }
             }
 
-            MetadataConstant Cci.IPropertyDefinition.DefaultValue
+            MetadataConstant? Cci.IPropertyDefinition.DefaultValue
             {
                 get { return null; }
             }

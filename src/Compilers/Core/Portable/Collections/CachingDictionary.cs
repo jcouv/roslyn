@@ -250,7 +250,7 @@ namespace Microsoft.CodeAnalysis.Collections
         /// </summary>
         private IDictionary<TKey, ImmutableArray<TElement>> EnsureFullyPopulated()
         {
-            IDictionary<TKey, ImmutableArray<TElement>> fullyPopulatedMap = null;
+            IDictionary<TKey, ImmutableArray<TElement>>? fullyPopulatedMap = null;
 
             var currentMap = _map;
             while (IsNotFullyPopulatedMap(currentMap))

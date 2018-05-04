@@ -392,7 +392,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             }
 
             AsyncQueue<CompilationEvent> eventQueue = _eventQueuePool.Allocate();
-            AnalyzerDriver driver = null;
+            AnalyzerDriver? driver = null;
 
             try
             {
@@ -432,7 +432,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         private async Task<ImmutableArray<Diagnostic>> GetAllDiagnosticsWithoutStateTrackingAsync(ImmutableArray<DiagnosticAnalyzer> analyzers, CancellationToken cancellationToken)
         {
             AsyncQueue<CompilationEvent> eventQueue = _eventQueuePool.Allocate();
-            AnalyzerDriver driver = null;
+            AnalyzerDriver? driver = null;
 
             try
             {
@@ -650,7 +650,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                                         {
                                             try
                                             {
-                                                AsyncQueue<CompilationEvent> eventQueue = null;
+                                                AsyncQueue<CompilationEvent>? eventQueue = null;
                                                 try
                                                 {
                                                     // Get event queue with pending events to analyze.

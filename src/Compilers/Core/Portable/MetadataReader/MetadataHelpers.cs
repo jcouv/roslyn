@@ -131,12 +131,12 @@ namespace Microsoft.CodeAnalysis
             {
                 Debug.Assert(!isTypeArgumentWithAssemblyName || isTypeArgument);
 
-                string topLevelType = null;
-                ArrayBuilder<string> nestedTypesBuilder = null;
-                AssemblyQualifiedTypeName[] typeArguments = null;
+                string? topLevelType = null;
+                ArrayBuilder<string>? nestedTypesBuilder = null;
+                AssemblyQualifiedTypeName[]? typeArguments = null;
                 int pointerCount = 0;
-                ArrayBuilder<int> arrayRanksBuilder = null;
-                string assemblyName = null;
+                ArrayBuilder<int>? arrayRanksBuilder = null;
+                string? assemblyName = null;
                 bool decodingTopLevelType = true;
                 bool isGenericTypeName = false;
 
@@ -317,7 +317,7 @@ namespace Microsoft.CodeAnalysis
                 return _input.Substring(start, _offset - start);
             }
 
-            private AssemblyQualifiedTypeName[] DecodeTypeArguments()
+            private AssemblyQualifiedTypeName[]? DecodeTypeArguments()
             {
                 if (EndOfInput)
                 {
@@ -379,7 +379,7 @@ namespace Microsoft.CodeAnalysis
                 return result;
             }
 
-            private string DecodeAssemblyName(bool isTypeArgumentWithAssemblyName)
+            private string? DecodeAssemblyName(bool isTypeArgumentWithAssemblyName)
             {
                 if (EndOfInput)
                 {
@@ -747,11 +747,11 @@ namespace Microsoft.CodeAnalysis
                     var pair = enumerator.Current;
 
                     // Simple name of the last encountered child namespace.
-                    string lastChildNamespaceName = null;
+                    string? lastChildNamespaceName = null;
 
                     // A list accumulating information about types within the last encountered child namespace.
                     // The list is similar to the sequence passed to this function.
-                    List<IGrouping<string, TypeDefinitionHandle>> typesInLastChildNamespace = null;
+                    List<IGrouping<string, TypeDefinitionHandle>>? typesInLastChildNamespace = null;
 
                     // if there are any types in this namespace,
                     // they will be in the first several groups if their key length 
@@ -939,7 +939,7 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
-        private static string GetAssemblyOrModuleNameErrorArgumentResourceName(string name)
+        private static string? GetAssemblyOrModuleNameErrorArgumentResourceName(string name)
         {
             if (name == null)
             {

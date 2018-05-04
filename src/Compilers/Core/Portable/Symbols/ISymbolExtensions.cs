@@ -15,7 +15,7 @@ namespace Microsoft.CodeAnalysis
         /// Returns the constructed form of the ReducedFrom property,
         /// including the type arguments that were either inferred during reduction or supplied at the call site.
         /// </summary>
-        public static IMethodSymbol GetConstructedReducedFrom(this IMethodSymbol method)
+        public static IMethodSymbol? GetConstructedReducedFrom(this IMethodSymbol method)
         {
             if (method.MethodKind != MethodKind.ReducedExtension)
             {
@@ -88,7 +88,7 @@ namespace Microsoft.CodeAnalysis
             return field.IsTupleElement() && !field.IsImplicitlyDeclared ? field.Name : null;
         }
 
-        internal static INamespaceSymbol GetNestedNamespace(this INamespaceSymbol container, string name)
+        internal static INamespaceSymbol? GetNestedNamespace(this INamespaceSymbol container, string name)
         {
             foreach (var sym in container.GetMembers(name))
             {

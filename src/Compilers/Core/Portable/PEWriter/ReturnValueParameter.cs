@@ -26,7 +26,7 @@ namespace Microsoft.Cci
 
         private readonly IMethodDefinition _containingMethod;
 
-        public MetadataConstant Constant
+        public MetadataConstant? Constant
         {
             get { return null; }
         }
@@ -41,7 +41,7 @@ namespace Microsoft.Cci
             get { return _containingMethod.ReturnValueCustomModifiers; }
         }
 
-        public MetadataConstant GetDefaultValue(EmitContext context)
+        public MetadataConstant? GetDefaultValue(EmitContext context)
         {
             return null;
         }

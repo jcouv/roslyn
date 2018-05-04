@@ -196,7 +196,7 @@ namespace Microsoft.Cci
             // We need to calculate the PDB checksum, so we may as well use the calculated hash for PDB ID regardless of whether deterministic build is requested.
             var portablePdbContentHash = default(ImmutableArray<byte>);
             
-            BlobBuilder portablePdbToEmbed = null;
+            BlobBuilder? portablePdbToEmbed = null;
             if (mdWriter.EmitPortableDebugMetadata)
             {
                 mdWriter.AddRemainingEmbeddedDocuments(mdWriter.Module.DebugDocumentsBuilder.EmbeddedDocuments);
@@ -432,7 +432,7 @@ namespace Microsoft.Cci
             return path + new string('\0', Math.Max(0, minLength - Encoding.UTF8.GetByteCount(path) - 1));
         }
 
-        private static ResourceSectionBuilder CreateNativeResourceSectionSerializer(CommonPEModuleBuilder module)
+        private static ResourceSectionBuilder? CreateNativeResourceSectionSerializer(CommonPEModuleBuilder module)
         {
             // Win32 resources are supplied to the compiler in one of two forms, .RES (the output of the resource compiler),
             // or .OBJ (the output of running cvtres.exe on a .RES file). A .RES file is parsed and processed into

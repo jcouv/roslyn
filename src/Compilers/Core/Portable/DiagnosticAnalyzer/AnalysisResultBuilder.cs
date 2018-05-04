@@ -23,9 +23,9 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         private readonly HashSet<DiagnosticAnalyzer> _completedAnalyzers;
         private readonly Dictionary<DiagnosticAnalyzer, AnalyzerActionCounts> _analyzerActionCounts;
 
-        private Dictionary<SyntaxTree, Dictionary<DiagnosticAnalyzer, ImmutableArray<Diagnostic>.Builder>> _localSemanticDiagnosticsOpt = null;
-        private Dictionary<SyntaxTree, Dictionary<DiagnosticAnalyzer, ImmutableArray<Diagnostic>.Builder>> _localSyntaxDiagnosticsOpt = null;
-        private Dictionary<DiagnosticAnalyzer, ImmutableArray<Diagnostic>.Builder> _nonLocalDiagnosticsOpt = null;
+        private Dictionary<SyntaxTree, Dictionary<DiagnosticAnalyzer, ImmutableArray<Diagnostic>.Builder>>? _localSemanticDiagnosticsOpt = null;
+        private Dictionary<SyntaxTree, Dictionary<DiagnosticAnalyzer, ImmutableArray<Diagnostic>.Builder>>? _localSyntaxDiagnosticsOpt = null;
+        private Dictionary<DiagnosticAnalyzer, ImmutableArray<Diagnostic>.Builder>? _nonLocalDiagnosticsOpt = null;
         
         internal AnalysisResultBuilder(bool logAnalyzerExecutionTime, ImmutableArray<DiagnosticAnalyzer> analyzers)
         {
@@ -59,7 +59,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         {
             lock (_gate)
             {
-                ArrayBuilder<DiagnosticAnalyzer> builder = null;
+                ArrayBuilder<DiagnosticAnalyzer>? builder = null;
                 foreach (var analyzer in analyzers)
                 {
                     if (!_completedAnalyzers.Contains(analyzer))

@@ -75,7 +75,7 @@ namespace Microsoft.Cci
             visitor.Visit((IModifiedTypeReference)this);
         }
 
-        IGenericMethodParameterReference ITypeReference.AsGenericMethodParameterReference
+        IGenericMethodParameterReference? ITypeReference.AsGenericMethodParameterReference
         {
             get
             {
@@ -83,7 +83,7 @@ namespace Microsoft.Cci
             }
         }
 
-        IGenericTypeInstanceReference ITypeReference.AsGenericTypeInstanceReference
+        IGenericTypeInstanceReference? ITypeReference.AsGenericTypeInstanceReference
         {
             get
             {
@@ -91,7 +91,7 @@ namespace Microsoft.Cci
             }
         }
 
-        IGenericTypeParameterReference ITypeReference.AsGenericTypeParameterReference
+        IGenericTypeParameterReference? ITypeReference.AsGenericTypeParameterReference
         {
             get
             {
@@ -99,12 +99,12 @@ namespace Microsoft.Cci
             }
         }
 
-        INamespaceTypeDefinition ITypeReference.AsNamespaceTypeDefinition(EmitContext context)
+        INamespaceTypeDefinition? ITypeReference.AsNamespaceTypeDefinition(EmitContext context)
         {
             return null;
         }
 
-        INamespaceTypeReference ITypeReference.AsNamespaceTypeReference
+        INamespaceTypeReference? ITypeReference.AsNamespaceTypeReference
         {
             get
             {
@@ -112,12 +112,12 @@ namespace Microsoft.Cci
             }
         }
 
-        INestedTypeDefinition ITypeReference.AsNestedTypeDefinition(EmitContext context)
+        INestedTypeDefinition? ITypeReference.AsNestedTypeDefinition(EmitContext context)
         {
             return null;
         }
 
-        INestedTypeReference ITypeReference.AsNestedTypeReference
+        INestedTypeReference? ITypeReference.AsNestedTypeReference
         {
             get
             {
@@ -125,7 +125,7 @@ namespace Microsoft.Cci
             }
         }
 
-        ISpecializedNestedTypeReference ITypeReference.AsSpecializedNestedTypeReference
+        ISpecializedNestedTypeReference? ITypeReference.AsSpecializedNestedTypeReference
         {
             get
             {
@@ -133,12 +133,12 @@ namespace Microsoft.Cci
             }
         }
 
-        ITypeDefinition ITypeReference.AsTypeDefinition(EmitContext context)
+        ITypeDefinition? ITypeReference.AsTypeDefinition(EmitContext context)
         {
             return null;
         }
 
-        IDefinition IReference.AsDefinition(EmitContext context)
+        IDefinition? IReference.AsDefinition(EmitContext context)
         {
             return null;
         }

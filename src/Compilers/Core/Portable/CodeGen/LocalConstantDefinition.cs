@@ -59,7 +59,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
         public int SlotIndex => -1;
 
-        public byte[] Signature => null;
+        public byte[]? Signature => null;
 
         public LocalSlotDebugInfo SlotInfo
             => new LocalSlotDebugInfo(SynthesizedLocalKind.UserDefined, LocalDebugId.None);

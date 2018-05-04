@@ -192,8 +192,8 @@ namespace Microsoft.CodeAnalysis
             var parsedParts = AssemblyIdentityParts.Name;
             var seen = AssemblyIdentityParts.Name;
 
-            Version version = null;
-            string culture = null;
+            Version? version = null;
+            string? culture = null;
             bool isRetargetable = false;
             var contentType = AssemblyContentType.Default;
             var publicKey = default(ImmutableArray<byte>);

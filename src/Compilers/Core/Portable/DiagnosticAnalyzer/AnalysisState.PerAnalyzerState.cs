@@ -21,7 +21,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             private readonly Dictionary<ISymbol, AnalyzerStateData> _pendingSymbols = new Dictionary<ISymbol, AnalyzerStateData>();
             private readonly Dictionary<ISymbol, Dictionary<int, DeclarationAnalyzerStateData>> _pendingDeclarations = new Dictionary<ISymbol, Dictionary<int, DeclarationAnalyzerStateData>>();
 
-            private Dictionary<SyntaxTree, AnalyzerStateData> _lazySyntaxTreesWithAnalysisData = null;
+            private Dictionary<SyntaxTree, AnalyzerStateData>? _lazySyntaxTreesWithAnalysisData = null;
             private int _pendingSyntaxAnalysisTreesCount = 0;
 
             private readonly ObjectPool<AnalyzerStateData> _analyzerStateDataPool;

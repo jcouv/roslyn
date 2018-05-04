@@ -63,7 +63,7 @@ namespace Microsoft.CodeAnalysis
         {
         }
 
-        private static GreenNode CreateNode(SyntaxTrivia[] trivias)
+        private static GreenNode? CreateNode(SyntaxTrivia[] trivias)
         {
             if (trivias == null)
             {

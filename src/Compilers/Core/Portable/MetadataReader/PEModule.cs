@@ -1042,7 +1042,7 @@ namespace Microsoft.CodeAnalysis
 
         internal const string ByRefLikeMarker = "Types with embedded references are not supported in this version of your compiler.";
 
-        internal ObsoleteAttributeData TryGetDeprecatedOrExperimentalOrObsoleteAttribute(
+        internal ObsoleteAttributeData? TryGetDeprecatedOrExperimentalOrObsoleteAttribute(
             EntityHandle token, 
             bool ignoreByRefLikeMarker)
         {
@@ -1162,7 +1162,7 @@ namespace Microsoft.CodeAnalysis
         }
 
         // This method extracts all the non-null string values from the given attributes.
-        private ArrayBuilder<string> ExtractStringValuesFromAttributes(List<AttributeInfo> attrInfos)
+        private ArrayBuilder<string>? ExtractStringValuesFromAttributes(List<AttributeInfo> attrInfos)
         {
             if (attrInfos == null)
             {
@@ -1183,7 +1183,7 @@ namespace Microsoft.CodeAnalysis
             return result;
         }
 
-        private ObsoleteAttributeData TryExtractObsoleteDataFromAttribute(AttributeInfo attributeInfo)
+        private ObsoleteAttributeData? TryExtractObsoleteDataFromAttribute(AttributeInfo attributeInfo)
         {
             Debug.Assert(attributeInfo.HasValue);
 

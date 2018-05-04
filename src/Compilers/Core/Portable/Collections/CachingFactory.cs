@@ -191,7 +191,7 @@ namespace Microsoft.CodeAnalysis
         // if someone needs to create a pool;
         public static ObjectPool<CachingIdentityFactory<TKey, TValue>> CreatePool(int size, Func<TKey, TValue> valueFactory)
         {
-            ObjectPool<CachingIdentityFactory<TKey, TValue>> pool = null;
+            ObjectPool<CachingIdentityFactory<TKey, TValue>>? pool = null;
             pool = new ObjectPool<CachingIdentityFactory<TKey, TValue>>(
                 () => new CachingIdentityFactory<TKey, TValue>(size, valueFactory, pool), Environment.ProcessorCount * 2);
 
