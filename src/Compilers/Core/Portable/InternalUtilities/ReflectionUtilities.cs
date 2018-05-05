@@ -131,10 +131,10 @@ namespace Roslyn.Utilities
 
 #if USES_ANNOTATIONS
         public static T? CreateDelegate<T>(this MethodInfo? methodInfo)
+            where T : Delegate
 #else
         public static T CreateDelegate<T>(this MethodInfo methodInfo)
 #endif
-            where T : Delegate
         {
             if (methodInfo == null)
             {
@@ -145,20 +145,15 @@ namespace Roslyn.Utilities
         }
 
 #if USES_ANNOTATIONS
-        public static T InvokeConstructor<T>(this ConstructorInfo? constructorInfo, params object[]? args)
+        public static T? InvokeConstructor<T>(this ConstructorInfo? constructorInfo, params object[]? args)
 #else
         public static T InvokeConstructor<T>(this ConstructorInfo constructorInfo, params object[] args)
 #endif
+            where T : class
         {
             if (constructorInfo == null)
             {
-#if USES_ANNOTATIONS
-                // PROTOTYPE(NullableDogfood): We will fix with class? constraint
-                // warning CS8625: Cannot convert null literal to non - nullable reference or unconstrained type parameter.
-                return default!;
-#else
-                return default;
-#endif
+                return null;
             }
 
             try
@@ -171,17 +166,15 @@ namespace Roslyn.Utilities
                 ExceptionDispatchInfo.Capture(e.InnerException).Throw();
                 Debug.Assert(false, "Unreachable");
 
-                // PROTOTYPE(NullableDogfood): We will fix with a class? constraint
-                // warning CS8625: Cannot convert null literal to non - nullable reference or unconstrained type parameter.
-#if USES_ANNOTATIONS
-                return default!;
-#else
-                return default;
-#endif
+                return null;
             }
         }
 
+#if USES_ANNOTATIONS
+        public static object? InvokeConstructor(this ConstructorInfo constructorInfo, params object[] args)
+#else
         public static object InvokeConstructor(this ConstructorInfo constructorInfo, params object[] args)
+#endif
         {
             return constructorInfo.InvokeConstructor<object>(args);
         }

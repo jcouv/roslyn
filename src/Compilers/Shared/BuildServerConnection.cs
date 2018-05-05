@@ -150,7 +150,7 @@ namespace Microsoft.CodeAnalysis.CommandLine
             var timeoutNewProcess = timeoutOverride ?? TimeOutMsNewProcess;
             var timeoutExistingProcess = timeoutOverride ?? TimeOutMsExistingProcess;
 #if USES_ANNOTATIONS
-            Task<NamedPipeClientStream>? pipeTask = null;
+            Task<NamedPipeClientStream?>? pipeTask = null;
             Mutex? clientMutex = null;
 #else
             Task<NamedPipeClientStream> pipeTask = null;
@@ -200,7 +200,7 @@ namespace Microsoft.CodeAnalysis.CommandLine
                 {
 #if USES_ANNOTATIONS
                     // PROTOTYPE(NullableDogfood): Workaround async issue
-                    pipeTask = TryConnectToServerAsync(pipeName, timeout, cancellationToken)!;
+                    pipeTask = TryConnectToServerAsync(pipeName, timeout, cancellationToken);
 #else
                     pipeTask = TryConnectToServerAsync(pipeName, timeout, cancellationToken);
 #endif
@@ -380,7 +380,9 @@ namespace Microsoft.CodeAnalysis.CommandLine
                     //              time-out period has expired.
 
                     Log($"Connecting to server timed out after {timeoutMs} ms");
-                    return null;
+#pragma warning disable CS8625
+                    return null; // PROTOTYPE(NullableDogfood): https://github.com/dotnet/roslyn/issues/23275
+#pragma warning restore CS8625
                 }
                 Log("Named pipe '{0}' connected", pipeName);
 
@@ -390,7 +392,9 @@ namespace Microsoft.CodeAnalysis.CommandLine
                 if (!CheckPipeConnectionOwnership(pipeStream))
                 {
                     Log("Owner of named pipe is incorrect");
-                    return null;
+#pragma warning disable CS8625
+                    return null; // PROTOTYPE(NullableDogfood): https://github.com/dotnet/roslyn/issues/23275
+#pragma warning restore CS8625
                 }
 
                 return pipeStream;
@@ -398,12 +402,9 @@ namespace Microsoft.CodeAnalysis.CommandLine
             catch (Exception e) when (!(e is TaskCanceledException || e is OperationCanceledException))
             {
                 LogException(e, "Exception while connecting to process");
-#if USES_ANNOTATIONS
-                // PROTOTYPE(NullableDogfood): https://github.com/dotnet/roslyn/issues/26614 There should be no need for !
-                return null!;
-#else
-                return null;
-#endif
+#pragma warning disable CS8625
+                    return null; // PROTOTYPE(NullableDogfood): https://github.com/dotnet/roslyn/issues/23275
+#pragma warning restore CS8625
             }
         }
 

@@ -17,7 +17,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         /// <summary>
         /// The last RCW that was created for the current context.
         /// </summary>
-        private T _rcwForCurrentCtx;
+        private T? _rcwForCurrentCtx;
 
         /// <summary>
         /// Indicates if we created the RCW and therefore need to release it's com reference.
@@ -56,7 +56,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             else
             {
                 _shouldReleaseRCW = true;
-                _rcwForCurrentCtx = (objInCurrentCtx as T)!; // PROTOTYPE(NullableDogfood): class? constraint not yet implemented
+                _rcwForCurrentCtx = (objInCurrentCtx as T);
             }
         }
 
@@ -116,9 +116,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             }
             finally
             {
-                // PROTOTYPE(NullableDogfood): T should be constrained to class? 
-                // 1>RCWForCurrentContext.cs(119,37,119,41): warning CS8625: Cannot convert null literal to non-nullable reference or unconstrained type parameter.
-                _rcwForCurrentCtx = null!;
+                _rcwForCurrentCtx = null;
             }
         }
     }
