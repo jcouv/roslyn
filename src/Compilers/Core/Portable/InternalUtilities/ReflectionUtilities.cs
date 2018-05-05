@@ -77,7 +77,11 @@ namespace Roslyn.Utilities
             return (lazyType == Missing) ? null : lazyType;
         }
 
+#if USES_ANNOTATIONS
+        public static T? FindItem<T>(IEnumerable<T> collection, params Type[] paramTypes)
+#else
         public static T FindItem<T>(IEnumerable<T> collection, params Type[] paramTypes)
+#endif
             where T : MethodBase
         {
             foreach (var current in collection)
@@ -104,43 +108,37 @@ namespace Roslyn.Utilities
                 }
             }
 
-            // PROTOTYPE(NullableDogfood): T is constrained to a specific class
-            // PROTOTYPE(NullableDogfood): ! did not suppress the warning 
-            // https://github.com/dotnet/roslyn/issues/26618
-#if USES_ANNOTATIONS
-#pragma warning disable CS8625 
             return null;
-#pragma warning restore CS8625 
-#else
-            return null;
-#endif
         }
 
+#if USES_ANNOTATIONS
+        internal static MethodInfo? GetDeclaredMethod(this TypeInfo typeInfo, string name, params Type[] paramTypes)
+#else
         internal static MethodInfo GetDeclaredMethod(this TypeInfo typeInfo, string name, params Type[] paramTypes)
+#endif
         {
             return FindItem(typeInfo.GetDeclaredMethods(name), paramTypes);
         }
 
+#if USES_ANNOTATIONS
+        internal static ConstructorInfo? GetDeclaredConstructor(this TypeInfo typeInfo, params Type[] paramTypes)
+#else
         internal static ConstructorInfo GetDeclaredConstructor(this TypeInfo typeInfo, params Type[] paramTypes)
+#endif
         {
             return FindItem(typeInfo.DeclaredConstructors, paramTypes);
         }
 
 #if USES_ANNOTATIONS
-        public static T CreateDelegate<T>(this MethodInfo? methodInfo)
+        public static T? CreateDelegate<T>(this MethodInfo? methodInfo)
 #else
         public static T CreateDelegate<T>(this MethodInfo methodInfo)
 #endif
+            where T : Delegate
         {
             if (methodInfo == null)
             {
-#if USES_ANNOTATIONS
-                // PROTOTYPE(NullableDogfood): We will fix with System.Delegate constraint
-                // warning CS8625: Cannot convert null literal to non - nullable reference or unconstrained type parameter.
-                return default!;
-#else
                 return default;
-#endif
             }
 
             return (T)(object)methodInfo.CreateDelegate(typeof(T));

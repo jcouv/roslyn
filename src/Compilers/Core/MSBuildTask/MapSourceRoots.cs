@@ -24,8 +24,8 @@ namespace Microsoft.CodeAnalysis.BuildTasks
     {
         public MapSourceRoots()
         {
-            SourceRoots = null!; // PROTOTYPE(NullableDogfood): Required by MSBuild
-            MappedSourceRoots = null!; // PROTOTYPE(NullableDogfood): Required by MSBuild
+            SourceRoots = null!; // PROTOTYPE(NullableDogfood): MSBuild ensures those are set, using [Required]
+            MappedSourceRoots = null!; // PROTOTYPE(NullableDogfood): MSBuild ensures those are set, using [Required]
             TaskResources = ErrorString.ResourceManager;
         }
 

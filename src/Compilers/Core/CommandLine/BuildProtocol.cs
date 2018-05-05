@@ -113,7 +113,6 @@ namespace Microsoft.CodeAnalysis.CommandLine
             return new BuildRequest(BuildProtocolConstants.ProtocolVersion, RequestLanguage.CSharpCompile, requestArgs);
         }
 
-        // PROTOTYPE(NullableDogfood): no need for ? on Task. See https://github.com/dotnet/roslyn/issues/26614
         /// <summary>
         /// Read a Request from the given stream.
         /// 
@@ -121,7 +120,7 @@ namespace Microsoft.CodeAnalysis.CommandLine
         /// </summary>
         /// <returns>null if the Request was too large, the Request otherwise.</returns>
 #if USES_ANNOTATIONS
-        public static async Task<BuildRequest?>? ReadAsync(Stream inStream, CancellationToken cancellationToken)
+        public static async Task<BuildRequest?> ReadAsync(Stream inStream, CancellationToken cancellationToken)
 #else
         public static async Task<BuildRequest> ReadAsync(Stream inStream, CancellationToken cancellationToken)
 #endif
@@ -136,7 +135,10 @@ namespace Microsoft.CodeAnalysis.CommandLine
             if (length > 0x100000)
             {
                 Log("Request is over 1MB in length, cancelling read.");
+                // PROTOTYPE(NullableDogfood): no need for suppression. See https://github.com/dotnet/roslyn/issues/26614
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
                 return null;
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
             }
 
             cancellationToken.ThrowIfCancellationRequested();

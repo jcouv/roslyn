@@ -117,10 +117,11 @@ namespace Microsoft.CodeAnalysis.CommandLine
                 string output = prefix + message + "\r\n";
                 byte[] bytes = Encoding.UTF8.GetBytes(output);
 
-                // PROTOTYPE(NullableDogfood): There should be no warning on de-referencing s_loggingStream since checked above
                 // Because multiple processes might be logging to the same file, we always seek to the end,
                 // write, and flush.
 #if USES_ANNOTATIONS
+                // PROTOTYPE(NullableDogfood): There should be no warning on de-referencing s_loggingStream since checked above
+                // https://github.com/dotnet/roslyn/issues/26651
                 s_loggingStream!.Seek(0, SeekOrigin.End);
                 s_loggingStream!.Write(bytes, 0, bytes.Length);
                 s_loggingStream!.Flush();

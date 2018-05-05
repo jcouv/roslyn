@@ -333,7 +333,6 @@ namespace Microsoft.CodeAnalysis.CommandLine
             }
         }
 
-        // PROTOTYPE(NullableDogfood): https://github.com/dotnet/roslyn/issues/26614
         /// <summary>
         /// Connect to the pipe for a given directory and return it.
         /// Throws on cancellation.
@@ -345,7 +344,7 @@ namespace Microsoft.CodeAnalysis.CommandLine
         /// An open <see cref="NamedPipeClientStream"/> to the server process or null on failure.
         /// </returns>
 #if USES_ANNOTATIONS
-        internal static async Task<NamedPipeClientStream?>? TryConnectToServerAsync(
+        internal static async Task<NamedPipeClientStream?> TryConnectToServerAsync(
             string pipeName,
             int timeoutMs,
             CancellationToken cancellationToken)
@@ -399,7 +398,12 @@ namespace Microsoft.CodeAnalysis.CommandLine
             catch (Exception e) when (!(e is TaskCanceledException || e is OperationCanceledException))
             {
                 LogException(e, "Exception while connecting to process");
+#if USES_ANNOTATIONS
+                // PROTOTYPE(NullableDogfood): https://github.com/dotnet/roslyn/issues/26614 There should be no need for !
+                return null!;
+#else
                 return null;
+#endif
             }
         }
 

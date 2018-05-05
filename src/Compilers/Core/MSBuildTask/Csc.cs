@@ -524,7 +524,7 @@ namespace Microsoft.CodeAnalysis.BuildTasks
                 ICscHostObject5? cscHostObject5 = cscHostObject as ICscHostObject5;
                 if (cscHostObject5 != null)
                 {
-                    // PROTOTYPE(NullableDogfood): Unusre about SetErrorLog API
+                    // PROTOTYPE(NullableDogfood): Not sure about SetErrorLog API
                     CheckHostObjectSupport(param = nameof(ErrorLog), cscHostObject5.SetErrorLog(ErrorLog!));
                     CheckHostObjectSupport(param = nameof(ReportAnalyzer), cscHostObject5.SetReportAnalyzer(ReportAnalyzer));
                 }
@@ -545,7 +545,6 @@ namespace Microsoft.CodeAnalysis.BuildTasks
                 if (cscHostObject is ICscHostObject2)
                 {
                     ICscHostObject2 cscHostObject2 = (ICscHostObject2)cscHostObject;
-                    // PROTOTYPE(NullableDogfood): Not sure
                     CheckHostObjectSupport(param = nameof(Win32Manifest), cscHostObject2.SetWin32Manifest(GetWin32ManifestSwitch(NoWin32Manifest, Win32Manifest)));
                 }
                 else

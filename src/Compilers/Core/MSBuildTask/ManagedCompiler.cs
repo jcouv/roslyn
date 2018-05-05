@@ -312,7 +312,9 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             {
                 if (UsedCommandLineTool)
                 {
-                    NormalizePaths(value!); // PROTOTYPE(NullableDogfood): value set should be non-null
+                    // PROTOTYPE(NullableDogfood): property setter should be non-null
+                    // https://github.com/dotnet/roslyn/issues/26621
+                    NormalizePaths(value!);
                 }
 
                 _store[nameof(Sources)] = value;
@@ -467,7 +469,8 @@ namespace Microsoft.CodeAnalysis.BuildTasks
                     CompilerServerLogger.Log($"BuildResponseFile = '{responseFileCommands}'");
 
                     // PROTOTYPE(NullableDogfood): GetDirectoryName should be annotated (can return null)
-                    var clientDir = Path.GetDirectoryName(PathToManagedTool);
+                    // PROTOTYPE(NullableDogfood): The cast should not be grayed out as un-necessary by IDE
+                    var clientDir = (string?)Path.GetDirectoryName(PathToManagedTool);
 
                     // Note: we can't change the "tool path" printed to the console when we run
                     // the Csc/Vbc task since MSBuild logs it for us before we get here. Instead,
