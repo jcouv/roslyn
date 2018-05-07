@@ -60,8 +60,6 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         private PooledDictionary<BoundExpression, ObjectCreationPlaceholderLocal> _placeholderLocals;
 
-        private bool _disableDiagnostics = false;
-
         protected override void Free()
         {
             _variableTypes.Free();
@@ -473,10 +471,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private void ReportStaticNullCheckingDiagnostics(ErrorCode errorCode, SyntaxNode syntaxNode, params object[] arguments)
         {
-            if (!_disableDiagnostics)
-            {
-                Diagnostics.Add(errorCode, syntaxNode.GetLocation(), arguments);
-            }
+            Diagnostics.Add(errorCode, syntaxNode.GetLocation(), arguments);
         }
 
         private void InheritNullableStateOfTrackableStruct(TypeSymbol targetType, int targetSlot, int valueSlot, bool isByRefTarget, int slotWatermark)
@@ -1559,12 +1554,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 ImmutableArray<RefKind> refKindsOpt = node.ArgumentRefKindsOpt;
                 ImmutableArray<BoundExpression> strippedArguments = RemoveArgumentConversions(arguments, refKindsOpt);
-                ImmutableArray<Result> results = VisitArgumentsEvaluate(strippedArguments, refKindsOpt, node.Expanded);
+                ImmutableArray<int> argsToParamsOpt = node.ArgsToParamsOpt;
+                ImmutableArray<Result> results = VisitArgumentsEvaluate(strippedArguments, refKindsOpt, method.Parameters, argsToParamsOpt, node.Expanded);
                 if (method.IsGenericMethod && HasImplicitTypeArguments(node))
                 {
                     method = InferMethod(node, method, results.SelectAsArray(r => r.Type));
                 }
-                VisitArgumentsWarn(strippedArguments, refKindsOpt, method.Parameters, node.ArgsToParamsOpt, node.Expanded, results);
+                VisitArgumentsWarn(strippedArguments, refKindsOpt, method.Parameters, argsToParamsOpt, node.Expanded, results);
             }
 
             UpdateStateForCall(node);
@@ -1575,126 +1571,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                 ReplayReadsAndWrites(localFunc, node.Syntax, writes: true);
             }
 
-            string key = ExtraAnnotations.MakeMethodKey(method);
-            ImmutableArray<AttributeDescription> extraAttributes = ExtraAnnotations.GetExtraAttributes(key);
-            if (MethodEnsuresTrueWhenExits(method, extraAttributes))
-            {
-                var condition = TryGetFirstArgument(method, arguments);
-                if (condition != null)
-                {
-                    VisitTrueWhenExits(condition);
-                }
-            }
-
-            if (MethodReturnsTrueWhenNotNull(method, extraAttributes))
-            {
-                var condition = TryGetFirstArgument(method, arguments);
-                if (condition != null)
-                {
-                    VisitTrueWhenNotNull(condition, method.ReturnType.TypeSymbol);
-                    _result = method.ReturnType;
-                    return null;
-                }
-            }
-
-            Debug.Assert(!IsConditionalState);
             //if (this.State.Reachable) // PROTOTYPE(NullableReferenceTypes): Consider reachability?
             {
                 _result = method.ReturnType;
             }
 
             return null;
-        }
-
-        private BoundExpression TryGetFirstArgument(MethodSymbol method, ImmutableArray<BoundExpression> arguments)
-        {
-            if (method.IsExtensionMethod)
-            {
-                return (arguments.Length > 1) ? arguments[1] : null;
-            }
-
-            return (arguments.Length > 0) ? arguments[0] : null;
-        }
-
-        private bool MethodReturnsTrueWhenNotNull(MethodSymbol method, ImmutableArray<AttributeDescription> extraAttributes)
-        {
-            if (method.ReturnType.SpecialType != SpecialType.System_Boolean)
-            {
-                return false;
-            }
-
-            return MethodHasAttribute(method, extraAttributes, AttributeDescription.TrueWhenNotNullAttribute);
-        }
-
-        private void VisitTrueWhenNotNull(BoundExpression operand, TypeSymbol boolType)
-        {
-            if (!operand.Type.IsReferenceType)
-            {
-                return;
-            }
-
-            // operand == null || someUnknownBoolean
-            BoundExpression equivalent = LogicalOr(
-                new BoundBinaryOperator(operand.Syntax, BinaryOperatorKind.Equal, operand,
-                    new BoundLiteral(operand.Syntax, ConstantValue.Null, operand.Type),
-                    constantValueOpt: null, methodOpt: null, LookupResultKind.Viable, boolType),
-                new BoundLiteral(operand.Syntax, constantValueOpt: null, boolType));
-
-            // We only need to update the null-state, so we'll do the flow analysis without diagnostics
-            bool savedDisableDiagnostics = _disableDiagnostics;
-            _disableDiagnostics = true;
-
-            Visit(equivalent);
-
-            _disableDiagnostics = savedDisableDiagnostics;
-        }
-
-        internal static BoundBinaryOperator LogicalOr(BoundExpression left, BoundExpression right)
-        {
-            return new BoundBinaryOperator(left.Syntax, BinaryOperatorKind.LogicalBoolOr, left, right, constantValueOpt: null, methodOpt: null, LookupResultKind.Viable, left.Type);
-        }
-
-        private bool MethodEnsuresTrueWhenExits(MethodSymbol method, ImmutableArray<AttributeDescription> extraAttributes)
-        {
-            return MethodHasAttribute(method, extraAttributes, AttributeDescription.EnsuresTrueWhenExitsAttribute);
-        }
-
-        private bool MethodHasAttribute(MethodSymbol method, ImmutableArray<AttributeDescription> extraAttributes, AttributeDescription description)
-        {
-            foreach (var attribute in method.GetAttributes())
-            {
-                if (attribute.IsTargetAttribute(method, description))
-                {
-                    return true;
-                }
-            }
-
-            if (!extraAttributes.IsDefault)
-            {
-                foreach (var attribute in extraAttributes)
-                {
-                    if (attribute.Equals(description))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        private void VisitTrueWhenExits(BoundExpression condition)
-        {
-            // We only need to update the null-state, so we'll do the flow analysis without diagnostics
-
-            bool savedDisableDiagnostics = _disableDiagnostics;
-            _disableDiagnostics = true;
-
-            // if (!condition) throw;
-            VisitIfStatement(new BoundIfStatement(condition.Syntax, SyntheticBoundNodeFactory.NotCore(condition),
-                new BoundThrowStatement(condition.Syntax, expressionOpt: null), alternativeOpt: null));
-
-            _disableDiagnostics = savedDisableDiagnostics;
         }
 
         // PROTOTYPE(NullableReferenceTypes): Record in the node whether type
@@ -1755,7 +1637,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             bool expanded)
         {
             Debug.Assert(!arguments.IsDefault);
-            ImmutableArray<Result> results = VisitArgumentsEvaluate(arguments, refKindsOpt, expanded);
+            ImmutableArray<Result> results = VisitArgumentsEvaluate(arguments, refKindsOpt, parameters, argsToParamsOpt, expanded);
             // PROTOTYPE(NullableReferenceTypes): Can we handle some error cases?
             // (Compare with CSharpOperationFactory.CreateBoundCallOperation.)
             if (!node.HasErrors && !parameters.IsDefault)
@@ -1767,6 +1649,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         private ImmutableArray<Result> VisitArgumentsEvaluate(
             ImmutableArray<BoundExpression> arguments,
             ImmutableArray<RefKind> refKindsOpt,
+            ImmutableArray<ParameterSymbol> parameters,
+            ImmutableArray<int> argsToParamsOpt,
             bool expanded)
         {
             Debug.Assert(!IsConditionalState);
@@ -1791,7 +1675,49 @@ namespace Microsoft.CodeAnalysis.CSharp
                     VisitLvalue(argument);
                 }
                 builder.Add(_result);
+
+                (ParameterSymbol parameter, _) = GetCorrespondingParameter(i, parameters, argsToParamsOpt, expanded);
+                bool notNullWhenFalse = parameter?.NotNullWhenFalse == true;
+                bool ensuresNotNull = parameter?.EnsuresNotNull == true;
+
+                if (notNullWhenFalse || ensuresNotNull)
+                {
+                    if (argument.Type?.IsReferenceType == true)
+                    {
+                        int slot = MakeSlot(argument);
+
+                        if (slot > 0)
+                        {
+                            if (slot >= this.State.Capacity) Normalize(ref this.State);
+
+                            if (notNullWhenFalse)
+                            {
+                                Split();
+
+                                // not null when method returns false
+                                this.StateWhenFalse[slot] = true;
+                            }
+
+                            if (ensuresNotNull)
+                            {
+                                // not null
+                                // TODO test coverage for both cases
+                                if (this.IsConditionalState)
+                                {
+                                    throw null;
+                                    this.StateWhenTrue[slot] = true;
+                                    this.StateWhenFalse[slot] = true;
+                                }
+                                else
+                                {
+                                    this.State[slot] = true;
+                                }
+                            }
+                        }
+                    }
+                }
             }
+
             _result = _invalidType;
             return builder.ToImmutableAndFree();
         }
@@ -1907,7 +1833,10 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private static (ParameterSymbol, TypeSymbolWithAnnotations) GetCorrespondingParameter(int argumentOrdinal, ImmutableArray<ParameterSymbol> parameters, ImmutableArray<int> argsToParamsOpt, bool expanded)
         {
-            Debug.Assert(!parameters.IsDefault);
+            if (parameters.IsDefault)
+            {
+                return (null, null);
+            }
 
             int n = parameters.Length;
             ParameterSymbol parameter;
@@ -3170,7 +3099,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override BoundNode VisitArgListOperator(BoundArgListOperator node)
         {
-            VisitArgumentsEvaluate(node.Arguments, node.ArgumentRefKindsOpt, expanded: false);
+            VisitArgumentsEvaluate(node.Arguments, node.ArgumentRefKindsOpt, parameters: default, argsToParamsOpt: default, expanded: false);
             Debug.Assert((object)node.Type == null);
             SetResult(node);
             return null;
@@ -3250,7 +3179,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override BoundNode VisitDynamicInvocation(BoundDynamicInvocation node)
         {
             VisitRvalue(node.Expression);
-            VisitArgumentsEvaluate(node.Arguments, node.ArgumentRefKindsOpt, expanded: false);
+            VisitArgumentsEvaluate(node.Arguments, node.ArgumentRefKindsOpt, parameters: default, argsToParamsOpt: default, expanded: false);
 
             Debug.Assert(node.Type.IsDynamic());
             Debug.Assert(node.Type.IsReferenceType);
@@ -3278,7 +3207,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override BoundNode VisitDynamicObjectCreationExpression(BoundDynamicObjectCreationExpression node)
         {
             Debug.Assert(!IsConditionalState);
-            VisitArgumentsEvaluate(node.Arguments, node.ArgumentRefKindsOpt, expanded: false);
+            VisitArgumentsEvaluate(node.Arguments, node.ArgumentRefKindsOpt, parameters: default, argsToParamsOpt: default, expanded: false);
             VisitObjectOrDynamicObjectCreation(node, node.InitializerExpressionOpt);
             return null;
         }
@@ -3357,7 +3286,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var receiver = node.ReceiverOpt;
             VisitRvalue(receiver);
             CheckPossibleNullReceiver(receiver);
-            VisitArgumentsEvaluate(node.Arguments, node.ArgumentRefKindsOpt, expanded: false);
+            VisitArgumentsEvaluate(node.Arguments, node.ArgumentRefKindsOpt, parameters: default, argsToParamsOpt: default, expanded: false);
 
             Debug.Assert(node.Type.IsDynamic());
 
@@ -3523,7 +3452,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return result;
         }
 
-#endregion Visitors
+        #endregion Visitors
 
         protected override string Dump(LocalState state)
         {
@@ -3675,6 +3604,21 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return _knownNullState.Capacity > 0;
                 }
             }
+
+#if DEBUG
+            public override string ToString()
+            {
+                var pooledBuilder = PooledStringBuilder.GetInstance();
+                var builder = pooledBuilder.Builder;
+                builder.Append(" ");
+                for (int i = this.Capacity - 1; i >= 0; i--)
+                {
+                    builder.Append(_knownNullState[i] ? (_notNull[i] ? "! " : "? ") : ". ");
+                }
+
+                return pooledBuilder.ToStringAndFree();
+            }
+#endif
         }
     }
 }
