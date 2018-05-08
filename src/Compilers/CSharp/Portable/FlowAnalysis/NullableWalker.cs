@@ -295,7 +295,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             return base.MakeSlot(node);
         }
 
-        private new void VisitLvalue(BoundExpression node)
+        /// <summary>
+        /// If you will be needing AssignedWhenTrue and AssignedWhenFalse, set `keepSplit` to `true`.
+        /// </summary>
+        private void VisitLvalue(BoundExpression node, bool keepSplit = false)
         {
             switch (node.Kind)
             {
@@ -326,7 +329,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case BoundKind.ObjectInitializerMember:
                     throw ExceptionUtilities.UnexpectedValue(node.Kind); // Should have been handled in VisitObjectCreationExpression().
                 default:
-                    VisitRvalue(node);
+                    VisitRvalue(node, keepSplit);
                     break;
             }
         }
@@ -1641,6 +1644,28 @@ namespace Microsoft.CodeAnalysis.CSharp
                     annotations &= ~AttributeAnnotations.EnsuresNotNull;
                 }
 
+                // We'll ignore EnsuresTrue that is misused in metadata
+                if ((annotations & AttributeAnnotations.EnsuresTrue) != 0 &&
+                    (parameter.Type?.SpecialType != SpecialType.System_Boolean))
+                {
+                    annotations &= ~AttributeAnnotations.EnsuresTrue;
+                }
+
+                // We'll ignore EnsuresFalse that is misused in metadata
+                if ((annotations & AttributeAnnotations.EnsuresFalse) != 0 &&
+                    (parameter.Type?.SpecialType != SpecialType.System_Boolean))
+                {
+                    annotations &= ~AttributeAnnotations.EnsuresFalse;
+                }
+
+                // We'll ignore EnsuresTrue and EnsuresFalse if both set in metadata
+                if ((annotations & AttributeAnnotations.EnsuresTrue) != 0 &&
+                    (annotations & AttributeAnnotations.EnsuresFalse) != 0)
+                {
+                    annotations &= ~AttributeAnnotations.EnsuresTrue;
+                    annotations &= ~AttributeAnnotations.EnsuresFalse;
+                }
+
                 if (annotations != AttributeAnnotations.None && builder == null)
                 {
                     builder = ArrayBuilder<AttributeAnnotations>.GetInstance(numArguments);
@@ -1761,7 +1786,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var builder = ArrayBuilder<Result>.GetInstance(n);
             for (int i = 0; i < n; i++)
             {
-                VisitArgumentEvaluate(arguments, refKindsOpt, i);
+                VisitArgumentEvaluate(arguments, refKindsOpt, i, keepSplit: false);
                 builder.Add(_result);
             }
 
@@ -1769,7 +1794,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return builder.ToImmutableAndFree();
         }
 
-        private void VisitArgumentEvaluate(ImmutableArray<BoundExpression> arguments, ImmutableArray<RefKind> refKindsOpt, int i)
+        private void VisitArgumentEvaluate(ImmutableArray<BoundExpression> arguments, ImmutableArray<RefKind> refKindsOpt, int i, bool keepSplit)
         {
             RefKind refKind = GetRefKind(refKindsOpt, i);
             var argument = arguments[i];
@@ -1777,17 +1802,18 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // PROTOTYPE(NullReferenceTypes): `ref` arguments should be treated as l-values
                 // for assignment. See `ref x3` in StaticNullChecking.PassingParameters_01.
-                VisitRvalue(argument);
+                VisitRvalue(argument, keepSplit);
             }
             else
             {
-                VisitLvalue(argument);
+                VisitLvalue(argument, keepSplit);
             }
         }
 
         /// <summary>
         /// Visit all the arguments for the purpose of computing the exit state of the method,
         /// given the annotations, but disabling warnings.
+        /// If there is any [NotNullWhenFalse] annotation, then we'll return a conditional state for the invocation.
         /// </summary>
         private void VisitArgumentsEvaluateHonoringAnnotations(
             ImmutableArray<BoundExpression> arguments,
@@ -1803,6 +1829,10 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             for (int i = 0; i < arguments.Length; i++)
             {
+                AttributeAnnotations annotation = annotations[i];
+                bool ensuresTrue = (annotation & AttributeAnnotations.EnsuresTrue) != 0;
+                bool ensuresFalse = (annotation & AttributeAnnotations.EnsuresFalse) != 0;
+
                 if (this.IsConditionalState)
                 {
                     // We could be in a conditional state because of NotNullWhenFalse annotation
@@ -1811,16 +1841,21 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // We'll assume that we're in the unconditional state where the method returns true,
                     // then we'll repeat assuming the method returns false.
 
+                    // We'll let the evaluation of each argument produce a split state. We'll unsplit it based on
+                    // [EnsuresTrue] or [EnsuresFalse] attributes, or default Unsplit otherwise.
+
                     LocalState whenTrue = this.StateWhenTrue.Clone();
                     LocalState whenFalse = this.StateWhenFalse.Clone();
 
                     this.SetState(whenTrue);
-                    VisitArgumentEvaluate(arguments, refKindsOpt, i);
+                    VisitArgumentEvaluate(arguments, refKindsOpt, i, keepSplit: true);
+                    unsplit(ensuresTrue, ensuresFalse);
                     Debug.Assert(!IsConditionalState);
                     whenTrue = this.State; // LocalState may be a struct
 
                     this.SetState(whenFalse);
-                    VisitArgumentEvaluate(arguments, refKindsOpt, i);
+                    VisitArgumentEvaluate(arguments, refKindsOpt, i, keepSplit: true);
+                    unsplit(ensuresTrue, ensuresFalse);
                     Debug.Assert(!IsConditionalState);
                     whenFalse = this.State; // LocalState may be a struct
 
@@ -1828,7 +1863,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
                 else
                 {
-                    VisitArgumentEvaluate(arguments, refKindsOpt, i);
+                    VisitArgumentEvaluate(arguments, refKindsOpt, i, keepSplit: true);
+                    unsplit(ensuresTrue, ensuresFalse);
                 }
 
                 var argument = arguments[i];
@@ -1843,10 +1879,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     continue;
                 }
 
-                AttributeAnnotations annotation = annotations[i];
                 bool notNullWhenFalse = (annotation & AttributeAnnotations.NotNullWhenFalse) != 0;
                 bool ensuresNotNull = (annotation & AttributeAnnotations.EnsuresNotNull) != 0;
-
                 if (ensuresNotNull)
                 {
                     // The variable in this slot is not null
@@ -1862,6 +1896,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
                 else if (notNullWhenFalse)
                 {
+                    // EnsuresNotNull is a stronger annotation than NotNullWhenFalse
+
                     // We'll use the WhenTrue/False states to represent whether the invocation returns true/false
                     Split();
 
@@ -1872,7 +1908,29 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             _result = _invalidType;
             _disableDiagnostics = saveDisableDiagnostics;
+
+            void unsplit(bool ensuresTrue, bool ensuresFalse)
+            {
+                if (!this.IsConditionalState)
+                {
+                    return;
+                }
+
+                if (ensuresTrue)
+                {
+                    this.SetState(this.StateWhenTrue);
+                }
+                else if (ensuresFalse)
+                {
+                    this.SetState(this.StateWhenFalse);
+                }
+                else
+                {
+                    this.Unsplit();
+                }
+            }
         }
+
 
         private void VisitArgumentsWarn(
             ImmutableArray<BoundExpression> arguments,
@@ -1910,6 +1968,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             TypeSymbolWithAnnotations resultType = result.Type;
             var argumentType = resultType?.TypeSymbol;
+
             switch (refKind)
             {
                 case RefKind.None:

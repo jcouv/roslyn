@@ -15,8 +15,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     internal enum AttributeAnnotations
     {
         None = 0,
-        NotNullWhenFalse,
-        EnsuresNotNull,
+        NotNullWhenFalse = 1 << 0,
+        EnsuresNotNull = 1 << 1,
+        EnsuresTrue = 1 << 2,
+        EnsuresFalse = 1 << 3,
     }
 
     // PROTOTYPE(NullableReferenceTypes): external annotations should be removed or fully designed/productized
@@ -49,6 +51,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 { "System.Boolean System.String.IsNullOrEmpty(System.String)", Array(default, NotNullWhenFalse) },
                 { "System.Boolean System.String.IsNullOrWhiteSpace(System.String)", Array(default, NotNullWhenFalse) },
                 { "System.Boolean System.String.Contains(System.String)", Array(default, EnsuresNotNull) },
+                { "System.Void System.Diagnostics.Debug.Assert(System.Boolean)", Array(default, EnsuresTrue) },
+                { "System.Void System.Diagnostics.Debug.Assert(System.Boolean, System.String)", Array(default, EnsuresTrue, default) },
+                { "System.Void System.Diagnostics.Debug.Assert(System.Boolean, System.String, System.String)", Array(default, EnsuresTrue, default, default) },
+                { "System.Void System.Diagnostics.Debug.Assert(System.Boolean, System.String, System.String, System.Object[])", Array(default, EnsuresTrue, default, default, default) },
             }.ToImmutableDictionary();
 
         internal static string MakeMethodKey(PEMethodSymbol method, ParamInfo<TypeSymbol>[] paramInfo)
@@ -184,7 +190,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
     internal static class ParameterAnnotationsExtensions
     {
-        internal static AttributeAnnotations With(this AttributeAnnotations value, bool notNullWhenFalse, bool ensuresNotNull)
+        internal static AttributeAnnotations With(this AttributeAnnotations value,
+            bool notNullWhenFalse, bool ensuresNotNull, bool ensuresTrue, bool ensuresFalse)
         {
             if (notNullWhenFalse)
             {
@@ -194,6 +201,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             if (ensuresNotNull)
             {
                 value |= EnsuresNotNull;
+            }
+
+            if (ensuresTrue)
+            {
+                value |= EnsuresTrue;
+            }
+
+            if (ensuresFalse)
+            {
+                value |= EnsuresFalse;
             }
 
             return value;
