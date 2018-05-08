@@ -1678,9 +1678,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 (ParameterSymbol parameter, _) = GetCorrespondingParameter(i, parameters, argsToParamsOpt, expanded);
                 bool notNullWhenFalse = parameter?.NotNullWhenFalse == true;
-                bool ensuresNotNull = parameter?.EnsuresNotNull == true;
 
-                if (notNullWhenFalse || ensuresNotNull)
+                if (notNullWhenFalse)
                 {
                     if (argument.Type?.IsReferenceType == true)
                     {
@@ -1697,11 +1696,32 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 // not null when method returns false
                                 this.StateWhenFalse[slot] = true;
                             }
+                        }
+                    }
+                }
+            }
+
+            // Apply knowledge from EnsuresNotNull
+            for (int i = 0; i < n; i++)
+            {
+                (ParameterSymbol parameter, _) = GetCorrespondingParameter(i, parameters, argsToParamsOpt, expanded);
+                bool ensuresNotNull = parameter?.EnsuresNotNull == true;
+
+                if (ensuresNotNull)
+                {
+                    var argument = arguments[i];
+                    if (argument.Type?.IsReferenceType == true)
+                    {
+                        int slot = MakeSlot(argument);
+
+                        if (slot > 0)
+                        {
+                            if (slot >= this.State.Capacity) Normalize(ref this.State);
 
                             if (ensuresNotNull)
                             {
                                 // not null
-                                // TODO test coverage for both cases
+                                // TODO test coverage for first cases
                                 if (this.IsConditionalState)
                                 {
                                     throw null;
@@ -1716,6 +1736,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         }
                     }
                 }
+
             }
 
             _result = _invalidType;
