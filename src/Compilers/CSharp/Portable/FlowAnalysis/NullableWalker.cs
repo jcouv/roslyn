@@ -1591,13 +1591,26 @@ namespace Microsoft.CodeAnalysis.CSharp
                 ImmutableArray<RefKind> refKindsOpt = node.ArgumentRefKindsOpt;
                 ImmutableArray<BoundExpression> arguments = RemoveArgumentConversions(node.Arguments, refKindsOpt);
                 ImmutableArray<int> argsToParamsOpt = node.ArgsToParamsOpt;
-                ImmutableArray<Result> results = VisitArgumentsEvaluate(arguments, refKindsOpt, method.Parameters, argsToParamsOpt, node.Expanded);
+                LocalState savedState = this.State.Clone();
+                // We do a first pass to work through the arguments without making any assumptions
+                ImmutableArray<Result> results = VisitArgumentsEvaluate(arguments, refKindsOpt);
 
                 if (method.IsGenericMethod && HasImplicitTypeArguments(node))
                 {
                     method = InferMethod(node, method, results.SelectAsArray(r => r.Type));
                 }
                 VisitArgumentsWarn(arguments, refKindsOpt, method.Parameters, argsToParamsOpt, node.Expanded, results);
+
+                // We do a second pass through the arguments, ignoring any diagnostics produced, but honoring the annotations,
+                // to get the proper result state.
+                ImmutableArray<AttributeAnnotations> annotations = GetAnnotations(arguments.Length,
+                   node.Expanded, method.Parameters, argsToParamsOpt);
+
+                if (!annotations.IsDefault)
+                {
+                    this.SetState(savedState);
+                    VisitArgumentsEvaluateHonoringAnnotations(arguments, refKindsOpt, annotations);
+                }
             }
 
             UpdateStateForCall(node);
@@ -1629,29 +1642,46 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 (ParameterSymbol parameter, _) = GetCorrespondingParameter(i, parameters, argsToParamsOpt, expanded);
                 AttributeAnnotations annotations = parameter?.FlowAnalysisAnnotations ?? AttributeAnnotations.None;
+                // We'll ignore annotations that are misused
 
-                // We'll ignore NotNullWhenFalse that is misused in metadata
+                // NotNullWhenTrue (without NotNullWhenFalse) must be applied on a bool-returning member
+                if ((annotations & AttributeAnnotations.NotNullWhenTrue) != 0 &&
+                    (annotations & AttributeAnnotations.NotNullWhenFalse) == 0 &&
+                    parameter.ContainingSymbol.GetTypeOrReturnType().SpecialType != SpecialType.System_Boolean)
+                {
+                    annotations &= ~AttributeAnnotations.NotNullWhenTrue;
+                }
+
+                // NotNullWhenTrue must be applied to a reference or unconstrained generic type
+                if ((annotations & AttributeAnnotations.NotNullWhenTrue) != 0 &&
+                    (parameter.Type?.IsValueType != false || parameter.IsParams))
+                {
+                    annotations &= ~AttributeAnnotations.NotNullWhenTrue;
+                }
+
+                // NotNullWhenFalse (without NotNullWhenTrue) must be applied on a bool-returning member
                 if ((annotations & AttributeAnnotations.NotNullWhenFalse) != 0 &&
+                    (annotations & AttributeAnnotations.NotNullWhenTrue) == 0 &&
                     parameter.ContainingSymbol.GetTypeOrReturnType().SpecialType != SpecialType.System_Boolean)
                 {
                     annotations &= ~AttributeAnnotations.NotNullWhenFalse;
                 }
 
-                // We'll ignore EnsuresNotNull that is misused in metadata
-                if ((annotations & AttributeAnnotations.EnsuresNotNull) != 0 &&
+                // NotNullWhenFalse must be applied to a reference or unconstrained generic type
+                if ((annotations & AttributeAnnotations.NotNullWhenFalse) != 0 &&
                     (parameter.Type?.IsValueType != false || parameter.IsParams))
                 {
-                    annotations &= ~AttributeAnnotations.EnsuresNotNull;
+                    annotations &= ~AttributeAnnotations.NotNullWhenFalse;
                 }
 
-                // We'll ignore EnsuresTrue that is misused in metadata
+                // EnsuresTrue must be applied on a bool parameter
                 if ((annotations & AttributeAnnotations.EnsuresTrue) != 0 &&
                     (parameter.Type?.SpecialType != SpecialType.System_Boolean))
                 {
                     annotations &= ~AttributeAnnotations.EnsuresTrue;
                 }
 
-                // We'll ignore EnsuresFalse that is misused in metadata
+                // EnsuresFalse must be applied on a bool parameter
                 if ((annotations & AttributeAnnotations.EnsuresFalse) != 0 &&
                     (parameter.Type?.SpecialType != SpecialType.System_Boolean))
                 {
@@ -1739,25 +1769,17 @@ namespace Microsoft.CodeAnalysis.CSharp
             bool expanded)
         {
             Debug.Assert(!arguments.IsDefault);
-            ImmutableArray<Result> results = VisitArgumentsEvaluate(arguments, refKindsOpt, parameters, argsToParamsOpt, expanded);
+
+            LocalState savedState = this.State.Clone();
+            // We do a first pass to work through the arguments without making any assumptions
+            ImmutableArray<Result> results = VisitArgumentsEvaluate(arguments, refKindsOpt);
+
             // PROTOTYPE(NullableReferenceTypes): Can we handle some error cases?
             // (Compare with CSharpOperationFactory.CreateBoundCallOperation.)
             if (!node.HasErrors && !parameters.IsDefault)
             {
                 VisitArgumentsWarn(arguments, refKindsOpt, parameters, argsToParamsOpt, expanded, results);
             }
-        }
-
-        private ImmutableArray<Result> VisitArgumentsEvaluate(
-            ImmutableArray<BoundExpression> arguments,
-            ImmutableArray<RefKind> refKindsOpt,
-            ImmutableArray<ParameterSymbol> parameters,
-            ImmutableArray<int> argsToParamsOpt,
-            bool expanded)
-        {
-            var savedState = this.State.Clone();
-            // We do a first pass to work through the arguments without making any assumptions
-            var results = VisitArgumentsEvaluate(arguments, refKindsOpt);
 
             // We do a second pass through the arguments, ignoring any diagnostics produced, but honoring the annotations,
             // to get the proper result state.
@@ -1769,8 +1791,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 this.SetState(savedState);
                 VisitArgumentsEvaluateHonoringAnnotations(arguments, refKindsOpt, annotations);
             }
-
-            return results;
         }
 
         private ImmutableArray<Result> VisitArgumentsEvaluate(
@@ -1879,8 +1899,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                     continue;
                 }
 
+                bool notNullWhenTrue = (annotation & AttributeAnnotations.NotNullWhenTrue) != 0;
                 bool notNullWhenFalse = (annotation & AttributeAnnotations.NotNullWhenFalse) != 0;
-                bool ensuresNotNull = (annotation & AttributeAnnotations.EnsuresNotNull) != 0;
+                bool ensuresNotNull = notNullWhenTrue && notNullWhenFalse;
                 if (ensuresNotNull)
                 {
                     // The variable in this slot is not null
@@ -1894,10 +1915,16 @@ namespace Microsoft.CodeAnalysis.CSharp
                         this.State[slot] = true;
                     }
                 }
+                else if (notNullWhenTrue)
+                {
+                    // We'll use the WhenTrue/False states to represent whether the invocation returns true/false
+                    Split();
+
+                    // The variable in this slot is not null when the method returns true
+                    this.StateWhenTrue[slot] = true;
+                }
                 else if (notNullWhenFalse)
                 {
-                    // EnsuresNotNull is a stronger annotation than NotNullWhenFalse
-
                     // We'll use the WhenTrue/False states to represent whether the invocation returns true/false
                     Split();
 

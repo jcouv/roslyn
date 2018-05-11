@@ -15,8 +15,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     internal enum AttributeAnnotations
     {
         None = 0,
-        NotNullWhenFalse = 1 << 0,
-        EnsuresNotNull = 1 << 1,
+        NotNullWhenTrue = 1 << 0,
+        NotNullWhenFalse = 1 << 1,
+        EnsuresNotNull = NotNullWhenTrue | NotNullWhenFalse,
         EnsuresTrue = 1 << 2,
         EnsuresFalse = 1 << 3,
     }
@@ -190,17 +191,18 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
     internal static class ParameterAnnotationsExtensions
     {
+        // For EnsuresNotNull, you should set NotNullWhenTrue and NotNullWhenFalse
         internal static AttributeAnnotations With(this AttributeAnnotations value,
-            bool notNullWhenFalse, bool ensuresNotNull, bool ensuresTrue, bool ensuresFalse)
+            bool notNullWhenTrue, bool notNullWhenFalse, bool ensuresTrue, bool ensuresFalse)
         {
             if (notNullWhenFalse)
             {
                 value |= NotNullWhenFalse;
             }
 
-            if (ensuresNotNull)
+            if (notNullWhenTrue)
             {
-                value |= EnsuresNotNull;
+                value |= NotNullWhenTrue;
             }
 
             if (ensuresTrue)

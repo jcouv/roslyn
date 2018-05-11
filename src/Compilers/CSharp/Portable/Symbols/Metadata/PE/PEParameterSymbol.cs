@@ -31,8 +31,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             IsCallerFilePath = 0x1 << 5,
             IsCallerLineNumber = 0x1 << 6,
             IsCallerMemberName = 0x1 << 7,
-            NotNullWhenFalse = 0x1 << 8,
-            EnsuresNotNull = 0x1 << 9,
+            NotNullWhenTrue = 0x1 << 8,
+            NotNullWhenFalse = 0x1 << 9,
             EnsuresTrue = 0x1 << 10,
             EnsuresFalse = 0x1 << 11,
         }
@@ -653,14 +653,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
         {
             get
             {
+                const WellKnownAttributeFlags notNullWhenTrue = WellKnownAttributeFlags.NotNullWhenTrue;
                 const WellKnownAttributeFlags notNullWhenFalse = WellKnownAttributeFlags.NotNullWhenFalse;
-                const WellKnownAttributeFlags ensuresNotNull = WellKnownAttributeFlags.EnsuresNotNull;
                 const WellKnownAttributeFlags ensuresTrue = WellKnownAttributeFlags.EnsuresTrue;
                 const WellKnownAttributeFlags ensuresFalse = WellKnownAttributeFlags.EnsuresFalse;
 
                 // PROTOTYPE(NullableReferenceTypes): the flags could be packed more
-                if (!_packedFlags.TryGetWellKnownAttribute(notNullWhenFalse, out bool hasNotNullWhenFalse) ||
-                    !_packedFlags.TryGetWellKnownAttribute(ensuresNotNull, out bool hasEnsuresNotNull) ||
+                if (!_packedFlags.TryGetWellKnownAttribute(notNullWhenTrue, out bool hasNotNullWhenTrue) ||
+                    !_packedFlags.TryGetWellKnownAttribute(notNullWhenFalse, out bool hasNotNullWhenFalse) ||
                     !_packedFlags.TryGetWellKnownAttribute(ensuresTrue, out bool hasEnsuresTrue) ||
                     !_packedFlags.TryGetWellKnownAttribute(ensuresFalse, out bool hasEnsuresFalse))
                 {
@@ -669,21 +669,22 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                     if (memberHasAny)
                     {
                         // External annotations win, if any is present on the member
+                        hasNotNullWhenTrue = (annotations & AttributeAnnotations.NotNullWhenTrue) != 0;
                         hasNotNullWhenFalse = (annotations & AttributeAnnotations.NotNullWhenFalse) != 0;
-                        hasEnsuresNotNull = (annotations & AttributeAnnotations.EnsuresNotNull) != 0;
                         hasEnsuresTrue = (annotations & AttributeAnnotations.EnsuresTrue) != 0;
                         hasEnsuresFalse = (annotations & AttributeAnnotations.EnsuresFalse) != 0;
                     }
                     else
                     {
-                        hasNotNullWhenFalse = _moduleSymbol.Module.HasAttribute(_handle, AttributeDescription.NotNullWhenFalseAttribute);
-                        hasEnsuresNotNull = _moduleSymbol.Module.HasAttribute(_handle, AttributeDescription.EnsuresNotNullAttribute);
+                        bool hasEnsuresNotNull = _moduleSymbol.Module.HasAttribute(_handle, AttributeDescription.EnsuresNotNullAttribute);
+                        hasNotNullWhenTrue = hasEnsuresNotNull || _moduleSymbol.Module.HasAttribute(_handle, AttributeDescription.NotNullWhenTrueAttribute);
+                        hasNotNullWhenFalse = hasEnsuresNotNull || _moduleSymbol.Module.HasAttribute(_handle, AttributeDescription.NotNullWhenFalseAttribute);
                         hasEnsuresTrue = _moduleSymbol.Module.HasAttribute(_handle, AttributeDescription.EnsuresTrueAttribute);
                         hasEnsuresFalse = _moduleSymbol.Module.HasAttribute(_handle, AttributeDescription.EnsuresFalseAttribute);
                     }
 
+                    _packedFlags.SetWellKnownAttribute(notNullWhenTrue, hasNotNullWhenTrue);
                     _packedFlags.SetWellKnownAttribute(notNullWhenFalse, hasNotNullWhenFalse);
-                    _packedFlags.SetWellKnownAttribute(ensuresNotNull, hasEnsuresNotNull);
                     _packedFlags.SetWellKnownAttribute(ensuresTrue, hasEnsuresTrue);
                     _packedFlags.SetWellKnownAttribute(ensuresFalse, hasEnsuresFalse);
 
@@ -693,7 +694,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                     }
                 }
 
-                return AttributeAnnotations.None.With(notNullWhenFalse: hasNotNullWhenFalse, ensuresNotNull: hasEnsuresNotNull,
+                return AttributeAnnotations.None.With(notNullWhenTrue: hasNotNullWhenTrue, notNullWhenFalse: hasNotNullWhenFalse,
                     ensuresTrue: hasEnsuresTrue, ensuresFalse: hasEnsuresFalse);
             }
         }

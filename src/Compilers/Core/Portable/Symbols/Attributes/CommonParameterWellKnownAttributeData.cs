@@ -110,6 +110,22 @@ namespace Microsoft.CodeAnalysis
         }
         #endregion
 
+        private bool _hasNotNullWhenTrueAttribute;
+        public bool HasNotNullWhenTrueAttribute
+        {
+            get
+            {
+                VerifySealed(expected: true);
+                return _hasNotNullWhenTrueAttribute;
+            }
+            set
+            {
+                VerifySealed(expected: false);
+                _hasNotNullWhenTrueAttribute = value;
+                SetDataStored();
+            }
+        }
+
         private bool _hasNotNullWhenFalseAttribute;
         public bool HasNotNullWhenFalseAttribute
         {

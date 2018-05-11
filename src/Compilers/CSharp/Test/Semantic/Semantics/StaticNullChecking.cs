@@ -97,6 +97,18 @@ namespace System.Runtime.CompilerServices
 }
 ";
 
+        private const string NotNullWhenTrueAttributeDefinition = @"
+namespace System.Runtime.CompilerServices
+{
+    [AttributeUsage(AttributeTargets.Parameter,
+                   AllowMultiple = false)]
+    public class NotNullWhenTrueAttribute : Attribute
+    {
+        public NotNullWhenTrueAttribute() { }
+    }
+}
+";
+
         private const string NotNullWhenFalseAttributeDefinition = @"
 namespace System.Runtime.CompilerServices
 {
@@ -5779,6 +5791,132 @@ class C
                 //         s2.ToString(); // warn
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "s2").WithLocation(10, 9)
                 );
+        }
+
+        [Fact]
+        public void MethodWithOutNullable()
+        {
+            CSharpCompilation c = CreateCompilation(@"
+public class C
+{
+    public void Main(string key)
+    {
+        if (TryGetValue(key, out string? s))
+        {
+            s.ToString(); // warn
+        }
+        else
+        {
+            s.ToString(); // warn 2
+        }
+
+        s.ToString(); // warn 3
+    }
+    public static bool TryGetValue(string key, out string? value) => throw null;
+}
+" + NotNullWhenTrueAttributeDefinition, parseOptions: TestOptions.Regular8);
+
+            c.VerifyDiagnostics(
+                // (8,13): warning CS8602: Possible dereference of a null reference.
+                //             s.ToString(); // warn
+                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "s").WithLocation(8, 13),
+                // (12,13): warning CS8602: Possible dereference of a null reference.
+                //             s.ToString(); // warn 2
+                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "s").WithLocation(12, 13),
+                // (15,9): warning CS8602: Possible dereference of a null reference.
+                //         s.ToString(); // warn 3
+                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "s").WithLocation(15, 9)
+                );
+        }
+
+        [Fact]
+        public void MethodWithOutNonNullable()
+        {
+            CSharpCompilation c = CreateCompilation(@"
+public class C
+{
+    public void Main(string key)
+    {
+        GetValue(key, out string s);
+        s.ToString(); // ok
+    }
+    public static void GetValue(string key, out string value) => throw null;
+}
+" + NotNullWhenTrueAttributeDefinition, parseOptions: TestOptions.Regular8);
+
+            c.VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void MethodWithOutVar()
+        {
+            CSharpCompilation c = CreateCompilation(@"
+public class C
+{
+    public void Main(string key)
+    {
+        if (TryGetValue(key, out var s))
+        {
+            s.ToString(); // warn
+        }
+        else
+        {
+            s.ToString(); // warn 2
+        }
+
+        s.ToString(); // warn 3
+    }
+    public static bool TryGetValue(string key, out string? value) => throw null;
+}
+" + NotNullWhenTrueAttributeDefinition, parseOptions: TestOptions.Regular8);
+
+            // TODO
+            c.VerifyDiagnostics(
+                // (6,34): warning CS8600: Converting null literal or possible null value to non-nullable type.
+                //         if (TryGetValue(key, out var s))
+                Diagnostic(ErrorCode.WRN_ConvertingNullableToNonNullable, "var s").WithLocation(6, 34),
+                // (8,13): warning CS8602: Possible dereference of a null reference.
+                //             s.ToString(); // warn
+                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "s").WithLocation(8, 13),
+                // (12,13): warning CS8602: Possible dereference of a null reference.
+                //             s.ToString(); // warn 2
+                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "s").WithLocation(12, 13),
+                // (15,9): warning CS8602: Possible dereference of a null reference.
+                //         s.ToString(); // warn 3
+                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "s").WithLocation(15, 9)
+                );
+        }
+
+        [Fact]
+        public void NotNullWhenTrue_Simple()
+        {
+            CSharpCompilation c = CreateCompilation(@"
+using System.Runtime.CompilerServices;
+public class C
+{
+    public void Main(string key)
+    {
+        if (TryGetValue(key, out string? s))
+        {
+            s.ToString(); // ok
+        }
+        else
+        {
+            s.ToString(); // warn
+        }
+
+        s.ToString(); // warn 2
+    }
+    public static bool TryGetValue(string key, [NotNullWhenTrue] out string? value) => throw null;
+}
+" + NotNullWhenTrueAttributeDefinition, parseOptions: TestOptions.Regular8);
+
+            c.VerifyDiagnostics(
+                // TODO
+                );
+
+            VerifyAnnotationsAndMetadata(c, "C.Main", None);
+            VerifyAnnotationsAndMetadata(c, "C.TryGetValue", None, NotNullWhenTrue);
         }
 
         [Fact]
