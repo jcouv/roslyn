@@ -598,7 +598,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <summary>
         /// Visit a general expression, where we will only need to determine if variables are
         /// assigned (or not).
-        /// If you will be needing AssignedWhenTrue and AssignedWhenFalse, set `keepSplit` to `true`.
+        /// If you will be needing WhenTrue and WhenFalse, set `keepSplit` to `true`.
         /// </summary>
         /// <param name="node"></param>
         protected BoundNode VisitRvalue(BoundExpression node, bool keepSplit = false)

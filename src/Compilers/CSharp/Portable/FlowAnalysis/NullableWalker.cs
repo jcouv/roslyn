@@ -296,7 +296,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
         /// <summary>
-        /// If you will be needing AssignedWhenTrue and AssignedWhenFalse, set `keepSplit` to `true`.
+        /// If you will be needing WhenTrue and WhenFalse, set `keepSplit` to `true`.
         /// </summary>
         private void VisitLvalue(BoundExpression node, bool keepSplit = false)
         {
