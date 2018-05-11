@@ -340,7 +340,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case BoundKind.DeconstructionVariablePendingInference:
                     {
                         var pending = (DeconstructionVariablePendingInference)expression;
-                        return pending.SetInferredType(type, this, diagnostics);
+                        // PROTOTYPE(NullableReferenceTypes): copy nullability annotations from Deconstruct method
+                        return pending.SetInferredType(TypeSymbolWithAnnotations.Create(type), this, diagnostics);
                     }
                 case BoundKind.DiscardExpression:
                     {

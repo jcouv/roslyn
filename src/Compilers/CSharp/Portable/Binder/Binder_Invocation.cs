@@ -1352,7 +1352,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                             var unboundArgument = (UnboundLambda)argument;
                             foreach (var parameterList in parameterListList)
                             {
-                                var parameterType = GetCorrespondingParameterType(analyzedArguments, i, parameterList);
+                                // PROTOTYPE(NullableReferenceTypes): should we carry the nullable annotations over?
+                                var parameterType = GetCorrespondingParameterType(analyzedArguments, i, parameterList).TypeSymbol;
                                 if (parameterType?.Kind == SymbolKind.NamedType &&
                                     (object)parameterType.GetDelegateType() != null)
                                 {
@@ -1373,7 +1374,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             }
 
                             // See if all applicable applicable parameters have the same type
-                            TypeSymbol candidateType = null;
+                            TypeSymbolWithAnnotations candidateType = null;
                             foreach (var parameterList in parameterListList)
                             {
                                 var parameterType = GetCorrespondingParameterType(analyzedArguments, i, parameterList);
@@ -1411,7 +1412,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 }
                                 else
                                 {
-                                    newArguments[i] = ((BoundDiscardExpression)argument).SetInferredType(candidateType);
+                                    newArguments[i] = ((BoundDiscardExpression)argument).SetInferredType(candidateType.TypeSymbol);
                                 }
                             }
 
@@ -1437,7 +1438,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <param name="i">The index of the argument</param>
         /// <param name="parameterList">The parameter list to match against</param>
         /// <returns>The type of the corresponding parameter.</returns>
-        private static TypeSymbol GetCorrespondingParameterType(AnalyzedArguments analyzedArguments, int i, ImmutableArray<ParameterSymbol> parameterList)
+        private static TypeSymbolWithAnnotations GetCorrespondingParameterType(AnalyzedArguments analyzedArguments, int i, ImmutableArray<ParameterSymbol> parameterList)
         {
             string name = analyzedArguments.Name(i);
             if (name != null)
@@ -1445,13 +1446,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // look for a parameter by that name
                 foreach (var parameter in parameterList)
                 {
-                    if (parameter.Name == name) return parameter.Type.TypeSymbol;
+                    if (parameter.Name == name) return parameter.Type;
                 }
 
                 return null;
             }
 
-            return (i < parameterList.Length) ? parameterList[i].Type.TypeSymbol : null;
+            return (i < parameterList.Length) ? parameterList[i].Type : null;
             // CONSIDER: should we handle variable argument lists?
         }
 

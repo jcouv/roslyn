@@ -5870,11 +5870,7 @@ public class C
 }
 " + NotNullWhenTrueAttributeDefinition, parseOptions: TestOptions.Regular8);
 
-            // TODO
             c.VerifyDiagnostics(
-                // (6,34): warning CS8600: Converting null literal or possible null value to non-nullable type.
-                //         if (TryGetValue(key, out var s))
-                Diagnostic(ErrorCode.WRN_ConvertingNullableToNonNullable, "var s").WithLocation(6, 34),
                 // (8,13): warning CS8602: Possible dereference of a null reference.
                 //             s.ToString(); // warn
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "s").WithLocation(8, 13),
@@ -5885,6 +5881,13 @@ public class C
                 //         s.ToString(); // warn 3
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "s").WithLocation(15, 9)
                 );
+
+            var tree = c.SyntaxTrees.Single();
+            var model = c.GetSemanticModel(tree);
+            var outVar = tree.GetRoot().DescendantNodes().OfType<DeclarationExpressionSyntax>().Single();
+            var symbol = (LocalSymbol)model.GetSymbolInfo(outVar).Symbol;
+            Assert.Equal("System.String? s", symbol.ToTestDisplayString());
+            Assert.Null(model.GetDeclaredSymbol(outVar));
         }
 
         [Fact]
