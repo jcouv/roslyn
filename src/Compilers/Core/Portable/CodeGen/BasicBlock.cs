@@ -11,6 +11,7 @@ using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CodeGen
 {
+    // PROTOTYPE(NullableDogfood): TODO I should come back and finish this class
     internal partial class ILBuilder
     {
         internal enum BlockType
@@ -57,11 +58,13 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
             protected BasicBlock()
             {
+                this.builder = null!; // PROTOTYPE(NullableDogfood): this is used for the object pool, which always calls Initialize when allocating an instance
             }
 
             internal BasicBlock(ILBuilder builder)
             {
                 Debug.Assert(BitConverter.IsLittleEndian);
+                this.builder = null!; // PROTOTYPE(NullableDogfood): this is redundant with Initialize call below
                 Initialize(builder);
             }
 
@@ -75,7 +78,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
             //parent builder
             internal ILBuilder builder;
 
-            private Cci.PooledBlobBuilder _lazyRegularInstructions;
+            private Cci.PooledBlobBuilder? _lazyRegularInstructions;
             public Cci.PooledBlobBuilder Writer
             {
                 get
@@ -129,10 +132,10 @@ namespace Microsoft.CodeAnalysis.CodeGen
             }
 
             //next block in the block sequence. Note that it is not necessarily reachable from current block.
-            public BasicBlock NextBlock;
+            public BasicBlock? NextBlock;
 
             //destination of the exit branch. null if branch code is nop or ret.
-            private object _branchLabel;
+            private object? _branchLabel;
 
             //block start relative to the method body.
             public int Start;
@@ -159,7 +162,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
                 }
             }
 
-            public object BranchLabel => _branchLabel;
+            public object? BranchLabel => _branchLabel;
 
             public ILOpCode BranchCode
             {
@@ -188,7 +191,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
             //destination of the branch. 
             //null if branch code is nop or ret or if label is not yet marked.
-            public BasicBlock BranchBlock
+            public BasicBlock? BranchBlock
             {
                 get
                 {
@@ -196,7 +199,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
                     if (BranchLabel != null)
                     {
-                        result = builder._labelInfos[BranchLabel].bb;
+                        result = builder!._labelInfos[BranchLabel].bb; // PROTOTYPE(NullableDogfood): add Debug.Assert on builder
                     }
 
                     return result;
@@ -217,7 +220,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
                 this.RevBranchCode = revBranchCode;
             }
 
-            public void SetBranch(object newLabel, ILOpCode branchCode)
+            public void SetBranch(object? newLabel, ILOpCode branchCode)
             {
                 this.BranchCode = branchCode;
 
@@ -229,10 +232,10 @@ namespace Microsoft.CodeAnalysis.CodeGen
                     {
                         Debug.Assert(newLabel != null);
 
-                        var labelInfo = this.builder._labelInfos[newLabel];
+                        var labelInfo = this.builder!._labelInfos[newLabel!]; // PROTOTYPE(NullableDogfood): Assert on builder and add annotation on Debug.Assert API
                         if (!labelInfo.targetOfConditionalBranches)
                         {
-                            this.builder._labelInfos[newLabel] = labelInfo.SetTargetOfConditionalBranches();
+                            this.builder!._labelInfos[newLabel!] = labelInfo.SetTargetOfConditionalBranches(); // PROTOTYPE(NullableDogfood): Assert on builder and add annotation on Debug.Assert API
                         }
                     }
                 }
@@ -250,7 +253,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
             /// <summary>
             /// Instructions that are not branches.
             /// </summary>
-            public BlobBuilder RegularInstructions => _lazyRegularInstructions;
+            public BlobBuilder? RegularInstructions => _lazyRegularInstructions;
 
             /// <summary>
             /// The block contains only the final branch or nothing at all
@@ -320,13 +323,13 @@ namespace Microsoft.CodeAnalysis.CodeGen
                 const int reduction = -3;
 
                 int offset;
-                var branchBlockStart = BranchBlock.Start;
+                var branchBlockStart = BranchBlock!.Start; // PROTOTYPE(NullableDogfood): bug?
                 if (branchBlockStart > Start)
                 {
                     //forward branch
                     //there must be NextBlock
                     // delta will be applied equally to both branchBlock and NextBlock so no need to consider delta here
-                    offset = branchBlockStart - NextBlock.Start;
+                    offset = branchBlockStart - NextBlock!.Start; // PROTOTYPE(NullableDogfood): bug?
                 }
                 else
                 {
@@ -383,7 +386,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
                 return false;
             }
 
-            private BasicBlock NextNontrivial
+            private BasicBlock? NextNontrivial
             {
                 get
                 {
@@ -650,7 +653,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
                 return "";
             }
 
-            private class PooledBasicBlock : BasicBlock
+            private sealed class PooledBasicBlock : BasicBlock
             {
                 internal override void Free()
                 {
@@ -660,7 +663,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
                     this.BranchCode = ILOpCode.Nop;
                     _revBranchCode = 0;
                     this.NextBlock = null;
-                    this.builder = null;
+                    this.builder = null!; // PROTOTYPE(NullableDogfood): pooled blocks are always initialized with a builder when allocated
                     this.Reachability = Reachability.NotReachable;
                     this.Start = 0;
 
@@ -680,7 +683,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
                 this.enclosingHandler = enclosingHandler;
             }
 
-            public override ExceptionHandlerScope EnclosingHandler => enclosingHandler;
+            public override ExceptionHandlerScope? EnclosingHandler => enclosingHandler;
         }
 
         internal sealed class ExceptionHandlerLeaderBlock : BasicBlockWithHandlerScope
@@ -695,7 +698,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
             // The next exception handler clause (catch or finally)
             // in the same exception handler.
-            public ExceptionHandlerLeaderBlock NextExceptionHandler;
+            public ExceptionHandlerLeaderBlock? NextExceptionHandler;
 
             public override BlockType Type => _type;
 
@@ -718,14 +721,14 @@ namespace Microsoft.CodeAnalysis.CodeGen
             public override BlockType Type => BlockType.Switch;
 
             // destination labels for switch block
-            public object[] BranchLabels;
+            public object[]? BranchLabels;
 
             public uint BranchesCount
             {
                 get
                 {
                     Debug.Assert(BranchLabels != null);
-                    return (uint)BranchLabels.Length;
+                    return (uint)BranchLabels!.Length; // PROTOTYPE(NullableDogfood): API annotation on Debug.Assert
                 }
             }
 

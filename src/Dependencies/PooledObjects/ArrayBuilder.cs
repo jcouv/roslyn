@@ -42,7 +42,11 @@ namespace Microsoft.CodeAnalysis.PooledObjects
 
         private readonly ImmutableArray<T>.Builder _builder;
 
+#if USES_ANNOTATIONS
+        private readonly ObjectPool<ArrayBuilder<T>>? _pool;
+#else
         private readonly ObjectPool<ArrayBuilder<T>> _pool;
+#endif
 
         public ArrayBuilder(int size)
         {
@@ -293,7 +297,7 @@ namespace Microsoft.CodeAnalysis.PooledObjects
             return result;
         }
 
-        #region Poolable
+#region Poolable
 
         // To implement Poolable, you need two things:
         // 1) Expose Freeing primitive. 
@@ -365,12 +369,16 @@ namespace Microsoft.CodeAnalysis.PooledObjects
 
         public static ObjectPool<ArrayBuilder<T>> CreatePool(int size)
         {
+#if USES_ANNOTATIONS
             ObjectPool<ArrayBuilder<T>>? pool = null;
+#else
+            ObjectPool<ArrayBuilder<T>> pool = null;
+#endif
             pool = new ObjectPool<ArrayBuilder<T>>(() => new ArrayBuilder<T>(pool), size);
             return pool;
         }
 
-        #endregion
+#endregion
 
         public Enumerator GetEnumerator()
         {

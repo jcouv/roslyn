@@ -25,7 +25,7 @@ namespace Microsoft.CodeAnalysis
 
         internal ImmutableArray<byte> GetHash(AssemblyHashAlgorithm algorithmId)
         {
-            using (HashAlgorithm algorithm = TryGetAlgorithm(algorithmId))
+            using (HashAlgorithm? algorithm = TryGetAlgorithm(algorithmId))
             {
                 // ERR_CryptoHashFailed has already been reported:
                 if (algorithm == null)

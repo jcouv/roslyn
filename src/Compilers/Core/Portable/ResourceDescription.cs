@@ -17,7 +17,7 @@ namespace Microsoft.CodeAnalysis
     public sealed class ResourceDescription : Cci.IFileReference
     {
         internal readonly string ResourceName;
-        internal readonly string FileName; // null if embedded
+        internal readonly string? FileName; // null if embedded
         internal readonly bool IsPublic;
         internal readonly Func<Stream> DataProvider;
         private readonly CryptographicHashProvider _hashes;
@@ -55,7 +55,7 @@ namespace Microsoft.CodeAnalysis
         {
         }
 
-        internal ResourceDescription(string resourceName, string fileName, Func<Stream> dataProvider, bool isPublic, bool isEmbedded, bool checkArgs)
+        internal ResourceDescription(string resourceName, string? fileName, Func<Stream> dataProvider, bool isPublic, bool isEmbedded, bool checkArgs)
         {
             if (checkArgs)
             {
@@ -121,7 +121,7 @@ namespace Microsoft.CodeAnalysis
                 }
                 catch (Exception ex)
                 {
-                    throw new ResourceException(_resource.FileName, ex);
+                    throw new ResourceException(_resource.FileName, ex); // PROTOTYPE(NullableDogfood): Not sure
                 }
             }
         }
@@ -143,7 +143,7 @@ namespace Microsoft.CodeAnalysis
 
         string Cci.IFileReference.FileName
         {
-            get { return FileName; }
+            get { return FileName; } // PROTOTYPE(NullableDogfood): Not sure
         }
 
         bool Cci.IFileReference.HasMetadata

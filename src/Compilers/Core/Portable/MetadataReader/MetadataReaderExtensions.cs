@@ -36,11 +36,13 @@ namespace Microsoft.CodeAnalysis
         }
 
         /// <exception cref="BadImageFormatException">An exception from metadata reader.</exception>
-        internal static AssemblyIdentity? ReadAssemblyIdentityOrThrow(this MetadataReader reader)
+        internal static AssemblyIdentity ReadAssemblyIdentityOrThrow(this MetadataReader reader)
         {
             if (!reader.IsAssembly)
             {
-                return null;
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
+                return null!; // PROTOTYPE(NullableReferenceTypes): maybe this should throw instead?
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
             }
 
             var assemblyDef = reader.GetAssemblyDefinition();
@@ -102,7 +104,7 @@ namespace Microsoft.CodeAnalysis
                 throw new BadImageFormatException(string.Format(CodeAnalysisResources.InvalidAssemblyName, nameStr));
             }
 
-            string cultureName = culture.IsNil ? null : reader.GetString(culture);
+            string? cultureName = culture.IsNil ? null : reader.GetString(culture);
             if (cultureName != null && !MetadataHelpers.IsValidMetadataIdentifier(cultureName))
             {
                 throw new BadImageFormatException(string.Format(CodeAnalysisResources.InvalidCultureName, cultureName));

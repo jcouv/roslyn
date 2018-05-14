@@ -132,7 +132,7 @@ namespace Microsoft.CodeAnalysis.Emit
         public override LocalDefinition? GetPreviousLocal(
             Cci.ITypeReference currentType,
             ILocalSymbolInternal currentLocalSymbol,
-            string nameOpt,
+            string? nameOpt,
             SynthesizedLocalKind kind,
             LocalDebugId id,
             LocalVariableAttributes pdbAttributes,
@@ -180,7 +180,7 @@ namespace Microsoft.CodeAnalysis.Emit
                 tupleElementNames);
         }
 
-        public override string PreviousStateMachineTypeName => _stateMachineTypeNameOpt;
+        public override string? PreviousStateMachineTypeName => _stateMachineTypeNameOpt;
 
         public override bool TryGetPreviousHoistedLocalSlotIndex(
             SyntaxNode currentDeclarator, 
@@ -239,7 +239,7 @@ namespace Microsoft.CodeAnalysis.Emit
             // => the source of the current method is the same as the source of the previous method 
             // => relative positions are the same 
             // => ids are the same
-            SyntaxNode previousSyntax = _syntaxMapOpt?.Invoke(currentSyntax);
+            SyntaxNode? previousSyntax = _syntaxMapOpt?.Invoke(currentSyntax);
             if (previousSyntax == null)
             {
                 previousSyntaxOffset = 0;
@@ -262,14 +262,14 @@ namespace Microsoft.CodeAnalysis.Emit
             // => the source of the current method is the same as the source of the previous method 
             // => relative positions are the same 
             // => ids are the same
-            SyntaxNode previousLambdaSyntax = _syntaxMapOpt?.Invoke(currentLambdaSyntax);
+            SyntaxNode? previousLambdaSyntax = _syntaxMapOpt?.Invoke(currentLambdaSyntax);
             if (previousLambdaSyntax == null)
             {
                 previousSyntaxOffset = 0;
                 return false;
             }
 
-            SyntaxNode previousSyntax;
+            SyntaxNode? previousSyntax;
             if (isLambdaBody)
             {
                 previousSyntax = _lambdaSyntaxFacts.TryGetCorrespondingLambdaBody(previousLambdaSyntax, lambdaOrLambdaBodySyntax);

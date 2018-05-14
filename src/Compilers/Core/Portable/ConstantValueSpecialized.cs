@@ -121,7 +121,7 @@ namespace Microsoft.CodeAnalysis
                 get { return SpecialType.System_String; }
             }
 
-            public override string StringValue
+            public override string? StringValue
             {
                 get
                 {

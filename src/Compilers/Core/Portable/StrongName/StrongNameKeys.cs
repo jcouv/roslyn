@@ -192,7 +192,7 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
-        internal static Diagnostic GetError(string keyFilePath, string keyContainerName, object message, CommonMessageProvider messageProvider)
+        internal static Diagnostic GetError(string keyFilePath, string? keyContainerName, object message, CommonMessageProvider messageProvider)
         {
             if (keyContainerName != null)
             {

@@ -18,8 +18,8 @@ namespace Microsoft.CodeAnalysis
 {
     internal class RESOURCE
     {
-        internal RESOURCE_STRING pstringType;
-        internal RESOURCE_STRING pstringName;
+        internal RESOURCE_STRING? pstringType;
+        internal RESOURCE_STRING? pstringName;
 
         internal DWORD DataSize;               // size of data without header
         internal DWORD HeaderSize;     // Length of the header
@@ -30,13 +30,13 @@ namespace Microsoft.CodeAnalysis
         internal WORD LanguageId;     // Unicode support for NLS
         internal DWORD Version;        // Version of the resource data
         internal DWORD Characteristics;        // Characteristics of the data
-        internal byte[] data;       //data
+        internal byte[]? data;       //data
     };
 
     internal class RESOURCE_STRING
     {
         internal WORD Ordinal;
-        internal string theString;
+        internal string? theString;
     };
 
     /// <summary>

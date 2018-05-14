@@ -36,7 +36,7 @@ namespace Microsoft.CodeAnalysis
         private readonly IntPtr _metadataPointerOpt;
         private readonly int _metadataSizeOpt;
 
-        private MetadataReader _lazyMetadataReader;
+        private MetadataReader? _lazyMetadataReader;
 
         private ImmutableArray<AssemblyIdentity> _lazyAssemblyReferences;
 
@@ -46,12 +46,12 @@ namespace Microsoft.CodeAnalysis
         /// keep a second one as well to use it for error reporting.
         /// We use -1 in case there was no forward.
         /// </summary>
-        private Dictionary<string, (int FirstIndex, int SecondIndex)> _lazyForwardedTypesToAssemblyIndexMap;
+        private Dictionary<string, (int FirstIndex, int SecondIndex)>? _lazyForwardedTypesToAssemblyIndexMap;
 
         private readonly Lazy<IdentifierCollection> _lazyTypeNameCollection;
         private readonly Lazy<IdentifierCollection> _lazyNamespaceNameCollection;
 
-        private string _lazyName;
+        private string? _lazyName;
         private bool _isDisposed;
 
         /// <summary>
@@ -65,18 +65,18 @@ namespace Microsoft.CodeAnalysis
         /// local type. If the bit is 1, local type will have an entry 
         /// in m_lazyTypeDefToTypeIdentifierMap.
         /// </summary>
-        private int[] _lazyNoPiaLocalTypeCheckBitMap;
+        private int[]? _lazyNoPiaLocalTypeCheckBitMap;
 
         /// <summary>
         /// For each TypeDef that has 1 in m_lazyNoPiaLocalTypeCheckBitMap,
         /// this map stores corresponding TypeIdentifier AttributeInfo. 
         /// </summary>
-        private ConcurrentDictionary<TypeDefinitionHandle, AttributeInfo> _lazyTypeDefToTypeIdentifierMap;
+        private ConcurrentDictionary<TypeDefinitionHandle, AttributeInfo>? _lazyTypeDefToTypeIdentifierMap;
 
         // The module can be used by different compilations or different versions of the "same"
         // compilation, which use different hash algorithms. Let's cache result for each distinct 
         // algorithm.
-        private readonly CryptographicHashProvider _hashesOpt;
+        private readonly CryptographicHashProvider? _hashesOpt;
 
         private delegate bool AttributeValueExtractor<T>(out T value, ref BlobReader sigReader);
         private static readonly AttributeValueExtractor<string> s_attributeStringValueExtractor = CrackStringInAttributeValue;
@@ -1535,7 +1535,7 @@ namespace Microsoft.CodeAnalysis
 
                     // Trim null characters at the end to mimic native compiler behavior.
                     // There are libraries that have them and leaving them in breaks tests.
-                    value = value.TrimEnd('\0');
+                    value = value!.TrimEnd('\0');
 
                     return true;
                 }
@@ -1552,12 +1552,12 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
-        internal static bool CrackStringArrayInAttributeValue(out ImmutableArray<string> value, ref BlobReader sig)
+        internal static bool CrackStringArrayInAttributeValue(out ImmutableArray<string?> value, ref BlobReader sig)
         {
             if (sig.RemainingBytes >= 4)
             {
                 uint arrayLen = sig.ReadUInt32();
-                var stringArray = new string[arrayLen];
+                var stringArray = new string?[arrayLen];
                 for (int i = 0; i < arrayLen; i++)
                 {
                     if (!CrackStringInAttributeValue(out stringArray[i], ref sig))
@@ -1571,7 +1571,7 @@ namespace Microsoft.CodeAnalysis
                 return true;
             }
 
-            value = default(ImmutableArray<string>);
+            value = default;
             return false;
         }
 

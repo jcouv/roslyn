@@ -23,8 +23,8 @@ namespace Microsoft.CodeAnalysis.Emit
         internal readonly IEnumerable<ResourceDescription> ManifestResources;
         internal readonly Cci.ModulePropertiesForSerialization SerializationProperties;
         internal readonly OutputKind OutputKind;
-        internal IEnumerable<Cci.IWin32Resource> Win32Resources;
-        internal Cci.ResourceSection Win32ResourceSection;
+        internal IEnumerable<Cci.IWin32Resource>? Win32Resources;
+        internal Cci.ResourceSection? Win32ResourceSection;
         internal Stream SourceLinkStreamOpt;
         
         internal Cci.IMethodReference? PEEntryPoint;

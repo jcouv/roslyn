@@ -221,18 +221,19 @@ namespace Microsoft.CodeAnalysis
         }
 
         // enumerates all edges of the tree yielding (parent, node) pairs. The first yielded value is (null, this).
-        public IEnumerable<KeyValuePair<TreeDumperNode, TreeDumperNode>> PreorderTraversal()
+        public IEnumerable<KeyValuePair<TreeDumperNode?, TreeDumperNode>> PreorderTraversal()
         {
-            var stack = new Stack<KeyValuePair<TreeDumperNode, TreeDumperNode>>();
-            stack.Push(new KeyValuePair<TreeDumperNode, TreeDumperNode>(null, this));
+            var stack = new Stack<KeyValuePair<TreeDumperNode?, TreeDumperNode>>();
+            stack.Push(new KeyValuePair<TreeDumperNode?, TreeDumperNode>(null, this));
             while (stack.Count != 0)
             {
                 var currentEdge = stack.Pop();
-                yield return currentEdge;
+                yield return currentEdge; // PROTOTYPE(NullableDogfood): missing warning when method return type lacks nullability annotation
+                                          // https://github.com/dotnet/roslyn/issues/23493
                 var currentNode = currentEdge.Value;
                 foreach (var child in currentNode.Children.Where(x => x != null).Reverse())
                 {
-                    stack.Push(new KeyValuePair<TreeDumperNode, TreeDumperNode>(currentNode, child));
+                    stack.Push(new KeyValuePair<TreeDumperNode?, TreeDumperNode>(currentNode, child));
                 }
             }
         }

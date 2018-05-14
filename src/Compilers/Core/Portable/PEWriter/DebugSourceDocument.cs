@@ -19,7 +19,7 @@ namespace Microsoft.Cci
         private readonly string _location;
         private readonly Guid _language;
         private readonly bool _isComputedChecksum;
-        private readonly Task<DebugSourceInfo> _sourceInfo;
+        private readonly Task<DebugSourceInfo>? _sourceInfo;
 
         public DebugSourceDocument(string location, Guid language)
         {

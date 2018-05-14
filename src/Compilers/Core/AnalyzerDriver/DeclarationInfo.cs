@@ -12,9 +12,9 @@ namespace Microsoft.CodeAnalysis
     {
         private readonly SyntaxNode _declaredNode;
         private readonly ImmutableArray<SyntaxNode> _executableCodeBlocks;
-        private readonly ISymbol _declaredSymbol;
+        private readonly ISymbol? _declaredSymbol;
 
-        internal DeclarationInfo(SyntaxNode declaredNode, ImmutableArray<SyntaxNode> executableCodeBlocks, ISymbol declaredSymbol)
+        internal DeclarationInfo(SyntaxNode declaredNode, ImmutableArray<SyntaxNode> executableCodeBlocks, ISymbol? declaredSymbol)
         {
             Debug.Assert(declaredNode != null);
             Debug.Assert(!executableCodeBlocks.IsDefault);
@@ -41,6 +41,6 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Symbol declared by this declaration.
         /// </summary>
-        public ISymbol DeclaredSymbol => _declaredSymbol;
+        public ISymbol? DeclaredSymbol => _declaredSymbol;
     }
 }

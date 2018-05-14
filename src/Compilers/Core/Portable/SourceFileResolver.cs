@@ -92,15 +92,15 @@ namespace Microsoft.CodeAnalysis
 
         public ImmutableArray<KeyValuePair<string, string>> PathMap => _pathMap;
 
-        public override string NormalizePath(string path, string baseFilePath)
+        public override string? NormalizePath(string path, string? baseFilePath)
         {
-            string normalizedPath = FileUtilities.NormalizeRelativePath(path, baseFilePath, _baseDirectory);
+            string? normalizedPath = FileUtilities.NormalizeRelativePath(path, baseFilePath, _baseDirectory);
             return (normalizedPath == null || _pathMap.IsDefaultOrEmpty) ? normalizedPath : PathUtilities.NormalizePathPrefix(normalizedPath, _pathMap);
         }
 
-        public override string? ResolveReference(string path, string baseFilePath)
+        public override string? ResolveReference(string path, string? baseFilePath)
         {
-            string resolvedPath = FileUtilities.ResolveRelativePath(path, baseFilePath, _baseDirectory, _searchPaths, FileExists);
+            string? resolvedPath = FileUtilities.ResolveRelativePath(path, baseFilePath, _baseDirectory, _searchPaths, FileExists);
             if (resolvedPath == null)
             {
                 return null;
@@ -109,7 +109,7 @@ namespace Microsoft.CodeAnalysis
             return FileUtilities.TryNormalizeAbsolutePath(resolvedPath);
         }
 
-        public override Stream OpenRead(string resolvedPath)
+        public override Stream? OpenRead(string resolvedPath)
         {
             CompilerPathUtilities.RequireAbsolutePath(resolvedPath, nameof(resolvedPath));
             return FileUtilities.OpenRead(resolvedPath);

@@ -29,16 +29,16 @@ namespace Microsoft.CodeAnalysis.CodeGen
         public readonly ConcurrentDictionary<IMethodSymbol, MethodData> Methods = new ConcurrentDictionary<IMethodSymbol, MethodData>();
 
         // The emitted module.
-        public CommonPEModuleBuilder Module;
+        public CommonPEModuleBuilder? Module;
 
-        public Func<ISymWriterMetadataProvider, SymUnmanagedWriter> SymWriterFactory;
+        public Func<ISymWriterMetadataProvider, SymUnmanagedWriter>? SymWriterFactory; // PROTOTYPE(NullableDogfood): all callers initialize this field, but the only consumer tolerates that it's missing
 
         public ILBuilder GetIL(Func<IMethodSymbol, bool> predicate)
         {
             return Methods.Single(p => predicate(p.Key)).Value.ILBuilder;
         }
 
-        private ImmutableDictionary<string, MethodData> _lazyMethodsByName;
+        private ImmutableDictionary<string, MethodData>? _lazyMethodsByName;
 
         // Returns map indexed by name for those methods that have a unique name.
         public ImmutableDictionary<string, MethodData> GetMethodsByName()
@@ -61,7 +61,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
                 var methodsByName = map.Where(p => p.Value.Method != null).ToImmutableDictionary();
                 Interlocked.CompareExchange(ref _lazyMethodsByName, methodsByName, null);
             }
-            return _lazyMethodsByName;
+            return _lazyMethodsByName!; // PROTOTYPE(NullableDogfood): annotation CompareExchange API
         }
 
         private static readonly SymbolDisplayFormat _testDataKeyFormat = new SymbolDisplayFormat(

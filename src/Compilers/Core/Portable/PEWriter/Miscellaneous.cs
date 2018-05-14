@@ -184,7 +184,7 @@ namespace Microsoft.Cci
         /// <summary>
         /// The name of the entity.
         /// </summary>
-        string Name { get; }
+        string? Name { get; }
     }
 
     /// <summary>

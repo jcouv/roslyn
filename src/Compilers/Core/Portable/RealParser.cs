@@ -475,9 +475,11 @@ namespace Microsoft.CodeAnalysis
             uint fractionalNumeratorBits = CountSignificantBits(fractionalNumerator);
             uint fractionalDenominatorBits = CountSignificantBits(fractionalDenominator);
 
+#pragma warning disable CS8626
             uint fractionalShift = fractionalDenominatorBits > fractionalNumeratorBits
                 ? fractionalDenominatorBits - fractionalNumeratorBits
-                : 0;
+                : 0; // PROTOTYPE(NullableDogfood): No best nullability between uint and int https://github.com/dotnet/roslyn/issues/26746
+#pragma warning restore CS8626
 
             if (fractionalShift > 0)
             {

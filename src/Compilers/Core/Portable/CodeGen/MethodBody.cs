@@ -121,9 +121,9 @@ namespace Microsoft.CodeAnalysis.CodeGen
         /// <summary>
         /// This is a list of the using directives that were in scope for this method body.
         /// </summary>
-        Cci.IImportScope Cci.IMethodBody.ImportScope => _importScopeOpt;
+        Cci.IImportScope? Cci.IMethodBody.ImportScope => _importScopeOpt;
 
-        string Cci.IMethodBody.StateMachineTypeName => _stateMachineTypeNameOpt;
+        string? Cci.IMethodBody.StateMachineTypeName => _stateMachineTypeNameOpt;
 
         ImmutableArray<StateMachineHoistedLocalScope> Cci.IMethodBody.StateMachineHoistedLocalScopes
             => _stateMachineHoistedLocalScopes;

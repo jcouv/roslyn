@@ -424,12 +424,13 @@ namespace Microsoft.Cci
         // progress:
         private bool _tableIndicesAreComplete;
 
-        private EntityHandle[] _pseudoSymbolTokenToTokenMap;
-        private IReference?[] _pseudoSymbolTokenToReferenceMap;
-        private UserStringHandle[] _pseudoStringTokenToTokenMap;
+        // PROTOTYPE(NullableReferenceTypes): those nullable members are null during construction, but non-null once CreateIndices was called
+        private EntityHandle[]? _pseudoSymbolTokenToTokenMap;
+        private IReference?[]? _pseudoSymbolTokenToReferenceMap;
+        private UserStringHandle[]? _pseudoStringTokenToTokenMap;
         private bool _userStringTokenOverflow;
-        private List<string?> _pseudoStringTokenToStringMap;
-        private ReferenceIndexer _referenceVisitor;
+        private List<string?>? _pseudoStringTokenToStringMap;
+        private ReferenceIndexer? _referenceVisitor;
 
         protected readonly MetadataBuilder metadata;
 
@@ -469,7 +470,7 @@ namespace Microsoft.Cci
             var referencesInIL = module.ReferencesInIL(out count);
 
             _pseudoSymbolTokenToTokenMap = new EntityHandle[count];
-            _pseudoSymbolTokenToReferenceMap = new IReference[count];
+            _pseudoSymbolTokenToReferenceMap = new IReference?[count];
 
             int cur = 0;
             foreach (IReference o in referencesInIL)
@@ -499,7 +500,7 @@ namespace Microsoft.Cci
 
         private void CreateUserStringIndices()
         {
-            _pseudoStringTokenToStringMap = new List<string>();
+            _pseudoStringTokenToStringMap = new List<string?>();
 
             foreach (string str in this.module.GetStrings())
             {
@@ -560,7 +561,7 @@ namespace Microsoft.Cci
             return this.GetConsolidatedTypeParameters(typeDef, typeDef);
         }
 
-        private List<IGenericTypeParameter> GetConsolidatedTypeParameters(ITypeDefinition typeDef, ITypeDefinition owner)
+        private List<IGenericTypeParameter>? GetConsolidatedTypeParameters(ITypeDefinition typeDef, ITypeDefinition owner)
         {
             List<IGenericTypeParameter>? result = null;
             INestedTypeDefinition nestedTypeDef = typeDef.AsNestedTypeDefinition(Context);
@@ -839,7 +840,7 @@ namespace Microsoft.Cci
         internal EntityHandle GetFieldHandle(IFieldReference fieldReference)
         {
             IFieldDefinition? fieldDef = null;
-            IUnitReference definingUnit = GetDefiningUnitReference(fieldReference.GetContainingType(Context), Context);
+            IUnitReference? definingUnit = GetDefiningUnitReference(fieldReference.GetContainingType(Context), Context);
             if (definingUnit != null && ReferenceEquals(definingUnit, this.module))
             {
                 fieldDef = fieldReference.GetResolvedField(Context);
@@ -1713,7 +1714,7 @@ namespace Microsoft.Cci
             throw ExceptionUtilities.Unreachable;
         }
 
-        public void WriteMetadataAndIL(PdbWriter nativePdbWriterOpt, Stream metadataStream, Stream ilStream, Stream portablePdbStreamOpt, out MetadataSizes metadataSizes)
+        public void WriteMetadataAndIL(PdbWriter? nativePdbWriterOpt, Stream metadataStream, Stream ilStream, Stream? portablePdbStreamOpt, out MetadataSizes metadataSizes)
         {
             Debug.Assert(nativePdbWriterOpt == null ^ portablePdbStreamOpt == null);
 

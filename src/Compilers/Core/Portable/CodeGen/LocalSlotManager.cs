@@ -63,13 +63,13 @@ namespace Microsoft.CodeAnalysis.CodeGen
         }
 
         // maps local identities to locals.
-        private Dictionary<ILocalSymbol, LocalDefinition> _localMap;
+        private Dictionary<ILocalSymbol, LocalDefinition>? _localMap;
 
         // pool of free slots partitioned by their signature.
-        private KeyedStack<LocalSignature, LocalDefinition> _freeSlots;
+        private KeyedStack<LocalSignature, LocalDefinition>? _freeSlots;
 
         // all locals in order
-        private ArrayBuilder<Cci.ILocalDefinition> _lazyAllLocals;
+        private ArrayBuilder<Cci.ILocalDefinition>? _lazyAllLocals;
 
         // An optional allocator that provides slots for locals.
         // Used when emitting an update to a method body during EnC.
@@ -189,8 +189,8 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
         private LocalDefinition DeclareLocalImpl(
             Cci.ITypeReference type,
-            ILocalSymbolInternal symbolOpt,
-            string nameOpt,
+            ILocalSymbolInternal? symbolOpt,
+            string? nameOpt,
             SynthesizedLocalKind kind,
             LocalDebugId id,
             LocalVariableAttributes pdbAttributes,
@@ -203,7 +203,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
                 _lazyAllLocals = new ArrayBuilder<Cci.ILocalDefinition>(1);
             }
 
-            LocalDefinition local;
+            LocalDefinition? local;
 
             if (symbolOpt != null && _slotAllocatorOpt != null)
             {

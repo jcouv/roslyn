@@ -131,7 +131,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Gets the first declaration symbol that matches the declaration id string, order undefined.
         /// </summary>
-        public static ISymbol GetFirstSymbolForDeclarationId(string id, Compilation compilation)
+        public static ISymbol? GetFirstSymbolForDeclarationId(string id, Compilation compilation)
         {
             if (id == null)
             {
@@ -214,7 +214,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Gets the first symbol that matches the reference id string, order undefined.
         /// </summary>
-        public static ISymbol GetFirstSymbolForReferenceId(string id, Compilation compilation)
+        public static ISymbol? GetFirstSymbolForReferenceId(string id, Compilation compilation)
         {
             if (id == null)
             {
@@ -243,7 +243,7 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
-        private static int GetTotalTypeParameterCount(INamedTypeSymbol symbol)
+        private static int GetTotalTypeParameterCount(INamedTypeSymbol? symbol)
         {
             int n = 0;
             while (symbol != null)
@@ -354,7 +354,7 @@ namespace Microsoft.CodeAnalysis
             private class Generator : SymbolVisitor<bool>
             {
                 private readonly StringBuilder _builder;
-                private ReferenceGenerator _referenceGenerator;
+                private ReferenceGenerator? _referenceGenerator;
 
                 public Generator(StringBuilder builder)
                 {
@@ -502,15 +502,15 @@ namespace Microsoft.CodeAnalysis
         private class ReferenceGenerator : SymbolVisitor<bool>
         {
             private readonly StringBuilder _builder;
-            private readonly ISymbol _typeParameterContext;
+            private readonly ISymbol? _typeParameterContext;
 
-            public ReferenceGenerator(StringBuilder builder, ISymbol typeParameterContext)
+            public ReferenceGenerator(StringBuilder builder, ISymbol? typeParameterContext)
             {
                 _builder = builder;
                 _typeParameterContext = typeParameterContext;
             }
 
-            public ISymbol TypeParameterContext
+            public ISymbol? TypeParameterContext
             {
                 get { return _typeParameterContext; }
             }
@@ -675,7 +675,7 @@ namespace Microsoft.CodeAnalysis
 
                 int index = 0;
                 results.Clear();
-                ParseTypeSymbol(id, ref index, compilation, null, results);
+                ParseTypeSymbol(id, ref index, compilation, typeParameterContext: null, results);
                 return results.Count > 0;
             }
 
@@ -810,7 +810,7 @@ namespace Microsoft.CodeAnalysis
                 }
             }
 
-            private static ITypeSymbol? ParseTypeSymbol(string id, ref int index, Compilation compilation, ISymbol typeParameterContext)
+            private static ITypeSymbol? ParseTypeSymbol(string id, ref int index, Compilation compilation, ISymbol? typeParameterContext)
             {
                 var results = s_symbolListPool.Allocate();
                 try
@@ -831,7 +831,7 @@ namespace Microsoft.CodeAnalysis
                 }
             }
 
-            private static void ParseTypeSymbol(string id, ref int index, Compilation compilation, ISymbol typeParameterContext, List<ISymbol> results)
+            private static void ParseTypeSymbol(string id, ref int index, Compilation compilation, ISymbol? typeParameterContext, List<ISymbol> results)
             {
                 var ch = PeekNextChar(id, index);
 
@@ -919,7 +919,7 @@ namespace Microsoft.CodeAnalysis
                 }
             }
 
-            private static void ParseTypeParameterSymbol(string id, ref int index, ISymbol typeParameterContext, List<ISymbol> results)
+            private static void ParseTypeParameterSymbol(string id, ref int index, ISymbol? typeParameterContext, List<ISymbol> results)
             {
                 // skip the first `
                 System.Diagnostics.Debug.Assert(PeekNextChar(id, index) == '`');
@@ -956,7 +956,7 @@ namespace Microsoft.CodeAnalysis
                 }
             }
 
-            private static void ParseNamedTypeSymbol(string id, ref int index, Compilation compilation, ISymbol typeParameterContext, List<ISymbol> results)
+            private static void ParseNamedTypeSymbol(string id, ref int index, Compilation compilation, ISymbol? typeParameterContext, List<ISymbol> results)
             {
                 var containers = s_namespaceOrTypeListPool.Allocate();
                 try
@@ -1067,7 +1067,7 @@ namespace Microsoft.CodeAnalysis
                 return bounds;
             }
 
-            private static bool ParseTypeArguments(string id, ref int index, Compilation compilation, ISymbol typeParameterContext, List<ITypeSymbol> typeArguments)
+            private static bool ParseTypeArguments(string id, ref int index, Compilation compilation, ISymbol? typeParameterContext, List<ITypeSymbol> typeArguments)
             {
                 index++; // skip over {
 
@@ -1215,7 +1215,7 @@ namespace Microsoft.CodeAnalysis
                                 if (PeekNextChar(id, index) == '~')
                                 {
                                     index++;
-                                    ITypeSymbol returnType = ParseTypeSymbol(id, ref index, compilation, methodSymbol);
+                                    ITypeSymbol? returnType = ParseTypeSymbol(id, ref index, compilation, methodSymbol);
 
                                     // if return type is specified, then it must match
                                     if (returnType != null && methodSymbol.ReturnType.Equals(returnType))

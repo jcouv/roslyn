@@ -15,10 +15,10 @@ namespace Microsoft.CodeAnalysis.CodeGen
     /// </remarks>
     internal sealed class SignatureOnlyLocalDefinition : Cci.ILocalDefinition
     {
-        private readonly byte[] _signature;
+        private readonly byte[]? _signature;
         private readonly int _slot;
 
-        internal SignatureOnlyLocalDefinition(byte[] signature, int slot)
+        internal SignatureOnlyLocalDefinition(byte[]? signature, int slot)
         {
             _signature = signature;
             _slot = slot;
@@ -76,7 +76,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
             get { throw ExceptionUtilities.Unreachable; }
         }
 
-        public byte[] Signature => _signature;
+        public byte[]? Signature => _signature;
 
         public LocalSlotDebugInfo SlotInfo
             => new LocalSlotDebugInfo(SynthesizedLocalKind.EmitterTemp, LocalDebugId.None);

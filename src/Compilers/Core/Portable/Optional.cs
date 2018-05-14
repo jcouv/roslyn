@@ -64,9 +64,11 @@ namespace Microsoft.CodeAnalysis
         public override string ToString()
         {
             // Note: For nullable types, it's possible to have _hasValue true and _value null.
+#pragma warning disable CS8602 // Possible dereference of a null reference.
             return _hasValue
-                ? _value?.ToString() ?? "null"
+                ? _value?.ToString() ?? "null" // PROTOTYPE(NullableDogfood): https://github.com/dotnet/roslyn/issues/26836
                 : "unspecified";
+#pragma warning restore CS8602 // Possible dereference of a null reference.
         }
     }
 }

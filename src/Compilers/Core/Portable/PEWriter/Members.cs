@@ -166,7 +166,7 @@ namespace Microsoft.Cci
         /// <summary>
         /// Specifies how this field is marshalled when it is accessed from unmanaged code.
         /// </summary>
-        IMarshallingInformation MarshallingInformation
+        IMarshallingInformation? MarshallingInformation
         {
             get;
             // ^ requires this.IsMarshalledExplicitly;
@@ -207,7 +207,7 @@ namespace Microsoft.Cci
         IFieldDefinition GetResolvedField(EmitContext context);
 
 
-        ISpecializedFieldReference AsSpecializedFieldReference { get; }
+        ISpecializedFieldReference? AsSpecializedFieldReference { get; }
 
 
         /// <summary>
@@ -300,7 +300,7 @@ namespace Microsoft.Cci
         /// <summary>
         /// Optional serialized local signature.
         /// </summary>
-        byte[] Signature { get; }
+        byte[]? Signature { get; }
 
         /// <summary>
         /// Local id, or <see cref="LocalDebugId.None"/> if this is a local constant, short-lived temp variable, 
@@ -751,7 +751,7 @@ namespace Microsoft.Cci
         /// <summary>
         /// The type definition that contains this member.
         /// </summary>
-        ITypeDefinition? ContainingTypeDefinition { get; }
+        ITypeDefinition ContainingTypeDefinition { get; }
 
         /// <summary>
         /// Indicates if the member is public or confined to its containing type, derived types and/or declaring assembly.
@@ -859,7 +859,7 @@ namespace Microsoft.Cci
         /// <summary>
         /// The method being referred to.
         /// </summary>
-        IMethodDefinition GetResolvedMethod(EmitContext context);
+        IMethodDefinition? GetResolvedMethod(EmitContext context);
         // ^ ensures this is IMethodDefinition ==> result == this;
 
         /// <summary>
@@ -867,8 +867,8 @@ namespace Microsoft.Cci
         /// </summary>
         ImmutableArray<IParameterTypeInformation> ExtraParameters { get; }
 
-        IGenericMethodInstanceReference AsGenericMethodInstanceReference { get; }
-        ISpecializedMethodReference AsSpecializedMethodReference { get; }
+        IGenericMethodInstanceReference? AsGenericMethodInstanceReference { get; }
+        ISpecializedMethodReference? AsSpecializedMethodReference { get; }
     }
 
     /// <summary>

@@ -21,7 +21,7 @@ namespace Microsoft.CodeAnalysis
             // 2) names in SpecialTypes.EmittedNames array.
             // 3) languageNames in SemanticFacts.cs
             // 4) languageNames in SemanticFacts.vb
-            null, // SpecialType.None
+            null!, // SpecialType.None // PROTOTYPE(NullableDogfood): Should this be replaced with a dummy value?
             "System.Object",
             "System.Enum",
             "System.MulticastDelegate",

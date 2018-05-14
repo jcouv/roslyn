@@ -13,8 +13,8 @@ namespace Microsoft.Cci
 {
     internal sealed class ManagedResource
     {
-        private readonly Func<Stream> _streamProvider;
-        private readonly IFileReference _fileReference;
+        private readonly Func<Stream>? _streamProvider;
+        private readonly IFileReference? _fileReference;
         private readonly uint _offset;
         private readonly string _name;
         private readonly bool _isPublic;
@@ -23,7 +23,7 @@ namespace Microsoft.Cci
         /// <paramref name="streamProvider"/> streamProvider callers will dispose result after use.
         /// <paramref name="streamProvider"/> and <paramref name="fileReference"/> are mutually exclusive.
         /// </summary>
-        internal ManagedResource(string name, bool isPublic, Func<Stream> streamProvider, IFileReference fileReference, uint offset)
+        internal ManagedResource(string name, bool isPublic, Func<Stream>? streamProvider, IFileReference? fileReference, uint offset)
         {
             Debug.Assert(streamProvider == null ^ fileReference == null);
 

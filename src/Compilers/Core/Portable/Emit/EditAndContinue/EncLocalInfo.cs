@@ -11,9 +11,9 @@ namespace Microsoft.CodeAnalysis.Emit
     internal struct EncLocalInfo : IEquatable<EncLocalInfo>
     {
         public readonly LocalSlotDebugInfo SlotInfo;
-        public readonly Cci.ITypeReference Type;
+        public readonly Cci.ITypeReference? Type;
         public readonly LocalSlotConstraints Constraints;
-        public readonly byte[] Signature;
+        public readonly byte[]? Signature;
         public readonly bool isUnused;
 
         public EncLocalInfo(byte[] signature)
@@ -28,7 +28,7 @@ namespace Microsoft.CodeAnalysis.Emit
             this.isUnused = true;
         }
 
-        public EncLocalInfo(LocalSlotDebugInfo slotInfo, Cci.ITypeReference type, LocalSlotConstraints constraints, byte[] signature)
+        public EncLocalInfo(LocalSlotDebugInfo slotInfo, Cci.ITypeReference type, LocalSlotConstraints constraints, byte[]? signature)
         {
             Debug.Assert(type != null);
 
@@ -55,7 +55,7 @@ namespace Microsoft.CodeAnalysis.Emit
             Debug.Assert(other.Type != null);
 
             return this.SlotInfo.Equals(other.SlotInfo) &&
-                   this.Type.Equals(other.Type) &&
+                   this.Type!.Equals(other.Type) && // PROTOTYPE(NullableDogfood): Debug.Assert
                    this.Constraints == other.Constraints &&
                    this.isUnused == other.isUnused;
         }
@@ -70,7 +70,7 @@ namespace Microsoft.CodeAnalysis.Emit
             Debug.Assert(this.Type != null);
 
             return Hash.Combine(this.SlotInfo.GetHashCode(),
-                   Hash.Combine(this.Type.GetHashCode(),
+                   Hash.Combine(this.Type!.GetHashCode(), // PROTOTYPE(NullableDogfood
                    Hash.Combine((int)this.Constraints,
                    Hash.Combine(isUnused, 0))));
         }

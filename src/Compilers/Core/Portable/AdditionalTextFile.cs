@@ -15,7 +15,7 @@ namespace Microsoft.CodeAnalysis
     {
         private readonly CommandLineSourceFile _sourceFile;
         private readonly CommonCompiler _compiler;
-        private SourceText _text;
+        private SourceText? _text;
         private IList<DiagnosticInfo> _diagnostics;
 
         private readonly object _lockObject = new object();

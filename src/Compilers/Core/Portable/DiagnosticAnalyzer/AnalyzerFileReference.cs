@@ -33,9 +33,9 @@ namespace Microsoft.CodeAnalysis.Diagnostics
         private readonly IAnalyzerAssemblyLoader _assemblyLoader;
         private readonly Extensions<DiagnosticAnalyzer> _diagnosticAnalyzers;
 
-        private string _lazyDisplay;
-        private object _lazyIdentity;
-        private Assembly _lazyAssembly;
+        private string? _lazyDisplay;
+        private object? _lazyIdentity;
+        private Assembly? _lazyAssembly;
 
         public event EventHandler<AnalyzerLoadFailureEventArgs> AnalyzerLoadFailed;
 
@@ -79,7 +79,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             }
         }
 
-        public override string Display
+        public override string? Display
         {
             get
             {
@@ -101,7 +101,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                     InitializeDisplayAndId();
                 }
 
-                return _lazyIdentity;
+                return _lazyIdentity!; // PROTOTYPE(NullableDogfood): add assertion
             }
         }
 
@@ -197,13 +197,14 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                 // Arguments are present--check prologue.
                 if (argsReader.ReadByte() == 1 && argsReader.ReadByte() == 0)
                 {
-                    string firstLanguageName;
+                    string? firstLanguageName;
                     if (!PEModule.CrackStringInAttributeValue(out firstLanguageName, ref argsReader))
                     {
                         return SpecializedCollections.EmptyEnumerable<string>();
                     }
 
-                    ImmutableArray<string> additionalLanguageNames;
+                    ImmutableArray<string?> additionalLanguageNames;
+                    // PROTOTYPE(NullableReferenceTypes): Seems like we can get nulls in additionalLanguageNames, maybe we shouldn't count those?
                     if (PEModule.CrackStringArrayInAttributeValue(out additionalLanguageNames, ref argsReader))
                     {
                         if (additionalLanguageNames.Length == 0)
@@ -247,7 +248,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             private readonly AttributePredicate _attributePredicate;
             private ImmutableArray<TExtension> _lazyAllExtensions;
             private ImmutableDictionary<string, ImmutableArray<TExtension>> _lazyExtensionsPerLanguage;
-            private ImmutableDictionary<string, ImmutableHashSet<string>> _lazyExtensionTypeNameMap;
+            private ImmutableDictionary<string, ImmutableHashSet<string>>? _lazyExtensionTypeNameMap;
 
             internal Extensions(AnalyzerFileReference reference, AttributePredicate attributePredicate)
             {
@@ -308,7 +309,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                     Interlocked.CompareExchange(ref _lazyExtensionTypeNameMap, analyzerTypeNameMap, null);
                 }
 
-                return _lazyExtensionTypeNameMap;
+                return _lazyExtensionTypeNameMap!; // PROTOTYPE(NullableReferenceTypes): need annotation on CompareExchange
             }
 
             internal void AddExtensions(ImmutableDictionary<string, ImmutableArray<TExtension>>.Builder builder)
@@ -431,7 +432,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
 
                     Debug.Assert(type != null);
 
-                    TExtension analyzer;
+                    TExtension? analyzer;
                     try
                     {
                         analyzer = Activator.CreateInstance(type) as TExtension;
@@ -458,7 +459,9 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             return Equals(obj as AnalyzerFileReference);
         }
 
-        public bool Equals(AnalyzerReference other)
+#pragma warning disable CS8614 // Nullability of reference types in type of parameter doesn't match implicitly implemented member.
+        public bool Equals(AnalyzerReference? other) // PROTOTYPE(NullableDogfood): Need annotation on IEquatable.Equals
+#pragma warning restore CS8614 // Nullability of reference types in type of parameter doesn't match implicitly implemented member.
         {
             if (other != null)
             {

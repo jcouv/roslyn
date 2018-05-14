@@ -30,7 +30,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
             TupleElementNames = tupleElementNames.NullToEmpty();
         }
 
-        public string Name { get; }
+        public string? Name { get; }
 
         public Location Location { get; }
 

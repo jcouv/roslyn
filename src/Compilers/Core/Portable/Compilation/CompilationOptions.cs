@@ -661,12 +661,12 @@ namespace Microsoft.CodeAnalysis
                    Hash.Combine(this.PublicSign, 0))))))))))))))))))))))))));
         }
 
-        public static bool operator ==(CompilationOptions left, CompilationOptions right)
+        public static bool operator ==(CompilationOptions? left, CompilationOptions? right)
         {
             return object.Equals(left, right);
         }
 
-        public static bool operator !=(CompilationOptions left, CompilationOptions right)
+        public static bool operator !=(CompilationOptions? left, CompilationOptions? right)
         {
             return !object.Equals(left, right);
         }

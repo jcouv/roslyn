@@ -47,7 +47,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
         private readonly ConcurrentDictionary<ImmutableArray<byte>, MappedField> _mappedFields =
             new ConcurrentDictionary<ImmutableArray<byte>, MappedField>(ByteSequenceComparer.Instance);
 
-        private ModuleVersionIdField _mvidField;
+        private ModuleVersionIdField? _mvidField;
         // Dictionary that maps from analysis kind to instrumentation payload field.
         private readonly ConcurrentDictionary<int, InstrumentationPayloadRootField> _instrumentationPayloadRootFields = new ConcurrentDictionary<int, InstrumentationPayloadRootField>();
 
@@ -171,8 +171,9 @@ namespace Microsoft.CodeAnalysis.CodeGen
                 Interlocked.CompareExchange(ref _mvidField, new ModuleVersionIdField(this, mvidType), null);
             }
 
-            Debug.Assert(_mvidField.Type.Equals(mvidType));
-            return _mvidField;
+            // PROTOTYPE(NullableDogfood): Need annotation for CompareExchange
+            Debug.Assert(_mvidField!.Type.Equals(mvidType));
+            return _mvidField!;
         }
 
         internal Cci.IFieldReference GetOrAddInstrumentationPayloadRoot(int analysisKind, Cci.ITypeReference payloadRootType)
@@ -247,9 +248,9 @@ namespace Microsoft.CodeAnalysis.CodeGen
             visitor.Visit(this);
         }
 
-        public override Cci.INamespaceTypeDefinition AsNamespaceTypeDefinition(EmitContext context) => this;
+        public override Cci.INamespaceTypeDefinition? AsNamespaceTypeDefinition(EmitContext context) => this;
 
-        public override Cci.INamespaceTypeReference AsNamespaceTypeReference => this;
+        public override Cci.INamespaceTypeReference? AsNamespaceTypeReference => this;
 
         public string Name => _name;
 
@@ -340,9 +341,9 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
         public Cci.ITypeReference GetContainingType(EmitContext context) => _containingType;
 
-        public override Cci.INestedTypeDefinition AsNestedTypeDefinition(EmitContext context) => this;
+        public override Cci.INestedTypeDefinition? AsNestedTypeDefinition(EmitContext context) => this;
 
-        public override Cci.INestedTypeReference AsNestedTypeReference => this;
+        public override Cci.INestedTypeReference? AsNestedTypeReference => this;
     }
 
     internal abstract class SynthesizedStaticField : Cci.IFieldDefinition
@@ -364,7 +365,9 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
         public override string ToString() => $"{_type} {_containingType}.{this.Name}";
 
-        public MetadataConstant? GetCompileTimeValue(EmitContext context) => null;
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
+        public MetadataConstant GetCompileTimeValue(EmitContext context) => null!; // PROTOTYPE(NullableDogfood): Bug. Should return Dummy.Constant instead.
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
 
         public abstract ImmutableArray<byte> MappedData { get; }
 
@@ -556,7 +559,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
         public virtual Cci.INestedTypeReference? AsNestedTypeReference => null;
 
-        public Cci.ITypeDefinition AsTypeDefinition(EmitContext context) => this;
+        public Cci.ITypeDefinition? AsTypeDefinition(EmitContext context) => this;
 
         public bool MangleName => false;
 

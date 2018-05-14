@@ -599,15 +599,15 @@ namespace Microsoft.Cci
         /// </summary>
         TypeDefinitionHandle TypeDef { get; }
 
-        IGenericMethodParameterReference AsGenericMethodParameterReference { get; }
-        IGenericTypeInstanceReference AsGenericTypeInstanceReference { get; }
-        IGenericTypeParameterReference AsGenericTypeParameterReference { get; }
-        INamespaceTypeDefinition AsNamespaceTypeDefinition(EmitContext context);
-        INamespaceTypeReference AsNamespaceTypeReference { get; }
-        INestedTypeDefinition AsNestedTypeDefinition(EmitContext context);
-        INestedTypeReference AsNestedTypeReference { get; }
-        ISpecializedNestedTypeReference AsSpecializedNestedTypeReference { get; }
-        ITypeDefinition AsTypeDefinition(EmitContext context);
+        IGenericMethodParameterReference? AsGenericMethodParameterReference { get; }
+        IGenericTypeInstanceReference? AsGenericTypeInstanceReference { get; }
+        IGenericTypeParameterReference? AsGenericTypeParameterReference { get; }
+        INamespaceTypeDefinition? AsNamespaceTypeDefinition(EmitContext context);
+        INamespaceTypeReference? AsNamespaceTypeReference { get; }
+        INestedTypeDefinition? AsNestedTypeDefinition(EmitContext context);
+        INestedTypeReference? AsNestedTypeReference { get; }
+        ISpecializedNestedTypeReference? AsSpecializedNestedTypeReference { get; }
+        ITypeDefinition? AsTypeDefinition(EmitContext context);
     }
 
     /// <summary>

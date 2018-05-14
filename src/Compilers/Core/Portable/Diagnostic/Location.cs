@@ -82,7 +82,7 @@ namespace Microsoft.CodeAnalysis
         }
 
         // Derived classes should provide value equality semantics.
-        public abstract override bool Equals(object obj);
+        public abstract override bool Equals(object? obj);
         public abstract override int GetHashCode();
 
         public override string ToString()
@@ -112,17 +112,17 @@ namespace Microsoft.CodeAnalysis
             return result;
         }
 
-        public static bool operator ==(Location left, Location right)
+        public static bool operator ==(Location? left, Location? right)
         {
             if (object.ReferenceEquals(left, null))
             {
                 return object.ReferenceEquals(right, null);
             }
 
-            return left.Equals(right);
+            return left!.Equals(right); // PROTOTYPE(NullableDogfood): Annotate API ReferenceEquals
         }
 
-        public static bool operator !=(Location left, Location right)
+        public static bool operator !=(Location? left, Location? right)
         {
             return !(left == right);
         }

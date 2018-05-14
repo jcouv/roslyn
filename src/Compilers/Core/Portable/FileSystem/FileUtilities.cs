@@ -35,12 +35,21 @@ namespace Roslyn.Utilities
         /// <returns>
         /// The resolved path or null if the path can't be resolved or does not exist.
         /// </returns>
+#if USES_ANNOTATIONS
         internal static string? ResolveRelativePath(
             string path,
-            string basePath,
+            string? basePath,
             string? baseDirectory,
             IEnumerable<string> searchPaths,
             Func<string, bool> fileExists)
+#else
+        internal static string ResolveRelativePath(
+            string path,
+            string basePath,
+            string baseDirectory,
+            IEnumerable<string> searchPaths,
+            Func<string, bool> fileExists)
+#endif
         {
             Debug.Assert(baseDirectory == null || searchPaths != null || PathUtilities.IsAbsolute(baseDirectory));
             Debug.Assert(searchPaths != null);
@@ -94,13 +103,21 @@ namespace Roslyn.Utilities
             return ResolveRelativePath(path, null, baseDirectory);
         }
 
+#if USES_ANNOTATIONS
         internal static string ResolveRelativePath(string path, string? basePath, string baseDirectory)
+#else
+        internal static string ResolveRelativePath(string path, string basePath, string baseDirectory)
+#endif
         {
             Debug.Assert(baseDirectory == null || PathUtilities.IsAbsolute(baseDirectory));
             return ResolveRelativePath(PathUtilities.GetPathKind(path), path, basePath, baseDirectory);
         }
 
+#if USES_ANNOTATIONS
         private static string? ResolveRelativePath(PathKind kind, string path, string basePath, string baseDirectory)
+#else
+        private static string ResolveRelativePath(PathKind kind, string path, string basePath, string baseDirectory)
+#endif
         {
             switch (kind)
             {
@@ -181,7 +198,11 @@ namespace Roslyn.Utilities
             }
         }
 
+#if USES_ANNOTATIONS
         private static string? GetBaseDirectory(string basePath, string baseDirectory)
+#else
+        private static string GetBaseDirectory(string basePath, string baseDirectory)
+#endif
         {
             // relative base paths are relative to the base directory:
             string resolvedBasePath = ResolveRelativePath(basePath, baseDirectory);
@@ -204,7 +225,11 @@ namespace Roslyn.Utilities
 
         private static readonly char[] s_invalidPathChars = Path.GetInvalidPathChars();
 
-        internal static string? NormalizeRelativePath(string path, string basePath, string baseDirectory)
+#if USES_ANNOTATIONS
+        internal static string? NormalizeRelativePath(string path, string? basePath, string baseDirectory)
+#else
+        internal static string NormalizeRelativePath(string path, string basePath, string baseDirectory)
+#endif
         {
             // Does this look like a URI at all or does it have any invalid path characters? If so, just use it as is.
             if (path.IndexOf("://", StringComparison.Ordinal) >= 0 || path.IndexOfAny(s_invalidPathChars) >= 0)
@@ -261,7 +286,11 @@ namespace Roslyn.Utilities
             return NormalizeAbsolutePath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         }
 
+#if USES_ANNOTATIONS
         internal static string? TryNormalizeAbsolutePath(string path)
+#else
+        internal static string TryNormalizeAbsolutePath(string path)
+#endif
         {
             Debug.Assert(PathUtilities.IsAbsolute(path));
 

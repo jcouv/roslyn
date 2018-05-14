@@ -34,7 +34,7 @@ namespace Microsoft.CodeAnalysis
         public abstract ConstantValueTypeDiscriminator Discriminator { get; }
         internal abstract SpecialType SpecialType { get; }
 
-        public virtual string StringValue { get { throw new InvalidOperationException(); } }
+        public virtual string? StringValue { get { throw new InvalidOperationException(); } }
         public virtual bool BooleanValue { get { throw new InvalidOperationException(); } }
 
         public virtual sbyte SByteValue { get { throw new InvalidOperationException(); } }
@@ -724,13 +724,16 @@ namespace Microsoft.CodeAnalysis
 
         internal virtual string GetValueToDisplay()
         {
-            return this.Value.ToString();
+            return this.Value.ToString(); // PROTOTYPE(NullableDogfood): bug?
         }
+
 
         // equal constants must have matching discriminators
         // derived types override this if equivalence is more than just discriminators match. 
         // singletons also override this since they only need a reference compare.
-        public virtual bool Equals(ConstantValue other)
+#pragma warning disable CS8614
+        public virtual bool Equals(ConstantValue? other) // PROTOTYPE(NullableDogfood): annotate IEquatable.Equals API https://github.com/dotnet/roslyn/issues/26761
+#pragma warning restore CS8614
         {
             if (ReferenceEquals(other, this))
             {
@@ -742,10 +745,10 @@ namespace Microsoft.CodeAnalysis
                 return false;
             }
 
-            return this.Discriminator == other.Discriminator;
+            return this.Discriminator == other!.Discriminator; // PROTOTYPE(NullableDogfood): https://github.com/dotnet/roslyn/issues/26761
         }
 
-        public static bool operator ==(ConstantValue left, ConstantValue right)
+        public static bool operator ==(ConstantValue? left, ConstantValue? right)
         {
             if (ReferenceEquals(right, left))
             {
@@ -757,10 +760,10 @@ namespace Microsoft.CodeAnalysis
                 return false;
             }
 
-            return left.Equals(right);
+            return left!.Equals(right!); // PROTOTYPE(NullableDogfood): annotate IEquatable.Equals and ReferenceEquals APIs  https://github.com/dotnet/roslyn/issues/26761
         }
 
-        public static bool operator !=(ConstantValue left, ConstantValue right)
+        public static bool operator !=(ConstantValue? left, ConstantValue? right)
         {
             return !(left == right);
         }

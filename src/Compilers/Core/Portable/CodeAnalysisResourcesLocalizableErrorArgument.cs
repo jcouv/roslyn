@@ -21,7 +21,8 @@ namespace Microsoft.CodeAnalysis
             return ToString(null, null);
         }
 
-        public string ToString(string format, IFormatProvider formatProvider)
+        // PROTOTYPE(NullableDogfood): Remove the format parameter?
+        public string ToString(string? format, IFormatProvider? formatProvider)
         {
             if (_targetResourceId != null)
             {

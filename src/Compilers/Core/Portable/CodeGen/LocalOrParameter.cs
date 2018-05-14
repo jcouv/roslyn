@@ -7,10 +7,10 @@ namespace Microsoft.CodeAnalysis.CodeGen
     [DebuggerDisplay("{GetDebuggerDisplay(),nq}")]
     internal struct LocalOrParameter
     {
-        public readonly LocalDefinition Local;
+        public readonly LocalDefinition? Local;
         public readonly int ParameterIndex;
 
-        private LocalOrParameter(LocalDefinition local, int parameterIndex)
+        private LocalOrParameter(LocalDefinition? local, int parameterIndex)
         {
             this.Local = local;
             this.ParameterIndex = parameterIndex;
