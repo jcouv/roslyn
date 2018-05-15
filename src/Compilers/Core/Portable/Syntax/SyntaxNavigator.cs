@@ -26,6 +26,7 @@ namespace Microsoft.CodeAnalysis
             SkippedTokens = 4,
         }
 
+        // PROTOTYPE(NullableDogfood): https://github.com/dotnet/roslyn/issues/26651
         private static readonly Func<SyntaxTrivia, bool>[] s_stepIntoFunctions = new Func<SyntaxTrivia, bool>[]
         {
             /* 000 */ null,
@@ -41,9 +42,12 @@ namespace Microsoft.CodeAnalysis
         private static Func<SyntaxTrivia, bool> GetStepIntoFunction(
             bool skipped, bool directives, bool docComments)
         {
+            // PROTOTYPE(NullableDogfood): https://github.com/dotnet/roslyn/issues/26746
+#pragma warning disable CS8626
             var index = (skipped ? SyntaxKinds.SkippedTokens : 0) |
                         (directives ? SyntaxKinds.Directives : 0) |
                         (docComments ? SyntaxKinds.DocComments : 0);
+#pragma warning restore CS8626
             return s_stepIntoFunctions[(int)index];
         }
 
@@ -118,7 +122,7 @@ namespace Microsoft.CodeAnalysis
 
                         if (child.IsNode)
                         {
-                            stack.Push(child.AsNode().ChildNodesAndTokens().GetEnumerator());
+                            stack.Push(child.AsNode()!.ChildNodesAndTokens().GetEnumerator());
                         }
                     }
                 }
@@ -164,7 +168,7 @@ namespace Microsoft.CodeAnalysis
 
                         if (child.IsNode)
                         {
-                            stack.Push(child.AsNode().ChildNodesAndTokens().Reverse().GetEnumerator());
+                            stack.Push(child.AsNode()!.ChildNodesAndTokens().Reverse().GetEnumerator());
                         }
                     }
                 }
@@ -449,7 +453,7 @@ namespace Microsoft.CodeAnalysis
                         }
                         else
                         {
-                            var token = GetFirstToken(child.AsNode(), predicate, stepInto);
+                            var token = GetFirstToken(child.AsNode()!, predicate, stepInto);
                             if (token.RawKind != None)
                             {
                                 return token;
@@ -498,7 +502,7 @@ namespace Microsoft.CodeAnalysis
                         }
                         else
                         {
-                            var token = GetLastToken(child.AsNode(), predicate, stepInto);
+                            var token = GetLastToken(child.AsNode()!, predicate, stepInto);
                             if (token.RawKind != None)
                             {
                                 return token;
@@ -555,7 +559,7 @@ namespace Microsoft.CodeAnalysis
                         }
                         else
                         {
-                            var token = GetFirstToken(child.AsNode(), predicate, stepInto);
+                            var token = GetFirstToken(child.AsNode()!, predicate, stepInto);
                             if (token.RawKind != None)
                             {
                                 return token;
@@ -608,7 +612,7 @@ namespace Microsoft.CodeAnalysis
                         }
                         else
                         {
-                            var token = GetLastToken(child.AsNode(), predicate, stepInto);
+                            var token = GetLastToken(child.AsNode()!, predicate, stepInto);
                             if (token.RawKind != None)
                             {
                                 return token;

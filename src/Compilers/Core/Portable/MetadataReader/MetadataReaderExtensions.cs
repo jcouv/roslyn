@@ -41,7 +41,7 @@ namespace Microsoft.CodeAnalysis
             if (!reader.IsAssembly)
             {
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
-                return null!; // PROTOTYPE(NullableReferenceTypes): maybe this should throw instead?
+                return null!; // PROTOTYPE(NullableDogfood): maybe this should throw instead?
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference or unconstrained type parameter.
             }
 

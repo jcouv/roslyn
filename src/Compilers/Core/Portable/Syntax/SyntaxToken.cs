@@ -74,7 +74,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         public SyntaxNode? Parent { get; }
 
-        internal GreenNode Node { get; }
+        internal GreenNode? Node { get; }
 
         internal int Index { get; }
 
@@ -133,13 +133,13 @@ namespace Microsoft.CodeAnalysis
         /// Returns the value of the token. For example, if the token represents an integer literal, then this property
         /// would return the actual integer.
         /// </summary>
-        public object Value => Node?.GetValue();
+        public object? Value => Node?.GetValue();
 
         /// <summary>
         /// Returns the text representation of the value of the token. For example, if the token represents an integer
         /// literal, then this property would return a string representing the integer.
         /// </summary>
-        public string ValueText => Node?.GetValueText();
+        public string? ValueText => Node?.GetValueText();
 
         public string Text => ToString();
 
@@ -464,7 +464,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Creates a new token from this token with the leading trivia specified..
         /// </summary>
-        public SyntaxToken WithLeadingTrivia(IEnumerable<SyntaxTrivia> trivia)
+        public SyntaxToken WithLeadingTrivia(IEnumerable<SyntaxTrivia>? trivia)
         {
             var greenList = trivia?.Select(t => t.UnderlyingNode);
 
@@ -492,7 +492,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Creates a new token from this token with the trailing trivia specified.
         /// </summary>
-        public SyntaxToken WithTrailingTrivia(IEnumerable<SyntaxTrivia> trivia)
+        public SyntaxToken WithTrailingTrivia(IEnumerable<SyntaxTrivia>? trivia)
         {
             var greenList = trivia?.Select(t => t.UnderlyingNode);
 
@@ -629,7 +629,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// The SyntaxTree that contains this token.
         /// </summary>
-        public SyntaxTree SyntaxTree => Parent?.SyntaxTree;
+        public SyntaxTree? SyntaxTree => Parent?.SyntaxTree;
 
         /// <summary>
         /// Gets the location for this token.

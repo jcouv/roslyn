@@ -424,7 +424,7 @@ namespace Microsoft.Cci
         // progress:
         private bool _tableIndicesAreComplete;
 
-        // PROTOTYPE(NullableReferenceTypes): those nullable members are null during construction, but non-null once CreateIndices was called
+        // PROTOTYPE(NullableDogfood): those nullable members are null during construction, but non-null once CreateIndices was called
         private EntityHandle[]? _pseudoSymbolTokenToTokenMap;
         private IReference?[]? _pseudoSymbolTokenToReferenceMap;
         private UserStringHandle[]? _pseudoStringTokenToTokenMap;

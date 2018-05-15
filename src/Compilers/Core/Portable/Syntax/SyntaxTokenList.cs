@@ -18,10 +18,10 @@ namespace Microsoft.CodeAnalysis
     [StructLayout(LayoutKind.Auto)]
     public readonly partial struct SyntaxTokenList : IEquatable<SyntaxTokenList>, IReadOnlyList<SyntaxToken>
     {
-        private readonly SyntaxNode _parent;
+        private readonly SyntaxNode? _parent;
         private readonly int _index;
 
-        internal SyntaxTokenList(SyntaxNode parent, GreenNode tokenOrList, int position, int index)
+        internal SyntaxTokenList(SyntaxNode? parent, GreenNode? tokenOrList, int position, int index)
         {
             Debug.Assert(tokenOrList != null || (position == 0 && index == 0 && parent == null));
             Debug.Assert(position >= 0);
@@ -91,7 +91,7 @@ namespace Microsoft.CodeAnalysis
             return builder.ToList().Node;
         }
 
-        internal GreenNode Node { get; }
+        internal GreenNode? Node { get; }
 
         internal int Position { get; }
 
@@ -117,7 +117,7 @@ namespace Microsoft.CodeAnalysis
                     {
                         if (unchecked((uint)index < (uint)Node.SlotCount))
                         {
-                            return new SyntaxToken(_parent, Node.GetSlot(index), Position + Node.GetSlotOffset(index), _index + index);
+                            return new SyntaxToken(_parent, Node.GetSlot(index)!, Position + Node.GetSlotOffset(index), _index + index);
                         }
                     }
                     else if (index == 0)

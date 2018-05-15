@@ -7,12 +7,12 @@ namespace Microsoft.CodeAnalysis.Syntax
 {
     internal class SyntaxNodeOrTokenListBuilder
     {
-        private GreenNode[] _nodes;
+        private GreenNode?[] _nodes;
         private int _count;
 
         public SyntaxNodeOrTokenListBuilder(int size)
         {
-            _nodes = new GreenNode[size];
+            _nodes = new GreenNode?[size];
             _count = 0;
         }
 
@@ -43,7 +43,7 @@ namespace Microsoft.CodeAnalysis.Syntax
                 }
                 else
                 {
-                    return innerNode.CreateRed();
+                    return innerNode.CreateRed(); // PROTOTYPE(NullableReferenceTypes): bug? 
                 }
             }
 
@@ -53,7 +53,7 @@ namespace Microsoft.CodeAnalysis.Syntax
             }
         }
 
-        internal void Add(GreenNode item)
+        internal void Add(GreenNode? item)
         {
             if (_nodes == null || _count >= _nodes.Length)
             {
@@ -122,29 +122,29 @@ namespace Microsoft.CodeAnalysis.Syntax
                 switch (_count)
                 {
                     case 1:
-                        if (_nodes[0].IsToken)
+                        if (_nodes[0]!.IsToken)
                         {
                             return new SyntaxNodeOrTokenList(
-                                InternalSyntax.SyntaxList.List(new[] { _nodes[0] }).CreateRed(),
+                                InternalSyntax.SyntaxList.List(new[] { _nodes[0]! }).CreateRed(),
                                 index: 0);
                         }
                         else
                         {
-                            return new SyntaxNodeOrTokenList(_nodes[0].CreateRed(), index: 0);
+                            return new SyntaxNodeOrTokenList(_nodes[0]!.CreateRed(), index: 0);
                         }
                     case 2:
                         return new SyntaxNodeOrTokenList(
-                            InternalSyntax.SyntaxList.List(_nodes[0], _nodes[1]).CreateRed(),
+                            InternalSyntax.SyntaxList.List(_nodes[0]!, _nodes[1]!).CreateRed(),
                             index: 0);
                     case 3:
                         return new SyntaxNodeOrTokenList(
-                            InternalSyntax.SyntaxList.List(_nodes[0], _nodes[1], _nodes[2]).CreateRed(),
+                            InternalSyntax.SyntaxList.List(_nodes[0]!, _nodes[1]!, _nodes[2]!).CreateRed(),
                             index: 0);
                     default:
                         var tmp = new ArrayElement<GreenNode>[_count];
                         for (int i = 0; i < _count; i++)
                         {
-                            tmp[i].Value = _nodes[i];
+                            tmp[i].Value = _nodes[i]!;
                         }
 
                         return new SyntaxNodeOrTokenList(InternalSyntax.SyntaxList.List(tmp).CreateRed(), index: 0);

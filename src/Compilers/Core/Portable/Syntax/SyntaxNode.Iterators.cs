@@ -11,14 +11,14 @@ namespace Microsoft.CodeAnalysis
 {
     public abstract partial class SyntaxNode
     {
-        private IEnumerable<SyntaxNode> DescendantNodesImpl(TextSpan span, Func<SyntaxNode, bool> descendIntoChildren, bool descendIntoTrivia, bool includeSelf)
+        private IEnumerable<SyntaxNode> DescendantNodesImpl(TextSpan span, Func<SyntaxNode, bool>? descendIntoChildren, bool descendIntoTrivia, bool includeSelf)
         {
             return descendIntoTrivia
-                ? DescendantNodesAndTokensImpl(span, descendIntoChildren, true, includeSelf).Where(e => e.IsNode).Select(e => e.AsNode())
+                ? DescendantNodesAndTokensImpl(span, descendIntoChildren, true, includeSelf).Where(e => e.IsNode).Select(e => e.AsNode()!)
                 : DescendantNodesOnly(span, descendIntoChildren, includeSelf);
         }
 
-        private IEnumerable<SyntaxNodeOrToken> DescendantNodesAndTokensImpl(TextSpan span, Func<SyntaxNode, bool> descendIntoChildren, bool descendIntoTrivia, bool includeSelf)
+        private IEnumerable<SyntaxNodeOrToken> DescendantNodesAndTokensImpl(TextSpan span, Func<SyntaxNode, bool>? descendIntoChildren, bool descendIntoTrivia, bool includeSelf)
         {
             return descendIntoTrivia
                 ? DescendantNodesAndTokensIntoTrivia(span, descendIntoChildren, includeSelf)
@@ -65,6 +65,7 @@ namespace Microsoft.CodeAnalysis
 
             public bool TryGetNextInSpan(in TextSpan span, out SyntaxNodeOrToken value)
             {
+                // PROTOTYPE(NullableReferenceTypes): TODO Need to revisit
                 while (_stack[_stackPtr].TryMoveNextAndGetCurrent(out value))
                 {
                     if (IsInSpan(in span, value.FullSpan))
@@ -79,7 +80,7 @@ namespace Microsoft.CodeAnalysis
 
             public SyntaxNode? TryGetNextAsNodeInSpan(in TextSpan span)
             {
-                SyntaxNode nodeValue;
+                SyntaxNode? nodeValue;
                 while ((nodeValue = _stack[_stackPtr].TryMoveNextAndGetCurrentAsNode()) != null)
                 {
                     if (IsInSpan(in span, nodeValue.FullSpan))
@@ -190,7 +191,7 @@ namespace Microsoft.CodeAnalysis
             private TriviaListEnumeratorStack _triviaStack;
             private readonly ArrayBuilder<Which>? _discriminatorStack;
 
-            public TwoEnumeratorListStack(SyntaxNode startingNode, Func<SyntaxNode, bool> descendIntoChildren)
+            public TwoEnumeratorListStack(SyntaxNode startingNode, Func<SyntaxNode, bool>? descendIntoChildren)
             {
                 _nodeStack = new ChildSyntaxListEnumeratorStack(startingNode, descendIntoChildren);
                 _triviaStack = new TriviaListEnumeratorStack();
@@ -277,7 +278,7 @@ namespace Microsoft.CodeAnalysis
             private readonly ArrayBuilder<SyntaxNodeOrToken>? _tokenStack;
             private readonly ArrayBuilder<Which>? _discriminatorStack;
 
-            public ThreeEnumeratorListStack(SyntaxNode startingNode, Func<SyntaxNode, bool> descendIntoChildren)
+            public ThreeEnumeratorListStack(SyntaxNode startingNode, Func<SyntaxNode, bool>? descendIntoChildren)
             {
                 _nodeStack = new ChildSyntaxListEnumeratorStack(startingNode, descendIntoChildren);
                 _triviaStack = new TriviaListEnumeratorStack();
@@ -365,7 +366,7 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
-        private IEnumerable<SyntaxNode> DescendantNodesOnly(TextSpan span, Func<SyntaxNode, bool> descendIntoChildren, bool includeSelf)
+        private IEnumerable<SyntaxNode> DescendantNodesOnly(TextSpan span, Func<SyntaxNode, bool>? descendIntoChildren, bool includeSelf)
         {
             if (includeSelf && IsInSpan(in span, this.FullSpan))
             {
@@ -390,7 +391,7 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
-        private IEnumerable<SyntaxNodeOrToken> DescendantNodesAndTokensOnly(TextSpan span, Func<SyntaxNode, bool> descendIntoChildren, bool includeSelf)
+        private IEnumerable<SyntaxNodeOrToken> DescendantNodesAndTokensOnly(TextSpan span, Func<SyntaxNode, bool>? descendIntoChildren, bool includeSelf)
         {
             if (includeSelf && IsInSpan(in span, this.FullSpan))
             {
@@ -419,7 +420,7 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
-        private IEnumerable<SyntaxNodeOrToken> DescendantNodesAndTokensIntoTrivia(TextSpan span, Func<SyntaxNode, bool> descendIntoChildren, bool includeSelf)
+        private IEnumerable<SyntaxNodeOrToken> DescendantNodesAndTokensIntoTrivia(TextSpan span, Func<SyntaxNode, bool>? descendIntoChildren, bool includeSelf)
         {
             if (includeSelf && IsInSpan(in span, this.FullSpan))
             {
@@ -442,7 +443,7 @@ namespace Microsoft.CodeAnalysis
                                 if (value.IsNode)
                                 {
                                     // parent nodes come before children (prefix document order)
-                                    stack.PushChildren(value.AsNode(), descendIntoChildren);
+                                    stack.PushChildren(value.AsNode()!, descendIntoChildren);
                                 }
                                 else if (value.IsToken)
                                 {
@@ -520,7 +521,7 @@ namespace Microsoft.CodeAnalysis
                     {
                         if (value.IsNode)
                         {
-                            var nodeValue = value.AsNode();
+                            var nodeValue = value.AsNode()!;
 
                             stack.PushChildren(nodeValue, descendIntoChildren);
                         }
@@ -563,7 +564,7 @@ namespace Microsoft.CodeAnalysis
                             {
                                 if (value.IsNode)
                                 {
-                                    var nodeValue = value.AsNode();
+                                    var nodeValue = value.AsNode()!;
                                     stack.PushChildren(nodeValue, descendIntoChildren);
                                 }
                                 else if (value.IsToken)

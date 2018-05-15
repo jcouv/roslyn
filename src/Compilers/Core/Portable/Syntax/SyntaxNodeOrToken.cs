@@ -126,7 +126,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         public SyntaxNode? Parent => _token != null ? _nodeOrParent : _nodeOrParent?.Parent;
 
-        internal GreenNode UnderlyingNode => _token ?? _nodeOrParent?.Green;
+        internal GreenNode? UnderlyingNode => _token ?? _nodeOrParent?.Green; // PROTOTYPE(NullableReferenceTypes): TODO Need to revisit 
 
         internal int Position => _position;
 
@@ -181,7 +181,7 @@ namespace Microsoft.CodeAnalysis
         {
             return this.IsToken
                 ? default(ChildSyntaxList)
-                : _nodeOrParent.ChildNodesAndTokens();
+                : _nodeOrParent!.ChildNodesAndTokens();
         }
 
         /// <summary>
@@ -770,7 +770,7 @@ namespace Microsoft.CodeAnalysis
         /// <returns>
         /// The underlying node wrapped by the supplied <see cref="SyntaxNodeOrToken"/>.
         /// </returns>
-        public static explicit operator SyntaxNode(SyntaxNodeOrToken nodeOrToken)
+        public static explicit operator SyntaxNode?(SyntaxNodeOrToken nodeOrToken)
         {
             return nodeOrToken.AsNode();
         }
@@ -787,7 +787,7 @@ namespace Microsoft.CodeAnalysis
         {
             return _token != null
                 ? this.AsToken().GetLocation()
-                : _nodeOrParent?.GetLocation();
+                : _nodeOrParent?.GetLocation(); // PROTOTYPE(NullableReferenceTypes): TODO Need to revisit
         }
 
         #region Directive Lookup
@@ -944,7 +944,7 @@ namespace Microsoft.CodeAnalysis
                 // walk reverse in parent's child list until we find ourself 
                 // and then return the next child
                 var returnNext = false;
-                foreach (var child in this.Parent.ChildNodesAndTokens().Reverse())
+                foreach (var child in this.Parent.ChildNodesAndTokens().Reverse()) // PROTOTYPE(NullableReferenceTypes): Unexpected warning 
                 {
                     if (returnNext)
                     {

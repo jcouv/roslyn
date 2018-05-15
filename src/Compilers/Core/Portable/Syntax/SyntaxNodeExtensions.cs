@@ -355,7 +355,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         public static TSyntax WithLeadingTrivia<TSyntax>(
             this TSyntax node,
-            IEnumerable<SyntaxTrivia> trivia) where TSyntax : SyntaxNode
+            IEnumerable<SyntaxTrivia>? trivia) where TSyntax : SyntaxNode
         {
             var first = node.GetFirstToken(includeZeroWidth: true);
             var newFirst = first.WithLeadingTrivia(trivia);
@@ -369,7 +369,7 @@ namespace Microsoft.CodeAnalysis
             this TSyntax node
             ) where TSyntax : SyntaxNode
         {
-            return node.WithLeadingTrivia((IEnumerable<SyntaxTrivia>)null);
+            return node.WithLeadingTrivia((IEnumerable<SyntaxTrivia>?)null);
         }
 
         /// <summary>
@@ -399,7 +399,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         public static TSyntax WithTrailingTrivia<TSyntax>(
             this TSyntax node,
-            IEnumerable<SyntaxTrivia> trivia) where TSyntax : SyntaxNode
+            IEnumerable<SyntaxTrivia>? trivia) where TSyntax : SyntaxNode
         {
             var last = node.GetLastToken(includeZeroWidth: true);
             var newLast = last.WithTrailingTrivia(trivia);
@@ -411,7 +411,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         public static TSyntax WithoutTrailingTrivia<TSyntax>(this TSyntax node) where TSyntax : SyntaxNode
         {
-            return node.WithTrailingTrivia((IEnumerable<SyntaxTrivia>)null);
+            return node.WithTrailingTrivia((IEnumerable<SyntaxTrivia>?)null);
         }
 
         /// <summary>

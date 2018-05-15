@@ -30,8 +30,8 @@ namespace Microsoft.CodeAnalysis
         private static long s_nextId;
 
         // use a value identity instead of object identity so a deserialized instance matches the original instance.
-        public string Kind { get; }
-        public string Data { get; }
+        public string? Kind { get; }
+        public string? Data { get; }
 
         public SyntaxAnnotation()
         {
@@ -69,19 +69,20 @@ namespace Microsoft.CodeAnalysis
             return string.Format("Annotation: Kind='{0}' Data='{1}'", this.Kind ?? "", this.Data ?? "");
         }
 
+        // PROTOTYPE(NullableDogfood): Annotate IEquatable.Equals API
         public bool Equals(SyntaxAnnotation other)
         {
             return (object)other != null && _id == other._id;
         }
 
-        public static bool operator ==(SyntaxAnnotation left, SyntaxAnnotation right)
+        public static bool operator ==(SyntaxAnnotation? left, SyntaxAnnotation? right)
         {
-            if ((object)left == (object)right)
+            if ((object?)left == (object?)right)
             {
                 return true;
             }
 
-            if ((object)left == null || (object)right == null)
+            if ((object?)left == null || (object?)right == null)
             {
                 return false;
             }
@@ -89,14 +90,14 @@ namespace Microsoft.CodeAnalysis
             return left.Equals(right);
         }
 
-        public static bool operator !=(SyntaxAnnotation left, SyntaxAnnotation right)
+        public static bool operator !=(SyntaxAnnotation? left, SyntaxAnnotation? right)
         {
-            if ((object)left == (object)right)
+            if ((object?)left == (object?)right)
             {
                 return false;
             }
 
-            if ((object)left == null || (object)right == null)
+            if ((object?)left == null || (object?)right == null)
             {
                 return true;
             }
@@ -106,7 +107,7 @@ namespace Microsoft.CodeAnalysis
 
         public override bool Equals(object obj)
         {
-            return this.Equals(obj as SyntaxAnnotation);
+            return this.Equals((obj as SyntaxAnnotation)!); // PROTOTYPE(NullableDogfood): remove once Equals is fixed
         }
 
         public override int GetHashCode()

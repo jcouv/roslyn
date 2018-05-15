@@ -117,7 +117,11 @@ namespace Roslyn.Utilities
         public void WriteUInt32(uint value) => _writer.Write(value);
         public void WriteUInt64(ulong value) => _writer.Write(value);
         public void WriteUInt16(ushort value) => _writer.Write(value);
+#if USES_ANNOTATIONS
+        public void WriteString(string? value) => WriteStringValue(value);
+#else
         public void WriteString(string value) => WriteStringValue(value);
+#endif
 
         /// <summary>
         /// Used so we can easily grab the low/high 64bits of a guid for serialization.
@@ -402,7 +406,11 @@ namespace Roslyn.Utilities
             }
         }
 
+#if USES_ANNOTATIONS
+        private unsafe void WriteStringValue(string? value)
+#else
         private unsafe void WriteStringValue(string value)
+#endif
         {
             if (value == null)
             {
@@ -726,7 +734,11 @@ namespace Roslyn.Utilities
             this.WriteInt32(_binderSnapshot.GetTypeId(type));
         }
 
+#if USES_ANNOTATIONS
         private void WriteObject(object instance, IObjectWritable? instanceAsWritableOpt)
+#else
+        private void WriteObject(object instance, IObjectWritable instanceAsWritableOpt)
+#endif
         {
             Debug.Assert(instance != null);
             Debug.Assert(instanceAsWritableOpt == null || instance == instanceAsWritableOpt);

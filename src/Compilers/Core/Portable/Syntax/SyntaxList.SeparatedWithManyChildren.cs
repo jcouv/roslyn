@@ -24,7 +24,7 @@ namespace Microsoft.CodeAnalysis.Syntax
                     return null;
                 }
 
-                return this.GetRedElement(ref _children[i >> 1].Value, i);
+                return this.GetRedElement(ref _children[i >> 1].Value!, i); // PROTOTYPE(NullableDogfood): fix GetRedElement
             }
 
             internal override SyntaxNode? GetCachedSlot(int i)

@@ -20,7 +20,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// The underlying field
         /// </summary>
-        private readonly SyntaxNode _node;
+        private readonly SyntaxNode? _node;
 
         /// <summary>
         /// The index from the parent's children list of this node.
@@ -76,11 +76,11 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Gets the underlying syntax node.
         /// </summary>
-        internal SyntaxNode Node => _node;
+        internal SyntaxNode? Node => _node;
 
         internal int Position => _node?.Position ?? 0;
 
-        internal SyntaxNode Parent => _node?.Parent;
+        internal SyntaxNode? Parent => _node?.Parent;
 
         /// <summary>
         /// Gets the count of nodes in this list
@@ -111,13 +111,13 @@ namespace Microsoft.CodeAnalysis
                     {
                         if (unchecked((uint)index < (uint)_node.SlotCount))
                         {
-                            var green = _node.Green.GetSlot(index);
+                            var green = _node.Green.GetSlot(index)!;
                             if (green.IsToken)
                             {
                                 return new SyntaxToken(this.Parent, green, _node.GetChildPosition(index), this.index + index);
                             }
 
-                            return _node.GetNodeSlot(index);
+                            return _node.GetNodeSlot(index)!;
                         }
                     }
                 }

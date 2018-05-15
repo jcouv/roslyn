@@ -138,11 +138,12 @@ namespace Microsoft.CodeAnalysis
             return id;
         }
 
-        private static SyntaxNode? GetRoot(SyntaxNode node)
+        private static SyntaxNode GetRoot(SyntaxNode node)
         {
-            SyntaxNode? current = node;
+            SyntaxNode current = node;
             while (true)
             {
+                // PROTOTYPE(NullableReferenceTypes): https://github.com/dotnet/roslyn/issues/26624 
                 while (current.Parent != null)
                 {
                     current = current.Parent;
@@ -154,6 +155,7 @@ namespace Microsoft.CodeAnalysis
                 }
                 else
                 {
+                    // PROTOTYPE(NullableReferenceTypes): TODO Need to revisit
                     current = ((IStructuredTriviaSyntax)current).ParentTrivia.Token.Parent;
                 }
             }

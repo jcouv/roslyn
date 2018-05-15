@@ -738,7 +738,7 @@ namespace Microsoft.CodeAnalysis
         public virtual GreenNode? GetLeadingTriviaCore() { return null; }
         public virtual GreenNode? GetTrailingTriviaCore() { return null; }
 
-        public virtual GreenNode WithLeadingTrivia(GreenNode trivia)
+        public virtual GreenNode WithLeadingTrivia(GreenNode? trivia)
         {
             return this;
         }
@@ -818,7 +818,7 @@ namespace Microsoft.CodeAnalysis
         #endregion
 
         #region Equivalence 
-        public virtual bool IsEquivalentTo(GreenNode other)
+        public virtual bool IsEquivalentTo(GreenNode? other)
         {
             if (this == other)
             {
@@ -889,7 +889,7 @@ namespace Microsoft.CodeAnalysis
         public abstract SyntaxToken CreateSeparator<TNode>(SyntaxNode element) where TNode : SyntaxNode;
         public abstract bool IsTriviaWithEndOfLine(); // trivia node has end of line
 
-        public virtual GreenNode? CreateList(IEnumerable<GreenNode> nodes, bool alwaysCreateListNode = false)
+        public virtual GreenNode? CreateList(IEnumerable<GreenNode>? nodes, bool alwaysCreateListNode = false)
         {
             if (nodes == null)
             {

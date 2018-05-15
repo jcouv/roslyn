@@ -17,9 +17,9 @@ namespace Microsoft.CodeAnalysis
     public readonly partial struct SyntaxList<TNode> : IReadOnlyList<TNode>, IEquatable<SyntaxList<TNode>>
         where TNode : SyntaxNode
     {
-        private readonly SyntaxNode _node;
+        private readonly SyntaxNode? _node;
 
-        internal SyntaxList(SyntaxNode node)
+        internal SyntaxList(SyntaxNode? node)
         {
             _node = node;
         }
@@ -60,7 +60,7 @@ namespace Microsoft.CodeAnalysis
             return builder.ToList().Node;
         }
 
-        internal SyntaxNode Node
+        internal SyntaxNode? Node
         {
             get
             {
@@ -94,7 +94,7 @@ namespace Microsoft.CodeAnalysis
                     {
                         if (unchecked((uint)index < (uint)_node.SlotCount))
                         {
-                            return (TNode)_node.GetNodeSlot(index);
+                            return (TNode)_node.GetNodeSlot(index)!; // PROTOTYPE(NullableDogfood): Checked slot count 
                         }
                     }
                     else if (index == 0)
@@ -108,6 +108,7 @@ namespace Microsoft.CodeAnalysis
 
         internal SyntaxNode ItemInternal(int index)
         {
+            // PROTOTYPE(NullableDogfood): TODO Need to revisit
             if (_node.IsList)
             {
                 return _node.GetNodeSlot(index);
@@ -325,7 +326,7 @@ namespace Microsoft.CodeAnalysis
                 return default(SyntaxList<TNode>);
             }
 
-            var newGreen = creator.CreateList(items.Select(n => n.Green));
+            var newGreen = creator.CreateList(items.Select(n => n.Green))!; // PROTOTYPE(NullableDogfood): items isn't null so nor is CreateList 
             return new SyntaxList<TNode>(newGreen.CreateRed());
         }
 
@@ -340,7 +341,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// The first node in the list or default if the list is empty.
         /// </summary>
-        public TNode FirstOrDefault()
+        public TNode? FirstOrDefault()
         {
             if (this.Any())
             {
@@ -348,8 +349,7 @@ namespace Microsoft.CodeAnalysis
             }
             else
             {
-                // PROTOTYPE(NullableDogfood): constrain TNode to class?
-                return null!;
+                return null;
             }
         }
 
@@ -364,7 +364,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// The last node in the list or default if the list is empty.
         /// </summary>
-        public TNode LastOrDefault()
+        public TNode? LastOrDefault()
         {
             if (this.Any())
             {
@@ -372,8 +372,7 @@ namespace Microsoft.CodeAnalysis
             }
             else
             {
-                // PROTOTYPE(NullableDogfood): TNode should be constrained to class? 
-                return null!;
+                return null;
             }
         }
 

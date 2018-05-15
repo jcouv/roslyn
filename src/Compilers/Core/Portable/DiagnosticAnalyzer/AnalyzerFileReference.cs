@@ -204,7 +204,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                     }
 
                     ImmutableArray<string?> additionalLanguageNames;
-                    // PROTOTYPE(NullableReferenceTypes): Seems like we can get nulls in additionalLanguageNames, maybe we shouldn't count those?
+                    // PROTOTYPE(NullableDogfood): Seems like we can get nulls in additionalLanguageNames, maybe we shouldn't count those?
                     if (PEModule.CrackStringArrayInAttributeValue(out additionalLanguageNames, ref argsReader))
                     {
                         if (additionalLanguageNames.Length == 0)
@@ -309,7 +309,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                     Interlocked.CompareExchange(ref _lazyExtensionTypeNameMap, analyzerTypeNameMap, null);
                 }
 
-                return _lazyExtensionTypeNameMap!; // PROTOTYPE(NullableReferenceTypes): need annotation on CompareExchange
+                return _lazyExtensionTypeNameMap!; // PROTOTYPE(NullableDogfood): need annotation on CompareExchange
             }
 
             internal void AddExtensions(ImmutableDictionary<string, ImmutableArray<TExtension>>.Builder builder)

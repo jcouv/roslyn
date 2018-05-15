@@ -22,7 +22,7 @@ namespace Microsoft.CodeAnalysis
     public abstract partial class SyntaxNode
     {
         private readonly SyntaxNode? _parent;
-        internal SyntaxTree _syntaxTree;
+        internal SyntaxTree? _syntaxTree;
 
         internal SyntaxNode(GreenNode green, SyntaxNode? parent, int position)
         {
@@ -151,7 +151,7 @@ namespace Microsoft.CodeAnalysis
 
         // PROTOTYPE(NullableDogfood): Some annotation on field would be useful 
         // special case of above function where slot = 0, does not need GetChildPosition 
-        internal SyntaxNode GetRedAtZero(ref SyntaxNode? field)
+        internal SyntaxNode? GetRedAtZero(ref SyntaxNode? field)
         {
             var result = field;
 
@@ -169,7 +169,7 @@ namespace Microsoft.CodeAnalysis
             return result;
         }
 
-        protected T GetRed<T>(ref T? field, int slot) where T : SyntaxNode
+        protected T? GetRed<T>(ref T? field, int slot) where T : SyntaxNode
         {
             var result = field;
 
@@ -187,7 +187,7 @@ namespace Microsoft.CodeAnalysis
         }
 
         // special case of above function where slot = 0, does not need GetChildPosition 
-        protected T GetRedAtZero<T>(ref T? field) where T : SyntaxNode
+        protected T? GetRedAtZero<T>(ref T? field) where T : SyntaxNode
         {
             var result = field;
 
@@ -209,8 +209,9 @@ namespace Microsoft.CodeAnalysis
         /// The only difference is that the public parent of the node is not the list, 
         /// but the list's parent. (element's grand parent).
         /// </summary>
-        internal SyntaxNode GetRedElement(ref SyntaxNode? element, int slot)
+        internal SyntaxNode? GetRedElement(ref SyntaxNode? element, int slot)
         {
+            // PROTOTYPE(NullableDogfood): annotate with NeverNulled
             Debug.Assert(this.IsList);
 
             var result = element;
@@ -219,6 +220,7 @@ namespace Microsoft.CodeAnalysis
             {
                 var green = this.Green.GetSlot(slot);
                 // passing list's parent
+                // PROTOTYPE(NullableReferenceTypes): Need to revisit 
                 Interlocked.CompareExchange(ref element, green.CreateRed(this.Parent, this.GetChildPosition(slot)), null);
                 result = element;
             }
@@ -229,7 +231,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// special cased helper for 2 and 3 children lists where child #1 may map to a token
         /// </summary>
-        internal SyntaxNode GetRedElementIfNotToken(ref SyntaxNode? element)
+        internal SyntaxNode? GetRedElementIfNotToken(ref SyntaxNode? element)
         {
             Debug.Assert(this.IsList);
 
@@ -238,6 +240,7 @@ namespace Microsoft.CodeAnalysis
             if (result == null)
             {
                 var green = this.Green.GetSlot(1);
+                // PROTOTYPE(NullableReferenceTypes): Need to revisit 
                 if (!green.IsToken)
                 {
                     // passing list's parent
@@ -254,7 +257,7 @@ namespace Microsoft.CodeAnalysis
             SyntaxNode? value = null;
             if (slot?.TryGetTarget(out value) == true)
             {
-                return value;
+                return value!; // PROTOTYPE(NullableReferenceTypes): annotate TryGetTarget API 
             }
 
             return CreateWeakItem(ref slot, index);
@@ -264,16 +267,17 @@ namespace Microsoft.CodeAnalysis
         private SyntaxNode CreateWeakItem(ref WeakReference<SyntaxNode>? slot, int index)
         {
             var greenChild = this.Green.GetSlot(index);
+            // PROTOTYPE(NullableReferenceTypes): Need to revisit 
             var newNode = greenChild.CreateRed(this.Parent, GetChildPosition(index));
             var newWeakReference = new WeakReference<SyntaxNode>(newNode);
 
             while (true)
             {
                 SyntaxNode? previousNode = null;
-                WeakReference<SyntaxNode> previousWeakReference = slot;
+                WeakReference<SyntaxNode>? previousWeakReference = slot;
                 if (previousWeakReference?.TryGetTarget(out previousNode) == true)
                 {
-                    return previousNode;
+                    return previousNode!; // PROTOTYPE(NullableReferenceTypes): annotate TryGetTarget API 
                 }
 
                 if (Interlocked.CompareExchange(ref slot, newWeakReference, previousWeakReference) == previousWeakReference)
@@ -368,8 +372,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         public bool IsPartOfStructuredTrivia()
         {
-            // PROTOTYPE(NullableDogfood): I expect a warning here, as this var is non-nullable
-            for (var node = this; node != null; node = node.Parent)
+            for (SyntaxNode? node = this; node != null; node = node.Parent)
             {
                 if (node.IsStructuredTrivia)
                     return true;
@@ -612,7 +615,7 @@ namespace Microsoft.CodeAnalysis
             }
         }
 
-        internal SyntaxNode ParentOrStructuredTriviaParent
+        internal SyntaxNode? ParentOrStructuredTriviaParent
         {
             get
             {
@@ -646,7 +649,7 @@ namespace Microsoft.CodeAnalysis
         /// Gets node at given node index. 
         /// This WILL force node creation if node has not yet been created.
         /// </summary>
-        internal abstract SyntaxNode GetNodeSlot(int slot);
+        internal abstract SyntaxNode? GetNodeSlot(int slot);
 
         /// <summary>
         /// Gets a list of the child nodes in prefix document order.
@@ -677,8 +680,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         public IEnumerable<SyntaxNode> AncestorsAndSelf(bool ascendOutOfTrivia = true)
         {
-            // PROTOTYPE(NullableDogfood): I expect a warning here for var that is non-nullable
-            for (var node = this; node != null; node = GetParent(node, ascendOutOfTrivia))
+            for (SyntaxNode? node = this; node != null; node = GetParent(node, ascendOutOfTrivia))
             {
                 yield return node;
             }
@@ -702,10 +704,10 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// Gets the first node of type TNode that matches the predicate.
         /// </summary>
-        public TNode FirstAncestorOrSelf<TNode>(Func<TNode, bool>? predicate = null, bool ascendOutOfTrivia = true)
+        public TNode? FirstAncestorOrSelf<TNode>(Func<TNode, bool>? predicate = null, bool ascendOutOfTrivia = true)
             where TNode : SyntaxNode
         {
-            for (var node = this; node != null; node = GetParent(node, ascendOutOfTrivia))
+            for (SyntaxNode? node = this; node != null; node = GetParent(node, ascendOutOfTrivia))
             {
                 var tnode = node as TNode;
                 if (tnode != null && (predicate == null || predicate(tnode)))

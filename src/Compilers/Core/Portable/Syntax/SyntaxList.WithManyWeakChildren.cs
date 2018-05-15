@@ -40,12 +40,12 @@ namespace Microsoft.CodeAnalysis.Syntax
                 return _childPositions[index];
             }
 
-            internal override SyntaxNode GetNodeSlot(int index)
+            internal override SyntaxNode? GetNodeSlot(int index)
             {
-                return GetWeakRedElement(ref _children[index].Value, index);
+                return GetWeakRedElement(ref _children[index].Value!, index); // PROTOTYPE(NullableDogfood): 
             }
 
-            internal override SyntaxNode GetCachedSlot(int index)
+            internal override SyntaxNode? GetCachedSlot(int index)
             {
                 SyntaxNode? value = null;
                 _children[index].Value?.TryGetTarget(out value);

@@ -16,12 +16,12 @@ namespace Microsoft.CodeAnalysis.Syntax
                 _children = new ArrayElement<SyntaxNode>[green.SlotCount];
             }
 
-            internal override SyntaxNode GetNodeSlot(int index)
+            internal override SyntaxNode? GetNodeSlot(int index)
             {
-                return this.GetRedElement(ref _children[index].Value, index);
+                return this.GetRedElement(ref _children[index].Value!, index); // PROTOTYPE(NullableDogfood): Fix GetRedElement 
             }
 
-            internal override SyntaxNode GetCachedSlot(int index)
+            internal override SyntaxNode? GetCachedSlot(int index)
             {
                 return _children[index];
             }

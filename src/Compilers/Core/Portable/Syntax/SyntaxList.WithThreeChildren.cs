@@ -8,9 +8,9 @@ namespace Microsoft.CodeAnalysis.Syntax
     {
         internal class WithThreeChildren : SyntaxList
         {
-            private SyntaxNode _child0;
-            private SyntaxNode _child1;
-            private SyntaxNode _child2;
+            private SyntaxNode? _child0;
+            private SyntaxNode? _child1;
+            private SyntaxNode? _child2;
 
             internal WithThreeChildren(InternalSyntax.SyntaxList green, SyntaxNode parent, int position)
                 : base(green, parent, position)

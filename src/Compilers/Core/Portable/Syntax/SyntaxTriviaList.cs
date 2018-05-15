@@ -21,7 +21,7 @@ namespace Microsoft.CodeAnalysis
     {
         public static SyntaxTriviaList Empty => default(SyntaxTriviaList);
 
-        internal SyntaxTriviaList(in SyntaxToken token, GreenNode node, int position, int index = 0)
+        internal SyntaxTriviaList(in SyntaxToken token, GreenNode? node, int position, int index = 0)
         {
             Token = token;
             Node = node;
@@ -63,7 +63,8 @@ namespace Microsoft.CodeAnalysis
         {
         }
 
-        private static GreenNode? CreateNode(SyntaxTrivia[] trivias)
+        // PROTOTYPE(NullableReferenceTypes): Need NullInNullOut annotation https://github.com/dotnet/roslyn/issues/26761 
+        private static GreenNode? CreateNode(SyntaxTrivia[]? trivias)
         {
             if (trivias == null)
             {
@@ -77,7 +78,7 @@ namespace Microsoft.CodeAnalysis
 
         internal SyntaxToken Token { get; }
 
-        internal GreenNode Node { get; }
+        internal GreenNode? Node { get; }
 
         internal int Position { get; }
 
