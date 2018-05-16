@@ -45,7 +45,7 @@ namespace Microsoft.CodeAnalysis
             // to return the children in order, while also keeping their offset
             // correct.
 
-            private readonly SyntaxNode _parent;
+            private readonly SyntaxNode? _parent;
             private readonly GreenNode _singleNodeOrList;
             private readonly int _baseIndex;
             private readonly int _count;
@@ -57,7 +57,7 @@ namespace Microsoft.CodeAnalysis
             internal Enumerator(in SyntaxTokenList list)
             {
                 _parent = list._parent;
-                _singleNodeOrList = list.Node;
+                _singleNodeOrList = list.Node; // PROTOTYPE(NullableReferenceTypes): How do we know that node isn't null?
                 _baseIndex = list._index;
                 _count = list.Count;
 

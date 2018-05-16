@@ -20,7 +20,11 @@ namespace Microsoft.CodeAnalysis
             var root = tree.GetRoot();
             var text = tree.GetText();
             var fullSpan = new TextSpan(0, text.Length);
+#if USES_ANNOTATIONS
             SyntaxNode? node = null;
+#else
+            SyntaxNode node = null;
+#endif
 
             // If only a subset of the document has changed,
             // just check that subset to reduce verification cost.

@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis.Text;
@@ -192,7 +193,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         /// <returns>The child non-terminal node representing the syntax tree structure under this structured
         /// trivia.</returns>
-        public SyntaxNode GetStructure()
+        public SyntaxNode? GetStructure()
         {
             return HasStructure ? UnderlyingNode.GetStructure(this) : null;
         }
@@ -377,7 +378,7 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// SyntaxTree which contains current SyntaxTrivia.
         /// </summary>
-        public SyntaxTree SyntaxTree
+        public SyntaxTree? SyntaxTree
         {
             get
             {
@@ -390,7 +391,11 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         public Location GetLocation()
         {
-            return this.SyntaxTree.GetLocation(this.Span);
+            var tree = SyntaxTree;
+
+            return tree == null
+                ? Location.None
+                : tree.GetLocation(Span);
         }
 
         /// <summary>
@@ -400,7 +405,10 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         public IEnumerable<Diagnostic> GetDiagnostics()
         {
-            return this.SyntaxTree.GetDiagnostics(this);
+            var tree = SyntaxTree;
+            return tree == null
+                ? ImmutableArray<Diagnostic>.Empty
+                : tree.GetDiagnostics(this);
         }
 
         /// <summary>

@@ -326,7 +326,7 @@ namespace Microsoft.CodeAnalysis
                 return default(SyntaxList<TNode>);
             }
 
-            var newGreen = creator.CreateList(items.Select(n => n.Green))!; // PROTOTYPE(NullableDogfood): items isn't null so nor is CreateList 
+            var newGreen = GreenNode.CreateList(items.Select(n => n.Green))!; // PROTOTYPE(NullableDogfood): items isn't null so nor is CreateList
             return new SyntaxList<TNode>(newGreen.CreateRed());
         }
 

@@ -252,6 +252,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         private GreenNode GetGreenNodeAt(int i)
         {
+            // PROTOTYPE(NullableReferenceTypes): TODO Need to revisit
             return GetGreenNodeAt(Node, i);
         }
 
@@ -355,7 +356,8 @@ namespace Microsoft.CodeAnalysis
                 return this;
             }
 
-            return new SyntaxTokenList(null, list[0].Node.CreateList(list.Select(n => n.Node)), 0, 0);
+            // PROTOTYPE(NullableReferenceTypes): CreateList will throw if some nodes are null. How do we know none are null?
+            return new SyntaxTokenList(null, GreenNode.CreateList(list.Select(n => n.Node)), 0, 0);
         }
 
         /// <summary>
@@ -371,7 +373,7 @@ namespace Microsoft.CodeAnalysis
 
             var list = this.ToList();
             list.RemoveAt(index);
-            return new SyntaxTokenList(null, Node.CreateList(list.Select(n => n.Node)), 0, 0);
+            return new SyntaxTokenList(null, GreenNode.CreateList(list.Select(n => n.Node)), 0, 0);
         }
 
         /// <summary>
@@ -417,7 +419,7 @@ namespace Microsoft.CodeAnalysis
                 var list = this.ToList();
                 list.RemoveAt(index);
                 list.InsertRange(index, newTokens);
-                return new SyntaxTokenList(null, Node.CreateList(list.Select(n => n.Node)), 0, 0);
+                return new SyntaxTokenList(null, GreenNode.CreateList(list.Select(n => n.Node)), 0, 0);
             }
 
             throw new ArgumentOutOfRangeException(nameof(tokenInList));

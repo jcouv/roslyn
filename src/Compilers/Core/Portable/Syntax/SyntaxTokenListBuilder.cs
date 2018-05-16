@@ -6,7 +6,7 @@ namespace Microsoft.CodeAnalysis.Syntax
 {
     internal class SyntaxTokenListBuilder
     {
-        private GreenNode[] _nodes;
+        private GreenNode?[] _nodes;
         private int _count;
 
         public SyntaxTokenListBuilder(int size)
@@ -33,7 +33,7 @@ namespace Microsoft.CodeAnalysis.Syntax
             this.Add(item.Node);
         }
 
-        internal void Add(GreenNode item)
+        internal void Add(GreenNode? item)
         {
             CheckSpace(1);
             _nodes[_count++] = item;

@@ -72,7 +72,7 @@ namespace Microsoft.CodeAnalysis.Syntax.InternalSyntax
                     case 2:
                         return _child2;
                     default:
-                        return null;
+                        return null; // PROTOTYPE(NullableReferenceTypes): We should consider throwing instead. Then GetSlot can maybe return non-nullable.
                 }
             }
 

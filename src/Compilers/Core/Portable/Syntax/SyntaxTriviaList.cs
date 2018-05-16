@@ -111,7 +111,7 @@ namespace Microsoft.CodeAnalysis
                     {
                         if (unchecked((uint)index < (uint)Node.SlotCount))
                         {
-                            return new SyntaxTrivia(Token, Node.GetSlot(index), Position + Node.GetSlotOffset(index), Index + index);
+                            return new SyntaxTrivia(Token, Node.GetSlot(index)!, Position + Node.GetSlotOffset(index), Index + index);
                         }
                     }
                     else if (index == 0)
@@ -350,7 +350,7 @@ namespace Microsoft.CodeAnalysis
 
             var list = this.ToList();
             list.RemoveAt(index);
-            return new SyntaxTriviaList(default(SyntaxToken), Node.CreateList(list.Select(n => n.UnderlyingNode)), 0, 0);
+            return new SyntaxTriviaList(default(SyntaxToken), GreenNode.CreateList(list.Select(n => n.UnderlyingNode)), 0, 0);
         }
 
         /// <summary>
@@ -396,7 +396,7 @@ namespace Microsoft.CodeAnalysis
                 var list = this.ToList();
                 list.RemoveAt(index);
                 list.InsertRange(index, newTrivia);
-                return new SyntaxTriviaList(default(SyntaxToken), Node.CreateList(list.Select(n => n.UnderlyingNode)), 0, 0);
+                return new SyntaxTriviaList(default(SyntaxToken), GreenNode.CreateList(list.Select(n => n.UnderlyingNode)), 0, 0);
             }
 
             throw new ArgumentOutOfRangeException(nameof(triviaInList));
@@ -430,6 +430,7 @@ namespace Microsoft.CodeAnalysis
         /// </summary>
         private GreenNode GetGreenNodeAt(int i)
         {
+            // PROTOTYPE(NullableReferenceTypes): TODO Need to revisit
             return GetGreenNodeAt(Node, i);
         }
 

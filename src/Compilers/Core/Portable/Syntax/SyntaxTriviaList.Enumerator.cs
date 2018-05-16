@@ -18,7 +18,7 @@ namespace Microsoft.CodeAnalysis
             private int _count;
 
             private int _index;
-            private GreenNode _current;
+            private GreenNode? _current;
             private int _position;
 
             internal Enumerator(in SyntaxTriviaList list)
@@ -36,6 +36,7 @@ namespace Microsoft.CodeAnalysis
             // PERF: Passing SyntaxToken by ref since it's a non-trivial struct
             private void InitializeFrom(in SyntaxToken token, GreenNode greenNode, int index, int position)
             {
+                // PROTOTYPE(NullableReferenceTypes): It seems that null greenNode could be passed in...
                 _token = token;
                 _singleNodeOrList = greenNode;
                 _baseIndex = index;

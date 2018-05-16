@@ -38,7 +38,7 @@ namespace Microsoft.CodeAnalysis
                 {
                     if (this.Depth >= SyntaxWalkerDepth.Node)
                     {
-                        Visit(child.AsNode());
+                        Visit(child.AsNode()!); // PROTOTYPE(NullableReferenceTypes): Add assertion instead
                     }
                 }
                 else if (child.IsToken)
@@ -98,7 +98,7 @@ namespace Microsoft.CodeAnalysis
         {
             if (this.Depth >= SyntaxWalkerDepth.StructuredTrivia && trivia.HasStructure)
             {
-                this.Visit(trivia.GetStructure());
+                this.Visit(trivia.GetStructure()!); // PROTOTYPE(NullableReferenceTypes): Add assertion instead
             }
         }
     }

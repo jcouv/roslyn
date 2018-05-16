@@ -182,6 +182,14 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
         }
 
         [Fact]
+        public void TestSyntaxTriviaWithoutSyntaxTree()
+        {
+            var trivia = SyntaxFactory.SyntaxTrivia(SyntaxKind.WhitespaceTrivia, " ");
+            Assert.Equal(Location.None, trivia.GetLocation());
+            Assert.Empty(trivia.GetDiagnostics());
+        }
+
+        [Fact]
         public void TestFreeFormTokenFactory_CustomText()
         {
             for (SyntaxKind kind = InternalSyntax.SyntaxToken.FirstTokenWithWellKnownText; kind <= InternalSyntax.SyntaxToken.LastTokenWithWellKnownText; kind++)
