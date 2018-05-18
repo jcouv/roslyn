@@ -17,10 +17,10 @@ namespace Microsoft.Cci
     internal sealed class CustomDebugInfoWriter
     {
         private MethodDefinitionHandle _methodWithModuleInfo;
-        private IMethodBody _methodBodyWithModuleInfo;
+        private IMethodBody? _methodBodyWithModuleInfo;
 
         private MethodDefinitionHandle _previousMethodWithUsingInfo;
-        private IMethodBody _previousMethodBodyWithUsingInfo;
+        private IMethodBody? _previousMethodBodyWithUsingInfo;
 
         private readonly PdbWriter _pdbWriter;
 
@@ -35,7 +35,7 @@ namespace Microsoft.Cci
         /// Returns non-null <paramref name="forwardToMethod"/> if the forwarding should be done directly via UsingNamespace,
         /// null if the forwarding is done via custom debug info.
         /// </summary>
-        public bool ShouldForwardNamespaceScopes(EmitContext context, IMethodBody methodBody, MethodDefinitionHandle methodHandle, out IMethodDefinition forwardToMethod)
+        public bool ShouldForwardNamespaceScopes(EmitContext context, IMethodBody methodBody, MethodDefinitionHandle methodHandle, out IMethodDefinition? forwardToMethod)
         {
             if (ShouldForwardToPreviousMethodWithUsingInfo(context, methodBody))
             {
@@ -43,7 +43,7 @@ namespace Microsoft.Cci
                 // VB on the other hand adds a "@methodtoken" to the scopes instead.
                 if (context.Module.GenerateVisualBasicStylePdb)
                 {
-                    forwardToMethod = _previousMethodBodyWithUsingInfo.MethodDefinition;
+                    forwardToMethod = _previousMethodBodyWithUsingInfo!.MethodDefinition; // PROTOTYPE(NullableReferenceTypes): Add assertion
                 }
                 else
                 {
@@ -107,6 +107,7 @@ namespace Microsoft.Cci
                 }
             }
 
+            // PROTOTYPE(NullableReferenceTypes): TODO Need to revisit
             byte[] result = encoder.ToArray();
             pooledBuilder.Free();
             return result;
@@ -135,7 +136,7 @@ namespace Microsoft.Cci
             }
         }
         
-        private static ArrayBuilder<T> GetLocalInfoToSerialize<T>(
+        private static ArrayBuilder<T>? GetLocalInfoToSerialize<T>(
             IMethodBody methodBody,
             Func<ILocalDefinition, bool> filter,
             Func<LocalScope, ILocalDefinition, T> getInfo)
