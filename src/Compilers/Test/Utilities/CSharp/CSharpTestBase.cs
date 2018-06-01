@@ -305,7 +305,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Test.Utilities
             string ilSource,
             IEnumerable<MetadataReference> references = null,
             CSharpCompilationOptions options = null,
-            bool appendDefaultHeader = true) => CreateCompilationWithILAndMscorlib40(source, ilSource, TargetFramework.Standard, references, options, appendDefaultHeader);
+            bool appendDefaultHeader = true) => CreateCompilationWithILAndMscorlib40(source, ilSource, TargetFramework.Standard, references, options,appendDefaultHeader: appendDefaultHeader);
 
         public static CSharpCompilation CreateCompilationWithILAndMscorlib40(
             CSharpTestSource source,
@@ -313,11 +313,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Test.Utilities
             TargetFramework targetFramework = TargetFramework.Mscorlib40,
             IEnumerable<MetadataReference> references = null,
             CSharpCompilationOptions options = null,
+            CSharpParseOptions parseOptions = null,
             bool appendDefaultHeader = true)
         {
             MetadataReference ilReference = CompileIL(ilSource, appendDefaultHeader);
             var allReferences = TargetFrameworkUtil.GetReferences(targetFramework, references).Add(ilReference);
-            return CreateEmptyCompilation(source, allReferences, options);
+            return CreateEmptyCompilation(source, allReferences, options, parseOptions);
         }
 
         public static CSharpCompilation CreateCompilationWithMscorlib40(
