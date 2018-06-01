@@ -5470,7 +5470,7 @@ class Goo<T>
 }
 ";
 
-            var compilation = CreateCompilation(source);
+            var compilation = CreateCompilation(source, parseOptions: CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp7));
             compilation.VerifyDiagnostics(
                 // (2,2): error CS0404: Cannot apply attribute class 'Goo<T>' because it is generic
                 // [Goo<int>]
@@ -5521,7 +5521,7 @@ class Goo<T>
 }
 ";
 
-            var compilation = CreateCompilation(source);
+            var compilation = CreateCompilation(source, parseOptions: CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp7));
 
             compilation.VerifyDiagnostics(
                 // (2,2): error CS0404: Cannot apply attribute class 'Goo<T>' because it is generic
@@ -7055,7 +7055,7 @@ public class Test
 }";
             CSharpCompilationOptions opt = TestOptions.ReleaseDll;
 
-            var compilation = CreateCompilation(source, null, options: opt);
+            var compilation = CreateCompilation(source, null, options: opt, parseOptions: CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp7));
 
             compilation.VerifyDiagnostics(
                 // (3,16): error CS0698: A generic type cannot derive from 'System.Attribute' because it is an attribute class
@@ -7087,7 +7087,7 @@ public class Test
 	}
 }";
 
-            var comp = CreateCompilationWithILAndMscorlib40(csharpSource, ilSource);
+            var comp = CreateCompilationWithILAndMscorlib40(csharpSource, ilSource, parseOptions: CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp7));
 
             comp.VerifyDiagnostics(
                 // (2,2): error CS0404: Cannot apply attribute class 'Gen<T>' because it is generic
@@ -7892,7 +7892,7 @@ public class C<T, U> : Attribute
 }
 ";
 
-            var comp = CreateCompilation(source);
+            var comp = CreateCompilation(source, parseOptions: CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp7));
             comp.VerifyDiagnostics(
 
                 // NOTE: Dev11 reports ERR_AttributeCantBeGeneric for these, but this makes more sense.
@@ -7957,7 +7957,7 @@ public class C<T> : Attribute
 }
 ";
 
-            var comp = CreateCompilation(source);
+            var comp = CreateCompilation(source, parseOptions: CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp7));
             comp.VerifyDiagnostics(
                 // (5,2): error CS0404: Cannot apply attribute class 'C<int>' because it is generic
                 // [Alias]
@@ -8005,7 +8005,7 @@ class Test
 
             // NOTE: Dev11 does not give an error for "[Alias]" - it just silently drops the
             // attribute at emit-time.
-            var comp = CreateCompilationWithILAndMscorlib40(source, il);
+            var comp = CreateCompilationWithILAndMscorlib40(source, il, parseOptions: CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp7));
             comp.VerifyDiagnostics(
                 // (4,2): error CS0404: Cannot apply attribute class 'C<int>' because it is generic
                 // [Alias]
@@ -8044,7 +8044,7 @@ public class Outer<T>
 }
 ";
 
-            var comp = CreateCompilation(source);
+            var comp = CreateCompilation(source, parseOptions: CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp7));
             comp.VerifyDiagnostics(
             // (5,2): error CS0404: Cannot apply attribute class 'Outer<int>.Inner' because it is generic
             // [InnerAlias]
