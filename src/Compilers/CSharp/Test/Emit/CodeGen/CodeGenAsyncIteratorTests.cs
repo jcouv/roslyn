@@ -42,7 +42,8 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
         // test should cover both case with AwaitOnCompleted and AwaitUnsafeOnCompleted
         // test `async IAsyncEnumerable<int> M() { return TaskLike(); }`
         // Can we avoid making IAsyncEnumerable<T> special from the start? Making mark it with an attribute like we did for task-like?
-        // Test normal break and normal return in async iterator
+        // Test normal break in async iterator
+        // WaitForNextAsync is resilient to be called out of turn. Test that.
 
         public static CSharpCompilation CreateCompilationWithTasksExtensions(
             CSharpTestSource source,
@@ -83,7 +84,7 @@ class C
 }";
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            var verifier = CompileAndVerify(comp, expectedOutput: "0 1 2 3 4 5", verify: Verification.Skipped);
+            var verifier = CompileAndVerify(comp, expectedOutput: "0 1 2 3 4 5", verify: Verification.Fails);
 
             verifier.VerifyIL("C.M", @"
 {
@@ -434,7 +435,7 @@ class C
 }";
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "0 1 2 3 4 5 Done", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "0 1 2 3 4 5 Done", verify: Verification.Fails);
         }
 
         [Fact]
@@ -463,7 +464,7 @@ class C
 }";
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "0 1 2 3 Done", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "0 1 2 3 Done", verify: Verification.Fails);
         }
 
         [Fact]
@@ -492,7 +493,7 @@ class C
 }";
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "0 1 2 Done", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "0 1 2 Done", verify: Verification.Fails);
         }
 
         [Fact]
@@ -526,7 +527,7 @@ label2:
 }";
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "0 1 2 3 Done", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "0 1 2 3 Done", verify: Verification.Fails);
         }
 
         [Fact]
@@ -564,7 +565,7 @@ class C
 }}";
                 var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
                 comp.VerifyDiagnostics();
-                var verifier = CompileAndVerify(comp, expectedOutput: expectation, verify: Verification.Skipped);
+                var verifier = CompileAndVerify(comp, expectedOutput: expectation, verify: Verification.Fails);
             }
 
             (string code, string expectation) generateCode(Instruction[] spec)
@@ -637,7 +638,7 @@ class C
 }";
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            var verifier = CompileAndVerify(comp, expectedOutput: "0 1 2 3 4 Done", verify: Verification.Skipped);
+            var verifier = CompileAndVerify(comp, expectedOutput: "0 1 2 3 4 Done", verify: Verification.Fails);
         }
 
         [Fact]
@@ -755,7 +756,7 @@ class C
         }
 
         [Fact]
-        public void TestThrownException()
+        public void TestWaitForNextAsyncCalledOutOfTurn()
         {
             string source = @"
 using static System.Console;
@@ -765,9 +766,104 @@ class C
     {
         var enumerator = new C().M().GetAsyncEnumerator();
         await enumerator.WaitForNextAsync();
+        await enumerator.WaitForNextAsync();
+        await enumerator.WaitForNextAsync();
+
         var value = enumerator.TryGetNext(out bool success);
         Assert(success);
         Assert(value == 42);
+
+        enumerator.TryGetNext(out success);
+        Assert(!success);
+
+        await enumerator.WaitForNextAsync();
+        await enumerator.WaitForNextAsync();
+        await enumerator.WaitForNextAsync();
+
+        value = enumerator.TryGetNext(out success);
+        Assert(success);
+        Assert(value == 43);
+
+        Write(""Done"");
+    }
+    async System.Collections.Generic.IAsyncEnumerable<int> M()
+    {
+        yield return 42;
+        await new System.Threading.Tasks.ValueTask(System.Threading.Tasks.Task.Delay(100));
+        yield return 43;
+    }
+    static void Assert(bool b)
+    {
+        if (!b) throw null;
+    }
+}";
+            var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
+            comp.VerifyDiagnostics();
+            CompileAndVerify(comp, expectedOutput: "Done", verify: Verification.Fails);
+        }
+
+        [Fact]
+        public void TestTryGetNextCalledOutOfTurn()
+        {
+            string source = @"
+using static System.Console;
+class C
+{
+    public static async System.Threading.Tasks.Task Main()
+    {
+        var enumerator = new C().M().GetAsyncEnumerator();
+        await enumerator.WaitForNextAsync();
+
+        var value = enumerator.TryGetNext(out bool success);
+        Assert(success);
+        Assert(value == 42);
+
+        enumerator.TryGetNext(out success);
+        Assert(!success);
+
+        try
+        {
+            enumerator.TryGetNext(out success);
+        }
+        catch (System.Exception e)
+        {
+            Assert(e != null);
+            Write(""Done"");
+        }
+    }
+    async System.Collections.Generic.IAsyncEnumerable<int> M()
+    {
+        yield return 42;
+        await new System.Threading.Tasks.ValueTask(System.Threading.Tasks.Task.Delay(100));
+        yield return 43;
+    }
+    static void Assert(bool b)
+    {
+        if (!b) throw null;
+    }
+}";
+            var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
+            comp.VerifyDiagnostics();
+            // PROTOTYPE(async-streams): need to implement the exception
+            //CompileAndVerify(comp, expectedOutput: "Done", verify: Verification.Fails);
+        }
+
+        [Fact]
+        public void TestThrownException_WhilePromiseInactive()
+        {
+            string source = @"
+using static System.Console;
+class C
+{
+    public static async System.Threading.Tasks.Task Main()
+    {
+        var enumerator = new C().M().GetAsyncEnumerator();
+        await enumerator.WaitForNextAsync();
+
+        var value = enumerator.TryGetNext(out bool success);
+        Assert(success);
+        Assert(value == 42);
+
         try
         {
             enumerator.TryGetNext(out success);
@@ -794,7 +890,55 @@ class C
 }";
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            var verifier = CompileAndVerify(comp, expectedOutput: "Done", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "Done", verify: Verification.Fails);
+        }
+
+        [Fact]
+        public void TestThrownException_WhilePromiseActive()
+        {
+            string source = @"
+using static System.Console;
+class C
+{
+    public static async System.Threading.Tasks.Task Main()
+    {
+        var enumerator = new C().M().GetAsyncEnumerator();
+        await enumerator.WaitForNextAsync();
+
+        var value = enumerator.TryGetNext(out bool success);
+        Assert(success);
+        Assert(value == 42);
+
+        enumerator.TryGetNext(out success);
+        Assert(!success);
+
+        try
+        {
+            await enumerator.WaitForNextAsync();
+            Write(""UNREACHABLE"");
+        }
+        catch (System.Exception e)
+        {
+            Assert(e.Message == ""message"");
+        }
+        Write(""Done"");
+    }
+    async System.Collections.Generic.IAsyncEnumerable<int> M()
+    {
+        yield return 42;
+        await new System.Threading.Tasks.ValueTask(System.Threading.Tasks.Task.Delay(100));
+        bool b = true;
+        if (b) throw new System.Exception(""message"");
+        Write(""UNREACHABLE2"");
+    }
+    static void Assert(bool b)
+    {
+        if (!b) throw null;
+    }
+}";
+            var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
+            comp.VerifyDiagnostics();
+            CompileAndVerify(comp, expectedOutput: "Done", verify: Verification.Fails);
         }
 
         // PROTOTYPE(async-streams): Consider moving this common test code to TestSources.cs

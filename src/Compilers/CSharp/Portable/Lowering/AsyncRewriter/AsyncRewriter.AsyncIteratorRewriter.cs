@@ -21,8 +21,29 @@ namespace Microsoft.CodeAnalysis.CSharp
         ///
         /// The promise of a value or end is visible outside of the state machine (it is returned from WaitForNextAsync). The existing
         /// builder and awaiter are used internally, to run the state machine in the background.
+        ///
+        ///
+        /// Compared to the state machine for a regular async method, the MoveNext for an async iterator method adds logic:
+        /// - to the handling of an `await`, to reset the promise
+        /// - to the handling of exceptions, to set the exception into the promise, if active, or rethrow it otherwise
+        /// - to support handling a `yield return` statement, which saves the current value and fulfill the promise (if active)
+        /// - to support handling a `yield break` statement, which resets the promise (if active) and fulfills it with result `false`
+        ///
+        /// The contract of the `MoveNext` method is that it returns either:
+        /// - in completed state
+        /// - leaving the promise inactive (when started with an inactive promise and a value is immediately available)
+        /// - with an exception (when started with an inactive promise and an exception is thrown)
+        /// - an active promise, which will later be fulfilled:
+        ///     - with `true` (when a value becomes available),
+        ///     - with `false` (if the end is reached)
+        ///     - with an exception
+        ///
+        /// If the promise is active:
+        /// - the builder is running the `MoveNext` logic,
+        /// - a call to `WaitForNextAsync` will not move the state machine forward (ie. it won't call `MoveNext`),
+        /// - a call to `TryGetNext` APIs will throw.
         /// </summary>
-        private class AsyncIteratorRewriter : AsyncRewriter
+        private sealed class AsyncIteratorRewriter : AsyncRewriter
         {
             private FieldSymbol _currentField; // stores the current yieled value
             private FieldSymbol _promiseOfValueOrEndField; // this struct implements the IValueTaskSource logic
@@ -219,7 +240,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // if (this._promiseIsActive)
                 // {
                 //     if (_valueOrEndPromise.GetStatus(_valueOrEndPromise.Version) == ValueTaskSourceStatus.Pending) throw new Exception();
-                //     if (State == StateMachineStates.NotStartedStateMachine) throw new Exception("You should call WaitForNextAsync first");
                 //     _promiseIsActive = false;
                 // }
                 // else
