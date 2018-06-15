@@ -853,7 +853,7 @@ public sealed class B : A<object>
             comp1.VerifyDiagnostics();
         }
 
-        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): Broken due to cycle shortcut")]
+        [Fact]
         public void NonNullTypes_Circular()
         {
             string source = @"
@@ -1613,8 +1613,8 @@ class E
 
             var oblivious2 = (NamedTypeSymbol)compilation.GetMember("Oblivious2");
             Assert.True(oblivious2.NonNullTypes);
-            //VerifyNonNullTypes(oblivious2.GetMember("s"), false); // PROTOTYPE(NullableReferenceTypes): affected by cycle shortcut
-            //VerifyNonNullTypes(oblivious2.GetMember("ns"), false);
+            VerifyNonNullTypes(oblivious2.GetMember("s"), false);
+            VerifyNonNullTypes(oblivious2.GetMember("ns"), false);
 
             void verifyOblivious(Compilation comp)
             {
@@ -1674,7 +1674,7 @@ class E
             }
         }
 
-        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): Broken due to cycle shortcut")]
+        [Fact]
         public void NonNullTypes_OnMethods()
         {
             var obliviousLib = @"
@@ -1833,7 +1833,7 @@ public class Oblivious { }
             VerifyNonNullTypes(compilation.GetMember("Oblivious"), false);
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): syntax-based detection of NonNullTypes is temporary")]
         public void NonNullTypes_OnAssembly()
         {
             var obliviousLib = @"
@@ -2305,7 +2305,7 @@ public class Base
                 );
         }
 
-        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): Broken due to cycle shortcut")]
+        [Fact]
         public void NonNullTypesFalse_LocalDeclarations()
         {
             var source = @"
@@ -2386,7 +2386,7 @@ public class Base
                 );
         }
 
-        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): Broken due to cycle shortcut")]
+        [Fact]
         public void NonNullTypes_Constraint()
         {
             var source = @"
@@ -3603,7 +3603,7 @@ class B2 : A
             }
         }
 
-        [Fact]
+        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): syntax-based detection of NonNullTypes is temporary")]
         public void Overriding_Methods()
         {
             var source = @"
@@ -3732,7 +3732,7 @@ public class Class<T> : Base<T> where T : class
             comp.VerifyDiagnostics();
         }
 
-        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): skipped because of a cycle in ApplyNullableTransforms which is currently mitigated but not solved")]
+        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): hits an assertion in AsObliviousReferenceType")]
         public void Overriding_Properties_WithNullableTypeArgument_WithStructConstraint()
         {
             var source = @"
@@ -3752,7 +3752,7 @@ public class Class<T> : Base<T> where T : struct
             comp.VerifyDiagnostics();
         }
 
-        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): Broken due to cycle shortcut")]
+        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): hits an assertion in CopyTypeCustomModifiers")]
         public void Overriding_Indexer()
         {
             var source = @"
@@ -3776,7 +3776,7 @@ public class Class2 : Base
             comp.VerifyDiagnostics();
         }
 
-        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): Broken due to cycle shortcut")]
+        [Fact]
         public void Overriding_Indexer2()
         {
             var source = @"
@@ -4127,7 +4127,7 @@ class B2 : A2
             }
         }
 
-        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): Broken due to cycle shortcut")]
+        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): hits assertion in AsObliviousReferenceType")]
         public void Overriding_22()
         {
             var source =
@@ -4589,9 +4589,7 @@ class B : IA
             }
         }
 
-        // PROTOTYPE(NullableReferenceTypes): Checking NonNullTypes can result in cycle
-        // when decoding attributes. See NonNullTypes_DecodeAttributeCycle_*.
-        [Fact(Skip = "NonNullTypes")]
+        [Fact]
         public void Implementing_11()
         {
             var source = @"
@@ -4625,7 +4623,14 @@ class B : IA
 ";
             var compilation = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, options: TestOptions.ReleaseDll, parseOptions: TestOptions.Regular8);
 
-            compilation.VerifyDiagnostics();
+            compilation.VerifyDiagnostics(
+                // (24,13): warning CS8616: Nullability of reference types in return type doesn't match implemented member 'T[] IA.M2<T>()'.
+                //     S?[] IA.M2<S>() 
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInReturnTypeOnExplicitImplementation, "M2").WithArguments("T[] IA.M2<T>()").WithLocation(24, 13),
+                // (18,18): warning CS8616: Nullability of reference types in return type doesn't match implemented member 'string[] IA.M1()'.
+                //     string?[] IA.M1()
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInReturnTypeOnExplicitImplementation, "M1").WithArguments("string[] IA.M1()").WithLocation(18, 18)
+                );
         }
 
         [Fact]
@@ -23963,7 +23968,7 @@ partial class C
             c.VerifyDiagnostics(expected);
         }
 
-        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): Broken due to cycle shortcut")]
+        [Fact]
         public void NonNullTypes_03()
         {
             string moduleAttributes = @"
@@ -24131,7 +24136,7 @@ partial class C
             c.VerifyDiagnostics(expectedDiagnostics);
         }
 
-        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): Broken due to cycle shortcut")]
+        [Fact]
         public void NonNullTypes_04()
         {
             string moduleAttributes = @"
@@ -24301,7 +24306,7 @@ partial class C
             c.VerifyDiagnostics(expected);
         }
 
-        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): Broken due to cycle shortcut")]
+        [Fact]
         public void NonNullTypes_05()
         {
             string moduleAttributes = @"
