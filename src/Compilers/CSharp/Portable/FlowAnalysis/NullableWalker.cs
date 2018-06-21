@@ -624,7 +624,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert(valueContainerSlot <= slotWatermark);
 
-            TypeSymbolWithAnnotations fieldOrPropertyType = GetTypeOrReturnTypeWithAdjustedNullableAnnotations(fieldOrProperty);
+            TypeSymbolWithAnnotations fieldOrPropertyType = fieldOrProperty.GetTypeOrReturnType();
 
             if (fieldOrPropertyType.IsReferenceType)
             {
@@ -1091,7 +1091,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     Result result = VisitRvalueWithResult(node);
                     if ((object)containingSymbol != null)
                     {
-                        var type = GetTypeOrReturnTypeWithAdjustedNullableAnnotations(containingSymbol);
+                        var type = containingSymbol.GetTypeOrReturnType();
                         ReportAssignmentWarnings(node, type, result.Type, useLegacyWarnings: false);
                         TrackNullableStateForAssignment(node, type, containingSlot, result.Type, result.Slot);
                     }
@@ -3153,7 +3153,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     ReportArgumentWarnings(node.Operand, resultOfOperandConversionType, incrementOperator.Parameters[0]);
 
-                    resultOfIncrementType = GetTypeOrReturnTypeWithAdjustedNullableAnnotations(incrementOperator);
+                    resultOfIncrementType = incrementOperator.ReturnType;
                 }
 
                 resultOfIncrementType = ApplyConversion(node, node.ResultConversion, node.Type, resultOfIncrementType);
@@ -3301,18 +3301,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 new FormattedSymbol(parameter.ContainingSymbol, SymbolDisplayFormat.MinimallyQualifiedFormat));
         }
 
-        // PROTOTYPE(NullableReferenceTypes): If support for [NonNullTypes] or [NullableOptOutForAssembly]
-        // is re-enabled, we'll need to call this helper for method symbols before inferring nullability of
-        // arguments to avoid warnings when nullability checking of the method is suppressed.
-        // (See all uses of this helper for method symbols.)
-        private TypeSymbolWithAnnotations GetTypeOrReturnTypeWithAdjustedNullableAnnotations(Symbol symbol)
-        {
-            Debug.Assert(symbol.Kind != SymbolKind.Local); // Handled in VisitLocal.
-            Debug.Assert(symbol.Kind != SymbolKind.Parameter); // Handled in VisitParameter.
-
-            return compilation.GetTypeOrReturnTypeWithAdjustedNullableAnnotations(symbol);
-        }
-
         private Result GetDeclaredLocalResult(LocalSymbol local)
         {
             var slot = GetOrCreateSlot(local);
@@ -3362,7 +3350,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // PROTOTYPE(NullableReferenceTypes): Update indexer based on inferred receiver type.
             VisitArguments(node, node.Arguments, node.ArgumentRefKindsOpt, node.Indexer, node.ArgsToParamsOpt, node.Expanded);
 
-            _result = GetTypeOrReturnTypeWithAdjustedNullableAnnotations(node.Indexer);
+            _result = node.Indexer.Type;
             return null;
         }
 
@@ -3482,7 +3470,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 else if ((object)node.MethodOpt != null && node.MethodOpt.ParameterCount == 1)
                 {
                     ReportArgumentWarnings(node.Operand, _result.Type, node.MethodOpt.Parameters[0]);
-                    resultType = GetTypeOrReturnTypeWithAdjustedNullableAnnotations(node.MethodOpt);
+                    resultType = node.MethodOpt.ReturnType;
                 }
             }
 
@@ -3535,7 +3523,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // PROTOTYPE(NullableReferenceTypes): Update method based on inferred operand types.
             if ((object)node.LogicalOperator != null && node.LogicalOperator.ParameterCount == 2)
             {
-                return GetTypeOrReturnTypeWithAdjustedNullableAnnotations(node.LogicalOperator);
+                return node.LogicalOperator.ReturnType;
             }
             else
             {
@@ -3626,7 +3614,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             else
             {
                 // PROTOTYPE(NullableReferenceTypes): Update method based on inferred receiver type.
-                _result = GetTypeOrReturnTypeWithAdjustedNullableAnnotations(node.GetResult);
+                _result = node.GetResult.ReturnType;
             }
             return result;
         }
