@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
@@ -194,14 +195,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             get
             {
                 return ImmutableArray<SyntaxReference>.Empty;
-            }
-        }
-
-        internal override bool NonNullTypes
-        {
-            get
-            {
-                return this.UtilizesNullableReferenceTypes;
             }
         }
 
