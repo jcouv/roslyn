@@ -102,7 +102,6 @@ namespace Microsoft.CodeAnalysis.AddImport
             var result = ArrayBuilder<AddImportFixData>.GetInstance();
             if (node != null)
             {
-
                 using (Logger.LogBlock(FunctionId.Refactoring_AddImport, cancellationToken))
                 {
                     if (!cancellationToken.IsCancellationRequested)

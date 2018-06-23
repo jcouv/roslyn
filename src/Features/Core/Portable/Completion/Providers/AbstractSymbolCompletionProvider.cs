@@ -188,7 +188,7 @@ namespace Microsoft.CodeAnalysis.Completion.Providers
             }
         }
 
-        private async Task<IEnumerable<CompletionItem>> GetItemsWorkerAsync(
+        protected virtual async Task<IEnumerable<CompletionItem>> GetItemsWorkerAsync(
             Document document, int position, OptionSet options, bool preselect, CancellationToken cancellationToken)
         {
             var relatedDocumentIds = GetRelatedDocumentIds(document, position);
