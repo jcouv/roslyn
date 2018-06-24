@@ -204,8 +204,8 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.InlineMethod
             // TODO: there should be a conflict reported because `this.InstanceMethod()`. Maybe the simplifier should leave nodes with conflict annotation?
         }
 
-        [Fact(Skip = "TODO")]
-        public async Task TestInstanceVoidMethodInBody_CalledFromAnotherType()
+        [Fact]
+        public async Task TestInstanceVoidMethodInBody_ReplaceTargetInstance()
         {
             await TestInRegularAndScript1Async(
 @"class C
@@ -233,6 +233,72 @@ public class D
 public class D
 {
     public void Print() => throw null;
+}");
+        }
+
+        [Fact]
+        public async Task TestInstanceVoidMethodInBody_ReplaceTargetInstance_Multiple()
+        {
+            // TODO: if the target is used multiple times in the method to inline, then
+            // the target instance should be extracted to a local, or the operation should produce a conflict/warning.
+            await TestInRegularAndScript1Async(
+@"class C
+{
+    void M(D d)
+    {
+        d.InlineMe();
+    }
+}
+public class D
+{
+    public void [||]InlineMe()
+    {
+        this.Print(this);
+    }
+    public void Print(D d) => throw null;
+}",
+@"class C
+{
+    void M(D d)
+    {
+        d.Print(d);
+    }
+}
+public class D
+{
+    public void Print(D d) => throw null;
+}");
+        }
+
+        [Fact]
+        public async Task TestInstanceVoidMethodInBody_ReplaceStaticTarget()
+        {
+            await TestInRegularAndScript1Async(
+@"class C
+{
+    void M()
+    {
+        D.InlineMe();
+    }
+}
+public class D
+{
+    static public void [||]InlineMe()
+    {
+        Print();
+    }
+    static public void Print() => throw null;
+}",
+@"class C
+{
+    void M()
+    {
+        D.Print();
+    }
+}
+public class D
+{
+    static public void Print() => throw null;
 }");
         }
 

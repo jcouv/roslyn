@@ -181,18 +181,7 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
 
             // Annotate `this`, parameter references
             expressionToInline = AnnotationRewriter.Visit(semanticModel, expressionToInline, cancellationToken);
-
-            // Collect the references.
-            var method = semanticModel.GetDeclaredSymbol(declaration, cancellationToken);
-            var symbolRefs = await SymbolFinder.FindReferencesAsync(method, document.Project.Solution, cancellationToken).ConfigureAwait(false);
-            var references = symbolRefs.Single(r => r.Definition == method).Locations;
-
-            // Collect the parenting invocation expression for each reference.
-            var syntaxRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            var callSites = references
-                .Select(loc => syntaxRoot.FindToken(loc.Location.SourceSpan.Start))
-                .Select(tok => tok.GetAncestor<InvocationExpressionSyntax>())
-                .Where(inv => inv != null);
+            var callSites = await FindCallSites(document, declaration, semanticModel, cancellationToken).ConfigureAwait(false);
 
             // TODO: handle a reference that isn't an invocation
 
@@ -234,6 +223,23 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
             document = await document.ReplaceNodeAsync(declaration.Parent, RemoveDeclarationFromScope(declaration, declaration.Parent), cancellationToken).ConfigureAwait(false);
 
             return document;
+        }
+
+        private static async Task<IEnumerable<InvocationExpressionSyntax>> FindCallSites(Document document, MethodDeclarationSyntax declaration, SemanticModel semanticModel, CancellationToken cancellationToken)
+        {
+
+            // Collect the references.
+            var method = semanticModel.GetDeclaredSymbol(declaration, cancellationToken);
+            var symbolRefs = await SymbolFinder.FindReferencesAsync(method, document.Project.Solution, cancellationToken).ConfigureAwait(false);
+            var references = symbolRefs.Single(r => r.Definition == method).Locations;
+
+            // Collect the parenting invocation expression for each reference.
+            var syntaxRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            var callSites = references
+                .Select(loc => syntaxRoot.FindToken(loc.Location.SourceSpan.Start))
+                .Select(tok => tok.GetAncestor<InvocationExpressionSyntax>())
+                .Where(inv => inv != null);
+            return callSites;
         }
 
         //private async Task<ExpressionSyntax> CreateExpressionToInlineAsync(
@@ -429,18 +435,21 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
             private readonly IMethodSymbol _methodSymbol;
             private readonly MethodDeclarationSyntax _methodDeclaration;
             private readonly ExpressionSyntax _expressionToInline;
+            private readonly InvocationExpressionSyntax _callSite;
             private readonly CancellationToken _cancellationToken;
 
             private InvocationRewriter(
                 SemanticModel semanticModel,
                 MethodDeclarationSyntax methodDeclaration,
                 ExpressionSyntax expressionToInline,
+                InvocationExpressionSyntax callSite,
                 CancellationToken cancellationToken)
             {
                 _semanticModel = semanticModel;
                 _methodSymbol = semanticModel.GetDeclaredSymbol(methodDeclaration, cancellationToken);
                 _methodDeclaration = methodDeclaration;
                 _expressionToInline = expressionToInline;
+                _callSite = callSite;
                 _cancellationToken = cancellationToken;
             }
 
@@ -480,7 +489,15 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
                     //    return node.Update(node.Identifier.WithAdditionalAnnotations(CreateConflictAnnotation()));
                     //}
 
-                    return _expressionToInline
+                    // The target of the call-site invocation replaces `this` in the expression to inline.
+                    var expressionToInline = _expressionToInline;
+                    if (node.Expression is MemberAccessExpressionSyntax memberAccess)
+                    {
+                        expressionToInline = expressionToInline.ReplaceNodes(
+                            _expressionToInline.GetAnnotatedNodes(ThisAnnotation), (_1, _2) => memberAccess.Expression);
+                    }
+
+                    return expressionToInline
                         .Parenthesize()
                         .WithAdditionalAnnotations(Formatter.Annotation, Simplifier.Annotation);
                 }
@@ -490,13 +507,13 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
 
             public static SyntaxNode Visit(
                 SemanticModel semanticModel,
-                SyntaxNode scope,
+                InvocationExpressionSyntax callSite,
                 MethodDeclarationSyntax methodDeclaration,
                 ExpressionSyntax expressionToInline,
                 CancellationToken cancellationToken)
             {
-                var rewriter = new InvocationRewriter(semanticModel, methodDeclaration, expressionToInline, cancellationToken);
-                return rewriter.Visit(scope);
+                var rewriter = new InvocationRewriter(semanticModel, methodDeclaration, expressionToInline, callSite, cancellationToken);
+                return rewriter.Visit(callSite);
             }
         }
 
