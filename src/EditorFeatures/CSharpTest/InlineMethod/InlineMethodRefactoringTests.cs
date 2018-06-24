@@ -116,6 +116,34 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.InlineMethod
 }");
         }
 
+        [Fact(Skip = "TODO Dealing with other references. Depends on allowing multiple call-sites")]
+        public async Task TestNotInMethodGroupReference()
+        {
+            await TestInRegularAndScript1Async(
+@"class C
+{
+    void M()
+    {
+        System.Action x = InlineMe;
+    }
+    void [||]InlineMe()
+    {
+        System.Console.WriteLine();
+    }
+}",
+@"class C
+{
+    void M()
+    {
+        System.Action x = InlineMe;
+    }
+    void [||]InlineMe()
+    {
+        System.Console.WriteLine();
+    }
+}");
+        }
+
         [Fact]
         public async Task TestNotInMethodUsingParameters()
         {

@@ -172,7 +172,7 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
 
             // Annotate `this`, parameter references
             expressionToInline = AnnotationRewriter.Visit(semanticModel, expressionToInline, cancellationToken);
-            var callSites = await FindCallSites(document, declaration, semanticModel, cancellationToken).ConfigureAwait(false);
+            var (callSites, others) = await FindCallSites(document, declaration, semanticModel, cancellationToken).ConfigureAwait(false);
 
             // TODO: handle a reference that isn't an invocation
 
@@ -202,13 +202,14 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
 
             // TODO: deal with multiple call-sites/scopes
             var callSite = callSites.Single();
-            var newCallSite = InvocationRewriter.Visit(semanticModel, callSite, declaration, expressionToInline, cancellationToken);
+            var newCallSite = InvocationRewriter.Visit(semanticModel, callSite, declaration, expressionToInline, others, cancellationToken);
 
             document = await document.ReplaceNodeAsync(callSite, newCallSite, cancellationToken).ConfigureAwait(false);
             semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
             declaration = await FindDeclarationAsync(document, cancellationToken).ConfigureAwait(false);
 
             // TODO: deal with conflicts annotated by the InvocationRewriter
+            // TODO: mark non-invocation references as conflicts
 
             // No semantic conflicts, we can remove the declaration.
             document = await document.ReplaceNodeAsync(declaration.Parent, RemoveDeclarationFromScope(declaration, declaration.Parent), cancellationToken).ConfigureAwait(false);
@@ -216,77 +217,28 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
             return document;
         }
 
-        private static async Task<IEnumerable<InvocationExpressionSyntax>> FindCallSites(Document document, MethodDeclarationSyntax declaration, SemanticModel semanticModel, CancellationToken cancellationToken)
+        private static async Task<(IEnumerable<InvocationExpressionSyntax> callSites, IEnumerable<SyntaxNode> others)> FindCallSites(
+            Document document, MethodDeclarationSyntax declaration, SemanticModel semanticModel, CancellationToken cancellationToken)
         {
+            var syntaxRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
 
             // Collect the references.
             var method = semanticModel.GetDeclaredSymbol(declaration, cancellationToken);
             var symbolRefs = await SymbolFinder.FindReferencesAsync(method, document.Project.Solution, cancellationToken).ConfigureAwait(false);
-            var references = symbolRefs.Single(r => r.Definition == method).Locations;
+            var references = symbolRefs.Single(r => r.Definition == method).Locations
+                .Select(loc => syntaxRoot.FindToken(loc.Location.SourceSpan.Start));
 
             // Collect the parenting invocation expression for each reference.
-            var syntaxRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            var callSites = references
-                .Select(loc => syntaxRoot.FindToken(loc.Location.SourceSpan.Start))
-                .Select(tok => tok.GetAncestor<InvocationExpressionSyntax>())
-                .Where(inv => inv != null);
-            return callSites;
+            var analyzedReferences = references
+                .Select(tok => (token: tok, invocation: tok.GetAncestor<InvocationExpressionSyntax>()));
+
+            var callSites = analyzedReferences.Where(t => t.invocation != null).Select(t => t.invocation)
+                .Where(inv => semanticModel.GetSymbolInfo(inv).Symbol == method);
+
+            var others = analyzedReferences.Where(t => t.invocation == null).Select(t => t.token.Parent);
+
+            return (callSites, others);
         }
-
-        //private async Task<ExpressionSyntax> CreateExpressionToInlineAsync(
-        //    MethodDeclarationSyntax methodDeclaration,
-        //    Document document,
-        //    CancellationToken cancellationToken)
-        //{
-        //    var updatedDocument = document;
-
-        //    var expression = SkipRedundantExteriorParentheses(variableDeclarator.Initializer.Value);
-        //    var semanticModel = await updatedDocument.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        //    var localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(variableDeclarator, cancellationToken);
-        //    var newExpression = InitializerRewriter.Visit(expression, localSymbol, semanticModel);
-
-        //    // If this is an array initializer, we need to transform it into an array creation
-        //    // expression for inlining.
-        //    if (newExpression.Kind() == SyntaxKind.ArrayInitializerExpression)
-        //    {
-        //        var arrayType = (ArrayTypeSyntax)localSymbol.Type.GenerateTypeSyntax();
-        //        var arrayInitializer = (InitializerExpressionSyntax)newExpression;
-
-        //        // Add any non-whitespace trailing trivia from the equals clause to the type.
-        //        var equalsToken = variableDeclarator.Initializer.EqualsToken;
-        //        if (equalsToken.HasTrailingTrivia)
-        //        {
-        //            var trailingTrivia = equalsToken.TrailingTrivia.SkipInitialWhitespace();
-        //            if (trailingTrivia.Any())
-        //            {
-        //                arrayType = arrayType.WithTrailingTrivia(trailingTrivia);
-        //            }
-        //        }
-
-        //        newExpression = SyntaxFactory.ArrayCreationExpression(arrayType, arrayInitializer);
-        //    }
-
-        //    newExpression = newExpression.WithAdditionalAnnotations(InitializerAnnotation);
-
-        //    updatedDocument = await updatedDocument.ReplaceNodeAsync(variableDeclarator.Initializer.Value, newExpression, cancellationToken).ConfigureAwait(false);
-        //    semanticModel = await updatedDocument.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        //    newExpression = await FindInitializerAsync(updatedDocument, cancellationToken).ConfigureAwait(false);
-        //    var newVariableDeclarator = await FindDeclaratorAsync(updatedDocument, cancellationToken).ConfigureAwait(false);
-        //    localSymbol = (ILocalSymbol)semanticModel.GetDeclaredSymbol(newVariableDeclarator, cancellationToken);
-
-        //    var explicitCastExpression = newExpression.CastIfPossible(localSymbol.Type, newVariableDeclarator.SpanStart, semanticModel);
-        //    if (explicitCastExpression != newExpression)
-        //    {
-        //        updatedDocument = await updatedDocument.ReplaceNodeAsync(newExpression, explicitCastExpression, cancellationToken).ConfigureAwait(false);
-        //        semanticModel = await updatedDocument.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-        //        newVariableDeclarator = await FindDeclaratorAsync(updatedDocument, cancellationToken).ConfigureAwait(false);
-        //    }
-
-        //    // Now that the variable declarator is normalized, make its initializer
-        //    // value semantically explicit.
-        //    newExpression = await Simplifier.ExpandAsync(newVariableDeclarator.Initializer.Value, updatedDocument, cancellationToken: cancellationToken).ConfigureAwait(false);
-        //    return newExpression.WithAdditionalAnnotations(ExpressionToInlineAnnotation);
-        //}
 
         private static SyntaxNode GetTopMostParentingExpression(ExpressionSyntax expression)
         {
@@ -427,6 +379,7 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
             private readonly MethodDeclarationSyntax _methodDeclaration;
             private readonly ExpressionSyntax _expressionToInline;
             private readonly InvocationExpressionSyntax _callSite;
+            private readonly HashSet<SyntaxNode> _otherReferences;
             private readonly CancellationToken _cancellationToken;
 
             private InvocationRewriter(
@@ -434,6 +387,7 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
                 MethodDeclarationSyntax methodDeclaration,
                 ExpressionSyntax expressionToInline,
                 InvocationExpressionSyntax callSite,
+                IEnumerable<SyntaxNode> otherReferences,
                 CancellationToken cancellationToken)
             {
                 _semanticModel = semanticModel;
@@ -441,6 +395,7 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
                 _methodDeclaration = methodDeclaration;
                 _expressionToInline = expressionToInline;
                 _callSite = callSite;
+                _otherReferences = new HashSet<SyntaxNode>(otherReferences);
                 _cancellationToken = cancellationToken;
             }
 
@@ -466,6 +421,16 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
                     return ((IdentifierNameSyntax)expression).GetNameToken();
                 }
                 return default;
+            }
+
+            public override SyntaxNode Visit(SyntaxNode node)
+            {
+                if (_otherReferences.Contains(node))
+                {
+                    return node.WithConflictAnnotation();
+                }
+
+                return base.Visit(node);
             }
 
             public override SyntaxNode VisitInvocationExpression(InvocationExpressionSyntax node)
@@ -501,9 +466,10 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
                 InvocationExpressionSyntax callSite,
                 MethodDeclarationSyntax methodDeclaration,
                 ExpressionSyntax expressionToInline,
+                IEnumerable<SyntaxNode> otherReferences,
                 CancellationToken cancellationToken)
             {
-                var rewriter = new InvocationRewriter(semanticModel, methodDeclaration, expressionToInline, callSite, cancellationToken);
+                var rewriter = new InvocationRewriter(semanticModel, methodDeclaration, expressionToInline, callSite, otherReferences, cancellationToken);
                 return rewriter.Visit(callSite);
             }
         }
