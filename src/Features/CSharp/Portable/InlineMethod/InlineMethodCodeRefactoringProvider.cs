@@ -37,7 +37,7 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
         /// https://github.com/dotnet/roslyn/issues/22052
         ///
         /// Pri0:
-        /// Call site is an expression vs. an expression statement with just an invocation vs. a method group conversion
+        /// Call site is an expression vs. a method group conversion
         /// Parameters, including ref/out/in/params/optional
         /// Deal with multiple call-sites
         ///
@@ -187,11 +187,12 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
             var symbolRefs = await SymbolFinder.FindReferencesAsync(method, document.Project.Solution, cancellationToken).ConfigureAwait(false);
             var references = symbolRefs.Single(r => r.Definition == method).Locations;
 
-            // Collect the topmost parenting expression for each reference.
+            // Collect the parenting invocation expression for each reference.
             var syntaxRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             var callSites = references
-                .Select(loc => syntaxRoot.FindToken(loc.Location.SourceSpan.Start).Parent.Parent)
-                .OfType<InvocationExpressionSyntax>();
+                .Select(loc => syntaxRoot.FindToken(loc.Location.SourceSpan.Start))
+                .Select(tok => tok.GetAncestor<InvocationExpressionSyntax>())
+                .Where(inv => inv != null);
 
             // TODO: handle a reference that isn't an invocation
 

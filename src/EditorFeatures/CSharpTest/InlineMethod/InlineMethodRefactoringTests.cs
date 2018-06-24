@@ -51,14 +51,14 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.InlineMethod
     }
     int [||]InlineMe()
     {
-        return 1 + 1;
+        return int.Add(1, 1);
     }
 }",
 @"class C
 {
     int M()
     {
-        return 1 + 1;
+        return int.Add(1, 1);
     }
 }");
         }
@@ -151,7 +151,7 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.InlineMethod
 }");
         }
 
-        [Fact(Skip = "TODO")]
+        [Fact]
         public async Task TestInstanceVoidMethodInBody()
         {
             await TestInRegularAndScript1Async(
@@ -159,7 +159,7 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.InlineMethod
 {
     void M()
     {
-        this.InlineMe(); // bug: this is not recognized as a call-site
+        this.InlineMe();
     }
     void [||]InlineMe()
     {
@@ -171,7 +171,7 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.InlineMethod
 {
     void M()
     {
-        this.Print();
+        Print();
     }
     void Print() => throw null;
 }");
