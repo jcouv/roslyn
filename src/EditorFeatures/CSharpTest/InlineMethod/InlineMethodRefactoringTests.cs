@@ -117,6 +117,40 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.InlineMethod
         }
 
         [Fact]
+        public async Task TestNotInMethodUsingParameters()
+        {
+            await TestMissingInRegularAndScriptAsync(
+@"class C
+{
+    void M()
+    {
+        InlineMe(1);
+    }
+    void [||]InlineMe(int a)
+    {
+        System.Console.Write(1);
+    }
+}");
+        }
+
+        [Fact]
+        public async Task TestNotInMethodUsingTypeParameters()
+        {
+            await TestMissingInRegularAndScriptAsync(
+@"class C
+{
+    void M()
+    {
+        InlineMe<int>();
+    }
+    void [||]InlineMe<T>()
+    {
+        System.Console.Write(default(T));
+    }
+}");
+        }
+
+        [Fact]
         public async Task TestNotInMethodUsingDeclarationExpression()
         {
             await TestMissingInRegularAndScriptAsync(

@@ -38,7 +38,7 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
         ///
         /// Pri0:
         /// Call site is an expression vs. a method group conversion
-        /// Parameters, including ref/out/in/params/optional
+        /// Arguments into parameters, including ref/out/in/params/optional/named/re-ordered.
         /// Deal with multiple call-sites
         ///
         /// Pri1:
@@ -66,43 +66,35 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
 
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             var node = root.FindToken(position).Parent;
-            if (node is null)
+            if (node == null)
             {
                 return;
             }
 
             var methodDeclaration = node as MethodDeclarationSyntax;
-            if (methodDeclaration is null || !methodDeclaration.GetNameToken().Span.Contains(position))
+            if (methodDeclaration == null || !methodDeclaration.GetNameToken().Span.Contains(position))
+            {
+                return;
+            }
+
+            if (methodDeclaration.ParameterList.Parameters.Count != 0)
+            {
+                return;
+            }
+
+            if (methodDeclaration.TypeParameterList != null)
             {
                 return;
             }
 
             var expression = TryGetSimpleBody(methodDeclaration);
-            if (expression == null)
-            {
-                return;
-            }
-
-            //var parameters = methodDeclaration.ParameterList;
-            //if (parameters == null ||
-            //    parameters.Parameters.Count != 0)
-            //{
-            //    return;
-            //}
-
-            var typeParameters = methodDeclaration.TypeParameterList;
-            if (typeParameters != null)
-            {
-                return;
-            }
-
-            if (!IsSimple(expression))
+            if (expression == null || !IsSimple(expression))
             {
                 return;
             }
 
             var references = await GetReferencesAsync(document, methodDeclaration, cancellationToken).ConfigureAwait(false);
-            if (!references.Any())
+            if (references.Count() != 1)
             {
                 return;
             }
@@ -112,7 +104,6 @@ namespace Microsoft.CodeAnalysis.CSharp.InlineMethod
                     CSharpFeaturesResources.Inline_simple_method,
                     c => this.InlineMethodAsync(document, methodDeclaration, c)));
         }
-
 
         /// <summary>
         /// Checks that the expression is simple, ie. that it doesn't use `base` or locals.
