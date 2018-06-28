@@ -194,7 +194,7 @@ class C : System.IAsyncDisposable
 ";
             var comp = CreateCompilationWithTasksExtensions(source + s_interfaces, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "C body DisposeAsync1 DisposeAsync2 end", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "C body DisposeAsync1 DisposeAsync2 end", verify: Verification.Passes);
         }
 
         [Fact]
@@ -335,7 +335,7 @@ class C : System.IAsyncDisposable
 ";
             var comp = CreateCompilationWithTasksExtensions(source + s_interfaces, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "try using dispose_start dispose_end end", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "try using dispose_start dispose_end end", verify: Verification.Passes);
         }
 
         [Fact]
@@ -450,7 +450,7 @@ class C : System.IAsyncDisposable
 ";
             var comp = CreateCompilationWithTasksExtensions(source + s_interfaces, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "using dispose_start dispose_end return", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "using dispose_start dispose_end return", verify: Verification.Passes);
         }
 
         [Fact]
@@ -477,7 +477,7 @@ class C
 ";
             var comp = CreateCompilationWithTasksExtensions(source + s_interfaces, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "before after", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "before after", verify: Verification.Passes);
         }
 
         [Fact]
@@ -763,7 +763,7 @@ class C : System.IAsyncDisposable, System.IDisposable
 ";
             var comp = CreateCompilationWithTasksExtensions(source + s_interfaces, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "body DisposeAsync", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "body DisposeAsync", verify: Verification.Passes);
         }
 
         [Fact]
@@ -793,7 +793,7 @@ class C : System.IAsyncDisposable, System.IDisposable
 ";
             var comp = CreateCompilationWithTasksExtensions(source + s_interfaces, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "body Dispose", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "body Dispose", verify: Verification.Passes);
         }
 
         [Fact]
@@ -820,7 +820,7 @@ class C : System.IAsyncDisposable
 ";
             var comp = CreateCompilationWithTasksExtensions(source + s_interfaces, options: TestOptions.DebugExe, references: new[] { CSharpRef });
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "body DisposeAsync end", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "body DisposeAsync end", verify: Verification.Passes);
         }
 
         [Fact]
@@ -846,7 +846,7 @@ class C : System.IAsyncDisposable
 ";
             var comp = CreateCompilationWithTasksExtensions(source + s_interfaces, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            var verifier = CompileAndVerify(comp, expectedOutput: "body DisposeAsync", verify: Verification.Skipped);
+            var verifier = CompileAndVerify(comp, expectedOutput: "body DisposeAsync", verify: Verification.Passes);
             verifier.VerifyIL("C.<Main>d__0.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext()", @"
 {
   // Code size      306 (0x132)
@@ -1015,7 +1015,7 @@ class C
 ";
             var comp = CreateCompilationWithTasksExtensions(source + s_interfaces, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            var verifier = CompileAndVerify(comp, expectedOutput: "body", verify: Verification.Skipped);
+            var verifier = CompileAndVerify(comp, expectedOutput: "body", verify: Verification.Passes);
         }
 
         [Fact]
@@ -1064,7 +1064,7 @@ class C : System.IAsyncDisposable
 ";
             var comp = CreateCompilationWithTasksExtensions(source + s_interfaces, options: TestOptions.DebugExe, references: new[] { CSharpRef });
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "body DisposeAsync", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "body DisposeAsync", verify: Verification.Passes);
         }
 
         [Fact]
@@ -1090,7 +1090,7 @@ struct S : System.IAsyncDisposable
 ";
             var comp = CreateCompilationWithTasksExtensions(source + s_interfaces, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            var verifier = CompileAndVerify(comp, expectedOutput: "body DisposeAsync", verify: Verification.Skipped);
+            var verifier = CompileAndVerify(comp, expectedOutput: "body DisposeAsync", verify: Verification.Passes);
             verifier.VerifyIL("S.<Main>d__0.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext()", @"
 {
   // Code size      298 (0x12a)
@@ -1260,7 +1260,7 @@ struct S : System.IAsyncDisposable
 ";
             var comp = CreateCompilationWithTasksExtensions(source + s_interfaces, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "body DisposeAsync", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "body DisposeAsync", verify: Verification.Passes);
         }
 
         [Fact]
@@ -1287,7 +1287,7 @@ struct S : System.IAsyncDisposable
 ";
             var comp = CreateCompilationWithTasksExtensions(source + s_interfaces, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            var verifier = CompileAndVerify(comp, expectedOutput: "body", verify: Verification.Skipped);
+            var verifier = CompileAndVerify(comp, expectedOutput: "body", verify: Verification.Passes);
         }
 
         [Fact]
@@ -1356,7 +1356,7 @@ class S : System.IAsyncDisposable
 ";
             var comp = CreateCompilationWithTasksExtensions(source + s_interfaces, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "ctor1 ctor2 body dispose2_start dispose2_end dispose1_start dispose1_end", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "ctor1 ctor2 body dispose2_start dispose2_end dispose1_start dispose1_end", verify: Verification.Passes);
         }
 
         [Fact]
@@ -1395,7 +1395,7 @@ class S : System.IAsyncDisposable
 ";
             var comp = CreateCompilationWithTasksExtensions(source + s_interfaces, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "ctor1 ctor2 body dispose2 dispose1 caught", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "ctor1 ctor2 body dispose2 dispose1 caught", verify: Verification.Passes);
         }
 
         [Fact]
@@ -1440,7 +1440,7 @@ class S : System.IAsyncDisposable
 ";
             var comp = CreateCompilationWithTasksExtensions(source + s_interfaces, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "ctor1 ctor2 dispose1 caught", verify: Verification.Skipped);
+            CompileAndVerify(comp, expectedOutput: "ctor1 ctor2 dispose1 caught", verify: Verification.Passes);
         }
 
         [Fact]

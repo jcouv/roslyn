@@ -45,18 +45,6 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
         // Test normal break in async iterator
         // WaitForNextAsync is resilient to be called out of turn. Test that.
 
-        public static CSharpCompilation CreateCompilationWithTasksExtensions(
-            CSharpTestSource source,
-            System.Collections.Generic.IEnumerable<MetadataReference> references = null,
-            CSharpCompilationOptions options = null,
-            CSharpParseOptions parseOptions = null,
-            TargetFramework targetFramework = TargetFramework.NetStandard20,
-            string assemblyName = "",
-            string sourceFileName = "")
-            => CreateCompilation(source,
-                (references ?? ImmutableArray<MetadataReference>.Empty).Concat(new[] { TestReferences.NetStandard20.TasksExtensionsRef, TestReferences.NetStandard20.UnsafeRef }),
-                options, parseOptions, targetFramework, assemblyName, sourceFileName);
-
         [Fact]
         public void AsyncIteratorWithAwaitCompletedAndYield()
         {
@@ -84,7 +72,7 @@ class C
 }";
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            var verifier = CompileAndVerify(comp, expectedOutput: "0 1 2 3 4 5", verify: Verification.Fails);
+            var verifier = CompileAndVerify(comp, expectedOutput: "0 1 2 3 4 5", verify: Verification.Passes);
 
             verifier.VerifyIL("C.M", @"
 {
@@ -435,7 +423,7 @@ class C
 }";
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "0 1 2 3 4 5 Done", verify: Verification.Fails);
+            CompileAndVerify(comp, expectedOutput: "0 1 2 3 4 5 Done", verify: Verification.Passes);
         }
 
         [Fact]
@@ -464,7 +452,7 @@ class C
 }";
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "0 1 2 3 Done", verify: Verification.Fails);
+            CompileAndVerify(comp, expectedOutput: "0 1 2 3 Done", verify: Verification.Passes);
         }
 
         [Fact]
@@ -493,7 +481,7 @@ class C
 }";
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "0 1 2 Done", verify: Verification.Fails);
+            CompileAndVerify(comp, expectedOutput: "0 1 2 Done", verify: Verification.Passes);
         }
 
         [Fact]
@@ -527,7 +515,7 @@ label2:
 }";
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "0 1 2 3 Done", verify: Verification.Fails);
+            CompileAndVerify(comp, expectedOutput: "0 1 2 3 Done", verify: Verification.Passes);
         }
 
         [Fact]
@@ -565,7 +553,7 @@ class C
 }}";
                 var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
                 comp.VerifyDiagnostics();
-                var verifier = CompileAndVerify(comp, expectedOutput: expectation, verify: Verification.Fails);
+                var verifier = CompileAndVerify(comp, expectedOutput: expectation, verify: Verification.Passes);
             }
 
             (string code, string expectation) generateCode(Instruction[] spec)
@@ -638,7 +626,7 @@ class C
 }";
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            var verifier = CompileAndVerify(comp, expectedOutput: "0 1 2 3 4 Done", verify: Verification.Fails);
+            var verifier = CompileAndVerify(comp, expectedOutput: "0 1 2 3 4 Done", verify: Verification.Passes);
         }
 
         [Fact]
@@ -799,7 +787,7 @@ class C
 }";
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "Done", verify: Verification.Fails);
+            CompileAndVerify(comp, expectedOutput: "Done", verify: Verification.Passes);
         }
 
         [Fact]
@@ -845,7 +833,7 @@ class C
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
             // PROTOTYPE(async-streams): need to implement the exception
-            //CompileAndVerify(comp, expectedOutput: "Done", verify: Verification.Fails);
+            //CompileAndVerify(comp, expectedOutput: "Done", verify: Verification.Passes);
         }
 
         [Fact]
@@ -890,7 +878,7 @@ class C
 }";
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "Done", verify: Verification.Fails);
+            CompileAndVerify(comp, expectedOutput: "Done", verify: Verification.Passes);
         }
 
         [Fact]
@@ -938,7 +926,7 @@ class C
 }";
             var comp = CreateCompilationWithTasksExtensions(source + s_common, options: TestOptions.DebugExe);
             comp.VerifyDiagnostics();
-            CompileAndVerify(comp, expectedOutput: "Done", verify: Verification.Fails);
+            CompileAndVerify(comp, expectedOutput: "Done", verify: Verification.Passes);
         }
 
         // PROTOTYPE(async-streams): Consider moving this common test code to TestSources.cs
