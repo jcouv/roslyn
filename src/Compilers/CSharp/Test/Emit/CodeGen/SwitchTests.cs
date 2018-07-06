@@ -9575,6 +9575,126 @@ class Program
             );
         }
 
+        [Fact, WorkItem(28288, "https://github.com/dotnet/roslyn/issues/28288")]
+        void TestSwitchStatementInAsyncMethod()
+        {
+            var source = @"
+
+public class Program
+{
+    public static async System.Threading.Tasks.Task Main()
+    {
+        switch (new Program())
+        {
+            case Program p:
+                M(1);
+                break;
+            default:
+                M(2);
+                return;
+        }
+
+        await System.Threading.Tasks.Task.CompletedTask;
+    }
+    private static void M(int i) { }
+}";
+            var verifier = CompileAndVerify(source);
+            verifier.VerifyIL("Program.<Main>d__0.System.Runtime.CompilerServices.IAsyncStateMachine.MoveNext()", @"{
+  // Code size      169 (0xa9)
+  .maxstack  3
+  .locals init (int V_0,
+                Program V_1,
+                System.Runtime.CompilerServices.TaskAwaiter V_2,
+                System.Exception V_3)
+  // sequence point: }, sequence point: <hidden>
+  IL_0000:  ldarg.0
+  IL_0001:  ldfld      ""int Program.<Main>d__0.<>1__state""
+  IL_0006:  stloc.0
+  .try
+  {
+    // sequence point: <hidden>
+    IL_0007:  ldloc.0
+    IL_0008:  brfalse.s  IL_0059
+    // sequence point: switch (new Program())
+    IL_000a:  newobj     ""Program..ctor()""
+    IL_000f:  stloc.1
+    IL_0010:  ldloc.1
+    IL_0011:  brfalse.s  IL_001d
+    IL_0013:  ldloc.1
+    IL_0014:  stloc.1
+    // sequence point: M(1);
+    IL_0015:  ldc.i4.1
+    IL_0016:  call       ""void Program.M(int)""
+    // sequence point: break;
+    IL_001b:  br.s       IL_0025
+    // sequence point: M(2);
+    IL_001d:  ldc.i4.2
+    IL_001e:  call       ""void Program.M(int)""
+    // sequence point: return;
+    IL_0023:  leave.s    IL_0095
+    // sequence point: await System.Threading.Tasks.Task.CompletedTask;
+    IL_0025:  call       ""System.Threading.Tasks.Task System.Threading.Tasks.Task.CompletedTask.get""
+    IL_002a:  callvirt   ""System.Runtime.CompilerServices.TaskAwaiter System.Threading.Tasks.Task.GetAwaiter()""
+    IL_002f:  stloc.2
+    // sequence point: <hidden>
+    IL_0030:  ldloca.s   V_2
+    IL_0032:  call       ""bool System.Runtime.CompilerServices.TaskAwaiter.IsCompleted.get""
+    IL_0037:  brtrue.s   IL_0075
+    IL_0039:  ldarg.0
+    IL_003a:  ldc.i4.0
+    IL_003b:  dup
+    IL_003c:  stloc.0
+    IL_003d:  stfld      ""int Program.<Main>d__0.<>1__state""
+    // async: yield
+    IL_0042:  ldarg.0
+    IL_0043:  ldloc.2
+    IL_0044:  stfld      ""System.Runtime.CompilerServices.TaskAwaiter Program.<Main>d__0.<>u__1""
+    IL_0049:  ldarg.0
+    IL_004a:  ldflda     ""System.Runtime.CompilerServices.AsyncTaskMethodBuilder Program.<Main>d__0.<>t__builder""
+    IL_004f:  ldloca.s   V_2
+    IL_0051:  ldarg.0
+    IL_0052:  call       ""void System.Runtime.CompilerServices.AsyncTaskMethodBuilder.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter, Program.<Main>d__0>(ref System.Runtime.CompilerServices.TaskAwaiter, ref Program.<Main>d__0)""
+    IL_0057:  leave.s    IL_00a8
+    // async: resume
+    IL_0059:  ldarg.0
+    IL_005a:  ldfld      ""System.Runtime.CompilerServices.TaskAwaiter Program.<Main>d__0.<>u__1""
+    IL_005f:  stloc.2
+    IL_0060:  ldarg.0
+    IL_0061:  ldflda     ""System.Runtime.CompilerServices.TaskAwaiter Program.<Main>d__0.<>u__1""
+    IL_0066:  initobj    ""System.Runtime.CompilerServices.TaskAwaiter""
+    IL_006c:  ldarg.0
+    IL_006d:  ldc.i4.m1
+    IL_006e:  dup
+    IL_006f:  stloc.0
+    IL_0070:  stfld      ""int Program.<Main>d__0.<>1__state""
+    IL_0075:  ldloca.s   V_2
+    IL_0077:  call       ""void System.Runtime.CompilerServices.TaskAwaiter.GetResult()""
+    IL_007c:  leave.s    IL_0095
+  }
+  catch System.Exception
+  {
+    // sequence point: <hidden>
+    IL_007e:  stloc.3
+    IL_007f:  ldarg.0
+    IL_0080:  ldc.i4.s   -2
+    IL_0082:  stfld      ""int Program.<Main>d__0.<>1__state""
+    IL_0087:  ldarg.0
+    IL_0088:  ldflda     ""System.Runtime.CompilerServices.AsyncTaskMethodBuilder Program.<Main>d__0.<>t__builder""
+    IL_008d:  ldloc.3
+    IL_008e:  call       ""void System.Runtime.CompilerServices.AsyncTaskMethodBuilder.SetException(System.Exception)""
+    IL_0093:  leave.s    IL_00a8
+  }
+  // sequence point: }
+  IL_0095:  ldarg.0
+  IL_0096:  ldc.i4.s   -2
+  IL_0098:  stfld      ""int Program.<Main>d__0.<>1__state""
+  // sequence point: <hidden>
+  IL_009d:  ldarg.0
+  IL_009e:  ldflda     ""System.Runtime.CompilerServices.AsyncTaskMethodBuilder Program.<Main>d__0.<>t__builder""
+  IL_00a3:  call       ""void System.Runtime.CompilerServices.AsyncTaskMethodBuilder.SetResult()""
+  IL_00a8:  ret
+}", sequencePoints: "", source: source);
+        }
         #endregion "regression tests"
     }
 }
