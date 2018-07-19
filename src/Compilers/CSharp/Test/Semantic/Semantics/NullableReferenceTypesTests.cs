@@ -12028,6 +12028,143 @@ class C
         }
 
         [Fact]
+        public void ConditionalBranching_CasePatterns()
+        {
+            CSharpCompilation c = CreateCompilation(@"
+class C
+{
+    void Test(object? x)
+    {
+        switch (x)
+        {
+            case null:
+                x.ToString(); // warn
+                break;
+            case C c:
+                x.ToString();
+                c.ToString();
+                break;
+            default:
+                x.ToString();
+                break;
+        }
+    }
+}
+", parseOptions: TestOptions.Regular8);
+
+            // PROTOTYPE(NullableReferenceTypes): WIP
+            c.VerifyDiagnostics(
+                // (9,17): warning CS8602: Possible dereference of a null reference.
+                //                 x.ToString(); // warn
+                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "x").WithLocation(9, 17),
+                // (16,17): warning CS8602: Possible dereference of a null reference.
+                //                 x.ToString();
+                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "x").WithLocation(16, 17)
+                );
+        }
+
+        [Fact]
+        public void ConditionalBranching_CasePatterns_FallThroughWithoutDefault()
+        {
+            CSharpCompilation c = CreateCompilation(@"
+class C
+{
+    void Test(object? x)
+    {
+        switch (x)
+        {
+            case null:
+                throw null;
+        }
+        x /*T:object!*/ .ToString();
+    }
+}
+", parseOptions: TestOptions.Regular8);
+
+            c.VerifyTypes();
+            c.VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void ConditionalBranching_CasePatterns_DefaultInsteadOfFallThrough()
+        {
+            CSharpCompilation c = CreateCompilation(@"
+class C
+{
+    void Test(object? x)
+    {
+        const string nonNullConstant = ""hello"";
+        switch (x)
+        {
+            case nonNullConstant:
+                break;
+            default:
+                throw null;
+        }
+        x /*T:object!*/ .ToString();
+    }
+}
+", parseOptions: TestOptions.Regular8);
+
+            c.VerifyTypes();
+            c.VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void ConditionalBranching_CaseVarPattern()
+        {
+            CSharpCompilation c = CreateCompilation(@"
+class C
+{
+    void Test(object? x)
+    {
+        switch (x)
+        {
+            case var o:
+                o.ToString(); // warn
+                break;
+        }
+    }
+}
+", parseOptions: TestOptions.Regular8);
+
+            c.VerifyDiagnostics(
+                // (9,17): warning CS8602: Possible dereference of a null reference.
+                //                 o.ToString(); // warn
+                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "o").WithLocation(9, 17)
+                );
+        }
+
+        [Fact]
+        public void ConditionalBranching_CaseVarPattern_AlreadyChecked()
+        {
+            CSharpCompilation c = CreateCompilation(@"
+class C
+{
+    void Test(object? x)
+    {
+        if (x != null)
+        {
+            switch (x)
+            {
+                case var o:
+                    o /*T:object!*/ .ToString();
+                    o = null; // warn
+                    break;
+            }
+        }
+    }
+}
+", parseOptions: TestOptions.Regular8);
+
+            c.VerifyDiagnostics(
+                // (12,25): warning CS8600: Converting null literal or possible null value to non-nullable type.
+                //                     o = null; // warn
+                Diagnostic(ErrorCode.WRN_ConvertingNullableToNonNullable, "null").WithLocation(12, 25)
+                );
+        }
+
+        [Fact]
         public void ConditionalOperator_01()
         {
             var source =

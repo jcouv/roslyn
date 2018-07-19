@@ -847,6 +847,69 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
+        // PROTOTYPE(NullableReferenceTypes): I need to figure out how pending branches work, and whether they are needed here
+        public override BoundNode VisitBreakStatement(BoundBreakStatement node)
+        {
+            Debug.Assert(!this.IsConditionalState);
+            return null;
+        }
+
+        public override BoundNode VisitPatternSwitchStatement(BoundPatternSwitchStatement node)
+        {
+            // visit switch header
+            LocalState breakState = VisitPatternSwitchHeader(node);
+            var nodeResultType = this._resultType;
+
+            // visit switch block
+            VisitPatternSwitchBlock(node, nodeResultType);
+            IntersectWith(ref breakState, ref this.State);
+            //ResolveBreaks(breakState, node.BreakLabel);
+            return null;
+        }
+
+        private void VisitPatternSwitchBlock(BoundPatternSwitchStatement node, TypeSymbolWithAnnotations nodeResultType)
+        {
+            var initialState = this.State;
+            var afterSwitchState = UnreachableState();
+            var fallThroughState = UnreachableState();
+            var switchSections = node.SwitchSections;
+            var iLastSection = (switchSections.Length - 1);
+
+            foreach (var section in switchSections)
+            {
+                SetState(initialState.Clone());
+                foreach (var label in section.SwitchLabels)
+                {
+                    //if (label != node.DefaultLabel)
+                    {
+                        // assign pattern variables
+                        VisitPattern(node.Expression, nodeResultType, label.Pattern);
+
+                        IntersectWith(ref fallThroughState, ref StateWhenFalse);
+
+                        SetState(StateWhenTrue);
+                        if (label.Guard != null)
+                        {
+                            VisitCondition(label.Guard);
+                            SetState(StateWhenTrue);
+                        }
+
+                        VisitStatementList(section);
+                        // Even though it is illegal for the end of a switch section to be reachable, in erroneous
+                        // code it may be reachable.  We treat that as an implicit break (branch to afterSwitchState).
+                        IntersectWith(ref afterSwitchState, ref this.State);
+                    }
+                }
+            }
+
+            if (node.DefaultLabel == null)
+            {
+                IntersectWith(ref afterSwitchState, ref fallThroughState);
+            }
+
+            SetState(afterSwitchState);
+        }
+
         protected override BoundNode VisitReturnStatementNoAdjust(BoundReturnStatement node)
         {
             Debug.Assert(!IsConditionalState);
@@ -3068,6 +3131,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override BoundNode VisitParameter(BoundParameter node)
         {
+            // PROTOTOYPE(NullableReferenceTypes): per discussion with Neal, every variable should have a non-null state in unreachable code
             var parameter = node.ParameterSymbol;
             int slot = GetOrCreateSlot(parameter);
             var type = GetDeclaredParameterResult(parameter);

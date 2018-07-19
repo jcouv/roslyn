@@ -202,7 +202,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <summary>
         /// Visit the switch expression, and return the initial break state.
         /// </summary>
-        private LocalState VisitPatternSwitchHeader(BoundPatternSwitchStatement node)
+        protected LocalState VisitPatternSwitchHeader(BoundPatternSwitchStatement node)
         {
             // visit switch expression
             VisitRvalue(node.Expression);
