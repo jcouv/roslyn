@@ -407,7 +407,7 @@ class C<T>
 
         // PROTOTYPE test foreach with unconstrained type parameters (see Fred's changes)
 
-        [Fact, WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
+        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): handle foreach-deconstruction"), WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
         public void ForeachIterationVariable_Deconstruction()
         {
             var source =
@@ -421,9 +421,30 @@ class C<T>
     public void Deconstruct(out T i, out T j) { }
 }";
             var comp = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
-            // PROTOTYPE
-            comp.VerifyDiagnostics(
-                );
+            // Expecting diagnostics for mismatching nested nullability
+            comp.VerifyDiagnostics();
+        }
+
+        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): handle foreach-deconstruction"), WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
+        public void ForeachIterationVariable_Deconstruction_Var()
+        {
+            var source =
+@"using System.Collections.Generic;
+class C<T>
+{
+    void M(IEnumerable<C<string?>> collection)
+    {
+        foreach ((var i, var j) in collection)
+        {
+            i /*T:string?*/ .ToString();
+            j /*T:string?*/ .ToString();
+        }
+    }
+    public void Deconstruct(out T i, out T j) { }
+}";
+            var comp = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            comp.VerifyTypes();
+            comp.VerifyDiagnostics();
         }
 
         [Fact, WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
@@ -440,7 +461,7 @@ class C
     }
 }";
             var comp = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
-            // PROTOTYPE
+            // PROTOTYPE expect warning
             comp.VerifyDiagnostics(
                 );
         }
