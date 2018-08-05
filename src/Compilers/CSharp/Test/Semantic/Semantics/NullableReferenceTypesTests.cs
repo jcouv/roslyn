@@ -271,6 +271,176 @@ class C
                 Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "int").WithArguments("System.Int32").WithLocation(4, 17));
         }
 
+        [Fact, WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
+        public void ForeachOnNullableCollection()
+        {
+            var source =
+@"using System.Collections.Generic;
+class C
+{
+    void M(IEnumerable<int>? collection)
+    {
+        foreach (var i in collection) { }
+    }
+}";
+            var comp = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            comp.VerifyDiagnostics(
+                // (6,27): warning CS8602: Possible dereference of a null reference.
+                //         foreach (var i in collection) { }
+                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "collection").WithLocation(6, 27)
+                );
+        }
+
+        [Fact, WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
+        public void ForeachIterationVariable()
+        {
+            var source =
+@"using System.Collections.Generic;
+class C
+{
+    void M(IEnumerable<string?> collection)
+    {
+        foreach (string i in collection) { }
+    }
+}";
+            var comp = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            comp.VerifyDiagnostics(
+                // (6,18): warning CS8600: Converting null literal or possible null value to non-nullable type.
+                //         foreach (string i in collection) { }
+                Diagnostic(ErrorCode.WRN_ConvertingNullableToNonNullable, "string").WithLocation(6, 18)
+                );
+        }
+
+        [Fact, WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
+        public void ForeachIterationVariable_Nested()
+        {
+            var source =
+@"using System.Collections.Generic;
+class C<T>
+{
+    void M(IEnumerable<C<string?>> collection)
+    {
+        foreach (C<string> i in collection) { }
+    }
+}";
+            var comp = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            // PROTOTYPE
+            comp.VerifyDiagnostics(
+                );
+        }
+
+        [Fact, WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
+        public void ForeachIterationVariable_Var()
+        {
+            var source =
+@"using System.Collections.Generic;
+class C<T>
+{
+    void M()
+    {
+        string element = null!;
+        var collection = MakeCollection(element);
+        foreach (var i in collection)
+        {
+            i /*T:string?*/ .ToString(); // warn
+        }
+    }
+    IEnumerable<T> MakeCollection(T t) => throw null;
+}";
+            var comp = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            // PROTOTYPE
+            comp.VerifyTypes();
+            comp.VerifyDiagnostics(
+                );
+        }
+
+        [Fact, WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
+        public void ForeachIterationVariable_Var2()
+        {
+            var source =
+@"using System.Collections.Generic;
+class C<T>
+{
+    void M()
+    {
+        string element = """";
+        var collection = MakeCollection(element);
+        foreach (var i in collection)
+        {
+            i /*T:string!*/ .ToString();
+        }
+    }
+    IEnumerable<T> MakeCollection(T t) => throw null;
+}";
+            var comp = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            // PROTOTYPE
+            comp.VerifyTypes();
+            comp.VerifyDiagnostics();
+        }
+
+        [Fact, WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
+        public void ForeachIterationVariable_Var_Nested()
+        {
+            var source =
+@"using System.Collections.Generic;
+class C<T>
+{
+    void M()
+    {
+        string element = null!;
+        var collection = MakeCollection(element);
+        foreach (var i in collection)
+        {
+            i /*T:C<string?>*/ .ToString(); // warn
+        }
+    }
+    IEnumerable<C<T>> MakeCollection(T t) => throw null;
+}";
+            var comp = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            // PROTOTYPE
+            comp.VerifyTypes();
+            comp.VerifyDiagnostics(
+                );
+        }
+
+        [Fact, WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
+        public void ForeachIterationVariable_Deconstruction()
+        {
+            var source =
+@"using System.Collections.Generic;
+class C<T>
+{
+    void M(IEnumerable<C<string?>> collection)
+    {
+        foreach ((C<string> i, C<string?> j) in collection) { }
+    }
+    public void Deconstruct(out T i, out T j) { }
+}";
+            var comp = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            // PROTOTYPE
+            comp.VerifyDiagnostics(
+                );
+        }
+
+        [Fact, WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
+        public void IteratorYieldReturn()
+        {
+            var source =
+@"using System.Collections.Generic;
+class C
+{
+    IEnumerable<string> M()
+    {
+        string? x = null;
+        yield return x;
+    }
+}";
+            var comp = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            // PROTOTYPE
+            comp.VerifyDiagnostics(
+                );
+        }
+
         [ConditionalFact(typeof(DesktopOnly))]
         public void UnannotatedAssemblies_WithSomeExtraAnnotations()
         {

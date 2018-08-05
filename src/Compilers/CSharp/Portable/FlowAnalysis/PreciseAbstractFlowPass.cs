@@ -2204,7 +2204,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override BoundNode VisitForEachStatement(BoundForEachStatement node)
         {
             // foreach ( var v in node.Expression ) { node.Body; node.ContinueLabel: } node.BreakLabel:
-            VisitRvalue(node.Expression);
+            VisitForEachCollection(node);
             var breakState = this.State.Clone();
             LoopHead(node);
             VisitForEachIterationVariables(node);
@@ -2213,6 +2213,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             LoopTail(node);
             ResolveBreaks(breakState, node.BreakLabel);
             return null;
+        }
+
+        public virtual void VisitForEachCollection(BoundForEachStatement node)
+        {
+            VisitRvalue(node.Expression);
         }
 
         public virtual void VisitForEachIterationVariables(BoundForEachStatement node)
