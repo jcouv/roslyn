@@ -104,7 +104,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     case true:
                         if (format.MiscellaneousOptions.IncludesOption(SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier))
                         {
-                            AddPunctuation(SyntaxKind.ExclamationToken);
+                            AddPunctuation(SyntaxKind.QuestionToken);
                         }
                         break;
                     case false:

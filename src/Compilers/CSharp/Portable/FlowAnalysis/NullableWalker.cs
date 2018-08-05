@@ -3560,6 +3560,11 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (node.IterationVariables.Count() == 1)
             {
+                // E e = ((C)(x)).GetEnumerator()
+                // IterationVariableType v = (IterationVariableType)(ElementConversion)e.Current;
+
+
+
                 var iterationVariable = node.IterationVariables[0];
                 int slot = GetOrCreateSlot(iterationVariable);
                 TypeSymbolWithAnnotations sourceType = node.EnumeratorInfoOpt?.ElementType ?? default;
@@ -3567,14 +3572,14 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (!sourceType.IsNull)
                 {
                     TypeSymbolWithAnnotations destinationType = iterationVariable.Type;
-                    HashSet<DiagnosticInfo> useSiteDiagnostics = null;
-                    Conversion conversion = _conversions.ClassifyImplicitConversionFromType(sourceType.TypeSymbol, destinationType.TypeSymbol, ref useSiteDiagnostics);
-                    TypeSymbolWithAnnotations result = ApplyConversion(node.IterationVariableType, operandOpt: null, conversion, destinationType.TypeSymbol, sourceType, checkConversion: false, fromExplicitCast: true, out bool canConvertNestedNullability);
-                    if (!conversion.Exists)
-                    {
-                        ReportStaticNullCheckingDiagnostics(ErrorCode.WRN_NullabilityMismatchInAssignment, node.Syntax, sourceType.TypeSymbol, destinationType);
-                    }
-                    else if (destinationType.IsReferenceType && destinationType.IsNullable == false && sourceType.IsNullable == true)
+                    //HashSet<DiagnosticInfo> useSiteDiagnostics = null;
+                    //Conversion conversion = _conversions.ClassifyImplicitConversionFromType(sourceType.TypeSymbol, destinationType.TypeSymbol, ref useSiteDiagnostics);
+                    TypeSymbolWithAnnotations result = ApplyConversion(node.IterationVariableType, operandOpt: null, node.ElementConversion, destinationType.TypeSymbol, sourceType, checkConversion: false, fromExplicitCast: true, out bool canConvertNestedNullability);
+                    //if (!conversion.Exists)
+                    //{
+                    //    ReportStaticNullCheckingDiagnostics(ErrorCode.WRN_NullabilityMismatchInAssignment, node.Syntax, sourceType.TypeSymbol, destinationType);
+                    //}
+                    if (destinationType.IsReferenceType && destinationType.IsNullable == false && sourceType.IsNullable == true)
                     {
                         ReportWWarning(node.IterationVariableType.Syntax);
                     }
@@ -3585,6 +3590,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             else
             {
                 // PROTOTYPE(NullableReferenceTypes): handle foreach-deconstruction
+                // E e = ((C)(x)).GetEnumerator()
+                // (D1 d1, ...) = (V)(T)e.Current;
             }
         }
 

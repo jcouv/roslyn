@@ -331,7 +331,7 @@ class C<T>
                 );
         }
 
-        [Fact, WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
+        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): need to infer var foreach locals"), WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
         public void ForeachIterationVariable_Var()
         {
             var source =
@@ -356,7 +356,7 @@ class C<T>
                 );
         }
 
-        [Fact, WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
+        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): need to infer var foreach locals"), WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
         public void ForeachIterationVariable_Var2()
         {
             var source =
@@ -380,7 +380,7 @@ class C<T>
             comp.VerifyDiagnostics();
         }
 
-        [Fact, WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
+        [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): need to infer var foreach locals"), WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
         public void ForeachIterationVariable_Var_Nested()
         {
             var source =
@@ -405,7 +405,7 @@ class C<T>
                 );
         }
 
-        // PROTOTYPE test foreach with unconstrained type parameters (see Fred's changes)
+        // PROTOTYPE test foreach with unconstrained type parameters (see Fred's changes, https://github.com/dotnet/roslyn/pull/28956)
 
         [Fact(Skip = "PROTOTYPE(NullableReferenceTypes): handle foreach-deconstruction"), WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
         public void ForeachIterationVariable_Deconstruction()
