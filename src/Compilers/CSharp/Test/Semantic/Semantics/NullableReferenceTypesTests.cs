@@ -324,8 +324,10 @@ class C<T>
     }
 }";
             var comp = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
-            // PROTOTYPE
             comp.VerifyDiagnostics(
+                // (6,9): warning CS8619: Nullability of reference types in value of type 'C<string!>' doesn't match target type 'C<string>'.
+                //         foreach (C<string> i in collection) { }
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "foreach (C<string> i in collection) { }").WithArguments("C<string!>", "C<string>").WithLocation(6, 9)
                 );
         }
 
@@ -402,6 +404,8 @@ class C<T>
             comp.VerifyDiagnostics(
                 );
         }
+
+        // PROTOTYPE test foreach with unconstrained type parameters (see Fred's changes)
 
         [Fact, WorkItem(23493, "https://github.com/dotnet/roslyn/issues/23493")]
         public void ForeachIterationVariable_Deconstruction()

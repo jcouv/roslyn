@@ -3558,9 +3558,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override void VisitForEachIterationVariables(BoundForEachStatement node)
         {
-            // declare and assign all iteration variables
-            foreach (var iterationVariable in node.IterationVariables)
+            if (node.IterationVariables.Count() == 1)
             {
+                var iterationVariable = node.IterationVariables[0];
                 int slot = GetOrCreateSlot(iterationVariable);
                 TypeSymbolWithAnnotations sourceType = node.EnumeratorInfoOpt?.ElementType ?? default;
                 bool? isNullableIfReferenceType = null;
@@ -3570,13 +3570,21 @@ namespace Microsoft.CodeAnalysis.CSharp
                     HashSet<DiagnosticInfo> useSiteDiagnostics = null;
                     Conversion conversion = _conversions.ClassifyImplicitConversionFromType(sourceType.TypeSymbol, destinationType.TypeSymbol, ref useSiteDiagnostics);
                     TypeSymbolWithAnnotations result = ApplyConversion(node.IterationVariableType, operandOpt: null, conversion, destinationType.TypeSymbol, sourceType, checkConversion: false, fromExplicitCast: true, out bool canConvertNestedNullability);
-                    if (destinationType.IsReferenceType && destinationType.IsNullable == false && sourceType.IsNullable == true)
+                    if (!conversion.Exists)
+                    {
+                        ReportStaticNullCheckingDiagnostics(ErrorCode.WRN_NullabilityMismatchInAssignment, node.Syntax, sourceType.TypeSymbol, destinationType);
+                    }
+                    else if (destinationType.IsReferenceType && destinationType.IsNullable == false && sourceType.IsNullable == true)
                     {
                         ReportWWarning(node.IterationVariableType.Syntax);
                     }
                     isNullableIfReferenceType = result.IsNullable;
                 }
                 this.State[slot] = !isNullableIfReferenceType;
+            }
+            else
+            {
+                // PROTOTYPE(NullableReferenceTypes): handle foreach-deconstruction
             }
         }
 

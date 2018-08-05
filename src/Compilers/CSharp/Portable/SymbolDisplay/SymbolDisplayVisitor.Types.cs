@@ -97,17 +97,27 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return;
             }
 
-            if (format.MiscellaneousOptions.IncludesOption(SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier) &&
-                !typeOpt.IsNullableType() &&
-                typeOpt.IsAnnotated)
+            if (format != null && !typeOpt.IsValueType)
             {
-                AddPunctuation(SyntaxKind.QuestionToken);
-            }
-            else if (format.CompilerInternalOptions.IncludesOption(SymbolDisplayCompilerInternalOptions.IncludeNonNullableTypeModifier) &&
-                !typeOpt.IsValueType &&
-                typeOpt.IsNullable == false)
-            {
-                AddPunctuation(SyntaxKind.ExclamationToken);
+                switch (typeOpt.IsNullable)
+                {
+                    case true:
+                        if (format.MiscellaneousOptions.IncludesOption(SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier))
+                        {
+                            AddPunctuation(SyntaxKind.ExclamationToken);
+                        }
+                        break;
+                    case false:
+                        if (format.CompilerInternalOptions.IncludesOption(SymbolDisplayCompilerInternalOptions.IncludeNonNullableTypeModifier))
+                        {
+                            AddPunctuation(SyntaxKind.ExclamationToken);
+                        }
+                        else if ((format.CompilerInternalOptions & SymbolDisplayCompilerInternalOptions.IncludeUnannotatedTypeModifier) != 0)
+                        {
+                            AddPunctuation(SyntaxKind.UnderscoreToken);
+                        }
+                        break;
+                }
             }
         }
 
