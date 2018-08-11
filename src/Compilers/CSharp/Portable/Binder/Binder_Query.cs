@@ -636,9 +636,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             AnonymousTypeDescriptor typeDescriptor = new AnonymousTypeDescriptor(
                                                             ImmutableArray.Create<AnonymousTypeField>(
                                                                 new AnonymousTypeField(field1Name, field1Value.Syntax.Location, 
-                                                                                       TypeSymbolWithAnnotations.Create(TypeOrError(field1Value), isNullableIfReferenceType: node.IsFeatureStaticNullCheckingEnabled())),
+                                                                                       TypeSymbolWithAnnotations.Create(NonNullTypesContext, TypeOrError(field1Value), isAnnotated: true)),
                                                                 new AnonymousTypeField(field2Name, field2Value.Syntax.Location, 
-                                                                                        TypeSymbolWithAnnotations.Create(TypeOrError(field2Value), isNullableIfReferenceType: node.IsFeatureStaticNullCheckingEnabled()))
+                                                                                        TypeSymbolWithAnnotations.Create(NonNullTypesContext, TypeOrError(field2Value), isAnnotated: true))
                                                             ),
                                                             node.Location
                                                      );
