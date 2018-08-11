@@ -321,7 +321,7 @@ class C<T> where T : class
             // PROTOTYPE(NullableReferenceTypes): are annotations on events meaningful/allowed?
             // PROTOTYPE(NullableReferenceTypes): locations aren't great
 
-            var c = CreateCompilation(source, parseOptions: TestOptions.Regular8);
+            var c = CreateCompilation(source, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
             c.VerifyDiagnostics(expectedDiagnostics);
 
             var c2 = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
@@ -331,7 +331,7 @@ class C<T> where T : class
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "Event").WithLocation(37, 17)
                 );
 
-            var c3 = CreateCompilation(new[] { source, NonNullTypesFalse, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var c3 = CreateCompilation(new[] { source, NonNullTypesFalse, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
             c3.VerifyDiagnostics(expectedDiagnostics
                 .Concat(new[] {
                     // (37,17): warning CS8602: Possible dereference of a null reference.
@@ -360,7 +360,7 @@ public class E<T> where T : struct
         return y2;
     }
 }
-", parseOptions: TestOptions.Regular8);
+", parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
 
             c.VerifyDiagnostics(
                 // (4,12): warning CS8632: The annotation for nullable reference types should only be used in code within a '[NonNullTypes(true)]' context.
@@ -564,7 +564,7 @@ namespace System
     }
 }
 ";
-            var comp = CreateEmptyCompilation(lib, parseOptions: TestOptions.Regular8);
+            var comp = CreateEmptyCompilation(lib, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
             comp.VerifyDiagnostics(
                 // (11,16): warning CS8632: The annotation for nullable reference types can only be used in code within a '[NonNullTypes(true)]' context.
                 //         public String? Concat(String a, String b) => throw null;
@@ -1403,7 +1403,7 @@ public class External
 }
 ";
 
-            var libComp = CreateCompilation(new[] { lib, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var libComp = CreateCompilation(new[] { lib, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
             libComp.VerifyDiagnostics(
                 // (13,27): warning CS8632: The annotation for nullable reference types should only be used in code within a '[NonNullTypes(true)]' context.
                 //     public static string? fns;
@@ -1491,7 +1491,7 @@ class E
     }
 }
 ";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue }, options: TestOptions.ReleaseDll,
+            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue }, options: TestOptions.ReleaseDll, skipUsesIsNullable: true,
                 parseOptions: TestOptions.Regular8, references: new[] { obliviousComp.EmitToImageReference(), libComp.EmitToImageReference() });
 
             compilation.VerifyTypes();
@@ -1614,7 +1614,7 @@ public class External
 }
 ";
 
-            var libComp = CreateCompilation(new[] { lib, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var libComp = CreateCompilation(new[] { lib, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
 
             var source = @"
 using System.Runtime.CompilerServices;
@@ -1683,7 +1683,7 @@ class E
     }
 }
 ";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue }, options: TestOptions.ReleaseDll,
+            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue }, options: TestOptions.ReleaseDll, skipUsesIsNullable: true,
                 parseOptions: TestOptions.Regular8, references: new[] { obliviousComp.EmitToImageReference(), libComp.EmitToImageReference() });
 
             compilation.VerifyTypes();
@@ -1893,7 +1893,7 @@ class E
     }
 }
 ";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue }, options: TestOptions.ReleaseDll,
+            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue }, options: TestOptions.ReleaseDll, skipUsesIsNullable: true,
                 parseOptions: TestOptions.Regular8, references: new[] { obliviousComp.EmitToImageReference(), libComp.EmitToImageReference() });
 
             compilation.VerifyTypes();
@@ -1938,7 +1938,7 @@ public class External
 }
 ";
 
-            var libComp = CreateCompilation(new[] { lib, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var libComp = CreateCompilation(new[] { lib, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
 
             var source = @"
 using System.Runtime.CompilerServices;
@@ -2004,7 +2004,7 @@ class E
     }
 }
 ";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue }, options: TestOptions.ReleaseDll,
+            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue }, options: TestOptions.ReleaseDll, skipUsesIsNullable: true,
                 parseOptions: TestOptions.Regular8, references: new[] { obliviousComp.EmitToImageReference(), libComp.EmitToImageReference() });
 
             compilation.VerifyTypes();
@@ -2195,7 +2195,7 @@ class E
     }
 }
 ";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue }, options: TestOptions.ReleaseDll,
+            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue }, options: TestOptions.ReleaseDll, skipUsesIsNullable: true,
                 parseOptions: TestOptions.Regular8, references: new[] { obliviousComp.EmitToImageReference(), libComp.EmitToImageReference() });
 
             compilation.VerifyTypes();
@@ -2537,7 +2537,7 @@ class C
     string?[] FalseNCollection() => throw null; // 5
 }
 ";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
 
             compilation.VerifyTypes();
             compilation.VerifyDiagnostics(
@@ -2624,7 +2624,7 @@ class C
     string?[] FalseNCollection() => throw null; // 7
 }
 ";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
 
             compilation.VerifyTypes();
             compilation.VerifyDiagnostics(
@@ -2709,7 +2709,7 @@ class C
     void FalseNOut(out string? ns) => throw null; // warn 7
 }
 ";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
 
             compilation.VerifyTypes();
             compilation.VerifyDiagnostics(
@@ -2797,7 +2797,7 @@ class C
     void FalseNOut(out string? ns) => throw null; // 8
 }
 ";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
 
             compilation.VerifyTypes();
             compilation.VerifyDiagnostics(
@@ -2887,7 +2887,7 @@ public class Base
     public string? FalseNMethod() => throw null; // warn 8
 }
 ";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var compilation = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
 
             compilation.VerifyTypes();
             compilation.VerifyDiagnostics(
@@ -2977,7 +2977,7 @@ public class Base
     public string? FalseNMethod() => throw null; // 8
 }
 ";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var compilation = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
 
             compilation.VerifyTypes();
             compilation.VerifyDiagnostics(
@@ -3236,7 +3236,7 @@ class C3
     int? F4() => throw null;
     Nullable<int> F5() => throw null;
 }";
-            var comp = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var comp = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
             comp.VerifyDiagnostics(
                 // (6,5): warning CS8632: The annotation for nullable reference types should only be used in code within a '[NonNullTypes(true)]' context.
                 //     string? F2() => throw null;
@@ -3312,7 +3312,7 @@ class C3
     T? F6<T>() where T : struct => throw null;
     Nullable<T> F7<T>() where T : struct => throw null;
 }";
-            var comp = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var comp = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
             comp.VerifyDiagnostics(
                 // (6,5): error CS8627: A nullable type parameter must be known to be a value or reference type. Consider adding a 'class', 'struct', or type constraint.
                 //     T? F2<T>() => throw null;
@@ -4539,7 +4539,7 @@ public class Class<T> : Base<T> where T : class
     public override List<T?> P { get; set; } = default;
 }
 ";
-            var comp = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var comp = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
             comp.VerifyDiagnostics(
                 // (12,21): warning CS8632: The annotation for nullable reference types should only be used in code within a '[NonNullTypes(true)]' context.
                 //     public override List<T?> P { get; set; } = default;
@@ -4658,7 +4658,7 @@ class B2 : A
     }
 }
 ";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var compilation = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
 
             compilation.VerifyDiagnostics(
                 // (19,50): warning CS8608: Nullability of reference types in type doesn't match overridden member.
@@ -5006,7 +5006,7 @@ class B1 : A1
     } 
 }
 ";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var compilation = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
 
             compilation.VerifyDiagnostics(
                 // (14,21): warning CS8632: The annotation for nullable reference types should only be used in code within a '[NonNullTypes(true)]' context.
@@ -5298,7 +5298,7 @@ class B : A
     } 
 }
 ";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
             // PROTOTYPE(NullableReferenceTypes): Should report return type mismatch
             // for M1 and M2 (see https://github.com/dotnet/roslyn/issues/28684).
             compilation.VerifyDiagnostics(
@@ -5482,7 +5482,7 @@ class B : IA
 }
 ";
             // PROTOTYPE(NullableReferenceTypes): missing a warning on IA.M2
-            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
             compilation.VerifyDiagnostics(
                 // (11,18): warning CS8616: Nullability of reference types in return type doesn't match implemented member 'string[] IA.M1()'.
                 //     string?[] IA.M1()
@@ -5520,7 +5520,7 @@ class B : IA
     S[] IA.M2<S>() => throw null;
 }
 ";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
             compilation.VerifyDiagnostics(
                 // (13,12): warning CS8616: Nullability of reference types in return type doesn't match implemented member 'T?[] IA.M2<T>()'.
                 //     S[] IA.M2<S>() => throw null;
@@ -5641,7 +5641,7 @@ class B : A
     } 
 }
 ";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var compilation = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
 
             compilation.VerifyDiagnostics(
                 // (13,26): warning CS8610: Nullability of reference types in type of parameter 'x' doesn't match overridden member.
@@ -6224,7 +6224,7 @@ partial class C1
     partial void M1<T>(T? x, T[]? y, System.Action<T?> z, System.Action<T?[]?>?[]? u) where T : class
     { }
 }";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var compilation = CreateCompilation(new[] { source, NonNullTypesTrue, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
 
             compilation.VerifyDiagnostics(
                 // (10,18): warning CS8611: Nullability of reference types in type of parameter 'x' doesn't match partial method declaration.
@@ -6267,7 +6267,7 @@ partial class C1
     partial void M1<T>(T? x, T[]? y, System.Action<T?> z, System.Action<T?[]?>?[]? u) where T : class
     { }
 }";
-            var compilation = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8);
+            var compilation = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
 
             compilation.VerifyDiagnostics(
                 // (17,18): warning CS8611: Nullability of reference types in type of parameter 'x' doesn't match partial method declaration.
@@ -26002,7 +26002,8 @@ partial class C
 
             CSharpCompilation c = CreateCompilation(new[] { NonNullTypesAttributesDefinition, moduleAttributes, lib, source1, source2 },
                                                                 parseOptions: TestOptions.Regular8,
-                                                                options: TestOptions.ReleaseDll);
+                                                                options: TestOptions.ReleaseDll,
+                                                                skipUsesIsNullable: true);
 
             c.VerifyDiagnostics(
                 // (15,21): warning CS8632: The annotation for nullable reference types should only be used in code within a '[NonNullTypes(true)]' context.
@@ -26069,13 +26070,15 @@ partial class C
 
             c = CreateCompilation(new[] { moduleAttributes, source2 }, new[] { c1.ToMetadataReference() },
                                               parseOptions: TestOptions.Regular8,
-                                              options: TestOptions.ReleaseDll);
+                                              options: TestOptions.ReleaseDll,
+                                              skipUsesIsNullable: true);
 
             c.VerifyDiagnostics(expectedDiagnostics);
 
             c = CreateCompilation(new[] { moduleAttributes, source2 }, new[] { c1.EmitToImageReference() },
                                               parseOptions: TestOptions.Regular8,
-                                              options: TestOptions.ReleaseDll);
+                                              options: TestOptions.ReleaseDll,
+                                              skipUsesIsNullable: true);
 
             c.VerifyDiagnostics(expectedDiagnostics);
         }
@@ -26179,7 +26182,8 @@ partial class C
 
             CSharpCompilation c = CreateCompilation(new[] { NonNullTypesAttributesDefinition, moduleAttributes, lib, source1, source2 },
                                                                 parseOptions: TestOptions.Regular8,
-                                                                options: TestOptions.ReleaseDll);
+                                                                options: TestOptions.ReleaseDll,
+                                                                skipUsesIsNullable: true);
 
             c.VerifyDiagnostics(
                 // (13,21): warning CS8632: The annotation for nullable reference types should only be used in code within a '[NonNullTypes(true)]' context.
@@ -26247,13 +26251,15 @@ partial class C
 
             c = CreateCompilation(new[] { moduleAttributes, source2 }, new[] { c1.ToMetadataReference() },
                                               parseOptions: TestOptions.Regular8,
-                                              options: TestOptions.ReleaseDll);
+                                              options: TestOptions.ReleaseDll,
+                                              skipUsesIsNullable: true);
 
             c.VerifyDiagnostics(expected);
 
             c = CreateCompilation(new[] { moduleAttributes, source2 }, new[] { c1.EmitToImageReference() },
                                               parseOptions: TestOptions.Regular8,
-                                              options: TestOptions.ReleaseDll);
+                                              options: TestOptions.ReleaseDll,
+                                              skipUsesIsNullable: true);
 
             c.VerifyDiagnostics(expected);
         }
@@ -26359,7 +26365,8 @@ partial class C
 
             CSharpCompilation c = CreateCompilation(new[] { NonNullTypesAttributesDefinition, moduleAttributes, lib, source1, source2 },
                                                                 parseOptions: TestOptions.Regular8,
-                                                                options: TestOptions.ReleaseDll);
+                                                                options: TestOptions.ReleaseDll,
+                                                                skipUsesIsNullable: true);
 
             c.VerifyDiagnostics(
                 // (13,21): warning CS8632: The annotation for nullable reference types should only be used in code within a '[NonNullTypes(true)]' context.
@@ -26427,13 +26434,15 @@ partial class C
 
             c = CreateCompilation(new[] { moduleAttributes, source2 }, new[] { c1.ToMetadataReference() },
                                               parseOptions: TestOptions.Regular8,
-                                              options: TestOptions.ReleaseDll);
+                                              options: TestOptions.ReleaseDll,
+                                              skipUsesIsNullable: true);
 
             c.VerifyDiagnostics(expected);
 
             c = CreateCompilation(new[] { moduleAttributes, source2 }, new[] { c1.EmitToImageReference() },
                                               parseOptions: TestOptions.Regular8,
-                                              options: TestOptions.ReleaseDll);
+                                              options: TestOptions.ReleaseDll,
+                                              skipUsesIsNullable: true);
 
             c.VerifyDiagnostics(expected);
         }
@@ -26545,7 +26554,8 @@ partial class C
 
             CSharpCompilation c = CreateCompilation(new[] { NonNullTypesAttributesDefinition, moduleAttributes, lib, source1, source2 },
                                                                 parseOptions: TestOptions.Regular8,
-                                                                options: TestOptions.ReleaseDll);
+                                                                options: TestOptions.ReleaseDll,
+                                                                skipUsesIsNullable: true);
 
             c.VerifyDiagnostics(
                 // (13,24): warning CS8632: The annotation for nullable reference types should only be used in code within a '[NonNullTypes(true)]' context.
@@ -26576,7 +26586,8 @@ partial class C
 
             CSharpCompilation c1 = CreateCompilation(new[] { NonNullTypesAttributesDefinition, moduleAttributes, lib },
                                                                 parseOptions: TestOptions.Regular8,
-                                                                options: TestOptions.ReleaseDll);
+                                                                options: TestOptions.ReleaseDll,
+                                                                skipUsesIsNullable: true);
 
             c1.VerifyDiagnostics(
                 // (13,24): warning CS8632: The annotation for nullable reference types should only be used in code within a '[NonNullTypes(true)]' context.
@@ -26592,7 +26603,8 @@ partial class C
 
             c = CreateCompilation(new[] { moduleAttributes, source2 }, new[] { c1.ToMetadataReference() },
                                               parseOptions: TestOptions.Regular8,
-                                              options: TestOptions.ReleaseDll);
+                                              options: TestOptions.ReleaseDll,
+                                              skipUsesIsNullable: true);
 
             c.VerifyDiagnostics(
                 // (27,19): warning CS8600: Converting null literal or possible null value to non-nullable type.
@@ -33077,7 +33089,7 @@ class C
         y.P.ToString();
     }
 }";
-            var comp = CreateEmptyCompilation(source, parseOptions: TestOptions.Regular8);
+            var comp = CreateEmptyCompilation(source, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
             comp.VerifyDiagnostics(
                 // (6,24): warning CS8632: The annotation for nullable reference types should only be used in code within a '[NonNullTypes(true)]' context.
                 //         public object? F;
@@ -35633,7 +35645,7 @@ class C
 {
     public object? P { get; set; }
 }";
-            var comp0 = CreateCompilation(source0, parseOptions: TestOptions.Regular8);
+            var comp0 = CreateCompilation(source0, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
             var ref0 = comp0.EmitToImageReference();
 
             var source =
@@ -38551,7 +38563,7 @@ class D
     B4<A?> G9; // 7
     B4<A> G10;
 }";
-            var comp = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, references: new[] { ref0 }, parseOptions: TestOptions.Regular8);
+            var comp = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, references: new[] { ref0 }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
             comp.VerifyDiagnostics(
                 // (4,23): warning CS8632: The annotation for nullable reference types should only be used in code within a '[NonNullTypes(true)]' context.
                 // class B1<T> where T : A? { }
@@ -38625,7 +38637,7 @@ class D
     B4<A<object?>> G9; // 9
     B4<A<object>> G10;
 }";
-            var comp = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, references: new[] { ref0 }, parseOptions: TestOptions.Regular8);
+            var comp = CreateCompilation(new[] { source, NonNullTypesAttributesDefinition }, references: new[] { ref0 }, parseOptions: TestOptions.Regular8, skipUsesIsNullable: true);
             comp.VerifyDiagnostics(
                 // (4,23): warning CS8632: The annotation for nullable reference types should only be used in code within a '[NonNullTypes(true)]' context.
                 // class B1<T> where T : A<object?> { }

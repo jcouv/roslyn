@@ -9,7 +9,7 @@ using Roslyn.Utilities;
 namespace Microsoft.CodeAnalysis.CSharp.Test.Utilities
 {
     /// <summary>
-    /// Returns the set of members that contain reference types with IsNullable set.
+    /// Returns the set of members that contain reference types with IsNullable set, but are outside a NonNullTypes(true) context.
     /// </summary>
     internal sealed class UsesIsNullableVisitor : CSharpSymbolVisitor<bool>
     {
@@ -33,16 +33,24 @@ namespace Microsoft.CodeAnalysis.CSharp.Test.Utilities
 
         public override bool VisitNamedType(NamedTypeSymbol symbol)
         {
-            // PROTOTYPE(NullableReferenceTypes): Check BaseType and Interfaces type arguments.
-            if (AddIfUsesIsNullable(symbol, symbol.TypeParameters))
+            if (symbol.NonNullTypes != true)
             {
-                return true;
+                // PROTOTYPE(NullableReferenceTypes): Check BaseType and Interfaces type arguments.
+                if (AddIfUsesIsNullable(symbol, symbol.TypeParameters))
+                {
+                    return true;
+                }
             }
             return VisitList(symbol.GetMembers());
         }
 
         public override bool VisitMethod(MethodSymbol symbol)
         {
+            if (symbol.NonNullTypes == true)
+            {
+                return false;
+            }
+
             return AddIfUsesIsNullable(symbol, symbol.TypeParameters) ||
                 AddIfUsesIsNullable(symbol, symbol.ReturnType) ||
                 AddIfUsesIsNullable(symbol, symbol.Parameters);
@@ -50,17 +58,32 @@ namespace Microsoft.CodeAnalysis.CSharp.Test.Utilities
 
         public override bool VisitProperty(PropertySymbol symbol)
         {
+            if (symbol.NonNullTypes == true)
+            {
+                return false;
+            }
+
             return AddIfUsesIsNullable(symbol, symbol.Type) ||
                 AddIfUsesIsNullable(symbol, symbol.Parameters);
         }
 
         public override bool VisitEvent(EventSymbol symbol)
         {
+            if (symbol.NonNullTypes == true)
+            {
+                return false;
+            }
+
             return AddIfUsesIsNullable(symbol, symbol.Type);
         }
 
         public override bool VisitField(FieldSymbol symbol)
         {
+            if (symbol.NonNullTypes == true)
+            {
+                return false;
+            }
+
             return AddIfUsesIsNullable(symbol, symbol.Type);
         }
 

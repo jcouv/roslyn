@@ -593,22 +593,11 @@ namespace System.Runtime.CompilerServices
             // symbols are created lazily, since 'UsesIsNullableVisitor' will eagerly visit all members.
             // PROTOTYPE(NullableReferenceTypes): Remove skipUsesIsNullable and call VerifyNoNullability
             // on a separate Compilation instance created with createCompilationLambda.
-            if (!skipUsesIsNullable && !IsNullableEnabled(compilation))
+            if (!skipUsesIsNullable)
             {
                 VerifyUsesOfNullability(compilation.SourceModule.GlobalNamespace, expectedUsesOfNullable: ImmutableArray<string>.Empty);
             }
             return compilation;
-        }
-
-        internal static bool IsNullableEnabled(CSharpCompilation compilation)
-        {
-            var trees = compilation.SyntaxTrees;
-            if (trees.IsDefaultOrEmpty)
-            {
-                return false;
-            }
-            var options = (CSharpParseOptions)trees[0].Options;
-            return options.IsFeatureEnabled(MessageID.IDS_FeatureStaticNullChecking);
         }
 
         internal static void VerifyUsesOfNullability(Symbol symbol, ImmutableArray<string> expectedUsesOfNullable)

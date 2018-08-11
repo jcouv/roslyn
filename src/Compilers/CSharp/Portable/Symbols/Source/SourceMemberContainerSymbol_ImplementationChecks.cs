@@ -727,8 +727,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                 diagnostics.Add(ErrorCode.ERR_CantChangeTypeOnOverride, overridingMemberLocation, overridingMember, overriddenMember, overriddenMemberType.TypeSymbol);
                                 suppressAccessors = true; //we get really unhelpful errors from the accessor if the type is mismatched
                             }
-                            else if (((CSharpParseOptions)overridingMemberLocation.SourceTree?.Options)?.IsFeatureEnabled(MessageID.IDS_FeatureStaticNullChecking) == true &&
-                                (compilation = overridingMember.DeclaringCompilation) != null &&
+                            else if ((compilation = overridingMember.DeclaringCompilation) != null &&
                                 !overridingMemberType.Equals(overriddenProperty.Type,
                                                              TypeCompareKind.AllIgnoreOptions |
                                                                 TypeCompareKind.CompareNullableModifiersForReferenceTypes |
@@ -773,8 +772,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                 diagnostics.Add(ErrorCode.ERR_CantChangeTypeOnOverride, overridingMemberLocation, overridingMember, overriddenMember, overriddenMemberType.TypeSymbol);
                                 suppressAccessors = true; //we get really unhelpful errors from the accessor if the type is mismatched
                             }
-                            else if (((CSharpParseOptions)overridingMemberLocation.SourceTree?.Options)?.IsFeatureEnabled(MessageID.IDS_FeatureStaticNullChecking) == true &&
-                                (compilation = overridingMember.DeclaringCompilation) != null &&
+                            else if ((compilation = overridingMember.DeclaringCompilation) != null &&
                                 !overridingMemberType.Equals(overriddenEvent.Type,
                                                              TypeCompareKind.AllIgnoreOptions |
                                                                 TypeCompareKind.CompareNullableModifiersForReferenceTypes |
@@ -809,8 +807,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                             {
                                 diagnostics.Add(ErrorCode.ERR_OverrideFinalizeDeprecated, overridingMemberLocation);
                             }
-                            else if (((CSharpParseOptions)overridingMemberLocation.SourceTree?.Options)?.IsFeatureEnabled(MessageID.IDS_FeatureStaticNullChecking) == true &&
-                                !overridingMember.IsImplicitlyDeclared && !overridingMember.IsAccessor() &&
+                            else if (!overridingMember.IsImplicitlyDeclared && !overridingMember.IsAccessor() &&
                                 (compilation = overridingMember.DeclaringCompilation) != null &&
                                 !overridingMethod.ReturnType.Equals(overriddenMethod.ReturnType,
                                                                     TypeCompareKind.AllIgnoreOptions |
@@ -821,8 +818,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                             }
                         }
 
-                        if (((CSharpParseOptions)overridingMemberLocation.SourceTree?.Options)?.IsFeatureEnabled(MessageID.IDS_FeatureStaticNullChecking) == true &&
-                            !overridingMember.IsImplicitlyDeclared && !overridingMember.IsAccessor() &&
+                        if (!overridingMember.IsImplicitlyDeclared && !overridingMember.IsAccessor() &&
                             (compilation = overridingMember.DeclaringCompilation) != null)
                         {
                             ImmutableArray<ParameterSymbol> overridingParameters = overridingMember.GetParameters();
