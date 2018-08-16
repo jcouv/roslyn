@@ -538,7 +538,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 constructor, 
                 arguments.Arguments.Count, 
                 argumentAnalysis.ArgsToParamsOpt, 
-                arguments.RefKinds, 
+                arguments._refKinds, 
                 isMethodGroupConversion: false, 
                 allowRefOmittedArguments: false);
 
@@ -576,7 +576,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 constructor, 
                 arguments.Arguments.Count, 
                 argumentAnalysis.ArgsToParamsOpt, 
-                arguments.RefKinds, 
+                arguments._refKinds, 
                 isMethodGroupConversion: false, 
                 allowRefOmittedArguments: false);
 
@@ -2945,7 +2945,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 GetConstructedFrom(leastOverriddenMember),
                 arguments.Arguments.Count,
                 argumentAnalysis.ArgsToParamsOpt,
-                arguments.RefKinds,
+                arguments._refKinds,
                 isMethodGroupConversion,
                 allowRefOmittedArguments,
                 out hasAnyRefOmittedArgument);
@@ -2957,7 +2957,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 leastOverriddenMember,
                 arguments.Arguments.Count,
                 argumentAnalysis.ArgsToParamsOpt,
-                arguments.RefKinds,
+                arguments._refKinds,
                 isMethodGroupConversion,
                 allowRefOmittedArguments);
 
@@ -3014,7 +3014,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 GetConstructedFrom(leastOverriddenMember),
                 arguments.Arguments.Count,
                 argumentAnalysis.ArgsToParamsOpt,
-                arguments.RefKinds,
+                arguments._refKinds,
                 isMethodGroupConversion: false,
                 allowRefOmittedArguments,
                 out hasAnyRefOmittedArgument);
@@ -3026,7 +3026,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 leastOverriddenMember,
                 arguments.Arguments.Count,
                 argumentAnalysis.ArgsToParamsOpt,
-                arguments.RefKinds,
+                arguments._refKinds,
                 isMethodGroupConversion: false,
                 allowRefOmittedArguments);
 

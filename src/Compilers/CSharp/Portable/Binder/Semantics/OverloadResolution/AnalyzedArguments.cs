@@ -4,82 +4,157 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.PooledObjects;
-using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp
 {
     internal interface IAnalyzedArguments
     {
-        ArrayBuilder<BoundExpression> Arguments { get; }
-        ArrayBuilder<IdentifierNameSyntax> Names { get; }
-        ArrayBuilder<RefKind> RefKinds { get; }
+        BoundExpression Argument(int i);
+        int ArgumentsCount { get; }
+        ImmutableArray<BoundExpression> ArgumentsImmutable { get; }
+
+        IdentifierNameSyntax Name(int i);
+        int NamesCount { get; }
+        string NameText(int i);
+
+        RefKind RefKind(int i);
+        int RefKindsCount { get; }
+        ImmutableArray<RefKind> RefKindsImmutable { get; }
+
         bool IsExtensionMethodInvocation { get; }
         bool HasErrors { get; }
-        BoundExpression Argument(int i);
         ImmutableArray<string> GetNames();
-        string Name(int i);
         bool IsExtensionMethodThisArgument(int i);
         bool HasDynamicArgument { get; }
-        RefKind RefKind(int i);
     }
 
-    // Note: instances of this object are pooled
-    internal sealed class AnalyzedArguments : IAnalyzedArguments
+    internal abstract class AnalyzedArgumentsBase
     {
-        private UnpooledAnalyzedArguments _analyzedArguments;
+        public abstract BoundExpression Argument(int i);
+        public abstract int ArgumentsCount { get; }
 
-        internal AnalyzedArguments()
+        public abstract IdentifierNameSyntax Name(int i);
+        public abstract int NamesCount { get; }
+
+        public abstract RefKind RefKind(int i);
+        public abstract int RefKindsCount { get; }
+
+        public bool IsExtensionMethodInvocation { get; set; }
+        protected ThreeState _lazyHasDynamicArgument;
+
+        public string NameText(int i)
         {
-            _analyzedArguments = new UnpooledAnalyzedArguments(new ArrayBuilder<BoundExpression>(32), new ArrayBuilder<IdentifierNameSyntax>(32), new ArrayBuilder<RefKind>(32));
-        }
+            if (NamesCount == 0)
+            {
+                return null;
+            }
 
-        public void Clear()
-        {
-            _analyzedArguments.Clear();
-        }
-
-        public ArrayBuilder<BoundExpression> Arguments => _analyzedArguments.Arguments;
-
-        public ArrayBuilder<IdentifierNameSyntax> Names => _analyzedArguments.Names;
-
-        public ArrayBuilder<RefKind> RefKinds => _analyzedArguments.RefKinds;
-
-        public bool IsExtensionMethodInvocation { get => _analyzedArguments.IsExtensionMethodInvocation; set => _analyzedArguments.IsExtensionMethodInvocation = value; }
-
-        public bool HasErrors => _analyzedArguments.HasErrors;
-
-        public bool HasDynamicArgument => _analyzedArguments.HasDynamicArgument;
-
-        private static ObjectPool<AnalyzedArguments> CreatePool()
-        {
-            ObjectPool<AnalyzedArguments> pool = null;
-            pool = new ObjectPool<AnalyzedArguments>(() => new AnalyzedArguments(), 10);
-            return pool;
-        }
-
-        public BoundExpression Argument(int i)
-        {
-            throw new System.NotImplementedException();
+            IdentifierNameSyntax syntax = Name(i);
+            return syntax == null ? null : syntax.Identifier.ValueText;
         }
 
         public ImmutableArray<string> GetNames()
         {
-            throw new System.NotImplementedException();
+            int count = this.NamesCount;
+
+            if (count == 0)
+            {
+                return default;
+            }
+
+            var builder = ArrayBuilder<string>.GetInstance(count);
+            for (int i = 0; i < count; ++i)
+            {
+                builder.Add(NameText(i));
+            }
+
+            return builder.ToImmutableAndFree();
         }
 
-        public string Name(int i)
+        public bool HasDynamicArgument
         {
-            throw new System.NotImplementedException();
+            get
+            {
+                if (_lazyHasDynamicArgument.HasValue())
+                {
+                    return _lazyHasDynamicArgument.Value();
+                }
+
+                for (int i = 0; i < ArgumentsCount; i++)
+                {
+                    var argument = Argument(i);
+
+                    // By-ref dynamic arguments don't make the invocation dynamic.
+                    if ((object)argument.Type != null && argument.Type.IsDynamic() &&  RefKind(i) == CodeAnalysis.RefKind.None)
+                    {
+                        _lazyHasDynamicArgument = ThreeState.True;
+                        return true;
+                    }
+                }
+
+                _lazyHasDynamicArgument = ThreeState.False;
+                return false;
+            }
         }
 
         public bool IsExtensionMethodThisArgument(int i)
         {
-            throw new System.NotImplementedException();
+            return (i == 0) && this.IsExtensionMethodInvocation;
         }
 
-        public RefKind RefKind(int i)
+        public bool HasErrors
         {
-            throw new System.NotImplementedException();
+            get
+            {
+                for (int i = 0; i < ArgumentsCount; i++)
+                {
+                    if (Argument(i).HasAnyErrors)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+    }
+
+    // Note: instances of this object are pooled
+    internal sealed class AnalyzedArguments : AnalyzedArgumentsBase, IAnalyzedArguments
+    {
+        internal readonly ArrayBuilder<BoundExpression> Arguments;
+        internal readonly ArrayBuilder<IdentifierNameSyntax> Names;
+        internal readonly ArrayBuilder<RefKind> _refKinds;
+
+        internal AnalyzedArguments()
+        {
+            Arguments = new ArrayBuilder<BoundExpression>(32);
+            Names = new ArrayBuilder<IdentifierNameSyntax>(32);
+            _refKinds = new ArrayBuilder<RefKind>(32);
+        }
+
+        public override BoundExpression Argument(int i) => Arguments[i];
+        public override int ArgumentsCount => Arguments.Count;
+        public ImmutableArray<BoundExpression> ArgumentsImmutable => Arguments.ToImmutable();
+
+        public override IdentifierNameSyntax Name(int i) => Names[i];
+        public override int NamesCount => Names.Count;
+
+        public override RefKind RefKind(int i)
+        {
+            return _refKinds.Count > 0 ? _refKinds[i] : CodeAnalysis.RefKind.None;
+        }
+
+        public override int RefKindsCount => _refKinds.Count;
+        public ImmutableArray<RefKind> RefKindsImmutable => _refKinds.ToImmutable();
+
+        public void Clear()
+        {
+            this.Arguments.Clear();
+            this.Names.Clear();
+            this._refKinds.Clear();
+            this.IsExtensionMethodInvocation = false;
+            _lazyHasDynamicArgument = ThreeState.Unknown;
         }
 
         #region "Poolable"
@@ -98,133 +173,45 @@ namespace Microsoft.CodeAnalysis.CSharp
         //2) Expose the pool or the way to create a pool or the way to get an instance.
         //       for now we will expose both and figure which way works better
         public static readonly ObjectPool<AnalyzedArguments> Pool = CreatePool();
+
+        private static ObjectPool<AnalyzedArguments> CreatePool()
+        {
+            ObjectPool<AnalyzedArguments> pool = null;
+            pool = new ObjectPool<AnalyzedArguments>(() => new AnalyzedArguments(), 10);
+            return pool;
+        }
+
         #endregion
     }
 
     /// <summary>
-    /// Instances of this object are either held in <see cref="AnalyzedArguments"/> or <see cref="MethodGroupResolution"/>.
+    /// Instances of this object are either held in <see cref="AnalyzedArguments"/> (which uses pooled ArrayBuilder instances),
+    /// or <see cref="MethodGroupResolution"/> (which uses .
     /// </summary>
-    internal class UnpooledAnalyzedArguments : IAnalyzedArguments
+    internal class UnpooledAnalyzedArguments : AnalyzedArgumentsBase, IAnalyzedArguments
     {
-        public ArrayBuilder<BoundExpression> Arguments { get; }
-        public ArrayBuilder<IdentifierNameSyntax> Names { get; }
-        public ArrayBuilder<RefKind> RefKinds { get; }
-        public bool IsExtensionMethodInvocation { get; set; }
-        protected ThreeState _lazyHasDynamicArgument;
-
-        internal UnpooledAnalyzedArguments(ArrayBuilder<BoundExpression> arguments, ArrayBuilder<IdentifierNameSyntax> names, ArrayBuilder<RefKind> refKinds)
-        {
-            this.Arguments = arguments;
-            this.Names = names;
-            this.RefKinds = refKinds;
-        }
+        public ImmutableArray<BoundExpression> ArgumentsImmutable { get; }
+        private ImmutableArray<IdentifierNameSyntax> Names;
+        public ImmutableArray<RefKind> RefKindsImmutable { get; }
 
         internal UnpooledAnalyzedArguments(AnalyzedArguments analyzedArguments)
         {
-            this.Arguments = ArrayBuilder<BoundExpression>.GetInstance(analyzedArguments.Arguments.Count);
-            this.Arguments.AddRange(analyzedArguments.Arguments);
-
-            this.Names = ArrayBuilder<IdentifierNameSyntax>.GetInstance(analyzedArguments.Names.Count);
-            this.Names.AddRange(analyzedArguments.Names);
-
-            this.RefKinds = ArrayBuilder<RefKind>.GetInstance(analyzedArguments.Names.Count);
-            this.RefKinds.AddRange(analyzedArguments.RefKinds);
+            ArgumentsImmutable = analyzedArguments.Arguments.ToImmutable();
+            Names = analyzedArguments.Names.ToImmutable();
+            RefKindsImmutable = analyzedArguments._refKinds.ToImmutable();
         }
 
-        public BoundExpression Argument(int i)
+        public override BoundExpression Argument(int i) => ArgumentsImmutable[i];
+        public override int ArgumentsCount => ArgumentsImmutable.Length;
+
+        public override IdentifierNameSyntax Name(int i) => Names[i];
+        public override int NamesCount => Names.Length;
+
+        public override RefKind RefKind(int i)
         {
-            return Arguments[i];
+            return RefKindsImmutable.Length > 0 ? RefKindsImmutable[i] : Microsoft.CodeAnalysis.RefKind.None;
         }
 
-        public string Name(int i)
-        {
-            if (Names.Count == 0)
-            {
-                return null;
-            }
-
-            IdentifierNameSyntax syntax = Names[i];
-            return syntax == null ? null : syntax.Identifier.ValueText;
-        }
-
-        public ImmutableArray<string> GetNames()
-        {
-            int count = this.Names.Count;
-
-            if (count == 0)
-            {
-                return default;
-            }
-
-            var builder = ArrayBuilder<string>.GetInstance(this.Names.Count);
-            for (int i = 0; i < this.Names.Count; ++i)
-            {
-                builder.Add(Name(i));
-            }
-
-            return builder.ToImmutableAndFree();
-        }
-
-        public RefKind RefKind(int i)
-        {
-            return RefKinds.Count > 0 ? RefKinds[i] : Microsoft.CodeAnalysis.RefKind.None;
-        }
-
-        public bool IsExtensionMethodThisArgument(int i)
-        {
-            return (i == 0) && this.IsExtensionMethodInvocation;
-        }
-
-        public bool HasDynamicArgument
-        {
-            get
-            {
-                if (_lazyHasDynamicArgument.HasValue())
-                {
-                    return _lazyHasDynamicArgument.Value();
-                }
-
-                bool hasRefKinds = RefKinds.Count > 0;
-                for (int i = 0; i < Arguments.Count; i++)
-                {
-                    var argument = Arguments[i];
-
-                    // By-ref dynamic arguments don't make the invocation dynamic.
-                    if ((object)argument.Type != null && argument.Type.IsDynamic() && (!hasRefKinds || RefKinds[i] == Microsoft.CodeAnalysis.RefKind.None))
-                    {
-                        _lazyHasDynamicArgument = ThreeState.True;
-                        return true;
-                    }
-                }
-
-                _lazyHasDynamicArgument = ThreeState.False;
-                return false;
-            }
-        }
-
-        public bool HasErrors
-        {
-            get
-            {
-                foreach (var argument in this.Arguments)
-                {
-                    if (argument.HasAnyErrors)
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-        }
-
-        public void Clear()
-        {
-            this.Arguments.Clear();
-            this.Names.Clear();
-            this.RefKinds.Clear();
-            this.IsExtensionMethodInvocation = false;
-            _lazyHasDynamicArgument = ThreeState.Unknown;
-        }
+        public override int RefKindsCount => RefKindsImmutable.Length;
     }
 }

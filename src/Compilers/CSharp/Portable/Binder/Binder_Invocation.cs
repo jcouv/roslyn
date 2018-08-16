@@ -213,7 +213,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             ImmutableArray<BoundExpression> arguments = analyzedArguments.Arguments.ToImmutable();
-            ImmutableArray<RefKind> refKinds = analyzedArguments.RefKinds.ToImmutableOrNull();
+            ImmutableArray<RefKind> refKinds = analyzedArguments._refKinds.ToImmutableOrNull();
             return new BoundArgListOperator(node, arguments, refKinds, null, analyzedArguments.HasErrors);
         }
 
@@ -341,7 +341,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             ImmutableArray<BoundExpression> argArray = BuildArgumentsForDynamicInvocation(arguments, diagnostics);
-            var refKindsArray = arguments.RefKinds.ToImmutableOrNull();
+            var refKindsArray = arguments.RefKindsImmutable;
 
             hasErrors &= ReportBadDynamicArguments(node, argArray, refKindsArray, diagnostics, queryClause);
 
@@ -358,7 +358,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private void CheckNamedArgumentsForDynamicInvocation(IAnalyzedArguments arguments, DiagnosticBag diagnostics)
         {
-            if (arguments.Names.Count == 0)
+            if (arguments.NamesCount == 0)
             {
                 return;
             }
@@ -369,15 +369,15 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             bool seenName = false;
-            for (int i = 0; i < arguments.Names.Count; i++)
+            for (int i = 0; i < arguments.NamesCount; i++)
             {
-                if (arguments.Names[i] != null)
+                if (arguments.Name(i) != null)
                 {
                     seenName = true;
                 }
                 else if (seenName)
                 {
-                    Error(diagnostics, ErrorCode.ERR_NamedArgumentSpecificationBeforeFixedArgumentInDynamicInvocation, arguments.Arguments[i].Syntax);
+                    Error(diagnostics, ErrorCode.ERR_NamedArgumentSpecificationBeforeFixedArgumentInDynamicInvocation, arguments.Argument(i).Syntax);
                     return;
                 }
             }
@@ -385,15 +385,19 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private ImmutableArray<BoundExpression> BuildArgumentsForDynamicInvocation(IAnalyzedArguments arguments, DiagnosticBag diagnostics)
         {
-            for (int i = 0; i < arguments.Arguments.Count; i++)
+            for (int i = 0; i < arguments.ArgumentsCount; i++)
             {
-                Debug.Assert(arguments.Arguments[i].Kind != BoundKind.OutDeconstructVarPendingInference);
+                BoundExpression boundExpression = arguments.Argument(i);
+                Debug.Assert(boundExpression.Kind != BoundKind.OutDeconstructVarPendingInference);
 
-                if (arguments.Arguments[i].Kind == BoundKind.OutVariablePendingInference ||
-                    arguments.Arguments[i].Kind == BoundKind.DiscardExpression && !arguments.Arguments[i].HasExpressionType())
+                if (boundExpression.Kind == BoundKind.OutVariablePendingInference ||
+                    boundExpression.Kind == BoundKind.DiscardExpression && !boundExpression.HasExpressionType())
                 {
-                    var builder = ArrayBuilder<BoundExpression>.GetInstance(arguments.Arguments.Count);
-                    builder.AddRange(arguments.Arguments);
+                    var builder = ArrayBuilder<BoundExpression>.GetInstance(arguments.ArgumentsCount);
+                    for (int j = 0; j < arguments.ArgumentsCount; j++)
+                    {
+                        builder.Add(arguments.Argument(j));
+                    }
 
                     do
                     {
@@ -416,7 +420,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            return arguments.Arguments.ToImmutable();
+            return arguments.ArgumentsImmutable;
         }
 
         // Returns true if there were errors.
@@ -562,6 +566,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var resolution = this.ResolveMethodGroup(
                 methodGroup, expression, methodName, analyzedArguments, isMethodGroupConversion: false,
                 useSiteDiagnostics: ref useSiteDiagnostics, allowUnexpandedForm: allowUnexpandedForm);
+            // PROTOTYPE: need to confirm what is the difference between analyzedArguments and resolution.AnalyzedArguments
             diagnostics.Add(expression, useSiteDiagnostics);
 
             if (!methodGroup.HasAnyErrors) diagnostics.AddRange(resolution.Diagnostics); // Suppress cascading.
@@ -983,7 +988,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             var methodResult = result.ValidResult;
             var returnType = methodResult.Member.ReturnType;
-            this.CoerceArguments(methodResult, analyzedArguments.Arguments, diagnostics);
+            this.CoerceArguments(methodResult, analyzedArguments, diagnostics); // PROTOTYPE: problem here
 
             var method = methodResult.Member;
             var expanded = methodResult.Result.Kind == MemberResolutionKind.ApplicableInExpandedForm;
@@ -1453,7 +1458,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             var args = BuildArgumentsForErrorRecovery(analyzedArguments);
             var argNames = analyzedArguments.GetNames();
-            var argRefKinds = analyzedArguments.RefKinds.ToImmutableOrNull();
+            var argRefKinds = analyzedArguments._refKinds.ToImmutableOrNull();
             var originalMethods = (expr.Kind == BoundKind.MethodGroup) ? ((BoundMethodGroup)expr).Methods : ImmutableArray<MethodSymbol>.Empty;
 
             return BoundCall.ErrorCall(node, expr, method, args, argNames, argRefKinds, isDelegateCall: false, invokedAsExtensionMethod: false, originalMethods: originalMethods, resultKind: resultKind, binder: this);

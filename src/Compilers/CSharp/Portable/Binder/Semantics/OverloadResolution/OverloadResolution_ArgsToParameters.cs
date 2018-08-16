@@ -489,7 +489,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var alreadyDefined = PooledHashSet<string>.GetInstance();
             for (int i = 0; i < arguments.Names.Count; ++i)
             {
-                string name = arguments.Name(i);
+                string name = arguments.NameText(i);
 
                 if (name is null)
                 {

@@ -619,7 +619,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     var variable = new OutDeconstructVarPendingInference(receiverSyntax);
                     analyzedArguments.Arguments.Add(variable);
-                    analyzedArguments.RefKinds.Add(RefKind.Out);
+                    analyzedArguments._refKinds.Add(RefKind.Out);
                     outVars.Add(variable);
                 }
 

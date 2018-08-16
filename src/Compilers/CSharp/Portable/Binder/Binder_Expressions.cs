@@ -2427,7 +2427,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert(argumentSyntax is ArgumentSyntax || argumentSyntax is AttributeArgumentSyntax);
 
-            bool hasRefKinds = result.RefKinds.Any();
+            bool hasRefKinds = result._refKinds.Any();
             if (refKind != RefKind.None)
             {
                 // The common case is no ref or out arguments. So we defer all work until the first one is seen.
@@ -2438,14 +2438,14 @@ namespace Microsoft.CodeAnalysis.CSharp
                     int argCount = result.Arguments.Count;
                     for (int i = 0; i < argCount; ++i)
                     {
-                        result.RefKinds.Add(RefKind.None);
+                        result._refKinds.Add(RefKind.None);
                     }
                 }
             }
 
             if (hasRefKinds)
             {
-                result.RefKinds.Add(refKind);
+                result._refKinds.Add(refKind);
             }
 
             bool hasNames = result.Names.Any();
@@ -3498,7 +3498,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     ReportDiagnosticsIfObsolete(diagnostics, resultMember, nonNullSyntax, hasBaseReceiver: isBaseConstructorInitializer);
 
                     var arguments = analyzedArguments.Arguments.ToImmutable();
-                    var refKinds = analyzedArguments.RefKinds.ToImmutableOrNull();
+                    var refKinds = analyzedArguments._refKinds.ToImmutableOrNull();
                     var argsToParamsOpt = memberResolutionResult.Result.ArgsToParamsOpt;
 
                     if (!hasErrors)
@@ -3625,7 +3625,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     diagnostics.Add(ErrorCode.ERR_BadCtorArgCount, node.Location, type, 0);
                     hasErrors = true;
                 }
-                else if (analyzedArguments.Names.Count != 0 || analyzedArguments.RefKinds.Count != 0 || analyzedArguments.Arguments.Count != 1)
+                else if (analyzedArguments.Names.Count != 0 || analyzedArguments._refKinds.Count != 0 || analyzedArguments.Arguments.Count != 1)
                 {
                     // Use a smaller span that excludes the parens.
                     var argSyntax = analyzedArguments.Arguments[0].Syntax;
@@ -4588,7 +4588,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (overloadResolutionResult.HasAnyApplicableMember)
                 {
                     var argArray = BuildArgumentsForDynamicInvocation(analyzedArguments, diagnostics);
-                    var refKindsArray = analyzedArguments.RefKinds.ToImmutableOrNull();
+                    var refKindsArray = analyzedArguments._refKinds.ToImmutableOrNull();
 
                     hasErrors &= ReportBadDynamicArguments(node, argArray, refKindsArray, diagnostics, queryClause: null);
 
@@ -4648,7 +4648,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     null;
 
                 var arguments = analyzedArguments.Arguments.ToImmutable();
-                var refKinds = analyzedArguments.RefKinds.ToImmutableOrNull();
+                var refKinds = analyzedArguments._refKinds.ToImmutableOrNull();
                 var argToParams = memberResolutionResult.Result.ArgsToParamsOpt;
 
                 if (!hasError)
@@ -5844,7 +5844,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(receiver != null);
             Debug.Assert(extensionMethodArguments.Arguments.Count == 0);
             Debug.Assert(extensionMethodArguments.Names.Count == 0);
-            Debug.Assert(extensionMethodArguments.RefKinds.Count == 0);
+            Debug.Assert(extensionMethodArguments._refKinds.Count == 0);
 
             extensionMethodArguments.IsExtensionMethodInvocation = true;
             extensionMethodArguments.Arguments.Add(receiver);
@@ -5856,10 +5856,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                 extensionMethodArguments.Names.AddRange(originalArguments.Names);
             }
 
-            if (originalArguments.RefKinds.Count > 0)
+            if (originalArguments._refKinds.Count > 0)
             {
-                extensionMethodArguments.RefKinds.Add(RefKind.None);
-                extensionMethodArguments.RefKinds.AddRange(originalArguments.RefKinds);
+                extensionMethodArguments._refKinds.Add(RefKind.None);
+                extensionMethodArguments._refKinds.AddRange(originalArguments._refKinds);
             }
         }
 
@@ -6909,7 +6909,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             var argArray = BuildArgumentsForDynamicInvocation(arguments, diagnostics);
-            var refKindsArray = arguments.RefKinds.ToImmutableOrNull();
+            var refKindsArray = arguments._refKinds.ToImmutableOrNull();
 
             hasErrors &= ReportBadDynamicArguments(syntax, argArray, refKindsArray, diagnostics, queryClause: null);
 
@@ -6950,7 +6950,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             ImmutableArray<string> argumentNames = analyzedArguments.GetNames();
-            ImmutableArray<RefKind> argumentRefKinds = analyzedArguments.RefKinds.ToImmutableOrNull();
+            ImmutableArray<RefKind> argumentRefKinds = analyzedArguments._refKinds.ToImmutableOrNull();
             if (!overloadResolutionResult.Succeeded)
             {
                 // If the arguments had an error reported about them then suppress further error

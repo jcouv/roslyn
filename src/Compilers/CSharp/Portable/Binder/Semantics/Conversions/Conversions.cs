@@ -235,7 +235,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
 
                 analyzedArguments.Arguments.Add(new BoundParameter(syntax, parameter) { WasCompilerGenerated = true });
-                analyzedArguments.RefKinds.Add(parameter.RefKind);
+                analyzedArguments._refKinds.Add(parameter.RefKind);
             }
         }
 
