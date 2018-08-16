@@ -271,7 +271,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private BoundExpression BindDynamicInvocation(
             SyntaxNode node,
             BoundExpression expression,
-            AnalyzedArguments arguments,
+            IAnalyzedArguments arguments,
             ImmutableArray<MethodSymbol> applicableMethods,
             DiagnosticBag diagnostics,
             CSharpSyntaxNode queryClause)
@@ -356,7 +356,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 hasErrors: hasErrors);
         }
 
-        private void CheckNamedArgumentsForDynamicInvocation(AnalyzedArguments arguments, DiagnosticBag diagnostics)
+        private void CheckNamedArgumentsForDynamicInvocation(IAnalyzedArguments arguments, DiagnosticBag diagnostics)
         {
             if (arguments.Names.Count == 0)
             {
@@ -383,7 +383,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
-        private ImmutableArray<BoundExpression> BuildArgumentsForDynamicInvocation(AnalyzedArguments arguments, DiagnosticBag diagnostics)
+        private ImmutableArray<BoundExpression> BuildArgumentsForDynamicInvocation(IAnalyzedArguments arguments, DiagnosticBag diagnostics)
         {
             for (int i = 0; i < arguments.Arguments.Count; i++)
             {
@@ -919,7 +919,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             SyntaxNode expression,
             string methodName,
             OverloadResolutionResult<MethodSymbol> result,
-            AnalyzedArguments analyzedArguments,
+            IAnalyzedArguments analyzedArguments,
             MethodGroup methodGroup,
             NamedTypeSymbol delegateTypeOpt,
             DiagnosticBag diagnostics,
@@ -1036,7 +1036,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 else if (receiverParameter.RefKind == RefKind.In)
                 {
                     // NB: receiver of an `in` extension method is treated as a `byval` argument, so no changes from the default refkind is needed in that case. 
-                    Debug.Assert(analyzedArguments.RefKind(0) == RefKind.None);
+                    Debug.Assert(analyzedArguments.RefKinds[0] == RefKind.None);
                     CheckFeatureAvailability(receiverArgument.Syntax, MessageID.IDS_FeatureRefExtensionMethods, diagnostics);
                 }
 
@@ -1217,7 +1217,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ImmutableArray<MethodSymbol> methods,
             LookupResultKind resultKind,
             ImmutableArray<TypeSymbol> typeArguments,
-            AnalyzedArguments analyzedArguments,
+            IAnalyzedArguments analyzedArguments,
             bool invokedAsExtensionMethod,
             bool isDelegate)
         {
@@ -1263,7 +1263,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         // Any additional parameter lists are ignored.
         internal const int MaxParameterListsForErrorRecovery = 10;
 
-        private ImmutableArray<BoundExpression> BuildArgumentsForErrorRecovery(AnalyzedArguments analyzedArguments, ImmutableArray<MethodSymbol> methods)
+        private ImmutableArray<BoundExpression> BuildArgumentsForErrorRecovery(IAnalyzedArguments analyzedArguments, ImmutableArray<MethodSymbol> methods)
         {
             var parameterListList = ArrayBuilder<ImmutableArray<ParameterSymbol>>.GetInstance();
             foreach (var m in methods)
@@ -1283,7 +1283,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return result;
         }
 
-        private ImmutableArray<BoundExpression> BuildArgumentsForErrorRecovery(AnalyzedArguments analyzedArguments, ImmutableArray<PropertySymbol> properties)
+        private ImmutableArray<BoundExpression> BuildArgumentsForErrorRecovery(IAnalyzedArguments analyzedArguments, ImmutableArray<PropertySymbol> properties)
         {
             var parameterListList = ArrayBuilder<ImmutableArray<ParameterSymbol>>.GetInstance();
             foreach (var p in properties)
@@ -1303,7 +1303,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return result;
         }
 
-        private ImmutableArray<BoundExpression> BuildArgumentsForErrorRecovery(AnalyzedArguments analyzedArguments, IEnumerable<ImmutableArray<ParameterSymbol>> parameterListList)
+        private ImmutableArray<BoundExpression> BuildArgumentsForErrorRecovery(IAnalyzedArguments analyzedArguments, IEnumerable<ImmutableArray<ParameterSymbol>> parameterListList)
         {
             // Since the purpose is to bind any unbound arguments, we return early if there are none.
             if (!analyzedArguments.Arguments.Any(e => (object)e.Type == null))
@@ -1415,7 +1415,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <param name="i">The index of the argument</param>
         /// <param name="parameterList">The parameter list to match against</param>
         /// <returns>The type of the corresponding parameter.</returns>
-        private static TypeSymbol GetCorrespondingParameterType(AnalyzedArguments analyzedArguments, int i, ImmutableArray<ParameterSymbol> parameterList)
+        private static TypeSymbol GetCorrespondingParameterType(IAnalyzedArguments analyzedArguments, int i, ImmutableArray<ParameterSymbol> parameterList)
         {
             string name = analyzedArguments.Name(i);
             if (name != null)

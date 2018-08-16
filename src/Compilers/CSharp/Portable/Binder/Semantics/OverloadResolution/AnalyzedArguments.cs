@@ -8,29 +8,127 @@ using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp
 {
-    // Note: instances of this object are pooled
-    internal sealed class AnalyzedArguments
+    internal interface IAnalyzedArguments
     {
-        public readonly ArrayBuilder<BoundExpression> Arguments;
-        public readonly ArrayBuilder<IdentifierNameSyntax> Names;
-        public readonly ArrayBuilder<RefKind> RefKinds;
-        public bool IsExtensionMethodInvocation;
-        private ThreeState _lazyHasDynamicArgument;
+        ArrayBuilder<BoundExpression> Arguments { get; }
+        ArrayBuilder<IdentifierNameSyntax> Names { get; }
+        ArrayBuilder<RefKind> RefKinds { get; }
+        bool IsExtensionMethodInvocation { get; }
+        bool HasErrors { get; }
+        BoundExpression Argument(int i);
+        ImmutableArray<string> GetNames();
+        string Name(int i);
+        bool IsExtensionMethodThisArgument(int i);
+        bool HasDynamicArgument { get; }
+        RefKind RefKind(int i);
+    }
+
+    // Note: instances of this object are pooled
+    internal sealed class AnalyzedArguments : IAnalyzedArguments
+    {
+        private UnpooledAnalyzedArguments _analyzedArguments;
 
         internal AnalyzedArguments()
         {
-            this.Arguments = new ArrayBuilder<BoundExpression>(32);
-            this.Names = new ArrayBuilder<IdentifierNameSyntax>(32);
-            this.RefKinds = new ArrayBuilder<RefKind>(32);
+            _analyzedArguments = new UnpooledAnalyzedArguments(new ArrayBuilder<BoundExpression>(32), new ArrayBuilder<IdentifierNameSyntax>(32), new ArrayBuilder<RefKind>(32));
         }
 
         public void Clear()
         {
-            this.Arguments.Clear();
-            this.Names.Clear();
-            this.RefKinds.Clear();
-            this.IsExtensionMethodInvocation = false;
-            _lazyHasDynamicArgument = ThreeState.Unknown;
+            _analyzedArguments.Clear();
+        }
+
+        public ArrayBuilder<BoundExpression> Arguments => _analyzedArguments.Arguments;
+
+        public ArrayBuilder<IdentifierNameSyntax> Names => _analyzedArguments.Names;
+
+        public ArrayBuilder<RefKind> RefKinds => _analyzedArguments.RefKinds;
+
+        public bool IsExtensionMethodInvocation { get => _analyzedArguments.IsExtensionMethodInvocation; set => _analyzedArguments.IsExtensionMethodInvocation = value; }
+
+        public bool HasErrors => _analyzedArguments.HasErrors;
+
+        public bool HasDynamicArgument => _analyzedArguments.HasDynamicArgument;
+
+        private static ObjectPool<AnalyzedArguments> CreatePool()
+        {
+            ObjectPool<AnalyzedArguments> pool = null;
+            pool = new ObjectPool<AnalyzedArguments>(() => new AnalyzedArguments(), 10);
+            return pool;
+        }
+
+        public BoundExpression Argument(int i)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public ImmutableArray<string> GetNames()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public string Name(int i)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public bool IsExtensionMethodThisArgument(int i)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public RefKind RefKind(int i)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        #region "Poolable"
+
+        public static AnalyzedArguments GetInstance()
+        {
+            return Pool.Allocate();
+        }
+
+        public void Free()
+        {
+            this.Clear();
+            Pool.Free(this);
+        }
+
+        //2) Expose the pool or the way to create a pool or the way to get an instance.
+        //       for now we will expose both and figure which way works better
+        public static readonly ObjectPool<AnalyzedArguments> Pool = CreatePool();
+        #endregion
+    }
+
+    /// <summary>
+    /// Instances of this object are either held in <see cref="AnalyzedArguments"/> or <see cref="MethodGroupResolution"/>.
+    /// </summary>
+    internal class UnpooledAnalyzedArguments : IAnalyzedArguments
+    {
+        public ArrayBuilder<BoundExpression> Arguments { get; }
+        public ArrayBuilder<IdentifierNameSyntax> Names { get; }
+        public ArrayBuilder<RefKind> RefKinds { get; }
+        public bool IsExtensionMethodInvocation { get; set; }
+        protected ThreeState _lazyHasDynamicArgument;
+
+        internal UnpooledAnalyzedArguments(ArrayBuilder<BoundExpression> arguments, ArrayBuilder<IdentifierNameSyntax> names, ArrayBuilder<RefKind> refKinds)
+        {
+            this.Arguments = arguments;
+            this.Names = names;
+            this.RefKinds = refKinds;
+        }
+
+        internal UnpooledAnalyzedArguments(AnalyzedArguments analyzedArguments)
+        {
+            this.Arguments = ArrayBuilder<BoundExpression>.GetInstance(analyzedArguments.Arguments.Count);
+            this.Arguments.AddRange(analyzedArguments.Arguments);
+
+            this.Names = ArrayBuilder<IdentifierNameSyntax>.GetInstance(analyzedArguments.Names.Count);
+            this.Names.AddRange(analyzedArguments.Names);
+
+            this.RefKinds = ArrayBuilder<RefKind>.GetInstance(analyzedArguments.Names.Count);
+            this.RefKinds.AddRange(analyzedArguments.RefKinds);
         }
 
         public BoundExpression Argument(int i)
@@ -120,30 +218,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
-        #region "Poolable"
-
-        public static AnalyzedArguments GetInstance()
+        public void Clear()
         {
-            return Pool.Allocate();
+            this.Arguments.Clear();
+            this.Names.Clear();
+            this.RefKinds.Clear();
+            this.IsExtensionMethodInvocation = false;
+            _lazyHasDynamicArgument = ThreeState.Unknown;
         }
-
-        public void Free()
-        {
-            this.Clear();
-            Pool.Free(this);
-        }
-
-        //2) Expose the pool or the way to create a pool or the way to get an instance.
-        //       for now we will expose both and figure which way works better
-        public static readonly ObjectPool<AnalyzedArguments> Pool = CreatePool();
-
-        private static ObjectPool<AnalyzedArguments> CreatePool()
-        {
-            ObjectPool<AnalyzedArguments> pool = null;
-            pool = new ObjectPool<AnalyzedArguments>(() => new AnalyzedArguments(), 10);
-            return pool;
-        }
-
-        #endregion
     }
 }

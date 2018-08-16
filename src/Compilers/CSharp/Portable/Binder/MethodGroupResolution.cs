@@ -16,7 +16,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public readonly MethodGroup MethodGroup;
         public readonly Symbol OtherSymbol;
         public readonly OverloadResolutionResult<MethodSymbol> OverloadResolutionResult;
-        public readonly AnalyzedArguments AnalyzedArguments;
+        public readonly UnpooledAnalyzedArguments AnalyzedArguments;
         public readonly ImmutableArray<Diagnostic> Diagnostics;
         public readonly LookupResultKind ResultKind;
 
@@ -28,7 +28,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public MethodGroupResolution(
             MethodGroup methodGroup,
             OverloadResolutionResult<MethodSymbol> overloadResolutionResult,
-            AnalyzedArguments analyzedArguments,
+            UnpooledAnalyzedArguments analyzedArguments,
             ImmutableArray<Diagnostic> diagnostics)
             : this(methodGroup, null, overloadResolutionResult, analyzedArguments, methodGroup.ResultKind, diagnostics)
         {
@@ -43,7 +43,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             MethodGroup methodGroup,
             Symbol otherSymbol,
             OverloadResolutionResult<MethodSymbol> overloadResolutionResult,
-            AnalyzedArguments analyzedArguments,
+            UnpooledAnalyzedArguments analyzedArguments,
             LookupResultKind resultKind,
             ImmutableArray<Diagnostic> diagnostics)
         {
@@ -95,15 +95,15 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (this.MethodGroup != null)
             {
-                if (this.MethodGroup.IsExtensionMethodGroup)
-                {
-                    // Arguments are only owned by this instance if the arguments are for
-                    // extension methods. Otherwise, the caller supplied the arguments.
-                    if (this.AnalyzedArguments != null)
-                    {
-                        this.AnalyzedArguments.Free();
-                    }
-                }
+                //if (this.MethodGroup.IsExtensionMethodGroup)
+                //{
+                //    // Arguments are only owned by this instance if the arguments are for
+                //    // extension methods. Otherwise, the caller supplied the arguments.
+                //    if (this.AnalyzedArguments != null)
+                //    {
+                //        this.AnalyzedArguments.Free();
+                //    }
+                //}
                 this.MethodGroup.Free();
             }
             if (this.OverloadResolutionResult != null)

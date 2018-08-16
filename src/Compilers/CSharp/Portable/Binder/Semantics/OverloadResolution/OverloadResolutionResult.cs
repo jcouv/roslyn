@@ -189,7 +189,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             string name,
             BoundExpression receiver,
             SyntaxNode invokedExpression,
-            AnalyzedArguments arguments,
+            IAnalyzedArguments arguments,
             ImmutableArray<T> memberGroup, // the T is just a convenience for the caller
             NamedTypeSymbol typeContainingConstructor,
             NamedTypeSymbol delegateTypeBeingInvoked,
@@ -664,7 +664,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             DiagnosticBag diagnostics,
             ImmutableArray<Symbol> symbols,
             BoundExpression receiver,
-            AnalyzedArguments arguments,
+            IAnalyzedArguments arguments,
             Location location,
             CSharpSyntaxNode queryClause = null)
         {
@@ -714,7 +714,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private static void ReportNameUsedForPositional(
             MemberResolutionResult<TMember> bad,
             DiagnosticBag diagnostics,
-            AnalyzedArguments arguments,
+            IAnalyzedArguments arguments,
             ImmutableArray<Symbol> symbols)
         {
             int badArg = bad.Result.BadArgumentsOpt[0];
@@ -735,7 +735,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private static void ReportBadNonTrailingNamedArgument(
             MemberResolutionResult<TMember> bad,
             DiagnosticBag diagnostics,
-            AnalyzedArguments arguments,
+            IAnalyzedArguments arguments,
             ImmutableArray<Symbol> symbols)
         {
             int badArg = bad.Result.BadArgumentsOpt[0];
@@ -753,7 +753,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 symbols), location);
         }
 
-        private void ReportDuplicateNamedArgument(MemberResolutionResult<TMember> result, DiagnosticBag diagnostics, AnalyzedArguments arguments)
+        private void ReportDuplicateNamedArgument(MemberResolutionResult<TMember> result, DiagnosticBag diagnostics, IAnalyzedArguments arguments)
         {
             Debug.Assert(result.Result.BadArgumentsOpt.Length == 1);
             IdentifierNameSyntax name = arguments.Names[result.Result.BadArgumentsOpt[0]];
@@ -767,7 +767,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             MemberResolutionResult<TMember> bad,
             string methodName,
             DiagnosticBag diagnostics,
-            AnalyzedArguments arguments,
+            IAnalyzedArguments arguments,
             NamedTypeSymbol delegateTypeBeingInvoked,
             ImmutableArray<Symbol> symbols)
         {
@@ -849,7 +849,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private static void ReportBadParameterCount(
             DiagnosticBag diagnostics,
             string name,
-            AnalyzedArguments arguments,
+            IAnalyzedArguments arguments,
             ImmutableArray<Symbol> symbols,
             Location location,
             NamedTypeSymbol typeContainingConstructor,
@@ -979,7 +979,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return true;
         }
 
-        private static bool HadLambdaConversionError(DiagnosticBag diagnostics, AnalyzedArguments arguments)
+        private static bool HadLambdaConversionError(DiagnosticBag diagnostics, IAnalyzedArguments arguments)
         {
             bool hadError = false;
             foreach (var argument in arguments.Arguments)
@@ -997,7 +997,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             DiagnosticBag diagnostics,
             Binder binder,
             string name,
-            AnalyzedArguments arguments,
+            IAnalyzedArguments arguments,
             ImmutableArray<Symbol> symbols,
             Location location,
             BinderFlags flags,
@@ -1056,7 +1056,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             DiagnosticBag diagnostics,
             Binder binder,
             string name,
-            AnalyzedArguments arguments,
+            IAnalyzedArguments arguments,
             ImmutableArray<Symbol> symbols,
             Location location,
             MemberResolutionResult<TMember> badArg,

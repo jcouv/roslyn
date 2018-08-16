@@ -6053,7 +6053,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     returnType: returnType);
                 diagnostics.Add(expression, useSiteDiagnostics);
                 var sealedDiagnostics = diagnostics.ToReadOnlyAndFree();
-                var result = new MethodGroupResolution(methodGroup, null, overloadResolutionResult, actualArguments, methodGroup.ResultKind, sealedDiagnostics);
+                var result = new MethodGroupResolution(methodGroup, null, overloadResolutionResult, new UnpooledAnalyzedArguments(actualArguments), methodGroup.ResultKind, sealedDiagnostics);
 
                 // If the search in the current scope resulted in any applicable method (regardless of whether a best 
                 // applicable method could be determined) then our search is complete. Otherwise, store aside the
@@ -7251,7 +7251,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     allowUnexpandedForm: allowUnexpandedForm,
                     returnRefKind: returnRefKind,
                     returnType: returnType);
-                return new MethodGroupResolution(methodGroup, null, result, analyzedArguments, methodGroup.ResultKind, sealedDiagnostics);
+                return new MethodGroupResolution(methodGroup, null, result, new UnpooledAnalyzedArguments(analyzedArguments), methodGroup.ResultKind, sealedDiagnostics);
             }
         }
 

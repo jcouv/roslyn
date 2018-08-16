@@ -157,7 +157,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return false;
         }
 
-        internal static void ReportQueryInferenceFailed(CSharpSyntaxNode queryClause, string methodName, BoundExpression receiver, AnalyzedArguments arguments, ImmutableArray<Symbol> symbols, DiagnosticBag diagnostics)
+        internal static void ReportQueryInferenceFailed(CSharpSyntaxNode queryClause, string methodName, BoundExpression receiver, IAnalyzedArguments arguments, ImmutableArray<Symbol> symbols, DiagnosticBag diagnostics)
         {
             string clauseKind = null;
             bool multiple = false;
@@ -206,7 +206,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 symbols), queryClause.GetFirstToken().GetLocation());
         }
 
-        private static bool ReportQueryInferenceFailedSelectMany(FromClauseSyntax fromClause, string methodName, BoundExpression receiver, AnalyzedArguments arguments, ImmutableArray<Symbol> symbols, DiagnosticBag diagnostics)
+        private static bool ReportQueryInferenceFailedSelectMany(FromClauseSyntax fromClause, string methodName, BoundExpression receiver, IAnalyzedArguments arguments, ImmutableArray<Symbol> symbols, DiagnosticBag diagnostics)
         {
             Debug.Assert(methodName == "SelectMany");
 
