@@ -449,38 +449,39 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             Debug.Assert(!constraintTypes.IsDefaultOrEmpty);
             inProgress = inProgress.Prepend(this);
 
-            bool? result = false;
+            bool sawOblivious = false;
             foreach (TypeSymbolWithAnnotations constraintType in constraintTypes)
+            {
+                switch (isNotNullable(constraintType))
+                {
+                    case true:
+                        return true;
+                    case null:
+                        sawOblivious = true;
+                        break;
+                }
+            }
+
+            return sawOblivious ? (bool?)null : false;
+
+            bool? isNotNullable(TypeSymbolWithAnnotations constraintType)
             {
                 if (constraintType.IsAnnotated)
                 {
-                    continue;
+                    return false;
                 }
 
                 if (constraintType.TypeKind == TypeKind.TypeParameter)
                 {
-                    bool? isNotNullableIfReferenceType = ((TypeParameterSymbol)constraintType.TypeSymbol).GetIsNotNullableIfReferenceType(inProgress);
-
-                    if (isNotNullableIfReferenceType == false)
+                    bool? fromTypeParameter = ((TypeParameterSymbol)constraintType.TypeSymbol).GetIsNotNullableIfReferenceType(inProgress);
+                    if (fromTypeParameter != true)
                     {
-                        continue;
-                    }
-                    else if (isNotNullableIfReferenceType == null)
-                    {
-                        result = null;
-                        continue;
+                        return fromTypeParameter;
                     }
                 }
 
-                if (constraintType.NonNullTypesContext.NonNullTypes == true)
-                {
-                    return true;
-                }
-
-                result = null;
+                return (constraintType.NonNullTypesContext.NonNullTypes == true) ? (bool?)true : null;
             }
-
-            return result;
         }
 
         internal bool IsValueTypeFromConstraintTypes(ImmutableArray<TypeSymbolWithAnnotations> constraintTypes, ConsList<TypeParameterSymbol> inProgress)
@@ -530,35 +531,34 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return false;
             }
 
-            bool? fromReferenceTypeConstraint = false;
-
+            bool sawOblivious = false;
             if (this.HasReferenceTypeConstraint)
             {
-                fromReferenceTypeConstraint = !this.ReferenceTypeConstraintIsNullable;
-
-                if (fromReferenceTypeConstraint == true)
+                switch (ReferenceTypeConstraintIsNullable)
                 {
-                    return true;
+                    case false:
+                        return true;
+                    case null:
+                        sawOblivious = true;
+                        break;
                 }
             }
 
             ImmutableArray<TypeSymbolWithAnnotations> constraintTypes = this.GetConstraintTypesNoUseSiteDiagnostics(inProgress, early: true);
-
-            if (constraintTypes.IsEmpty)
+            if (!constraintTypes.IsEmpty)
             {
-                return fromReferenceTypeConstraint;
+                bool? fromTypes = IsNotNullableIfReferenceTypeFromConstraintTypes(constraintTypes, inProgress);
+                switch (fromTypes)
+                {
+                    case true:
+                        return true;
+                    case null:
+                        sawOblivious = true;
+                        break;
+                }
             }
 
-            bool? fromTypes = IsNotNullableIfReferenceTypeFromConstraintTypes(constraintTypes, inProgress);
-
-            if (fromTypes == true || fromReferenceTypeConstraint == false)
-            {
-                return fromTypes;
-            }
-
-            Debug.Assert(fromReferenceTypeConstraint == null);
-            Debug.Assert(fromTypes != true);
-            return null;
+            return sawOblivious ? (bool?)null : false;
         }
 
         // PROTOTYPE(NullableReferenceTypes): Should this API be exposed through ITypeParameterSymbol?
