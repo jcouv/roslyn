@@ -21,7 +21,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.CodeGen
     [CompilerTrait(CompilerFeature.AsyncStreams)]
     public class CodeGenAsyncIteratorTests : EmitMetadataTestBase
     {
-        // PROTOTYPE(async-streams)
+        // PROTOTYPE(async-streams) Add more tests:
         // Test missing remaining types/members once BCL APIs are finalized (MRVTSL, IStrongBox, IValueTaskSource)
         // test missing AsyncTaskMethodBuilder<T> or missing members Create(), Task, ...
         // Test with yield or await in try/catch/finally
@@ -51,9 +51,9 @@ class C
     async System.Collections.Generic.IAsyncEnumerable<int> M() { await Task.CompletedTask; yield return 3; }
 }
 ";
-                var comp = CreateCompilationWithTasksExtensions(source, references: new[] { lib_ref });
-                comp.MakeMemberMissing(member);
-                comp.VerifyEmitDiagnostics(expected);
+            var comp = CreateCompilationWithTasksExtensions(source, references: new[] { lib_ref });
+            comp.MakeMemberMissing(member);
+            comp.VerifyEmitDiagnostics(expected);
         }
 
         private void VerifyMissingType(WellKnownType type, params DiagnosticDescription[] expected)
@@ -68,9 +68,9 @@ class C
     async System.Collections.Generic.IAsyncEnumerable<int> M() { await Task.CompletedTask; yield return 3; }
 }
 ";
-                var comp = CreateCompilationWithTasksExtensions(source, references: new[] { lib_ref });
-                comp.MakeTypeMissing(type);
-                comp.VerifyEmitDiagnostics(expected);
+            var comp = CreateCompilationWithTasksExtensions(source, references: new[] { lib_ref });
+            comp.MakeTypeMissing(type);
+            comp.VerifyEmitDiagnostics(expected);
         }
 
         [Fact]
@@ -186,6 +186,16 @@ class C
                 // (5,64): error CS0656: Missing compiler required member 'System.Threading.Tasks.Sources.IValueTaskSource`1.OnCompleted'
                 //     async System.Collections.Generic.IAsyncEnumerable<int> M() { await Task.CompletedTask; yield return 3; }
                 Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "{ await Task.CompletedTask; yield return 3; }").WithArguments("System.Threading.Tasks.Sources.IValueTaskSource`1", "OnCompleted").WithLocation(5, 64)
+                );
+        }
+
+        [Fact]
+        public void MissingMember_AsyncVoidMethodBuilder()
+        {
+            VerifyMissingMember(WellKnownMember.System_Runtime_CompilerServices_AsyncVoidMethodBuilder__Create,
+                // (5,64): error CS0656: Missing compiler required member 'System.Runtime.CompilerServices.AsyncVoidMethodBuilder.Create'
+                //     async System.Collections.Generic.IAsyncEnumerable<int> M() { await Task.CompletedTask; yield return 3; }
+                Diagnostic(ErrorCode.ERR_MissingPredefinedMember, "{ await Task.CompletedTask; yield return 3; }").WithArguments("System.Runtime.CompilerServices.AsyncVoidMethodBuilder", "Create").WithLocation(5, 64)
                 );
         }
 
