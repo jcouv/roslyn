@@ -18,6 +18,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             private FieldSymbol _promiseOfValueOrEndField; // this struct implements the IValueTaskSource logic
             private FieldSymbol _promiseIsActiveField;
             private FieldSymbol _currentField; // stores the current/yielded value
+            private FieldSymbol _initialThreadIdField;
 
             internal AsyncIteratorRewriter(
                 BoundStatement body,
@@ -103,6 +104,26 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 // Add a field: T current
                 _currentField = F.StateMachineField(method.IteratorElementType, GeneratedNames.MakeIteratorCurrentFieldName());
+
+                // Add a field: int initialThreadId
+                // if either Environment.CurrentManagedThreadId or Thread.ManagedThreadId are available
+                _initialThreadIdField = CanGetThreadId()
+                    ? F.StateMachineField(F.SpecialType(SpecialType.System_Int32), GeneratedNames.MakeIteratorCurrentThreadIdFieldName())
+                    : null;
+            }
+
+            protected override void GenerateConstructor()
+            {
+                GenerateIteratorConstructor(MakeCurrentThreadId(), _initialThreadIdField);
+            }
+
+            protected override void InitializeStateMachine(ArrayBuilder<BoundStatement> bodyBuilder, NamedTypeSymbol frameType, LocalSymbol stateMachineLocal)
+            {
+                // var stateMachineLocal = new {state machine type}(StateMachineStates.FirstUnusedState);
+                bodyBuilder.Add(
+                    F.Assignment(
+                        F.Local(stateMachineLocal),
+                        F.New(stateMachineType.Constructor.AsMember(frameType), F.Literal(StateMachineStates.FirstUnusedState))));
             }
 
             /// <summary>
@@ -110,6 +131,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             /// </summary>
             protected override BoundStatement GenerateStateMachineCreation(LocalSymbol stateMachineVariable, NamedTypeSymbol frameType)
             {
+                // PROTOTYPE(async-streams): TODO review this (what is this error case at the start?)
+
                 // If the async method's result type is a type parameter of the method, then the AsyncTaskMethodBuilder<T>
                 // needs to use the method's type parameters inside the rewritten method body. All other methods generated
                 // during async rewriting are members of the synthesized state machine struct, and use the type parameters
@@ -152,7 +175,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         F.Field(F.Local(stateMachineVariable), _promiseIsActiveField.AsMember(frameType)),
                         F.Literal(true)));
 
-                // return local.$stateField;
+                // return local;
                 bodyBuilder.Add(F.Return(F.Local(stateMachineVariable)));
 
                 return F.Block(
@@ -185,7 +208,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     .AsMember(IAsyncEnumeratorOfElementType);
 
                 // The implementation doesn't depend on the method body of the iterator method.
-                OpenMethodImplementation( IAsyncEnumerableOfElementType_WaitForNextAsync, hasMethodBodyDependency: false);
+                OpenMethodImplementation(IAsyncEnumerableOfElementType_WaitForNextAsync, hasMethodBodyDependency: false);
 
                 BoundFieldAccess promiseIsActiveField = F.Field(F.This(), _promiseIsActiveField);
 
@@ -248,7 +271,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     .AsMember(IAsyncEnumeratorOfElementType);
 
                 // The implementation doesn't depend on the method body of the iterator method.
-                OpenMethodImplementation( IAsyncEnumerableOfElementType_TryGetNext, hasMethodBodyDependency: false);
+                OpenMethodImplementation(IAsyncEnumerableOfElementType_TryGetNext, hasMethodBodyDependency: false);
 
                 var blockBuilder = ArrayBuilder<BoundStatement>.GetInstance();
 
@@ -484,7 +507,27 @@ namespace Microsoft.CodeAnalysis.CSharp
             /// </summary>
             private void GenerateIAsyncEnumerableImplementation_GetAsyncEnumerator()
             {
-                // PROTOTYPE(async-streams): do the threadID dance to decide if we can return this or should instantiate.
+                // TODO: figure out if I need to save parameters and 'this'
+                // TODO: review state numbers
+
+                // Produce:
+                // {state machine type} result = new {state machine type}();
+                //  OR
+                // {state machine type} result;
+                // if (this.$stateField == FinishedStateMachine && this.initialThreadId == Environment.CurrentManagedThreadId)
+                // {
+                //     this.$stateField = StateMachineStates.FirstUnusedState;
+                //     result = this;
+                // }
+                // else
+                // {
+                //     result = new {state machine type}();
+                // }
+                //
+                // Followed by:
+                // TODO?     result.self = this.self;
+                // TODO? ... set parameters ...
+                // return result;
 
                 NamedTypeSymbol IAsyncEnumerableOfElementType =
                     F.WellKnownType(WellKnownType.System_Collections_Generic_IAsyncEnumerable_T)
@@ -498,14 +541,41 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // result = this;
                 // result.parameter = this.parameterProxy; // copy all of the parameter proxies // PROTOTYPE(async-streams): No sure what this is for
 
-                // The implementation doesn't depend on the method body of the iterator method.
-                // Generates IAsyncEnumerator<elementType> IAsyncEnumerable<elementType>.GetEnumerator()
-                OpenMethodImplementation( IAsyncEnumerableOfElementType_GetEnumerator, hasMethodBodyDependency: false);
 
-                // PROTOTYPE(async-streams): 0 is not the proper state to start with
-                F.CloseMethod(F.Block(
-                    //F.Assignment(F.Field(F.This(), stateField), F.Literal(StateMachineStates.FirstUnusedState)), // this.state = 0;
-                    F.Return(F.This()))); // return this;
+                OpenMethodImplementation(IAsyncEnumerableOfElementType_GetEnumerator, hasMethodBodyDependency: false);
+                var bodyBuilder = ArrayBuilder<BoundStatement>.GetInstance();
+
+                // {state machine type} result;
+                var resultVariable = F.SynthesizedLocal(stateMachineType, syntax: null);
+
+                //var thisInitialized = F.GenerateLabel("thisInitialized");
+
+                // result = new {state machine type}(StateMachineStates.FirstUnusedState);
+                BoundStatement makeStateMachine = F.Assignment(F.Local(resultVariable), F.New(stateMachineType.Constructor, F.Literal(StateMachineStates.FirstUnusedState)));
+
+                if ((object)_initialThreadIdField != null)
+                {
+                    var managedThreadId = MakeCurrentThreadId();
+
+                    makeStateMachine = F.If(
+                        condition:
+                            F.LogicalAnd( // if (this.state == -2 && this.initialThreadId == Thread.CurrentThread.ManagedThreadId)
+                                F.IntEqual(F.Field(F.This(), stateField), F.Literal(StateMachineStates.FinishedStateMachine)),
+                                F.IntEqual(F.Field(F.This(), _initialThreadIdField), managedThreadId)),
+                        thenClause: F.Block( // then
+                            F.Assignment(F.Field(F.This(), stateField), F.Literal(StateMachineStates.FirstUnusedState)),  // this.state = 0;
+                            F.Assignment(F.Local(resultVariable), F.This())),       // result = this;
+                            //method.IsStatic || method.ThisParameter.Type.IsReferenceType ?   // if this is a reference type, no need to copy it since it is not assignable
+                            //    F.Goto(thisInitialized) :                          // goto thisInitialized
+                            //    (BoundStatement)F.StatementList()),
+                        elseClauseOpt: makeStateMachine // else { result = new {state machine type}(0); }
+                        );
+                }
+
+                bodyBuilder.Add(makeStateMachine);
+                bodyBuilder.Add(F.Return(F.Local(resultVariable)));
+
+                F.CloseMethod(F.Block(ImmutableArray.Create(resultVariable), bodyBuilder.ToImmutableAndFree()));
             }
 
             protected override void GenerateMoveNext(SynthesizedImplementationMethod moveNextMethod)

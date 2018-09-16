@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System.Collections.Immutable;
+using System.Diagnostics;
 using Microsoft.CodeAnalysis.CodeGen;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.PooledObjects;
@@ -108,7 +109,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return Binder.GetWellKnownTypeMember(F.Compilation, member, bag, body.Syntax.Location);
         }
 
-        protected override bool PreserveInitialParameterValues
+        protected sealed override bool PreserveInitialParameterValues
         {
             get { return false; }
         }
@@ -162,13 +163,22 @@ namespace Microsoft.CodeAnalysis.CSharp
             // Constructor
             if (stateMachineType.TypeKind == TypeKind.Class)
             {
-                F.CurrentFunction = stateMachineType.Constructor;
-                F.CloseMethod(F.Block(ImmutableArray.Create(F.BaseInitialization(), F.Return())));
+                GenerateConstructor();
             }
+        }
+
+        protected virtual void GenerateConstructor()
+        {
+            Debug.Assert(!this.method.IsIterator); // overridden for async-iterators
+
+            F.CurrentFunction = stateMachineType.Constructor;
+            F.CloseMethod(F.Block(ImmutableArray.Create(F.BaseInitialization(), F.Return())));
         }
 
         protected override void InitializeStateMachine(ArrayBuilder<BoundStatement> bodyBuilder, NamedTypeSymbol frameType, LocalSymbol stateMachineLocal)
         {
+            Debug.Assert(!this.method.IsIterator); // overridden for async-iterators
+
             if (frameType.TypeKind == TypeKind.Class)
             {
                 // local = new {state machine type}();
@@ -181,6 +191,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         protected override BoundStatement GenerateStateMachineCreation(LocalSymbol stateMachineVariable, NamedTypeSymbol frameType)
         {
+            Debug.Assert(!this.method.IsIterator); // overridden for async-iterators
+
             // If the async method's result type is a type parameter of the method, then the AsyncTaskMethodBuilder<T>
             // needs to use the method's type parameters inside the rewritten method body. All other methods generated
             // during async rewriting are members of the synthesized state machine struct, and use the type parameters

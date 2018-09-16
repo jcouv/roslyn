@@ -331,6 +331,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         protected BoundExpression MakeCurrentThreadId()
         {
+            // .NET Core has removed the Thread class. We can get the managed thread id by making a call to Environment.CurrentManagedThreadId. 
             Debug.Assert(CanGetThreadId());
             var currentManagedThreadIdProperty = (PropertySymbol)F.WellKnownMember(WellKnownMember.System_Environment__CurrentManagedThreadId, isOptional: true);
             if ((object)currentManagedThreadIdProperty != null)
@@ -352,6 +353,37 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             return (object)F.WellKnownMember(WellKnownMember.System_Threading_Thread__ManagedThreadId, isOptional: true) != null ||
                 (object)F.WellKnownMember(WellKnownMember.System_Environment__CurrentManagedThreadId, isOptional: true) != null;
+        }
+
+        /// <summary>
+        /// Generate the body for a constructor accepting an `int` parameter for the initial state,
+        /// which saves the state value and optionally saves the current thread id
+        /// </summary>
+        protected void GenerateIteratorConstructor(BoundExpression managedThreadId, FieldSymbol initialThreadIdField)
+        {
+            // Produce:
+            // base()
+            // this.$stateField = state;
+            // this.initialThreadId = Thread.CurrentThread.ManagedThreadId; /* optionally */
+            // return;
+
+            F.CurrentFunction = stateMachineType.Constructor;
+            var bodyBuilder = ArrayBuilder<BoundStatement>.GetInstance();
+            bodyBuilder.Add(F.BaseInitialization());
+
+            // this.$stateField = state;
+            bodyBuilder.Add(F.Assignment(F.Field(F.This(), stateField), F.Parameter(F.CurrentFunction.Parameters[0])));
+
+            if (managedThreadId != null)
+            {
+                // this.initialThreadId = Thread.CurrentThread.ManagedThreadId;
+                bodyBuilder.Add(F.Assignment(F.Field(F.This(), initialThreadIdField), managedThreadId));
+            }
+
+            bodyBuilder.Add(F.Return());
+
+            F.CloseMethod(F.Block(bodyBuilder.ToImmutableAndFree()));
+            bodyBuilder = null;
         }
     }
 }

@@ -194,7 +194,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     GenerateEnumerableImplementation(ref managedThreadId);
                 }
 
-                GenerateConstructor(managedThreadId);
+                GenerateIteratorConstructor(managedThreadId, _initialThreadIdField);
             }
             catch (SyntheticBoundNodeFactory.MissingPredefinedMember ex)
             {
@@ -251,12 +251,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             var IEnumerableOfElementType_GetEnumerator = F.SpecialMethod(SpecialMember.System_Collections_Generic_IEnumerable_T__GetEnumerator).AsMember(IEnumerableOfElementType);
 
             // generate the code for GetEnumerator()
-            // .NET Core has removed the Thread class. We can the managed thread id by making a call to 
+            // .NET Core has removed the Thread class. We can get the managed thread id by making a call to 
             // Environment.CurrentManagedThreadId. If that method is not present (pre 4.5) fall back to the old behavior.
             //    IEnumerable<elementType> result;
             //    if (this.initialThreadId == Thread.CurrentThread.ManagedThreadId && this.state == -2)
             //    {
-            //        this.state = 0;
+            //        this.state = StateMachineStates.FirstUnusedState;
             //        result = this;
             //    }
             //    else
@@ -275,7 +275,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             var bodyBuilder = ArrayBuilder<BoundStatement>.GetInstance();
             var resultVariable = F.SynthesizedLocal(stateMachineType, null);      // iteratorClass result;
-            BoundStatement makeIterator = F.Assignment(F.Local(resultVariable), F.New(stateMachineType.Constructor, F.Literal(0))); // result = new IteratorClass(0)
+
+            // result = new IteratorClass(StateMachineStates.FirstUnusedState);
+            BoundStatement makeIterator = F.Assignment(F.Local(resultVariable), F.New(stateMachineType.Constructor, F.Literal(StateMachineStates.FirstUnusedState)));
 
             var thisInitialized = F.GenerateLabel("thisInitialized");
 
@@ -336,24 +338,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             // Generate IEnumerable.GetEnumerator
             var getEnumerator = OpenMethodImplementation(IEnumerable_GetEnumerator);
             F.CloseMethod(F.Return(F.Call(F.This(), getEnumeratorGeneric)));
-        }
-
-        private void GenerateConstructor(BoundExpression managedThreadId)
-        {
-            F.CurrentFunction = stateMachineType.Constructor;
-            var bodyBuilder = ArrayBuilder<BoundStatement>.GetInstance();
-            bodyBuilder.Add(F.BaseInitialization());
-            bodyBuilder.Add(F.Assignment(F.Field(F.This(), stateField), F.Parameter(F.CurrentFunction.Parameters[0]))); // this.state = state;
-
-            if (managedThreadId != null)
-            {
-                // this.initialThreadId = Thread.CurrentThread.ManagedThreadId;
-                bodyBuilder.Add(F.Assignment(F.Field(F.This(), _initialThreadIdField), managedThreadId));
-            }
-
-            bodyBuilder.Add(F.Return());
-            F.CloseMethod(F.Block(bodyBuilder.ToImmutableAndFree()));
-            bodyBuilder = null;
         }
 
         protected override void InitializeStateMachine(ArrayBuilder<BoundStatement> bodyBuilder, NamedTypeSymbol frameType, LocalSymbol stateMachineLocal)
