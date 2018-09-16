@@ -1085,6 +1085,36 @@ class C
             }
         }
 
+        [ConditionalFact(typeof(WindowsDesktopOnly), AlwaysSkip = "PROTOTYPE(async-streams): assigning value of wrong type, ie. the T from a different method")]
+        public void AsyncIteratorWithGenericReturn()
+        {
+            string source = @"
+using static System.Console;
+class C
+{
+    static async System.Collections.Generic.IAsyncEnumerable<T> M<T>(T value)
+    {
+        Write(""1 "");
+        await System.Threading.Tasks.Task.CompletedTask;
+        Write(""2 "");
+        yield return value;
+        Write("" 4 "");
+    }
+    static async System.Threading.Tasks.Task Main()
+    {
+        Write(""0 "");
+        foreach await (var i in M(3))
+        {
+            Write(i);
+        }
+        Write(""5"");
+    }
+}";
+            var comp = CreateCompilationWithTasksExtensions(new[] { source, s_common }, options: TestOptions.DebugExe);
+            comp.VerifyDiagnostics();
+            CompileAndVerify(comp, expectedOutput: "0 1 2 3 4 5");
+        }
+
         [Fact]
         public void AsyncIteratorWithReturn()
         {

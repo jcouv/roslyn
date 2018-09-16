@@ -110,8 +110,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             /// </summary>
             protected override BoundStatement GenerateStateMachineCreation(LocalSymbol stateMachineVariable, NamedTypeSymbol frameType)
             {
-                // PROTOTYPE(async-streams): TODO review this (what is this error case at the start?)
-
                 // If the async method's result type is a type parameter of the method, then the AsyncTaskMethodBuilder<T>
                 // needs to use the method's type parameters inside the rewritten method body. All other methods generated
                 // during async rewriting are members of the synthesized state machine struct, and use the type parameters
