@@ -194,7 +194,23 @@ namespace Microsoft.CodeAnalysis.CSharp
                     GenerateEnumerableImplementation(ref managedThreadId);
                 }
 
-                GenerateIteratorConstructor(managedThreadId, _initialThreadIdField);
+                F.CurrentFunction = stateMachineType.Constructor;
+                var bodyBuilder = ArrayBuilder<BoundStatement>.GetInstance();
+                bodyBuilder.Add(F.BaseInitialization());
+
+                // this.$stateField = state;
+                bodyBuilder.Add(F.Assignment(F.Field(F.This(), stateField), F.Parameter(F.CurrentFunction.Parameters[0])));
+
+                if (managedThreadId != null)
+                {
+                    // this.initialThreadId = Thread.CurrentThread.ManagedThreadId;
+                    bodyBuilder.Add(F.Assignment(F.Field(F.This(), _initialThreadIdField), managedThreadId));
+                }
+
+                bodyBuilder.Add(F.Return());
+
+                F.CloseMethod(F.Block(bodyBuilder.ToImmutableAndFree()));
+                bodyBuilder = null;
             }
             catch (SyntheticBoundNodeFactory.MissingPredefinedMember ex)
             {

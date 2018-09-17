@@ -86,7 +86,8 @@ It is similar to a state machine produced for an async method. It contains build
 But it contains additional state:
 - a promise of a value-or-end,
 - a `bool` flag indicating whether the promise is active or not,
-- a current yielded value of type `T`.
+- a current yielded value of type `T`,
+- an `int` capturing the id of the thread that created it.
 
 The promise of a value-or-end is returned from `WaitForNextAsync`. It can be fulfilled with either:
 - `true` (when a value becomes available following background execution of the state machine),

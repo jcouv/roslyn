@@ -114,16 +114,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             protected override void GenerateConstructor()
             {
-                GenerateIteratorConstructor(MakeCurrentThreadId(), _initialThreadIdField);
-            }
-
-            protected override void InitializeStateMachine(ArrayBuilder<BoundStatement> bodyBuilder, NamedTypeSymbol frameType, LocalSymbol stateMachineLocal)
-            {
-                // var stateMachineLocal = new {state machine type}(StateMachineStates.FirstUnusedState);
-                bodyBuilder.Add(
-                    F.Assignment(
-                        F.Local(stateMachineLocal),
-                        F.New(stateMachineType.Constructor.AsMember(frameType), F.Literal(StateMachineStates.FirstUnusedState))));
+                F.CurrentFunction = stateMachineType.Constructor;
+                F.CloseMethod(F.Block(ImmutableArray.Create(F.BaseInitialization(), F.Return())));
             }
 
             /// <summary>
@@ -550,8 +542,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 //var thisInitialized = F.GenerateLabel("thisInitialized");
 
-                // result = new {state machine type}(StateMachineStates.FirstUnusedState);
-                BoundStatement makeStateMachine = F.Assignment(F.Local(resultVariable), F.New(stateMachineType.Constructor, F.Literal(StateMachineStates.FirstUnusedState)));
+                // result = new {state machine type}();
+                BoundStatement makeStateMachine = F.Assignment(F.Local(resultVariable), F.New(stateMachineType.Constructor));
 
                 if ((object)_initialThreadIdField != null)
                 {
