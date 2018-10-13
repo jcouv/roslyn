@@ -38,6 +38,7 @@ namespace Microsoft.CodeAnalysis.Test.Utilities
             public const string CodeActionsAddAccessibilityModifiers = "CodeActions.AddAccessibilityModifiers";
             public const string CodeActionsAddAnonymousTypeMemberName = "CodeActions.AddAnonymousTypeMemberName";
             public const string CodeActionsAddBraces = "CodeActions.AddBraces";
+            public const string CodeActionsParenthesizeConditional = "CodeActions.ParenthesizeConditional";
             public const string CodeActionsAddFileBanner = "CodeActions.AddFileBanner";
             public const string CodeActionsAddImport = "CodeActions.AddImport";
             public const string CodeActionsAddMissingReference = "CodeActions.AddMissingReference";

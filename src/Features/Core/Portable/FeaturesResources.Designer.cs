@@ -2628,6 +2628,15 @@ namespace Microsoft.CodeAnalysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Parenthesize conditional expression.
+        /// </summary>
+        internal static string Parenthesize_conditional_expression {
+            get {
+                return ResourceManager.GetString("Parenthesize_conditional_expression", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Pascal Case.
         /// </summary>
         internal static string Pascal_Case {
