@@ -4601,29 +4601,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             var method = (MethodSymbol)_member;
             Debug.Assert(method.IsIterator);
-            VisitOptionalImplicitConversion(expr, getIteratorElementType(method.ReturnType.TypeSymbol), useLegacyWarnings: false, AssignmentKind.Return);
+
+            var ignored = DiagnosticBag.GetInstance();
+            var elementType = InMethodBinder.GetIteratorElementTypeFromReturnType(compilation, _binder, RefKind.None, method.ReturnType.TypeSymbol, (CSharpSyntaxNode)node.Syntax, ignored);
+            ignored.Free();
+
+            VisitOptionalImplicitConversion(expr, elementType, useLegacyWarnings: false, AssignmentKind.Return);
             return null;
-
-            TypeSymbolWithAnnotations getIteratorElementType(TypeSymbol returnType)
-            {
-                switch (returnType.OriginalDefinition.SpecialType)
-                {
-                    case SpecialType.System_Collections_IEnumerable:
-                    case SpecialType.System_Collections_IEnumerator:
-                        return TypeSymbolWithAnnotations.Create(compilation.GetSpecialType(SpecialType.System_Object));
-
-                    case SpecialType.System_Collections_Generic_IEnumerable_T:
-                    case SpecialType.System_Collections_Generic_IEnumerator_T:
-                        return ((NamedTypeSymbol)returnType).TypeArgumentsNoUseSiteDiagnostics[0];
-                }
-
-                if (returnType.OriginalDefinition == compilation.GetWellKnownType(WellKnownType.System_Collections_Generic_IAsyncEnumerable_T))
-                {
-                    return ((NamedTypeSymbol)returnType).TypeArgumentsNoUseSiteDiagnostics[0];
-                }
-
-                return default;
-            }
         }
 
 #endregion Visitors

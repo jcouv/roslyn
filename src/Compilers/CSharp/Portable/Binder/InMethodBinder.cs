@@ -175,7 +175,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             return _iteratorInfo.ElementType;
         }
 
-        private TypeSymbol GetIteratorElementTypeFromReturnType(RefKind refKind, TypeSymbol returnType, CSharpSyntaxNode errorLocationNode, DiagnosticBag diagnostics)
+        internal TypeSymbol GetIteratorElementTypeFromReturnType(RefKind refKind, TypeSymbol returnType, CSharpSyntaxNode errorLocationNode, DiagnosticBag diagnostics)
+        {
+            return GetIteratorElementTypeFromReturnType(Compilation, binder: this, refKind, returnType, errorLocationNode, diagnostics).TypeSymbol;
+        }
+
+        internal static TypeSymbolWithAnnotations GetIteratorElementTypeFromReturnType(CSharpCompilation compilation, Binder binder, RefKind refKind, TypeSymbol returnType, CSharpSyntaxNode errorLocationNode, DiagnosticBag diagnostics)
         {
             if (refKind == RefKind.None && returnType.Kind == SymbolKind.NamedType)
             {
@@ -183,20 +188,20 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     case SpecialType.System_Collections_IEnumerable:
                     case SpecialType.System_Collections_IEnumerator:
-                        return GetSpecialType(SpecialType.System_Object, diagnostics, errorLocationNode);
+                        return TypeSymbolWithAnnotations.Create(binder.GetSpecialType(SpecialType.System_Object, diagnostics, errorLocationNode));
 
                     case SpecialType.System_Collections_Generic_IEnumerable_T:
                     case SpecialType.System_Collections_Generic_IEnumerator_T:
-                        return ((NamedTypeSymbol)returnType).TypeArgumentsNoUseSiteDiagnostics[0].TypeSymbol;
+                        return ((NamedTypeSymbol)returnType).TypeArgumentsNoUseSiteDiagnostics[0];
                 }
 
-                if (returnType.OriginalDefinition == Compilation.GetWellKnownType(WellKnownType.System_Collections_Generic_IAsyncEnumerable_T))
+                if (returnType.OriginalDefinition == compilation.GetWellKnownType(WellKnownType.System_Collections_Generic_IAsyncEnumerable_T))
                 {
-                    return ((NamedTypeSymbol)returnType).TypeArgumentsNoUseSiteDiagnostics[0].TypeSymbol;
+                    return ((NamedTypeSymbol)returnType).TypeArgumentsNoUseSiteDiagnostics[0];
                 }
             }
 
-            return null;
+            return default;
         }
 
         internal override void LookupSymbolsInSingleBinder(
