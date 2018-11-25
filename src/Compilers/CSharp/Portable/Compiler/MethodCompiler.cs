@@ -1285,7 +1285,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // The reason why this rewrite happens before the lambda rewrite 
                     // is that we may need access to exception locals and it would be fairly hard to do
                     // if these locals are captured into closures (possibly nested ones).
-                    Debug.Assert(!method.IsIterator);
+                    Debug.Assert(method.IsAsync);
                     loweredBody = AsyncExceptionHandlerRewriter.Rewrite(
                         method,
                         method.ContainingType,
@@ -1335,6 +1335,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return bodyWithoutIterators;
                 }
 
+                // Rewrite async and async-iterator methods
                 AsyncStateMachine asyncStateMachine;
                 BoundStatement bodyWithoutAsync = AsyncRewriter.Rewrite(bodyWithoutIterators, method, methodOrdinal, lazyVariableSlotAllocator, compilationState, diagnostics, out asyncStateMachine);
 

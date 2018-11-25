@@ -246,7 +246,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 method: method,
                 methodOrdinal: _methodOrdinal,
                 asyncMethodBuilderMemberCollection: _asyncMethodBuilderMemberCollection,
-                asyncIteratorInfo: null,
                 F: F,
                 state: stateField,
                 builder: _builderField,

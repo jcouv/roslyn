@@ -43,6 +43,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return "<>m__Finally" + StringExtensions.GetNumeral(Math.Abs(iteratorState + 2));
         }
 
+        internal static string MakeIteratorFinallyAllMethodName()
+        {
+            Debug.Assert((char)GeneratedNameKind.IteratorFinallyMethod == 'm');
+            return "<>m__FinallyAll";
+        }
+
         internal static string MakeStaticLambdaDisplayClassName(int methodOrdinal, int generation)
         {
             return MakeMethodScopedSynthesizedName(GeneratedNameKind.LambdaDisplayClass, methodOrdinal, generation);
@@ -440,6 +446,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             Debug.Assert((char)GeneratedNameKind.IteratorCurrentBackingField == '2');
             return "<>2__current";
+        }
+
+        internal static string MakeDisposeModeFieldName()
+        {
+            Debug.Assert((char)GeneratedNameKind.DisposeModeField == 'w');
+            return "<>w__disposeMode";
         }
 
         internal static string MakeIteratorCurrentThreadIdFieldName()

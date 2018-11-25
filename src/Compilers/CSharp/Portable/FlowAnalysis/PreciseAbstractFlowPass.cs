@@ -936,6 +936,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             return null;
         }
 
+        public override BoundNode VisitExtractedFinallyBlock(BoundExtractedFinallyBlock node)
+        {
+            return Visit(node.FinallyBlock);
+        }
+
         public override BoundNode VisitThrowExpression(BoundThrowExpression node)
         {
             VisitRvalue(node.Expression);
@@ -2230,7 +2235,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             LoopTail(node);
             ResolveBreaks(breakState, node.BreakLabel);
 
-            if (((CommonForEachStatementSyntax)node.Syntax).AwaitKeyword != default)
+            if (AwaitUsingAndForeachAddsPendingBranch && ((CommonForEachStatementSyntax)node.Syntax).AwaitKeyword != default)
             {
                 _pendingBranches.Add(new PendingBranch(node, this.State));
             }
@@ -2572,14 +2577,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (_trackExceptions) NotePossibleException(node);
             VisitStatement(node.Body);
 
-            if (AwaitUsingAddsPendingBranch && node.AwaitOpt != null)
+            if (AwaitUsingAndForeachAddsPendingBranch && node.AwaitOpt != null)
             {
                 _pendingBranches.Add(new PendingBranch(node, this.State));
             }
             return null;
         }
 
-        public abstract bool AwaitUsingAddsPendingBranch { get; }
+        public abstract bool AwaitUsingAndForeachAddsPendingBranch { get; }
 
         public override BoundNode VisitFixedStatement(BoundFixedStatement node)
         {

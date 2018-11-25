@@ -814,7 +814,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         Dispatch(),
                         F.Goto(skipFinalizer),
                         F.Label(finalizer), // code for the finalizer here
-                        F.Assignment(F.Field(F.This(), stateField), F.AssignmentExpression(F.Local(cachedState), F.Literal(StateMachineStates.NotStartedStateMachine))),
+                        GenerateSetBothStates(StateMachineStates.NotStartedStateMachine),
                         GenerateReturn(false),
                         F.Label(skipFinalizer),
                         tryBlock);
@@ -849,7 +849,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 ),
                 F.HiddenSequencePoint());
 
-            BoundStatement result = node.Update(tryBlock, catchBlocks, finallyBlockOpt, node.PreferFaultHandler);
+            BoundStatement result = node.Update(tryBlock, catchBlocks, finallyBlockOpt, node.FinallyLabelOpt, node.PreferFaultHandler);
+
             if ((object)dispatchLabel != null)
             {
                 result = F.Block(
@@ -859,6 +860,15 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Set the state field and the cached state
+        /// </summary>
+        protected BoundExpressionStatement GenerateSetBothStates(int stateNumber)
+        {
+            // this.state = cachedState = stateForLabel
+            return F.Assignment(F.Field(F.This(), stateField), F.AssignmentExpression(F.Local(cachedState), F.Literal(stateNumber)));
         }
 
         protected BoundStatement CacheThisIfNeeded()

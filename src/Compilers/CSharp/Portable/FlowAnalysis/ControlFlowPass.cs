@@ -291,7 +291,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
         // For purpose of control flow analysis, awaits do not create pending branches, so asynchronous usings don't either
-        public sealed override bool AwaitUsingAddsPendingBranch => false;
+        public sealed override bool AwaitUsingAndForeachAddsPendingBranch => false;
 
         protected override void VisitLabel(BoundLabeledStatement node)
         {
