@@ -43,32 +43,18 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         /// <summary>
         /// Join nullable annotations from the set of lower bounds for fixing a type parameter.
+        /// We use the covariant merging rules:
+        ///  - if either `n` or `m` are nullable, nullable.
+        /// - if either `n` or `m` are oblivious, oblivious.
+        /// - otherwise non-nullable.
         /// </summary>
         public static NullableAnnotation JoinForFixingLowerBounds(this NullableAnnotation a, NullableAnnotation b)
         {
-            if (a == b)
+            if (a.IsAnyNullable() || b.IsAnyNullable())
             {
-                return a;
-            }
-
-            if (a.IsAnyNullable() && b.IsAnyNullable())
-            {
-                return NullableAnnotation.Annotated;
-            }
-
-            // If nullability on both sides matches - result is that nullability (trivial cases like these are handled above)
-            // If either candidate is nullable - result is nullable
-            // Otherwise - result is "oblivious". 
-
-            if (a.IsAnyNullable())
-            {
-                Debug.Assert(!b.IsAnyNullable());
-                return a;
-            }
-
-            if (b.IsAnyNullable())
-            {
-                return b;
+                return a == NullableAnnotation.Nullable || b == NullableAnnotation.Nullable
+                    ? NullableAnnotation.Nullable
+                    : NullableAnnotation.Annotated;
             }
 
             if (a == NullableAnnotation.Unknown || b == NullableAnnotation.Unknown)
@@ -76,11 +62,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return NullableAnnotation.Unknown;
             }
 
-            Debug.Assert((a == NullableAnnotation.NotAnnotated && b == NullableAnnotation.NotNullable) ||
-                (b == NullableAnnotation.NotAnnotated && a == NullableAnnotation.NotNullable));
-            return NullableAnnotation.NotAnnotated; // It is reasonable to settle on this value because the difference in annotations is either
-                                                    // not significant for the type, or candidate corresponding to this value is possibly a 
-                                                    // nullable reference type type parameter and nullable should win. 
+            return a == NullableAnnotation.NotNullable || b == NullableAnnotation.NotNullable
+                ? NullableAnnotation.NotNullable
+                : NullableAnnotation.NotAnnotated;
         }
 
         /// <summary>
