@@ -11,6 +11,7 @@ namespace Microsoft.CodeAnalysis
     internal enum TypeCompareKind
     {
         ConsiderEverything = 0,
+        ConsiderEverything2 = ConsiderEverything,
         IgnoreCustomModifiersAndArraySizesAndLowerBounds = 1,
         IgnoreDynamic = 2,
         IgnoreTupleNames = 4,
