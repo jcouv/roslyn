@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -62002,6 +62003,119 @@ partial class Program
         }
 
         private readonly static NullableAnnotation[] s_AllNullableAnnotations = (NullableAnnotation[])Enum.GetValues(typeof(NullableAnnotation));
+
+        [Fact]
+        public void TestJoinForFixingLowerBounds()
+        {
+            var inputs = new[] { NullableAnnotation.Annotated, NullableAnnotation.Nullable, NullableAnnotation.Unknown, NullableAnnotation.NotNullable, NullableAnnotation.NotAnnotated };
+            Func<int, int, NullableAnnotation> getResult = (i, j) => NullableAnnotationExtensions.JoinForFixingLowerBounds(inputs[i], inputs[j]);
+
+            var expected = new NullableAnnotation[5, 5]
+            {
+                { NullableAnnotation.Annotated,     NullableAnnotation.Nullable,      NullableAnnotation.Annotated,     NullableAnnotation.Annotated,     NullableAnnotation.Annotated    },
+                { NullableAnnotation.Nullable,      NullableAnnotation.Nullable,      NullableAnnotation.Nullable,      NullableAnnotation.Nullable,      NullableAnnotation.Nullable     },
+                { NullableAnnotation.Annotated,     NullableAnnotation.Nullable,      NullableAnnotation.Unknown,       NullableAnnotation.Unknown,       NullableAnnotation.Unknown      },
+                { NullableAnnotation.Annotated,     NullableAnnotation.Nullable,      NullableAnnotation.Unknown,       NullableAnnotation.NotNullable,   NullableAnnotation.NotNullable  },
+                { NullableAnnotation.Annotated,     NullableAnnotation.Nullable,      NullableAnnotation.Unknown,       NullableAnnotation.NotNullable,   NullableAnnotation.NotAnnotated },
+            };
+
+            AssertEqual(expected, getResult, inputs.Length);
+        }
+
+        [Fact]
+        public void JoinForFlowAnalysisBranches()
+        {
+            (NullableAnnotation annotation, bool isPNTP)[] inputs = new[]
+            {
+                (NullableAnnotation.Annotated, false),
+                (NullableAnnotation.Nullable, false),
+                (NullableAnnotation.Unknown, false),
+                (NullableAnnotation.NotNullable, false),
+                (NullableAnnotation.NotAnnotated, false),
+                (NullableAnnotation.NotAnnotated, true)
+            };
+
+            Func<int, int, NullableAnnotation> getResult =
+                (i, j) => NullableAnnotationExtensions.JoinForFlowAnalysisBranches<string>(
+                    inputs[i].annotation, inputs[j].annotation, type: null, isPossiblyNullableReferenceTypeTypeParameter: _ => inputs[i].isPNTP);
+
+            var expected = new NullableAnnotation[6, 6]
+            {
+                { NullableAnnotation.Annotated,     NullableAnnotation.Annotated,     NullableAnnotation.Annotated,     NullableAnnotation.Annotated,     NullableAnnotation.Annotated,     NullableAnnotation.Annotated    },
+                { NullableAnnotation.Annotated,     NullableAnnotation.Nullable,      NullableAnnotation.Nullable,      NullableAnnotation.Nullable,      NullableAnnotation.Nullable,      NullableAnnotation.Nullable     },
+                { NullableAnnotation.Annotated,     NullableAnnotation.Nullable,      NullableAnnotation.Unknown,       NullableAnnotation.Unknown,       NullableAnnotation.Unknown,       NullableAnnotation.Unknown      },
+                { NullableAnnotation.Annotated,     NullableAnnotation.Nullable,      NullableAnnotation.Unknown,       NullableAnnotation.NotNullable,   NullableAnnotation.NotAnnotated,  NullableAnnotation.NotAnnotated },
+                { NullableAnnotation.Annotated,     NullableAnnotation.Nullable,      NullableAnnotation.Unknown,       NullableAnnotation.NotAnnotated,  NullableAnnotation.NotAnnotated,  NullableAnnotation.NotAnnotated },
+                { NullableAnnotation.Annotated,     NullableAnnotation.Nullable,      NullableAnnotation.NotAnnotated,  NullableAnnotation.NotAnnotated,  NullableAnnotation.NotAnnotated,  NullableAnnotation.NotAnnotated },
+            };
+
+            AssertEqual(expected, getResult, inputs.Length);
+        }
+
+        [Fact]
+        public void TestMeet()
+        {
+            var inputs = new[] { NullableAnnotation.Annotated, NullableAnnotation.Nullable, NullableAnnotation.Unknown, NullableAnnotation.NotNullable, NullableAnnotation.NotAnnotated };
+            Func<int, int, NullableAnnotation> getResult = (i, j) => NullableAnnotationExtensions.Meet(inputs[i], inputs[j]);
+
+            var expected = new NullableAnnotation[5, 5]
+            {
+                { NullableAnnotation.Annotated,     NullableAnnotation.Nullable,      NullableAnnotation.Unknown,       NullableAnnotation.NotNullable,   NullableAnnotation.NotAnnotated },
+                { NullableAnnotation.Nullable,      NullableAnnotation.Nullable,      NullableAnnotation.Unknown,       NullableAnnotation.NotNullable,   NullableAnnotation.NotAnnotated },
+                { NullableAnnotation.Unknown,       NullableAnnotation.Unknown,       NullableAnnotation.Unknown,       NullableAnnotation.NotNullable,   NullableAnnotation.NotAnnotated },
+                { NullableAnnotation.NotNullable,   NullableAnnotation.NotNullable,   NullableAnnotation.NotNullable,   NullableAnnotation.NotNullable,   NullableAnnotation.NotNullable  },
+                { NullableAnnotation.NotAnnotated,  NullableAnnotation.NotAnnotated,  NullableAnnotation.NotAnnotated,  NullableAnnotation.NotNullable,   NullableAnnotation.NotAnnotated },
+            };
+
+            AssertEqual(expected, getResult, inputs.Length);
+        }
+
+        void AssertEqual(NullableAnnotation[,] expected, Func<int, int, NullableAnnotation> getResult, int size)
+        {
+            bool mismatch = false;
+            for (int i = 0; i < size; i++)
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    if (expected[i, j] != getResult(i, j))
+                    {
+                        mismatch = true;
+                    }
+                }
+            }
+
+            if (mismatch)
+            {
+                var builder = new StringBuilder();
+                builder.AppendLine("Actual result: ");
+                for (int i = 0; i < size; i++)
+                {
+                    builder.Append("{ ");
+                    bool first = true;
+                    int spaces = 0;
+                    for (int j = 0; j < size; j++)
+                    {
+                        if (first)
+                        {
+                            first = false;
+                        }
+                        else
+                        {
+                            builder.Append(", ");
+                            builder.Append(' ', spaces);
+                        }
+
+                        var output = getResult(i, j).ToString();
+                        builder.Append($"NullableAnnotation.{output}");
+                        spaces = 13 - output.Length;
+                    }
+                    builder.Append(' ', spaces);
+                    builder.AppendLine("},");
+                }
+
+                Assert.True(false, builder.ToString());
+            }
+        }
 
         [Fact]
         public void TestJoinForFixingLowerBoundsIsAssociative()
