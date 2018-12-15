@@ -64,7 +64,9 @@ class Program
 {
     void M(TypeSymbol x)
     {
-        _ = [|x != x|];
+        if (true &&
+            [|x != x|])
+        { }
     }
 }" + typeSymbol,
 @"
@@ -72,7 +74,9 @@ class Program
 {
     void M(TypeSymbol x)
     {
-        _ = !TypeSymbol.Equals(x, x, TypeCompareKind.ConsiderEverything2);
+        if (true &&
+            !TypeSymbol.Equals(x, x, TypeCompareKind.ConsiderEverything2))
+        { }
     }
 }" + typeSymbol, parameters: s_nullableFeature);
         }
