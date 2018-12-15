@@ -145,35 +145,28 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         /// <summary>
         /// Meet two nullable annotations for computing the nullable annotation of a type parameter from upper bounds.
+        /// We use the contravariant merging rules:
+        /// - if either `n` or `m` are non-nullable, non-nullable.
+        /// - if either `n` or `m` are oblivious, oblivious.
+        /// - otherwise nullable.
         /// </summary>
         public static NullableAnnotation MeetForFixingUpperBounds(this NullableAnnotation a, NullableAnnotation b)
         {
-            if (a == b)
+            if (a.IsAnyNotNullable() || b.IsAnyNotNullable())
             {
-                return a;
+                return a == NullableAnnotation.NotNullable || b == NullableAnnotation.NotNullable
+                    ? NullableAnnotation.NotNullable
+                    : NullableAnnotation.NotAnnotated;
             }
 
-            if (a.IsAnyNullable() && b.IsAnyNullable())
+            if (a == NullableAnnotation.Unknown || b == NullableAnnotation.Unknown)
             {
-                return NullableAnnotation.Annotated;
+                return NullableAnnotation.Unknown;
             }
 
-            // If nullability on both sides matches - result is that nullability (trivial cases like these are handled above)
-            // If either candidate is not nullable - result is not nullable
-            // Otherwise - result is "oblivious". 
-
-            if (a == NullableAnnotation.NotNullable || b == NullableAnnotation.NotNullable)
-            {
-                return NullableAnnotation.NotNullable;
-            }
-
-            if (a == NullableAnnotation.NotAnnotated || b == NullableAnnotation.NotAnnotated)
-            {
-                return NullableAnnotation.NotAnnotated;
-            }
-
-            Debug.Assert(a == NullableAnnotation.Unknown || b == NullableAnnotation.Unknown);
-            return NullableAnnotation.Unknown;
+            return a == NullableAnnotation.Nullable || b == NullableAnnotation.Nullable
+                ? NullableAnnotation.Nullable
+                : NullableAnnotation.Annotated;
         }
 
         /// <summary>
