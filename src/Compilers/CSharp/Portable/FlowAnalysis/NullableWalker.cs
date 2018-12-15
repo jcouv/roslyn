@@ -5014,7 +5014,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 NullableAnnotation selfAnnotation = self[slot];
                 NullableAnnotation otherAnnotation = other[slot];
-                NullableAnnotation union = selfAnnotation.MeetForFlowAnalysisFinally(otherAnnotation);
+                NullableAnnotation union = selfAnnotation.Meet(otherAnnotation);
 
                 if (selfAnnotation != union)
                 {

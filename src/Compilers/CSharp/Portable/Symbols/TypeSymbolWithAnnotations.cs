@@ -134,7 +134,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// - if either `n` or `m` are oblivious, oblivious.
         /// - otherwise nullable.
         /// </summary>
-        public static NullableAnnotation MeetForFixingUpperBounds(this NullableAnnotation a, NullableAnnotation b)
+        public static NullableAnnotation Meet(this NullableAnnotation a, NullableAnnotation b)
         {
             if (a.IsAnyNotNullable() || b.IsAnyNotNullable())
             {
@@ -151,32 +151,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return a == NullableAnnotation.Nullable || b == NullableAnnotation.Nullable
                 ? NullableAnnotation.Nullable
                 : NullableAnnotation.Annotated;
-        }
-
-        /// <summary>
-        /// Meet two nullable annotations from distinct states for the meet (union) operation in flow analysis.
-        /// </summary>
-        public static NullableAnnotation MeetForFlowAnalysisFinally(this NullableAnnotation selfAnnotation, NullableAnnotation otherAnnotation)
-        {
-            if (selfAnnotation == otherAnnotation)
-            {
-                return selfAnnotation;
-            }
-
-            if (selfAnnotation.IsAnyNotNullable() || otherAnnotation.IsAnyNotNullable())
-            {
-                return selfAnnotation == NullableAnnotation.NotNullable || otherAnnotation == NullableAnnotation.NotNullable ?
-                            NullableAnnotation.NotNullable : NullableAnnotation.NotAnnotated;
-            }
-            else if (selfAnnotation == NullableAnnotation.Unknown || otherAnnotation == NullableAnnotation.Unknown)
-            {
-                return NullableAnnotation.Unknown;
-            }
-            else
-            {
-                return selfAnnotation == NullableAnnotation.Nullable || otherAnnotation == NullableAnnotation.Nullable ?
-                            NullableAnnotation.Nullable : NullableAnnotation.Annotated;
-            }
         }
 
         /// <summary>
@@ -519,7 +493,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             switch (variance)
             {
                 case VarianceKind.In:
-                    return a.MeetForFixingUpperBounds(b);
+                    return a.Meet(b);
                 case VarianceKind.Out:
                     return a.JoinForFixingLowerBounds(b);
                 case VarianceKind.None:

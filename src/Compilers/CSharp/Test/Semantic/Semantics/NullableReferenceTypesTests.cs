@@ -62050,8 +62050,8 @@ partial class Program
                 {
                     foreach (var c in s_AllNullableAnnotations)
                     {
-                        var leftFirst = a.MeetForFixingUpperBounds(b).MeetForFixingUpperBounds(c);
-                        var rightFirst = a.MeetForFixingUpperBounds(b.MeetForFixingUpperBounds(c));
+                        var leftFirst = a.Meet(b).Meet(c);
+                        var rightFirst = a.Meet(b.Meet(c));
                         Assert.Equal(leftFirst, rightFirst);
                     }
                 }
@@ -62067,8 +62067,8 @@ partial class Program
                 {
                     foreach (var c in s_AllNullableAnnotations)
                     {
-                        var leftFirst = a.MeetForFlowAnalysisFinally(b).MeetForFlowAnalysisFinally(c);
-                        var rightFirst = a.MeetForFlowAnalysisFinally(b.MeetForFlowAnalysisFinally(c));
+                        var leftFirst = a.Meet(b).Meet(c);
+                        var rightFirst = a.Meet(b.Meet(c));
                         Assert.Equal(leftFirst, rightFirst);
                     }
                 }
@@ -62136,8 +62136,8 @@ partial class Program
             {
                 foreach (var b in s_AllNullableAnnotations)
                 {
-                    var leftFirst = a.MeetForFixingUpperBounds(b);
-                    var rightFirst = b.MeetForFixingUpperBounds(a);
+                    var leftFirst = a.Meet(b);
+                    var rightFirst = b.Meet(a);
                     Assert.Equal(leftFirst, rightFirst);
                 }
             }
@@ -62152,8 +62152,8 @@ partial class Program
                 {
                     foreach (var c in s_AllNullableAnnotations)
                     {
-                        var leftFirst = a.MeetForFlowAnalysisFinally(b);
-                        var rightFirst = b.MeetForFlowAnalysisFinally(a);
+                        var leftFirst = a.Meet(b);
+                        var rightFirst = b.Meet(a);
                         Assert.Equal(leftFirst, rightFirst);
                     }
                 }
@@ -62204,8 +62204,8 @@ partial class Program
             {
                 foreach (var b in s_AllNullableAnnotations)
                 {
-                    var result1 = a.MeetForFixingUpperBounds(b);
-                    var result2 = a.MeetForFlowAnalysisFinally(b);
+                    var result1 = a.Meet(b);
+                    var result2 = a.Meet(b);
                     Assert.Equal(result1, result2);
                 }
             }
