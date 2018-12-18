@@ -17,7 +17,7 @@ using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp.CodeFixes.DeclareAsNullable
 {
-    [ExportCodeFixProvider(LanguageNames.CSharp, Name = PredefinedCodeFixProviderNames.DeclareAsNullable), Shared]
+    [ExportCodeFixProvider(LanguageNames.CSharp, Name = PredefinedCodeFixProviderNames.FixEquals), Shared]
     internal class CSharpFixEqualsCodeFixProvider : SyntaxEditorBasedCodeFixProvider
     {
         // error CS0619
@@ -28,12 +28,6 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeFixes.DeclareAsNullable
             var diagnostic = context.Diagnostics.First();
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
             var node = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
-
-            //var declarationTypeToFix = TryGetDeclarationTypeToFix(node);
-            //if (declarationTypeToFix == null)
-            //{
-            //    return;
-            //}
 
             context.RegisterCodeFix(new MyCodeAction(
                 c => FixAsync(context.Document, diagnostic, c)),

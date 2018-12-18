@@ -285,14 +285,14 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
         End Function
 
         '<Obsolete("obsolete", True)>
-        Public Overloads Shared Operator =(left As TypeSymbol, right As TypeSymbol) As Boolean
-            Return True
-        End Operator
+        'Public Overloads Shared Operator =(left As TypeSymbol, right As TypeSymbol) As Boolean
+        '    Return True
+        'End Operator
 
         '<Obsolete("obsolete", True)>
-        Public Overloads Shared Operator <>(left As TypeSymbol, right As TypeSymbol) As Boolean
-            Return True
-        End Operator
+        'Public Overloads Shared Operator <>(left As TypeSymbol, right As TypeSymbol) As Boolean
+        '    Return True
+        'End Operator
 
         Public Overloads Shared Function Equals(left As TypeSymbol, right As TypeSymbol, comparison As TypeCompareKind) As Boolean
             Return True
