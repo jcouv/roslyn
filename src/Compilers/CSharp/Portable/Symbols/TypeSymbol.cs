@@ -21,16 +21,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     /// </summary>
     internal abstract partial class TypeSymbol : NamespaceOrTypeSymbol, ITypeSymbol
     {
-        //[Obsolete("obsolete", error: true)]
-        public static bool operator ==(TypeSymbol left, TypeSymbol right)
-        {
-            throw null;
-        }
-        public static bool operator !=(TypeSymbol left, TypeSymbol right)
-        {
-            throw null;
-        }
-
         public static bool Equals(TypeSymbol left, TypeSymbol right, TypeCompareKind comparison)
         {
             throw null;
