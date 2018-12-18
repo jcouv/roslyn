@@ -284,17 +284,22 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
             Return other.Is(Me)
         End Function
 
-        '<Obsolete("obsolete", True)>
-        'Public Overloads Shared Operator =(left As TypeSymbol, right As TypeSymbol) As Boolean
-        '    Return True
-        'End Operator
+        <Obsolete("Use TypeSymbol.Equals method.", True)>
+        Public Overloads Shared Operator =(left As TypeSymbol, right As TypeSymbol) As Boolean
+            Throw ExceptionUtilities.Unreachable
+        End Operator
 
-        '<Obsolete("obsolete", True)>
-        'Public Overloads Shared Operator <>(left As TypeSymbol, right As TypeSymbol) As Boolean
-        '    Return True
-        'End Operator
+        <Obsolete("Use TypeSymbol.Equals method.", True)>
+        Public Overloads Shared Operator <>(left As TypeSymbol, right As TypeSymbol) As Boolean
+            Throw ExceptionUtilities.Unreachable
+        End Operator
 
         Public Overloads Shared Function Equals(left As TypeSymbol, right As TypeSymbol, comparison As TypeCompareKind) As Boolean
+            If comparison = TypeCompareKind.ConsiderEverything AndAlso right Is Nothing Then
+                Return left Is Nothing
+            End If
+
+            Return (comparison = TypeCompareKind.ConsiderEverything AndAlso left Is right) OrElse right.IsSameType(left, comparison)
             Return True
         End Function
 
