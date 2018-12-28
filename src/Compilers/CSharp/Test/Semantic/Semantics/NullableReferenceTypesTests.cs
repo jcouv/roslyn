@@ -64646,9 +64646,97 @@ partial class Program
             AssertEx.Equal(expected, getResult, inputs.Length);
         }
 
+        [Fact]
+        public void TestEnsureCompatibleForTuples_IsPossiblyNullableReferenceTypeTypeParameterFalse()
+        {
+            var inputs = new[] { NullableAnnotation.Annotated, NullableAnnotation.Nullable, NullableAnnotation.Unknown, NullableAnnotation.NotNullable, NullableAnnotation.NotAnnotated };
+
+            Func<int, int, NullableAnnotation> getResult =
+                (i, j) => NullableAnnotationExtensions.EnsureCompatibleForTuples<string>(
+                    inputs[i], inputs[j], type: null, isPossiblyNullableReferenceTypeTypeParameter: _ => false, hadNullabilityMismatch: out _);
+
+            var expected = new NullableAnnotation[5, 5]
+            {
+                { NullableAnnotation.Annotated,    NullableAnnotation.Annotated,    NullableAnnotation.Annotated,    NullableAnnotation.NotAnnotated, NullableAnnotation.NotAnnotated },
+                { NullableAnnotation.Annotated,    NullableAnnotation.Nullable,     NullableAnnotation.Nullable,     NullableAnnotation.NotAnnotated, NullableAnnotation.NotAnnotated },
+                { NullableAnnotation.Annotated,    NullableAnnotation.Nullable,     NullableAnnotation.Unknown,      NullableAnnotation.NotNullable,  NullableAnnotation.NotAnnotated },
+                { NullableAnnotation.NotAnnotated, NullableAnnotation.NotAnnotated, NullableAnnotation.NotNullable,  NullableAnnotation.NotNullable,  NullableAnnotation.NotAnnotated },
+                { NullableAnnotation.NotAnnotated, NullableAnnotation.NotAnnotated, NullableAnnotation.NotAnnotated, NullableAnnotation.NotAnnotated, NullableAnnotation.NotAnnotated },
+            };
+
+            AssertEqual(expected, getResult, inputs.Length);
+        }
+
+        [Fact]
+        public void TestEnsureCompatibleForTuples_IsPossiblyNullableReferenceTypeTypeParameterFalse_HadNullabilityMismatch()
+        {
+            var inputs = new[] { NullableAnnotation.Annotated, NullableAnnotation.Nullable, NullableAnnotation.Unknown, NullableAnnotation.NotNullable, NullableAnnotation.NotAnnotated };
+            Func<int, int, bool> getResult = (i, j) =>
+            {
+                NullableAnnotationExtensions.EnsureCompatibleForTuples<string>(
+                    inputs[i], inputs[j], type: null, isPossiblyNullableReferenceTypeTypeParameter: _ => false, hadNullabilityMismatch: out var hadNullabilityMismatch);
+                return hadNullabilityMismatch;
+            };
+
+            var expected = new bool[5, 5]
+            {
+                { false, false, false, true,  true  },
+                { false, false, false, true,  true  },
+                { false, false, false, false, false },
+                { true,  true,  false, false, false },
+                { true,  true,  false, false, false },
+            };
+
+            AssertEx.Equal(expected, getResult, inputs.Length);
+        }
+
+        [Fact]
+        public void TestEnsureCompatibleForTuples_IsPossiblyNullableReferenceTypeTypeParameterTrue()
+        {
+            var inputs = new[] { NullableAnnotation.Annotated, NullableAnnotation.Nullable, NullableAnnotation.Unknown, NullableAnnotation.NotNullable, NullableAnnotation.NotAnnotated };
+
+            Func<int, int, NullableAnnotation> getResult =
+                (i, j) => NullableAnnotationExtensions.EnsureCompatibleForTuples<string>(
+                    inputs[i], inputs[j], type: null, isPossiblyNullableReferenceTypeTypeParameter: _ => true, hadNullabilityMismatch: out _);
+
+            var expected = new NullableAnnotation[5, 5]
+            {
+                { NullableAnnotation.Annotated,    NullableAnnotation.Annotated,    NullableAnnotation.Annotated,    NullableAnnotation.NotAnnotated, NullableAnnotation.NotAnnotated },
+                { NullableAnnotation.Annotated,    NullableAnnotation.Nullable,     NullableAnnotation.Nullable,     NullableAnnotation.NotAnnotated, NullableAnnotation.NotAnnotated },
+                { NullableAnnotation.Annotated,    NullableAnnotation.Nullable,     NullableAnnotation.Unknown,      NullableAnnotation.NotNullable,  NullableAnnotation.NotAnnotated },
+                { NullableAnnotation.NotAnnotated, NullableAnnotation.NotAnnotated, NullableAnnotation.NotNullable,  NullableAnnotation.NotNullable,  NullableAnnotation.NotAnnotated },
+                { NullableAnnotation.NotAnnotated, NullableAnnotation.NotAnnotated, NullableAnnotation.NotAnnotated, NullableAnnotation.NotAnnotated, NullableAnnotation.NotAnnotated },
+            };
+
+            AssertEqual(expected, getResult, inputs.Length);
+        }
+
+        [Fact]
+        public void TestEnsureCompatibleForTuples_IsPossiblyNullableReferenceTypeTypeParameterTrue_HadNullabilityMismatch()
+        {
+            var inputs = new[] { NullableAnnotation.Annotated, NullableAnnotation.Nullable, NullableAnnotation.Unknown, NullableAnnotation.NotNullable, NullableAnnotation.NotAnnotated };
+            Func<int, int, bool> getResult = (i, j) =>
+            {
+                NullableAnnotationExtensions.EnsureCompatibleForTuples<string>(
+                    inputs[i], inputs[j], type: null, isPossiblyNullableReferenceTypeTypeParameter: _ => true, hadNullabilityMismatch: out var hadNullabilityMismatch);
+                return hadNullabilityMismatch;
+            };
+
+            var expected = new bool[5, 5]
+            {
+                { false, false, false, true,  true  },
+                { false, false, false, true,  true  },
+                { false, false, false, false, false },
+                { true,  true,  false, false, true  },
+                { true,  true,  false, true,  false },
+            };
+
+            AssertEx.Equal(expected, getResult, inputs.Length);
+        }
+
         private static void AssertEqual(NullableAnnotation[,] expected, Func<int, int, NullableAnnotation> getResult, int size)
         {
-            AssertEx.Equal<NullableAnnotation>(expected, getResult, (na1, na2) => na1 == na2, na => $"NullableAnnotation.{na}", "{0,-14:G}", size);
+            AssertEx.Equal<NullableAnnotation>(expected, getResult, (na1, na2) => na1 == na2, na => $"NullableAnnotation.{na}", "{0,-32:G}", size);
         }
 
         [Fact]
