@@ -60,17 +60,19 @@ When you call `MoveNextAsync()`:
 - if the code reaches a `yield return` statement, you immediately get a `true`,
 - if the code reaches the end of the method, you immediately get a `false`,
 - if you reach an `await`, you get a pending task and the code continues to execute in the background.
+
 As the code continues to execute in the background:
 - if it reaches a `yield return`, the background execution completes and the task we've previously handed to the caller is fulfilled with `true`,
 - if it reaches the end of the method, that task is fulfilled with `false`,
 - if it reaches an `await`, execution continues in the background.
 
-Note that the method is moved forward either by the caller or by background execution, but never both.
+Note that the method is moved forward either by the caller or by background execution, but never both. Calling `MoveNextAsync()` before the task from the previous call complets yield unspecified results.
 
 
 ### Exception handling (optional)
 
 When the caller is moving the method forward and an exception is thrown (without being caught by user code in the async-iterator method), `MoveNextAsync()` will return a task as normal. 
+
 That task is complete (rather than pending). When the caller tries to access its result the task will throw the exception it holds.
 
 When background execution is moving the method forward and an exception is thrown without handling, the exception is similarly caught and passed onto the caller via the task.
@@ -94,6 +96,7 @@ The execution of async-iterator methods mixes both of those patterns, with the c
 ## Lowering
 
 Clearly, yields and awaits do much of the work. So I'll describe the process of **lowering** async-iterator methods, that is replacing awaits and yields with simpler primitives.
+
 My approach is bottom-up, starting from parts and building up from there.
 
 
@@ -146,7 +149,7 @@ So `{ ... method body... }` is lowered to start with a **dispatching** `switch` 
 }
 ```
 
-When either the caller or background execution need to move the method forward, execution will resume where we need it to because the state variable was set to `N` and the dispatching logic will jump to the label we want.
+When either the caller or background execution need to move the method forward, execution will resume from the right label because the state variable was set to `N` and the dispatching logic will jump to that label.
 
 Because there is a cost to starting background execution, suspending and resuming, the lowering pattern is optimized: if the task was already completed, we avoid that overhead and instead just move ahead with the result.
 
@@ -167,6 +170,7 @@ The compiler also generates fields for:
 
 Lowering an `await expr` as described about works well when it is an expression statement (`await expr;`) or an assignment statement (`x = await expr;`).
 But when it appears inside another expression, such as an invocation `Method1(Method2(), await expr)`, this lowering is not sufficient.
+
 This invocation needs to evaluate `Method2()`, put the result on the stack, get a result from awaiting `expr`, put that result on the stack, then call `Method1` with both arguments on the stack.
 
 The problem is that the lowering for `await expr` involves a suspension (a `return` statement). But returning loses information saved in the current stack frame.
@@ -203,7 +207,7 @@ finally
 }
 ```
 
-To allow resumption from `resumeLabelN:` in the lowered `await expr;`, some additional dispatching `switch` statements and some additional labels are introduced:
+To allow resumption from `resumeLabelN:` in the lowered `await expr;`, some additional dispatching `switch` statements and labels are introduced:
 ```C#
 switch (state)
 {
@@ -265,6 +269,7 @@ resumeLabelN:
 ```
 
 The suspension again relies on setting a state to `N` and returning. Additionally, it saves the yielded value (that is how the caller can access it with the `Current` property) and records that a value is available (more on that later).
+
 The resumption is pretty straightforward, if we ignore the disposal logic for now.
 
 
@@ -335,10 +340,8 @@ We'll cover some of those next.
 
 ## Public API of async-enumerables
 
-Now we can get back to the production of async-enumerables from async-iterator methods.
 
-
-#### GetAsyncEnumerator
+### GetAsyncEnumerator
 
 `GetAsyncEnumerator` is the first method called on an async-enumerable.
 You could implement the `IAsyncEnumerable<T>` interface by hand, but I'll focus on the implementation the compiler generates for async-iterator methods.
@@ -349,7 +352,7 @@ I will skip over some details here. There are some optimizations that avoid allo
 Those copies give us pristine values of the parameters to use if `GetAsyncEnumerator()` is called a second time.
 
 
-#### MoveNextAsync and Current
+### MoveNextAsync and Current
 
 TODO
 
@@ -357,9 +360,9 @@ TODO
 
 
 
-#### DisposeAsync
+### DisposeAsync
 
-##### Purpose
+#### Purpose
 
 It is useful to first understand why enumerators and async-enumerators are disposable.
 
@@ -406,7 +409,7 @@ foreach (var item in GetItemsAndLog())
 // When we break out of this `foreach` loop, `Dispose()` is called and we expect the `finally` block to be executed. This is especially important if the `finally` is disposing some resources.
 
 
-##### Design
+#### Design
 
 Now that we understand __why__ async-enumerators implement `IAsyncDisposable`, let's look at __how__ we achieve the right disposal behavior for async-iterator methods.
 
@@ -531,7 +534,6 @@ Notes on async-iterator methods:
 - end of method
 - cancellation token
 - exception handling
-- enumerable vs. enumerator
 - extracted catch/finally
 - code from ILSpy, finish with an actual example?
 - mention alternative API design? (no)
