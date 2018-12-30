@@ -6,7 +6,7 @@ Editorial notes:
 - Although I will gloss over many important parts, I will try to mention them to give a sense of how things fit together.
 - `/* ... */` comments indicate omitted code.
 - `// ... ` comments apply to code that is there.
-- Every illustration of generated code includes some simplifications and omissions.
+- Every illustration of generated code omits some details.
 
 
 ## Overview
@@ -17,17 +17,15 @@ Those are methods that yield a sequence of items (like iterator methods that ret
 
 ## Consumption with `await foreach`
 
-TODO dedupe sentences
-The typical consumption pattern of async-enumerables is to enumerate over the elements with an `await foreach`.
-The most straightforward way of enumerating an async-enumerable's items is with `await foreach`, which is very similar to `foreach` for enumerables.
-The main difference is that `await foreach` awaits each item (and also disposal).
+The `await foreach` statement offers the most straightforward way of enumerating an async-enumerable's items.
+It is very similar to `foreach` for enumerables. The main difference is that `await foreach` awaits each item (and also disposal).
 
-The parallel is apparent in the interfaces involved:
+The parallel jumps out in the interfaces involved:
 | `IAsyncEnumerable<T>` used with `GetAsyncEnumerator()` | `IEnumerable<T>` used with `GetEnumerator()` |
 | `IAsyncEnumerator<T>` used with `await MoveNextAsync()` and `Current` | `IEnumerator<T>` used with `MoveNext()` and `Current` |
 | `IAsyncDisposable` used with `await DisposeAsync()` | `IDisposable` used with `Dispose()` |
 
-Given that, it is unsurprising that the lowering for `await foreach` is very similar to that of a `foreach`.
+So it is unsurprising that the lowering for `await foreach` is very similar to that of a `foreach`.
 
 The following:
 ```C#
@@ -56,22 +54,33 @@ finally
 
 ### Control flow (caller and background execution)
 
-Let's now consider an async-enumerable implemented by an async-iterator method and get a sense of the control flow, and how that compares to iterator methods and async methods.
+In a `await foreach`, the caller repeatedly calls `MoveNextAsync()`.
+This returns a `ValueTask<bool>` where the `bool` represents the presence or absence of an item.
+When you call `MoveNextAsync()`:
+- if the code reaches a `yield return` statement, you immediately get a `true`,
+- if the code reaches the end of the method, you immediately get a `false`,
+- if you reach an `await`, you get a pending task and the code continues to execute in the background.
+As the code continues to execute in the background:
+- if it reaches a `yield return`, the background execution completes and the task we've previously handed to the caller is fulfilled with `true`,
+- if it reaches the end of the method, that task is fulfilled with `false`,
+- if it reaches an `await`, execution continues in the background.
+
+Note that the method is moved forward either by the caller or by background execution, but never both.
+
+
+### Exception handling (optional)
+
+When the caller is moving the method forward and an exception is thrown (without being caught by user code in the async-iterator method), `MoveNextAsync()` will return a task as normal. 
+That task is complete (rather than pending). When the caller tries to access its result the task will throw the exception it holds.
+
+When background execution is moving the method forward and an exception is thrown without handling, the exception is similarly caught and passed onto the caller via the task.
+
+
+### Parallels with iterator and async control flow (optional)
 
 The execution of iterator methods shifts the control between the caller and the method:
 - the caller repeatedly calls `MoveNext()` (which executes the method),
 - the method yields control back to the caller (when reaching a `yield return`).
-
-```C#
-IEnumerable<int> IteratorMethod()
-{
-	Console.WriteLine(1);
-	yield return 1;
-	Console.WriteLine(2);
-	yield return 2;
-}
-```
-TODO diagram
 
 The execution of async methods starts by the caller giving control to the method and background execution.
 From there on, the control shifts between the method and background execution:
@@ -79,65 +88,18 @@ From there on, the control shifts between the method and background execution:
 - the method yields control back to the background execution (when reaching an `await`).
 Only when the method completes with a `return` is the control fully returned to the caller.
 
-```C#
-async Task AsyncMethod()
-{
-	Console.WriteLine(1);
-	await SomethingLong();
-	Console.WriteLine(2);
-	await SomethingLong();
-	return;
-}
-```
-TODO diagram
-
 The execution of async-iterator methods mixes both of those patterns, with the control shifting between caller (repeatedly calls `MoveNextAsync()`), method (gives control to the caller when reaching a `yield return` and to the background execution when reaching an `await`) and background execution (resumes the method after an `await`).
-
-```C#
-async IAsyncEnumerable<int> M()
-{
-    Console.WriteLine(1);
-    yield return 1;
-    Console.WriteLine(2);
-    yield return 2;
-    var task = SomethingLong();
-    await task;
-    Console.WriteLine(4);
-    var task2 = SomethingLong2();
-    await task2;
-    Console.WriteLine(5);
-    yield return 5;
-    Console.WriteLine(6);
-    yield return 6;
-}
-```
-
-- caller calls `M()`
-- caller calls `GetAsyncEnumerator()`
-- caller calls `MoveNextAsync()` which immediately returns with `true` (an item is available)
-- caller gets the value from `Current` which returns `1`
-- caller calls `MoveNextAsync()` (returns true) and `Current` (returns `2`)
-- caller calls `MoveNextAsync()` which continues the execution until the first `await`, which kicks off background execution, and then returns a pending task (not-yet-fulfilled promise)
-- the long task runs in the background and once completed, resumes from the first `await`, prints "4" and kicks off background execution of the second task
-- the second long task runs in the background and once completed, resumes from the second `await`, prints "5", makes a new item available (`5`) and notifies the caller by fulfilling the promise
-- the task the caller was waiting on completes with `true` (an item is available), so the caller gets the item with `Current` (returns `5`)
-- caller calls `MoveNextAsync()` (returns true) and `Current` (returns `6`)
-- callers calls `MoveNextAsync()` which immediately returns with `false` (there are no more items)
-
-TODO convert this to a diagram
-
 
 
 ## Lowering
 
 Clearly, yields and awaits do much of the work. So I'll describe the process of **lowering** async-iterator methods, that is replacing awaits and yields with simpler primitives.
-// I'll start by explaining parts of the lowering, and build up to show how they compose.
-
+My approach is bottom-up, starting from parts and building up from there.
 
 
 ### Await suspensions
 
-`await expr` in async-iterator methods is lowered using the same pattern in async methods. Here's a stylized version:
+`await expr` in async-iterator methods is lowered as:
 ```C#
 ... code before `await expr` ...
 
@@ -162,10 +124,13 @@ Clearly, yields and awaits do much of the work. So I'll describe the process of 
 ... code after `await expr` ...
 ```
 
+Note this is the same pattern used to lower awaits in async methods.
+
+As you can see, we're introducing a suspension and resumption in the middle of the method.
 The suspension is the code leading up to the `return` statement. Each suspension is identified by a number `N`.
 The resumption is the code starting from label `resumeLabelN:`.
 
-For this to work, not only is the `await expr` rewritten as described, but the lowering adds logic at the beginning of the method to jumps to `resumeLabelN:` when the **state** is `N`.
+You might wonder how execution resumes from that label. The lowering also adds logic at the beginning of the method to jumps to `resumeLabelN:` when the **state** is `N`.
 So `{ ... method body... }` is lowered to start with a **dispatching** `switch` statement:
 ```C#
 {
@@ -181,9 +146,10 @@ So `{ ... method body... }` is lowered to start with a **dispatching** `switch` 
 }
 ```
 
-The background execution is kicked-off in such a way that, when the task completes, it will continue by invoking the current method again. When it does, execution will resume where we need it to because the state variable was set to `N` and the dispatching logic will jump to the label we want.
+When either the caller or background execution need to move the method forward, execution will resume where we need it to because the state variable was set to `N` and the dispatching logic will jump to the label we want.
 
-Because there is a cost with starting background execution, suspending and resuming, notice that the lowering pattern is optimized: if the task was already completed, we can just move ahead with the result.
+Because there is a cost to starting background execution, suspending and resuming, the lowering pattern is optimized: if the task was already completed, we avoid that overhead and instead just move ahead with the result.
+
 
 #### Locals
 
@@ -275,7 +241,7 @@ With such nested dispatch blocks, restarting the method with state set to `N` re
 // REMOVE? In terms of implementation, the key is to keep track of which states/suspensions appeared inside a given `try`. So when a `try` statements are lowered, we can inject the necessary labels and dispatch blocks.
 
 
-#### Awaits in `catch` and `finally` blocks
+#### Awaits in `catch` and `finally` blocks (optional)
 
 TODO cover cases where the `await` occurs inside the `catch` or `finally` blocks
 
@@ -564,7 +530,7 @@ Notes on async-iterator methods:
 - MoveNextAsync(), Current, promise
 - end of method
 - cancellation token
-- exception
+- exception handling
 - enumerable vs. enumerator
 - extracted catch/finally
 - code from ILSpy, finish with an actual example?
