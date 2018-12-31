@@ -1503,6 +1503,15 @@ namespace Microsoft.CodeAnalysis.CSharp
                         reportNestedWarnings: false, reportTopLevelWarnings: false);
                 }
 
+                // Recompute the best type because some typeless literals can affect nullability once given a type
+                var resultTypeSymbols = ArrayBuilder<TypeSymbol>.GetInstance(n);
+                foreach (var resultType in resultTypes)
+                {
+                    resultTypeSymbols.Add(resultType.TypeSymbol);
+                }
+                bestType = BestTypeInferrer.GetBestType(resultTypeSymbols, walker._conversions, hadNullabilityMismatch: out _, ref useSiteDiagnostics);
+                resultTypeSymbols.Free();
+
                 // Set top-level nullability on inferred type
                 inferredType = TypeSymbolWithAnnotations.Create(bestType, BestTypeInferrer.GetNullableAnnotation(resultTypes));
             }
