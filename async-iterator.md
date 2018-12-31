@@ -20,6 +20,9 @@ The `await foreach` statement offers the most straightforward way of enumerating
 It is very similar to `foreach` for enumerables. The main difference is that `await foreach` awaits each item (and also disposal).
 
 The parallel jumps out in the interfaces involved:
+
+| async enumerables | enumerables |
+| --- | --- |
 | `IAsyncEnumerable<T>` used with `GetAsyncEnumerator()` | `IEnumerable<T>` used with `GetEnumerator()` |
 | `IAsyncEnumerator<T>` used with `await MoveNextAsync()` and `Current` | `IEnumerator<T>` used with `MoveNext()` and `Current` |
 | `IAsyncDisposable` used with `await DisposeAsync()` | `IDisposable` used with `Dispose()` |
