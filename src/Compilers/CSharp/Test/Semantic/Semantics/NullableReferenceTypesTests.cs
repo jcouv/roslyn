@@ -716,12 +716,10 @@ class C<T>
                 );
         }
 
-        [Fact(Skip = "https://github.com/dotnet/roslyn/issues/32006")]
+        [Fact]
         [WorkItem(32006, "https://github.com/dotnet/roslyn/issues/32006")]
         public void SpeakableInference_LambdaReturnTypeInference_NonNullableTypelessOuptut()
         {
-            // See https://github.com/dotnet/roslyn/issues/32006
-            // need to relax assertion in GetImplicitTupleLiteralConversion
             var source =
 @"
 class C
@@ -69037,12 +69035,9 @@ class Program
         }
 
         [WorkItem(32006, "https://github.com/dotnet/roslyn/issues/32006")]
-        [Fact(Skip = "https://github.com/dotnet/roslyn/issues/32006")]
+        [Fact]
         public void LambaReturnType_DifferentTupleNullability_01()
         {
-            // See https://github.com/dotnet/roslyn/issues/32006
-            // need to relax assertion in GetImplicitTupleLiteralConversion
-
             var source =
 @"using System;
 class Program
@@ -69075,23 +69070,18 @@ class Program
     }
 }";
             var comp = CreateCompilation(source, options: WithNonNullTypesTrue());
-            // https://github.com/dotnet/roslyn/issues/32006: Warning inferring return type.
             comp.VerifyDiagnostics(
-                // (20,24): warning CS8619: Nullability of reference types in value of type '(T?, U?)' doesn't match target type '(T? t1, U? u2)'.
-                //                 return (null, null);
-                Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(null, null)").WithArguments("(T?, U?)", "(T? t1, U? u2)").WithLocation(20, 24),
                 // (24,31): warning CS8619: Nullability of reference types in value of type '(T?, U?)' doesn't match target type '(T t2, U? u1)'.
                 //                 if (b) return (null, null);
-                Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(null, null)").WithArguments("(T?, U?)", "(T t2, U? u1)").WithLocation(24, 31));
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(null, null)").WithArguments("(T?, U?)", "(T t2, U? u1)").WithLocation(24, 31)
+                );
             comp.VerifyTypes();
         }
 
         [WorkItem(32006, "https://github.com/dotnet/roslyn/issues/32006")]
-        [Fact(Skip = "https://github.com/dotnet/roslyn/issues/32006")]
+        [Fact]
         public void LambaReturnType_DifferentTupleNullability_02()
         {
-            // See https://github.com/dotnet/roslyn/issues/32006
-            // need to relax assertion in GetImplicitTupleLiteralConversion
             var source =
 @"using System;
 class Program
@@ -69107,6 +69097,7 @@ class Program
         F(b => { if (b) return (null, new T()); return (new T(), new T()); })/*T:(T!, T!)*/;
     }
 }";
+            // TODO
             var comp = CreateCompilation(source, options: WithNonNullTypesTrue());
             // https://github.com/dotnet/roslyn/issues/32006: Warning inferring return type.
             comp.VerifyDiagnostics(
@@ -69120,11 +69111,9 @@ class Program
         }
 
         [WorkItem(32006, "https://github.com/dotnet/roslyn/issues/32006")]
-        [Fact(Skip = "https://github.com/dotnet/roslyn/issues/32006")]
+        [Fact]
         public void LambaReturnType_DifferentTupleNullability_03()
         {
-            // See https://github.com/dotnet/roslyn/issues/32006
-            // need to relax assertion in GetImplicitTupleLiteralConversion
             var source =
 @"using System;
 class Program
@@ -69154,11 +69143,9 @@ class Program
         }
 
         [WorkItem(32006, "https://github.com/dotnet/roslyn/issues/32006")]
-        [Fact(Skip = "https://github.com/dotnet/roslyn/issues/32006")]
+        [Fact]
         public void LambaReturnType_DifferentTupleNullability_04()
         {
-            // See https://github.com/dotnet/roslyn/issues/32006
-            // need to relax assertion in GetImplicitTupleLiteralConversion
             var source =
 @"using System;
 class Program
