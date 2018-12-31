@@ -97,14 +97,13 @@ The execution of async-iterator methods mixes both of those patterns, with the c
 
 ## Lowering
 
-Clearly, yields and awaits do much of the work. So I'll describe the process of **lowering** async-iterator methods, that is replacing awaits and yields with simpler primitives.
-
-My approach is bottom-up, starting from parts and building up from there.
+I'll describe the process of **lowering** async-iterator methods, that is replacing awaits and yields with simpler primitives.
 
 I'll start with many techniques already used for async methods (await suspensions, extracting locals to fields, spilling awaits, dispatch blocks).
 Then I'll explain `yield return` suspensions, disposal and yield breaks.
 
-### Await suspensions
+
+### `await`
 
 `await expr` in async-iterator methods is lowered as:
 ```C#
@@ -280,7 +279,7 @@ finally
 With such nested dispatch blocks, restarting the method with state set to `N` resumes its execution from `resumeLabelN`.
 
 
-#### Awaits in `catch` and `finally` blocks (optional)
+#### `await` in `catch` and `finally` blocks (optional)
 
 The nested dispatching allows us to resume execution at a label inside a `try` block.
 But that strategy doesn't allow us to resume from a label inside a `catch` block which is only entered when an exception is thrown.
@@ -324,7 +323,7 @@ extractedFinallyLabel:
 This pattern can be expanded to extract `catch` handlers: each `catch` block is replaced with logic to pend the exception (save the exception into a local, remember which exception handler we were in) and the original handlers are moved out into the extracted block.
 
 
-### Yield return suspensions
+### `yield return`
 
 `yield return expr;` is lowered as:
 ```C#
@@ -426,7 +425,7 @@ Note that this lowered method is private. So although it is at the heart of the 
 We'll look at `GetAsyncEnumerator`, `MoveNextAsync` and `DisposeAsync` next.
 
 
-## GetAsyncEnumerator
+## `GetAsyncEnumerator`
 
 The compiler generates an `GetAsyncEnumerator` which returns an instance of the type described above.
 
@@ -435,7 +434,7 @@ Most importantly, the returned instance is initialized with a known `state` so t
 The method also includes some optimizations to avoid allocations. But as a result it has to deal with a second copy of all the method parameters. Those copies give us pristine values of the parameters when `GetAsyncEnumerator()` is called more than once.
 
 
-## MoveNextAsync
+## `MoveNextAsync`
 
 `MoveNextAsync` is also quite simple: it calls `MoveNext()` and returns a `ValueTask<bool>` using the machinery mentioned earlier.
 Depending on the situation, the returned task may already be completed (with `true` or `false` or an exception) or still pending.
@@ -443,7 +442,7 @@ Depending on the situation, the returned task may already be completed (with `tr
 The method is complicated somewhat by optimizations and the need to respect synchronization contexts, but I will skip that.
 
 
-## DisposeAsync
+## `DisposeAsync`
 
 ### Purpose
 
@@ -554,11 +553,11 @@ IEnumerable<int> GetItemsWithLongDisposal()
 ```
 
 
-### Yield break
+### `yield break`
 
 When a `yield break;` is reached, the relevant `finally` blocks should get executed immediately.
 
-With everything we've seen so far, `yield break` statements become straightforward.
+With everything we've seen so far, `yield break` statements are straightforward.
 They can simply be lowered as:
 ```C#
 disposeMode = true;
@@ -568,14 +567,14 @@ disposeMode = true;
 Note that in this case, the caller will not get a result from `MoveNextAsync()` until we've reached the end of the method (**finished** state) and so `DisposeAsync()` will have no work left to do.
 
 
+## End-to-end example
 
 
-
-
-
+## Conclusion
 
 
 Notes on async-iterator methods:
+- stub method
 - cancellation token
 - code from ILSpy, finish with an actual example?
 - https://github.com/dotnet/roslyn/blob/master/docs/features/async-streams.md
