@@ -2,10 +2,9 @@
 I'll share some notes about the design for async-iterator methods (C# 8.0 feature).
 
 Editorial notes:
-- Some sections probably should be skipped on your first reading. I marked them as "optional".
+- Some sections probably should be skipped on first reading. I marked them as "optional".
 - Although I will gloss over many important parts, I will try to mention them to give a sense of how things fit together.
-- `/* ... */` comments indicate omitted code.
-- `// ... ` comments apply to code that is there.
+- `/* ... */` comments indicate omitted code, while `// ... ` comments apply to code that is there.
 - Every illustration of generated code omits some details.
 
 
@@ -71,7 +70,7 @@ Note that the method is moved forward either by the caller or by background exec
 
 ### Exception handling (optional)
 
-When the caller is moving the method forward and an exception is thrown (without being caught by user code in the async-iterator method), `MoveNextAsync()` will return a task as normal. 
+When the caller is moving the method forward and an exception is thrown (without being caught by user code in the async-iterator method), `MoveNextAsync()` will return a task as normal.
 
 That task is complete (rather than pending). When the caller tries to access its result the task will throw the exception it holds.
 
@@ -99,6 +98,8 @@ Clearly, yields and awaits do much of the work. So I'll describe the process of 
 
 My approach is bottom-up, starting from parts and building up from there.
 
+I'll start with many techniques already used for async methods (await suspensions, extracting locals to fields, spilling awaits, dispatch blocks).
+Then I'll explain `yield return` suspensions, disposal and yield breaks.
 
 ### Await suspensions
 
@@ -166,6 +167,39 @@ The compiler also generates fields for:
 - the machinery for background execution and continuation.
 
 
+### Generic type parameters (optional)
+
+Consider the following async-iterator method:
+```C#
+IAsyncEnumerable<T> GetValuesAsync<T>(Task<T> slowValue)
+{
+    T value = await slowValue;
+    yield return value;
+    yield return default(T);
+}
+```
+
+Because the method has a type parameter, the generated type will have one as well (let's call it `T2`). As part of rewriting the body of the method, all references to `T` will be converted to references to `T2`:
+```C#
+class UnspeakableType<T2>
+{
+    private void MoveNext()
+    {
+        /* dispatch block */
+        /* lowered `T2 value = await slowValue;` */
+        /* lowered `yield return value;` */
+        /* lowered `yield return default(T2); */
+    }
+
+    /* various fields and public members omitted */
+}
+IAsyncEnumerable<T> GetValuesAsync<T>(Task<T> slowValue)
+{
+    return new UnspeakableType<T>();
+}
+```
+
+
 #### Spilling (optional)
 
 Lowering an `await expr` as described about works well when it is an expression statement (`await expr;`) or an assignment statement (`x = await expr;`).
@@ -186,7 +220,7 @@ This relies on locals (instead of the stack) to store the two results.
 So when we rewrite async or async-iterator methods, we can assume that all awaits have been spilled.
 
 
-#### Nested dispatching (optional)
+#### Suspensions in `try` blocks (optional)
 
 We have seen how dispatch blocks (switch statements filled with gotos) help to resume execution from a certain point in the method.
 But the CLR (and C#) disallow jumping into `try` statements.
@@ -240,17 +274,54 @@ finally
 }
 ```
 
-With such nested dispatch blocks, restarting the method with state set to `N` resumes the execution from `resumeLabelN`.
-
-// REMOVE? In terms of implementation, the key is to keep track of which states/suspensions appeared inside a given `try`. So when a `try` statements are lowered, we can inject the necessary labels and dispatch blocks.
+With such nested dispatch blocks, restarting the method with state set to `N` resumes its execution from `resumeLabelN`.
 
 
 #### Awaits in `catch` and `finally` blocks (optional)
 
-TODO cover cases where the `await` occurs inside the `catch` or `finally` blocks
+The nested dispatching allows us to resume execution at a label inside a `try` block.
+But that strategy doesn't allow us to resume from a label inside a `catch` block which is only entered when an exception is thrown.
+This is solved by yet another lowering pass which extracts any `catch` or `finally` blocks containing awaits and turns them into regular blocks.
+
+Consider a `finally`:
+```C#
+try
+{
+    ... body ...
+}
+finally
+{
+    ... some await ...
+}
+```
+We can extract it into a regular block:
+```C#
+Exception exceptionLocal = null;
+try
+{
+     ... body ...
+    goto extractedFinallyLabel;
+}
+catch (Exception e)
+{
+    exceptionLocal = e;
+}
+
+// extracted finally block
+extractedFinallyLabel:
+{
+    ... some await ...
+    if (exceptionLocal != null)
+    {
+        throw exceptionLocal;
+    }
+}
+```
+
+This pattern can be expanded to extract `catch` handlers: each `catch` block is replaced with logic to pend the exception (save the exception into a local, remember which exception handler we were in) and the original handlers are moved out into the extracted block.
 
 
-### yield return suspensions
+### Yield return suspensions
 
 `yield return expr;` is lowered as:
 ```C#
@@ -290,79 +361,88 @@ The compiler will produce a type with various fields (for locals, `state`, ...) 
 ```C#
 private void MoveNext()
 {
-    // dispatch block
-    switch (state)
+    try
     {
-        case 1:
-            goto resumeLabel1;
-        case 2:
-            goto resumeLabel2;
-    }
-
-    Console.WriteLine(1);
-
-    // lowered `await expr;`
-    {
-        var awaiterTemp = <expr>.GetAwaiter();
-        if(!awaiterTemp.IsCompleted)
+        // dispatch block
+        switch (state)
         {
-            /* set state to 1 */
-            /* save awaiter temp */
-            /* kick off background execution */
-            return;
-            resumeLabel1:
-            /* reset state */
-            /* restore awaiter temp */
+            case 1:
+                goto resumeLabel1;
+            case 2:
+                goto resumeLabel2;
         }
+
+        Console.WriteLine(1);
+
+        // lowered `await expr;`
+        {
+            var awaiterTemp = <expr>.GetAwaiter();
+            if(!awaiterTemp.IsCompleted)
+            {
+                /* set state to 1 */
+                /* save awaiter temp */
+                /* kick off background execution */
+                return;
+                resumeLabel1:
+                /* reset state */
+                /* restore awaiter temp */
+            }
+        }
+
+        Console.WriteLine(2);
+
+        // lowered `yield return 42;`
+        {
+            current = 42;
+            /* set state to 2 */
+            /* record that a value is available */
+            return;
+            resumeLabel2:
+            /* reset state */
+        }
+
+        Console.WriteLine(3);
     }
-
-    Console.WriteLine(2);
-
-    // lowered `yield return 42;`
+    catch (Exception e)
     {
-        current = 42;
-        /* set state to 2 */
-        /* record that a value is available */
+        /* record that an exception was thrown */
         return;
-        resumeLabel2:
-        /* reset state */
     }
 
-    Console.WriteLine(3);
-
-    /* omitted termination logic */
+    /* record that no value remains */
+    /* set state to "finished" state */
 }
 ```
 
-This lowered method is private, but the compiler also generates some public methods on this type, which both the caller and background execution will interact with.
-We'll cover some of those next.
+Although I won't explain it in details, the generated type includes machinery to produce a `ValueTask<bool>` and complete it in different ways:
+- with result `true` (used in `yield return` statements),
+- with result `false` (used at the end of the method),
+- with an exception (used by the catch-all exception handler).
+
+Note that this lowered method is private. So although it is at the heart of the generated type, the caller and background execution rely on public APIs that wrap it.
+We'll look at `GetAsyncEnumerator`, `MoveNextAsync` and `DisposeAsync` next.
 
 
-## Public API of async-enumerables
+## GetAsyncEnumerator
 
-
-### GetAsyncEnumerator
-
-`GetAsyncEnumerator` is the first method called on an async-enumerable.
-You could implement the `IAsyncEnumerable<T>` interface by hand, but I'll focus on the implementation the compiler generates for async-iterator methods.
 The compiler generates an `GetAsyncEnumerator` which returns an instance of the type described above.
-Most importantly, the returned instance is initialized with a known `state` so that it is ready to execute the user code from the start.
 
-I will skip over some details here. There are some optimizations that avoid allocations but involve keeping a second copy of all the method parameters.
-Those copies give us pristine values of the parameters to use if `GetAsyncEnumerator()` is called a second time.
+Most importantly, the returned instance is initialized with a known `state` so that it is ready from the beginning.
 
-
-### MoveNextAsync and Current
-
-TODO
+The method also includes some optimizations to avoid allocations. But as a result it has to deal with a second copy of all the method parameters. Those copies give us pristine values of the parameters when `GetAsyncEnumerator()` is called more than once.
 
 
+## MoveNextAsync
+
+`MoveNextAsync` is also quite simple: it calls `MoveNext()` and returns a `ValueTask<bool>` using the machinery mentioned earlier.
+Depending on the situation, the returned task may already be completed (with `true` or `false` or an exception) or still pending.
+
+The method is complicated somewhat by optimizations and the need to respect synchronization contexts, but I will skip that.
 
 
+## DisposeAsync
 
-### DisposeAsync
-
-#### Purpose
+### Purpose
 
 It is useful to first understand why enumerators and async-enumerators are disposable.
 
@@ -386,7 +466,7 @@ IEnumerable<int> GetItemsAndLog()
 ```
 
 There are three cases when the `finally` block should be evaluated:
-- normal execution (ie. after resuming from `yield return 2;` or when reaching a `yield break;`),
+- normal execution (ie. after the `try` block completes or when reaching a `yield break;`),
 - exceptional execution (ie. if `Something()` throws an exception),
 - interrupted enumeration.
 
@@ -409,7 +489,7 @@ foreach (var item in GetItemsAndLog())
 // When we break out of this `foreach` loop, `Dispose()` is called and we expect the `finally` block to be executed. This is especially important if the `finally` is disposing some resources.
 
 
-#### Design
+### Design
 
 Now that we understand __why__ async-enumerators implement `IAsyncDisposable`, let's look at __how__ we achieve the right disposal behavior for async-iterator methods.
 
@@ -471,7 +551,7 @@ IEnumerable<int> GetItemsWithLongDisposal()
 ```
 
 
-#### Yield break
+### Yield break
 
 When a `yield break;` is reached, the relevant `finally` blocks should get executed immediately.
 
@@ -485,43 +565,6 @@ disposeMode = true;
 Note that in this case, the caller will not get a result from `MoveNextAsync()` until we've reached the end of the method (**finished** state) and so `DisposeAsync()` will have no work left to do.
 
 
-### End of method
-
-When you reach the end of the async-iterator method, we set the `state` to a special "finished" value, record the fact that no value remains, and return.
-
-
-
-### Generic type parameters (optional)
-
-Consider the following async-iterator method:
-```C#
-IAsyncEnumerable<T> GetValuesAsync<T>(Task<T> slowValue)
-{
-    T value = await slowValue;
-    yield return value;
-    yield return default(T);
-}
-```
-
-Because the method has a type parameter, the generated type will have one as well (let's call it `T2`). As part of rewriting the body of the method, all references to `T` will be converted to references to `T2`:
-```C#
-class UnspeakableType<T2>
-{
-    private void MoveNext()
-    {
-        /* dispatch block */
-        /* lowered `T2 value = await slowValue;` */
-        /* lowered `yield return value;` */
-        /* lowered `yield return default(T2); */
-    }
-
-    /* various fields and public members omitted */
-}
-IAsyncEnumerable<T> GetValuesAsync<T>(Task<T> slowValue)
-{
-    return new UnspeakableType<T>();
-}
-```
 
 
 
@@ -530,11 +573,7 @@ IAsyncEnumerable<T> GetValuesAsync<T>(Task<T> slowValue)
 
 
 Notes on async-iterator methods:
-- MoveNextAsync(), Current, promise
-- end of method
 - cancellation token
-- exception handling
-- extracted catch/finally
 - code from ILSpy, finish with an actual example?
-- mention alternative API design? (no)
+- https://github.com/dotnet/roslyn/blob/master/docs/features/async-streams.md
 Point to Lippert's series
