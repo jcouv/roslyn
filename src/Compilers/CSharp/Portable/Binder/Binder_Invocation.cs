@@ -231,7 +231,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             bool allowUnexpandedForm = true)
         {
             BoundExpression result;
-            NamedTypeSymbol delegateType;
 
             if ((object)boundExpression.Type != null && boundExpression.Type.IsDynamic())
             {
@@ -240,13 +239,21 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // invocation and let the lowering pass sort it out.
                 result = BindDynamicInvocation(node, boundExpression, analyzedArguments, ImmutableArray<MethodSymbol>.Empty, diagnostics, queryClause);
             }
-            else if (boundExpression.Kind == BoundKind.MethodGroup)
+            else if (boundExpression.KindIgnoringSuppressions() == BoundKind.MethodGroup)
             {
-                result = BindMethodGroupInvocation(
-                    node, expression, methodName, (BoundMethodGroup)boundExpression, analyzedArguments,
-                    diagnostics, queryClause, allowUnexpandedForm: allowUnexpandedForm, anyApplicableCandidates: out _);
+                if (boundExpression.Kind == BoundKind.SuppressNullableWarningExpression)
+                {
+                    diagnostics.Add(new CSDiagnosticInfo(ErrorCode.ERR_IllegalSuppression), expression.Location);
+                    result = CreateBadCall(node, boundExpression, LookupResultKind.NotInvocable, analyzedArguments);
+                }
+                else
+                {
+                    result = BindMethodGroupInvocation(
+                        node, expression, methodName, (BoundMethodGroup)boundExpression, analyzedArguments,
+                        diagnostics, queryClause, allowUnexpandedForm: allowUnexpandedForm, anyApplicableCandidates: out _);
+                }
             }
-            else if ((object)(delegateType = GetDelegateType(boundExpression)) != null)
+            else if (GetDelegateType(boundExpression) is NamedTypeSymbol delegateType)
             {
                 if (ReportDelegateInvokeUseSiteDiagnostic(diagnostics, delegateType, node: node))
                 {
@@ -283,6 +290,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             bool hasErrors = false;
             if (expression.Kind == BoundKind.MethodGroup)
             {
+                // TODO2
                 BoundMethodGroup methodGroup = (BoundMethodGroup)expression;
                 BoundExpression receiver = methodGroup.ReceiverOpt;
 
@@ -444,8 +452,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            foreach (var arg in arguments)
+            foreach (var argument in arguments)
             {
+                var arg = argument.RemoveSuppressions();
                 if (!IsLegalDynamicOperand(arg))
                 {
                     if (queryClause != null && !reportedBadQuery)
@@ -1338,7 +1347,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             int argumentCount = analyzedArguments.Arguments.Count;
-            ArrayBuilder<BoundExpression> newArguments = ArrayBuilder<BoundExpression>.GetInstance(argumentCount);
+            var newArguments = ArrayBuilder<BoundExpression>.GetInstance(argumentCount);
             newArguments.AddRange(analyzedArguments.Arguments);
             for (int i = 0; i < argumentCount; i++)
             {
@@ -1348,12 +1357,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                     continue;
                 }
 
-                switch (argument.Kind)
+                switch (argument.KindIgnoringSuppressions())
                 {
                     case BoundKind.UnboundLambda:
                         {
                             // bind the argument against each applicable parameter
-                            var unboundArgument = (UnboundLambda)argument;
+                            var unboundArgument = (UnboundLambda)argument.RemoveSuppressions();
                             foreach (var parameterList in parameterListList)
                             {
                                 var parameterType = GetCorrespondingParameterType(analyzedArguments, i, parameterList);
@@ -1365,12 +1374,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                             }
 
                             // replace the unbound lambda with its best inferred bound version
-                            newArguments[i] = unboundArgument.BindForErrorRecovery();
+                            newArguments[i] = unboundArgument.BindForErrorRecovery().WrapWithSuppressionsFrom(argument);
                             break;
                         }
                     case BoundKind.OutVariablePendingInference:
                     case BoundKind.DiscardExpression:
                         {
+                            Debug.Assert(argument.KindIgnoringSuppressions() == argument.Kind); // no suppressions possible on out vars or discards
                             if (argument.HasExpressionType())
                             {
                                 break;
@@ -1423,6 +1433,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         }
                     case BoundKind.OutDeconstructVarPendingInference:
                         {
+                            Debug.Assert(argument.KindIgnoringSuppressions() == argument.Kind); // no suppressions possible on out vars for Deconstruct
                             newArguments[i] = ((OutDeconstructVarPendingInference)argument).FailInference(this);
                             break;
                         }
@@ -1480,7 +1491,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var args = BuildArgumentsForErrorRecovery(analyzedArguments);
             var argNames = analyzedArguments.GetNames();
             var argRefKinds = analyzedArguments.RefKinds.ToImmutableOrNull();
-            var originalMethods = (expr.Kind == BoundKind.MethodGroup) ? ((BoundMethodGroup)expr).Methods : ImmutableArray<MethodSymbol>.Empty;
+            var originalMethods = (expr.KindIgnoringSuppressions() == BoundKind.MethodGroup) ? ((BoundMethodGroup)expr.RemoveSuppressions()).Methods : ImmutableArray<MethodSymbol>.Empty;
 
             return BoundCall.ErrorCall(node, expr, method, args, argNames, argRefKinds, isDelegateCall: false, invokedAsExtensionMethod: false, originalMethods: originalMethods, resultKind: resultKind, binder: this);
         }
@@ -1533,9 +1544,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             // We relax the instance-vs-static requirement for top-level member access expressions by creating a NameofBinder binder.
             var nameofBinder = new NameofBinder(argument, this);
             var boundArgument = nameofBinder.BindExpression(argument, diagnostics);
-            if (!boundArgument.HasAnyErrors && CheckSyntaxForNameofArgument(argument, out name, diagnostics) && boundArgument.Kind == BoundKind.MethodGroup)
+
+            if (!boundArgument.HasAnyErrors && CheckSyntaxForNameofArgument(argument, out name, diagnostics) && boundArgument.KindIgnoringSuppressions() == BoundKind.MethodGroup)
             {
-                var methodGroup = (BoundMethodGroup)boundArgument;
+                var methodGroup = (BoundMethodGroup)boundArgument.RemoveSuppressions();
                 if (!methodGroup.TypeArgumentsOpt.IsDefaultOrEmpty)
                 {
                     // method group with type parameters not allowed

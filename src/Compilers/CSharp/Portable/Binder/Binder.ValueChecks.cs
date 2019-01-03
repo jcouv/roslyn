@@ -209,8 +209,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         var outer = (BoundSuppressNullableWarningExpression)expr;
                         var inner = CheckValue(outer.Expression, valueKind, diagnostics);
-                        return outer.Update(inner, inner.Type);
+                        expr = outer.Update(inner, inner.Type);
                     }
+                    break;
             }
 
             bool hasResolutionErrors = false;
@@ -324,8 +325,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return CheckEventValueKind((BoundEventAccess)expr, valueKind, diagnostics);
 
                 case BoundKind.SuppressNullableWarningExpression:
-                    // https://github.com/dotnet/roslyn/issues/29710 We can reach this assertion
-                    Debug.Assert(false);
+                    // TODO2 other cases?
+                    if (valueKind == BindValueKind.AddressOf)
+                    {
+                        Error(diagnostics, GetStandardLvalueError(valueKind), node);
+                        return false;
+                    }
+
                     return CheckValueKind(node, ((BoundSuppressNullableWarningExpression)expr).Expression, valueKind, checkingReceiver, diagnostics);
             }
 

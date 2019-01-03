@@ -984,6 +984,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             bool hadError = false;
             foreach (var argument in arguments.Arguments)
             {
+                // TODO2
                 if (argument.Kind == BoundKind.UnboundLambda)
                 {
                     hadError |= ((UnboundLambda)argument).GenerateSummaryErrors(diagnostics);
@@ -1118,6 +1119,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 TypeSymbol parameterType = UnwrapIfParamsArray(parameter, isLastParameter) is TypeSymbol t ? t : parameter.Type.TypeSymbol;
 
+                // TODO2
                 // If the problem is that a lambda isn't convertible to the given type, also report why.
                 // The argument and parameter type might match, but may not have same in/out modifiers
                 if (argument.Kind == BoundKind.UnboundLambda && refArg == refParameter)

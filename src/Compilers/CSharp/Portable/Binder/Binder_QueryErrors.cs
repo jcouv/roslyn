@@ -215,6 +215,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             TypeSymbol type = null;
             if (arg.Kind == BoundKind.UnboundLambda)
             {
+                // TODO2
                 var unbound = (UnboundLambda)arg;
                 foreach (var t in unbound.Data.InferredReturnTypes())
                 {

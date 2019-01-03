@@ -544,11 +544,13 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (argument.Kind == BoundKind.UnboundLambda)
             {
+                // TODO2
                 ExplicitParameterTypeInference(argument, target, ref useSiteDiagnostics);
             }
             else if (argument.Kind != BoundKind.TupleLiteral ||
                 !MakeExplicitParameterTypeInferences(binder, (BoundTupleLiteral)argument, target, kind, ref useSiteDiagnostics))
             {
+                // TODO2
                 // Either the argument is not a tuple literal, or we were unable to do the inference from its elements, let's try to infer from argument type
                 if (IsReallyAType(argument.Type))
                 {
@@ -833,6 +835,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return false; // No input types.
             }
 
+            // TODO2
             if (argument.Kind != BoundKind.UnboundLambda && argument.Kind != BoundKind.MethodGroup)
             {
                 return false; // No input types.
@@ -887,6 +890,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return false;
             }
 
+            // TODO2
             if (argument.Kind != BoundKind.UnboundLambda && argument.Kind != BoundKind.MethodGroup)
             {
                 return false;
@@ -1337,6 +1341,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // SPEC: parameter types V1...Vk then for each Ui an exact inference is made
             // SPEC: from Ui to the corresponding Vi.
 
+            // TODO2
             if (source.Kind != BoundKind.UnboundLambda)
             {
                 return;
@@ -2575,6 +2580,7 @@ OuterBreak:
             //   inferred return type of F is T.
             // * Otherwise, a return type cannot be inferred for F.
 
+            // TODO2
             if (source.Kind != BoundKind.UnboundLambda)
             {
                 return default;

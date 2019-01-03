@@ -2078,7 +2078,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         // Determine whether t1 or t2 is a better conversion target from node.
         private BetterResult BetterConversionFromExpression(BoundExpression node, TypeSymbol t1, TypeSymbol t2, ref HashSet<DiagnosticInfo> useSiteDiagnostics)
         {
-            Debug.Assert(node.Kind != BoundKind.UnboundLambda);
+            Debug.Assert(node.KindIgnoringSuppressions() != BoundKind.UnboundLambda);
             bool ignore;
             return BetterConversionFromExpression(
                 node,
@@ -2221,6 +2221,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             MethodSymbol invoke;
             TypeSymbol y;
 
+            // TODO2
             if (node.Kind == BoundKind.UnboundLambda &&
                 (object)(d = t.GetDelegateType()) != null &&
                 (object)(invoke = d.DelegateInvokeMethod) != null &&

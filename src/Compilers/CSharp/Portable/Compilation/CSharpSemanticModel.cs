@@ -2046,6 +2046,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             }
                         case BoundKind.UnboundLambda:
                             {
+                                // TODO2
                                 var lambda = ((UnboundLambda)boundExpr).BindForErrorRecovery();
                                 conversion = new Conversion(ConversionKind.AnonymousFunction, lambda.Symbol, delegateCreation.IsExtensionMethod);
                                 break;
@@ -3061,6 +3062,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             resultKind = LookupResultKind.Viable;
             isDynamic = false;
 
+            // TODO2
             switch (boundNode.Kind)
             {
                 case BoundKind.MethodGroup:

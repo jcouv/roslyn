@@ -1989,6 +1989,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return ((BoundExpressionWithNullability)expr).NullableAnnotation;
                 case BoundKind.MethodGroup:
                 case BoundKind.UnboundLambda:
+                case BoundKind.SuppressNullableWarningExpression:
                     return NullableAnnotation.Unknown;
                 default:
                     Debug.Assert(false); // unexpected value
@@ -3116,6 +3117,16 @@ namespace Microsoft.CodeAnalysis.CSharp
             return (expr, group?.Conversion ?? Conversion.Identity);
         }
 
+        /// <summary>
+        /// Returns true if the expression had a suppression.
+        /// </summary>
+        bool RemoveSuppressions(ref BoundExpression expression)
+        {
+            var original = expression;
+            expression = expression.RemoveSuppressions();
+            return expression != original;
+        }
+
         // See Binder.BindNullCoalescingOperator for initial binding.
         private Conversion GenerateConversionForConditionalOperator(BoundExpression sourceExpression, TypeSymbol sourceType, TypeSymbol destinationType, bool reportMismatch)
         {
@@ -3310,6 +3321,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             (BoundExpression operand, Conversion conversion) = RemoveConversion(expr, includeExplicitConversions: false);
+
             var operandType = VisitRvalueWithResult(operand);
             // If an explicit conversion was used in place of an implicit conversion, the explicit
             // conversion was created by initial binding after reporting "error CS0266:
@@ -3508,7 +3520,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         Analyze(compilation, lambda, Diagnostics, delegateInvokeMethod: delegateType?.DelegateInvokeMethod, returnTypes: null, initialState: variableState);
                         var unboundLambda = GetUnboundLambda(lambda, variableState);
                         var boundLambda = unboundLambda.Bind(delegateType);
-                        if (!fromExplicitCast)
+                        if (!fromExplicitCast && reportRemainingWarnings)
                         {
                             ReportNullabilityMismatchWithTargetDelegate(node.Syntax, delegateType, unboundLambda);
                         }

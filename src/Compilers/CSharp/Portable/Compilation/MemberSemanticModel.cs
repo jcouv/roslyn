@@ -1645,6 +1645,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             do
             {
+                // TODO2
                 switch (node.Kind)
                 {
                     case BoundKind.QueryClause:
