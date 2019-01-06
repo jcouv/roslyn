@@ -488,8 +488,6 @@ foreach (var item in GetItemsAndLog())
 - After three or four steps (ie. after reaching `yield return 3;` or the end of the method) the `finally` should not be evaluated.
 - You can imagine cases with multiple `try/finally` statements that are nested, where disposal should evaluate more than one `finally` block "on the way out".
 
-// When we break out of this `foreach` loop, `Dispose()` is called and we expect the `finally` block to be executed. This is especially important if the `finally` is disposing some resources.
-
 
 ### Design
 
@@ -500,9 +498,6 @@ A few notes before getting started:
   - One reason for this difference is that unlike disposal of iterator methods, the disposal of async-iterator methods can encounter suspensions from awaits. For instance, an `await` inside a `finally`.
 - The caller should only invoke `DisposeAsync()` when the async-iterator method is suspended on a `yield return` statement. Invoking it at other times during the method's execution produces unspecified behavior.
 - The language disallows `yield return` statements inside `finally` blocks. So once we start disposing, there is no chance of yielding additional items.
-
-
-// Because we keep track of `state` when the iterator method is suspended, we know which `finally` block(s) should be evaluated.
 
 When `DisposeAsync()` is called, we should resume from our current suspension state (that's already handled by dispatching), but from there we should not execute any code that isn't inside a `finally`.
 
@@ -569,13 +564,341 @@ Note that in this case, the caller will not get a result from `MoveNextAsync()` 
 
 ## End-to-end example
 
+To wrap things up, let's look at the code generated for this async-iterator method `M`:
+
+```C#
+class C
+{
+    public static async IAsyncEnumerable<int> M()
+    {
+        Console.Write(0);
+        await foreach (var i in M2())
+        {
+            Console.Write(1);
+            await Task.Delay(1);
+            Console.Write(2);
+            yield return i;
+            Console.Write(3);
+        }
+        Console.Write(4);
+    }
+    public static IAsyncEnumerable<int> M2() { /* omitted */ }
+}
+```
+
+The pseudo-code below shows what we generate. It was manually edited for readability. In particular, it more closely reflects the lowering patterns and resembles the original code structure than what you would normally see from decompilation.
+
+You can see that:
+- method `M` is replaced by a stub method that just returns an instance of `Unspeakable`
+- the code for method `M` ends up in `MoveNext` in the generated type
+- the type contains fields for the local and temporary variables extracted from `M` (`i`, `__enumerator`) and other machinery (`__state`, `__current`, etc)
+- `await` and `yield return` are expanded into small blocks of code with a suspension and a resume label
+- dispatching `switch` statements are added to allow resuming the execution from a given state/label
+- `await foreach` is expanded into a loop that repeatedly does `await MoveNextAsync()` and gets the value from `Current`, and that loop is inside a `try/finally` which ensures we call `DisposeAsync()` on the enumerator
+- that `finally` is extracted so that we can resume from `await __enumerator.DisposeAsync()` at label `resumeDisposeAsyncLabel`
+- disposal is largely handled by the `MoveNext` method itself, and it uses a flag to go down a specific control flow path
+
+A few things this example didn't illustrate:
+- if `M` had returned `IAsyncEnumerator<int>` instead of `IAsyncEnumerable<int>` then we would generate mostly the same thing, except that `Unspeakable` would not implement `IAsyncEnumerable<int>` and would not have a `GetAsyncEnumerator()` method
+- this example didn't include any method type parameters, method parameters, spilled awaits, `yield break` or exception handlers
+- it is possible that C# 8.0 will add some mechanism to pass a `CancellationToken` into async-iterator method bodies, but that is not finalized. I'll update this post accordingly
+
+```C#
+class C
+{
+    // stub method
+    [AsyncIteratorStateMachine(typeof(Unspeakable))]
+    public static IAsyncEnumerable<int> M()
+    {
+        return new Unspeakable(FinishedState);
+    }
+
+    [CompilerGenerated]
+    private sealed class Unspeakable : IAsyncEnumerable<int>, IAsyncEnumerator<int>, IAsyncDisposable, IValueTaskSource<bool>, IValueTaskSource, IAsyncStateMachine
+    {
+        public int __state;
+        private int __current;
+        private bool __disposeMode;
+
+        private IAsyncEnumerator<int> __asyncEnumerator;
+        private int i;
+
+        private object __exception;
+        private TaskAwaiter __taskAwaiter;
+        private ValueTaskAwaiter<bool> __valueTaskAwaiterBool;
+        private ValueTaskAwaiter __valueTaskAwaiter;
+
+        public AsyncIteratorMethodBuilder __builder;
+        public ManualResetValueTaskSourceCore<bool> __promiseOfValueOrEnd;
+        private int __initialThreadId;
+
+        public Unspeakable(int __state)
+        {
+            __state = __state;
+            __initialThreadId = Environment.CurrentManagedThreadId;
+            __builder = AsyncIteratorMethodBuilder.Create();
+        }
+
+        // rewritten method M
+        private void MoveNext()
+        {
+            int state = __state;
+            try
+            {
+                // dispatch block
+                switch (state)
+                {
+                    case -4:
+                        goto tryDispatchLabel;
+                    case 0:
+                        goto tryDispatchLabel;
+                    case 1:
+                        goto tryDispatchLabel;
+                    case 2:
+                        goto resumeDisposeAsyncLabel;
+                }
+
+                if (__disposeMode) goto setResultFalseLabel;
+                __state = state = RunningState;
+
+                Console.Write(0);
+
+#region await foreach
+
+                __asyncEnumerator = M2().GetAsyncEnumerator();
+                __exception = null;
+
+            tryDispatchLabel:;
+                try
+                {
+                    // nested dispatch block
+                    switch (state)
+                    {
+                        case -4:
+                            goto resumeYieldReturnILabel;
+                        case 0:
+                            goto resumeAwaitDelayLabel;
+                        case 1:
+                            goto resumeAwaitMoveNextAsyncLabel;
+                    }
+
+                    goto moveNextAsyncLabel;
+                hasCurrentLabel:;
+                    i = __asyncEnumerator.get_Current();
+
+#region body of await foreach
+
+                    Console.Write(1);
+
+                    // await Task.Delay(1);
+                    System.Runtime.CompilerServices.TaskAwaiter awaitDelayAwaiter = Task.Delay(1).GetAwaiter();
+                    if (!awaitDelayAwaiter.get_IsCompleted())
+                    {
+                        __state = state = 0; // state 0
+                        __taskAwaiter = awaitDelayAwaiter;
+                        var temp = this;
+                        __builder.AwaitUnsafeOnCompleted(awaitDelayAwaiter, ref temp);
+                        return;
+                    resumeAwaitDelayLabel:;
+                        awaitDelayAwaiter = __taskAwaiter;
+                        __taskAwaiter = default;
+                        __state = state = RunningState;
+                    }
+                    awaitDelayAwaiter.GetResult();
+
+                    Console.Write(2);
+
+                    // yield return i;
+                    __current = i;
+                    __state = state = -4; // state -4
+                    goto setResultTrueLabel;
+                resumeYieldReturnILabel:;
+                    __state = state = RunningState;
+                    if (__disposeMode) goto disposeEnumeratorLabel;
+
+                    Console.Write(3);
+#endregion
+
+                moveNextAsyncLabel:;
+
+                    // await __asyncEnumerator.MoveNextAsync();
+                    System.Runtime.CompilerServices.ValueTaskAwaiter<bool> moveNextAsyncAwaiter = __asyncEnumerator.MoveNextAsync().GetAwaiter();
+                    if (!moveNextAsyncAwaiter.get_IsCompleted())
+                    {
+                        __state = state = 1; // state 1
+                        __valueTaskAwaiterBool = moveNextAsyncAwaiter;
+                        var temp = this;
+                        __builder.AwaitUnsafeOnCompleted(moveNextAsyncAwaiter, ref temp);
+                        return;
+                    resumeAwaitMoveNextAsyncLabel:;
+                        moveNextAsyncAwaiter = __valueTaskAwaiterBool;
+                        __valueTaskAwaiterBool = default;
+                        __state = state = RunningState;
+                    }
+                    bool moveNextAsyncResult = moveNextAsyncAwaiter.GetResult();
+
+                    if (moveNextAsyncResult) goto hasCurrentLabel;
+                    goto disposeEnumeratorLabel;
+                }
+                catch (Object)
+                {
+                }
+
+                // extracted finally from await foreach
+            disposeEnumeratorLabel:;
+                if (__asyncEnumerator != null)
+                {
+                    System.Runtime.CompilerServices.ValueTaskAwaiter disposeAsyncAwaiter = __asyncEnumerator.DisposeAsync().GetAwaiter();
+                    if (!disposeAsyncAwaiter.get_IsCompleted())
+                    {
+                        __state = state = 2; // state 2
+                        __valueTaskAwaiter = disposeAsyncAwaiter;
+                        var temp = this;
+                        __builder.AwaitUnsafeOnCompleted(disposeAsyncAwaiter, ref temp);
+                        return;
+                    resumeDisposeAsyncLabel:;
+                        disposeAsyncAwaiter = __valueTaskAwaiter;
+                        __valueTaskAwaiter = default;
+                        __state = state = RunningState;
+                    }
+                    disposeAsyncAwaiter.GetResult();
+                }
+
+                object exception = __exception;
+                if (exception != null)
+                {
+                    var temp = exception as System.Exception;
+                    if (temp != null) throw exception;
+                    ExceptionDispatchInfo.Capture(temp).Throw();
+                }
+
+                if (__disposeMode) goto setResultFalseLabel;
+                __exception = null;
+                __asyncEnumerator = null;
+
+#endregion
+
+                Console.Write(4);
+                goto setResultFalseLabel;
+            }
+            catch (System.Exception e)
+            {
+                __state = FinishedState;
+                __promiseOfValueOrEnd.SetException(e);
+                return;
+            }
+
+        setResultFalseLabel:;
+            __state = FinishedState;
+            __promiseOfValueOrEnd.SetResult(false);
+            return;
+
+        setResultTrueLabel:;
+            __promiseOfValueOrEnd.SetResult(true);
+            return;
+        }
+
+        IAsyncEnumerator<int> IAsyncEnumerable<int>.GetAsyncEnumerator(CancellationToken token)
+        {
+            Unspeakable result;
+            if (__state == FinishedState && __initialThreadId == Environment.CurrentManagedThreadId)
+            {
+                __state = InitialState;
+                result = this;
+                __disposeMode = false;
+            }
+            else
+            {
+                result = new Unspeakable(InitialState);
+            }
+            return result;
+        }
+
+        ValueTask<bool> IAsyncEnumerator<int>.MoveNextAsync()
+        {
+            if (__state == FinishedState)
+            {
+                return default(ValueTask<bool>);
+            }
+
+            __promiseOfValueOrEnd.Reset();
+            Unspeakable stateMachine = this;
+            __builder.MoveNext(ref stateMachine);
+            short version = __promiseOfValueOrEnd.Version;
+            if (__promiseOfValueOrEnd.GetStatus(version) == ValueTaskSourceStatus.Succeeded)
+            {
+                return new ValueTask<bool>(__promiseOfValueOrEnd.GetResult(version));
+            }
+
+            return new ValueTask<bool>(this, version);
+        }
+
+        int IAsyncEnumerator<int>.Current => __current;
+
+        ValueTask IAsyncDisposable.DisposeAsync()
+        {
+            if (__state >= RunningState)
+            {
+                throw new NotSupportedException();
+            }
+
+            if (__state == FinishedState)
+            {
+                return default(ValueTask);
+            }
+
+            __disposeMode = true;
+            __promiseOfValueOrEnd.Reset();
+            Unspeakable stateMachine = this;
+            __builder.MoveNext(ref stateMachine);
+            return new ValueTask(this, __promiseOfValueOrEnd.Version);
+        }
+
+        ValueTaskSourceStatus IValueTaskSource<bool>.GetStatus(short token)
+        {
+            return __promiseOfValueOrEnd.GetStatus(token);
+        }
+
+        bool IValueTaskSource<bool>.GetResult(short token)
+        {
+            return __promiseOfValueOrEnd.GetResult(token);
+        }
+
+        void IValueTaskSource<bool>.OnCompleted(Action<object> continuation, object state, short token, ValueTaskSourceOnCompletedFlags flags)
+        {
+            __promiseOfValueOrEnd.OnCompleted(continuation, state, token, flags);
+        }
+
+        ValueTaskSourceStatus IValueTaskSource.GetStatus(short token)
+        {
+            return __promiseOfValueOrEnd.GetStatus(token);
+        }
+
+        void IValueTaskSource.GetResult(short token)
+        {
+            __promiseOfValueOrEnd.GetResult(token);
+        }
+
+        void IValueTaskSource.OnCompleted(Action<object> continuation, object state, short token, ValueTaskSourceOnCompletedFlags flags)
+        {
+            __promiseOfValueOrEnd.OnCompleted(continuation, state, token, flags);
+        }
+
+        void IAsyncStateMachine.SetStateMachine(IAsyncStateMachine stateMachine)
+        {
+        }
+    }
+}
+```
 
 ## Conclusion
 
-
-Notes on async-iterator methods:
-- stub method
-- cancellation token
-- code from ILSpy, finish with an actual example?
+I hope you enjoyed this technical deep dive. Although there are always more details, we've covered a lot of ground, including existing machinery re-used from async methods, as well as the additions for async-iterator methods.
 - https://github.com/dotnet/roslyn/blob/master/docs/features/async-streams.md
+- https://github.com/dotnet/csharplang/blob/master/proposals/async-streams.md
+
+
 Point to Lippert's series
+https://blogs.msdn.microsoft.com/ericlippert/tag/iterators/ (including explanations for disallowing `yield return` in `catch` or `finally` blocks)
+https://blogs.msdn.microsoft.com/ericlippert/tag/async/
+
