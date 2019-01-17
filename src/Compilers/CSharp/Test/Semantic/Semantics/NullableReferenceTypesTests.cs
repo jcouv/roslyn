@@ -324,7 +324,7 @@ public static class X1
         }
 
         [Fact, WorkItem(31370, "https://github.com/dotnet/roslyn/issues/31370")]
-        public void SuppressNullableWarning_TargetTypedStringInterpolation()
+        public void SuppressNullableWarning_StringInterpolation()
         {
             var source = @"
 public class C
@@ -360,7 +360,7 @@ public class C
         }
 
         [Fact, WorkItem(31370, "https://github.com/dotnet/roslyn/issues/31370")]
-        public void SuppressNullableWarning_TargetTypedStringInterpolation_ExplicitCast()
+        public void SuppressNullableWarning_StringInterpolation_ExplicitCast()
         {
             var source = @"
 public class C
@@ -412,9 +412,8 @@ public class C
         }
 
         [Fact, WorkItem(31370, "https://github.com/dotnet/roslyn/issues/31370")]
-        public void SuppressNullableWarning_TargetTypedTuple()
+        public void SuppressNullableWarning_Tuple()
         {
-            // TODO2 crash
             var source =
 @"class C<T>
 {
@@ -426,19 +425,28 @@ public class C
         _ = tuple2;
         (string, C<string>) tuple3 = (null!, x!);
         _ = tuple3;
+        (int, int) tuple4 = (1, 2)!;
+        _ = tuple4;
+        (double, long) tuple5 = (1, 2)!;
+        _ = tuple5;
+        var tuple6 = ((string, C<string>))(null, x)!;
+        _ = tuple6;
     }
 }";
             var comp = CreateCompilation(source, options: WithNonNullTypesTrue());
             comp.VerifyDiagnostics(
                 // (5,37): warning CS8619: Nullability of reference types in value of type '(string?, C<string?> x)' doesn't match target type '(string, C<string>)'.
                 //         (string, C<string>) tuple = (null, x);
-                Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(null, x)").WithArguments("(string?, C<string?> x)", "(string, C<string>)").WithLocation(5, 37)
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(null, x)").WithArguments("(string?, C<string?> x)", "(string, C<string>)").WithLocation(5, 37),
+                // (9,38): warning CS8619: Nullability of reference types in value of type '(string, C<string?>)' doesn't match target type '(string, C<string>)'.
+                //         (string, C<string>) tuple3 = (null!, x!);
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(null!, x!)").WithArguments("(string, C<string?>)", "(string, C<string>)").WithLocation(9, 38)
                 );
             CompileAndVerify(comp);
         }
 
         [Fact, WorkItem(31370, "https://github.com/dotnet/roslyn/issues/31370")]
-        public void SuppressNullableWarning_TargetTypedTupleEquality()
+        public void SuppressNullableWarning_TupleEquality()
         {
             // TODO2 unexpected diagnostic
             var source =
@@ -461,7 +469,7 @@ public class C
         }
 
         [Fact, WorkItem(31370, "https://github.com/dotnet/roslyn/issues/31370")]
-        public void SuppressNullableWarning_TargetTypedDefault()
+        public void SuppressNullableWarning_Default()
         {
             var source =
 @"class C
@@ -527,7 +535,7 @@ class C
         }
 
         [Fact, WorkItem(31370, "https://github.com/dotnet/roslyn/issues/31370")]
-        public void SuppressNullableWarning_TargetTypedMethodGroup()
+        public void SuppressNullableWarning_MethodGroup()
         {
             var source =
 @"class C
@@ -769,7 +777,7 @@ class Test
         }
 
         [Fact, WorkItem(31370, "https://github.com/dotnet/roslyn/issues/31370")]
-        public void SuppressNullableWarning_TargetTypedMethodGroup2()
+        public void SuppressNullableWarning_MethodGroup2()
         {
             var source =
 @"class C
@@ -796,7 +804,7 @@ class Test
         }
 
         [Fact, WorkItem(31370, "https://github.com/dotnet/roslyn/issues/31370")]
-        public void SuppressNullableWarning_TargetTypedLambda()
+        public void SuppressNullableWarning_Lambda()
         {
             var source =
 @"class C
@@ -835,7 +843,7 @@ class Test
         }
 
         [Fact, WorkItem(31370, "https://github.com/dotnet/roslyn/issues/31370")]
-        public void SuppressNullableWarning_TargetTypedLambda_ExplicitCast()
+        public void SuppressNullableWarning_Lambda_ExplicitCast()
         {
             var source =
 @"class C
@@ -870,7 +878,7 @@ class Test
         }
 
         [Fact, WorkItem(31370, "https://github.com/dotnet/roslyn/issues/31370")]
-        public void SuppressNullableWarning_TargetTypedLambda2()
+        public void SuppressNullableWarning_Lambda2()
         {
             var source =
 @"class C
@@ -902,7 +910,7 @@ class Test
         }
 
         [Fact, WorkItem(31370, "https://github.com/dotnet/roslyn/issues/31370")]
-        public void SuppressNullableWarning_TargetTypedLambda2_ExplicitCast()
+        public void SuppressNullableWarning_Lambda2_ExplicitCast()
         {
             var source =
 @"class C
@@ -1379,7 +1387,7 @@ class C
         }
 
         [Fact, WorkItem(31370, "https://github.com/dotnet/roslyn/issues/31370")]
-        public void SuppressNullableWarning_TargetTypedDeconstruction()
+        public void SuppressNullableWarning_Deconstruction()
         {
             var source =
 @"class C

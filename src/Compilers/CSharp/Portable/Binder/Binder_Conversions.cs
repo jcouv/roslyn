@@ -66,17 +66,17 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // identity tuple conversions result in a converted tuple
                 // to indicate that tuple conversions are no longer applicable.
                 // nothing else changes
-                if (source.Kind == BoundKind.TupleLiteral)
+                if (source.KindIgnoringSuppressions() == BoundKind.TupleLiteral)
                 {
-                    // TODO2
-                    var sourceTuple = (BoundTupleLiteral)source;
+                    var sourceTuple = (BoundTupleLiteral)source.RemoveSuppressions();
                     TupleTypeSymbol.ReportNamesMismatchesIfAny(destination, sourceTuple, diagnostics);
                     source = new BoundConvertedTupleLiteral(
                         sourceTuple.Syntax,
                         sourceTuple.Type,
                         sourceTuple.Arguments,
                         sourceTuple.Type, // same type to keep original element names 
-                        sourceTuple.HasErrors);
+                        sourceTuple.HasErrors)
+                        .WrapWithSuppressionsFrom(source);
                 }
 
                 // We need to preserve any conversion that changes the type (even identity conversions, like object->dynamic),
@@ -108,8 +108,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (conversion.IsTupleLiteralConversion ||
                 (conversion.IsNullable && conversion.UnderlyingConversions[0].IsTupleLiteralConversion))
             {
-                // TODO2
-                return CreateTupleLiteralConversion(syntax, (BoundTupleLiteral)source, conversion, isCast: isCast, conversionGroupOpt, destination, diagnostics);
+                return CreateTupleLiteralConversion(syntax, source, conversion, isCast: isCast, conversionGroupOpt, destination, diagnostics);
             }
 
             if (conversion.IsUserDefined)
@@ -369,12 +368,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             return CreateConversion(syntax, convertedNode, underlyingConversion, isCast: isCast, conversionGroup, destination, diagnostics);
         }
 
-        private BoundExpression CreateTupleLiteralConversion(SyntaxNode syntax, BoundTupleLiteral sourceTuple, Conversion conversion, bool isCast, ConversionGroup conversionGroup, TypeSymbol destination, DiagnosticBag diagnostics)
+        private BoundExpression CreateTupleLiteralConversion(SyntaxNode syntax, BoundExpression source, Conversion conversion, bool isCast, ConversionGroup conversionGroup, TypeSymbol destination, DiagnosticBag diagnostics)
         {
+            Debug.Assert(source.KindIgnoringSuppressions() == BoundKind.TupleLiteral);
             // We have a successful tuple conversion; rather than producing a separate conversion node 
             // which is a conversion on top of a tuple literal, tuple conversion is an element-wise conversion of arguments.
             Debug.Assert(conversion.IsNullable == destination.IsNullableType());
 
+            var sourceTuple = (BoundTupleLiteral)source.RemoveSuppressions();
             var destinationWithoutNullable = destination;
             var conversionWithoutNullable = conversion;
 
@@ -440,7 +441,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 sourceTuple.Syntax,
                 sourceTuple.Type,
                 convertedArguments.ToImmutableAndFree(),
-                targetType);
+                targetType)
+                .WrapWithSuppressionsFrom(source);
 
             if (!TypeSymbol.Equals(sourceTuple.Type, destination, TypeCompareKind.ConsiderEverything2))
             {

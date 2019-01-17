@@ -687,6 +687,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             foreach (var argument in this.Arguments)
             {
+                // TODO2
                 if (argument.Kind == BoundKind.TupleLiteral)
                 {
                     ((BoundTupleExpression)argument).VisitAllElements(action, args);

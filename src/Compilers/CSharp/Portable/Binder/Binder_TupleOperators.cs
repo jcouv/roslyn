@@ -40,6 +40,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (convertedType is null)
             {
+                // TODO2
                 if (@operator.InfoKind == TupleBinaryOperatorInfoKind.Multiple && expr.Kind == BoundKind.TupleLiteral)
                 {
                     // Although the tuple will remain typeless, we'll give elements converted types as possible
@@ -213,6 +214,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return TupleBinaryOperatorInfo.Multiple.ErrorInstance;
             }
 
+            // TODO2
             // Aside from default (which we fixed or ruled out above) and tuple literals,
             // we must have typed expressions at this point
             Debug.Assert((object)left.Type != null || left.Kind == BoundKind.TupleLiteral);
@@ -266,6 +268,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private static void ReportNamesMismatchesIfAny(BoundExpression left, BoundExpression right,
             ImmutableArray<string> leftNames, ImmutableArray<string> rightNames, DiagnosticBag diagnostics)
         {
+            // TODO2
             bool leftIsTupleLiteral = left.Kind == BoundKind.TupleLiteral;
             bool rightIsTupleLiteral = right.Kind == BoundKind.TupleLiteral;
 
@@ -377,6 +380,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         private static (ImmutableArray<BoundExpression> Elements, ImmutableArray<string> Names) GetTupleArgumentsOrPlaceholders(BoundExpression expr)
         {
+            // TODO2
             if (expr.Kind == BoundKind.TupleLiteral)
             {
                 var tuple = (BoundTupleLiteral)expr;

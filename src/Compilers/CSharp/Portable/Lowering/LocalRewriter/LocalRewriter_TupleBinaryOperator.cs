@@ -52,6 +52,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         private BoundExpression ReplaceTerminalElementsWithTemps(BoundExpression expr, TupleBinaryOperatorInfo operators, ArrayBuilder<BoundExpression> initEffects, ArrayBuilder<LocalSymbol> temps)
         {
+            // TODO2
             if (operators.InfoKind == TupleBinaryOperatorInfoKind.Multiple)
             {
                 // Example:
@@ -205,6 +206,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private void MakeNullableParts(BoundExpression expr, ArrayBuilder<LocalSymbol> temps, ArrayBuilder<BoundExpression> innerEffects,
             ArrayBuilder<BoundExpression> outerEffects, bool saveHasValue, out BoundExpression hasValue, out BoundExpression value, out bool isNullable)
         {
+            // TODO2
             isNullable = expr.Kind != BoundKind.TupleLiteral && expr.Type.IsNullableType();
             if (!isNullable)
             {
@@ -307,6 +309,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         private BoundExpression GetTuplePart(BoundExpression tuple, int i)
         {
+            // TODO2
             // Example:
             // (1, 2) == (1, 2);
             if (tuple.Kind == BoundKind.TupleLiteral)

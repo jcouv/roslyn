@@ -2178,6 +2178,7 @@ moreArguments:
                     // always returnable
                     return Binder.ExternalScope;
 
+                // TODO2
                 case BoundKind.TupleLiteral:
                     var tupleLiteral = (BoundTupleLiteral)expr;
                     return GetTupleValEscape(tupleLiteral.Arguments, scopeOfTheContainingExpression);
@@ -2473,6 +2474,7 @@ moreArguments:
                     // always returnable
                     return true;
 
+                // TODO2
                 case BoundKind.TupleLiteral:
                     var tupleLiteral = (BoundTupleLiteral)expr;
                     return CheckTupleValEscape(tupleLiteral.Arguments, escapeFrom, escapeTo, diagnostics);

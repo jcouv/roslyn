@@ -877,6 +877,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
+            // TODO2
             if (right.Kind != BoundKind.ConvertedTupleLiteral && right.Kind != BoundKind.TupleLiteral)
             {
                 return;

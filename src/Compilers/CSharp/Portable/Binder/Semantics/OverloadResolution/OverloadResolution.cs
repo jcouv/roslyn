@@ -2205,6 +2205,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return true;
             }
 
+            // TODO2
             if (node.Kind == BoundKind.TupleLiteral)
             {
                 // Recurse into tuple constituent arguments.

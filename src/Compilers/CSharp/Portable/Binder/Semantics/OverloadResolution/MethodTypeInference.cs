@@ -718,6 +718,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private void MakeOutputTypeInferences(Binder binder, BoundExpression argument, TypeSymbolWithAnnotations formalType, ref HashSet<DiagnosticInfo> useSiteDiagnostics)
         {
+            // TODO2
             if (argument.Kind == BoundKind.TupleLiteral && (object)argument.Type == null)
             {
                 MakeOutputTypeInferences(binder, (BoundTupleLiteral)argument, formalType, ref useSiteDiagnostics);

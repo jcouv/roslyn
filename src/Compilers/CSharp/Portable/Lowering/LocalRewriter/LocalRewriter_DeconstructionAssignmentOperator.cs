@@ -181,6 +181,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return InvokeDeconstructMethod(deconstructionInfo, evaluationResult, effects.deconstructions, temps);
             }
 
+            // TODO2
             // Example:
             // var (x, y) = (1, 2);
             if (IsTupleExpression(right.Kind))
@@ -188,6 +189,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return ((BoundTupleExpression)right).Arguments;
             }
 
+            // TODO2
             // Example:
             // (byte x, byte y) = (1, 2);
             // (int x, string y) = (1, null);

@@ -2686,6 +2686,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var kind = result.ConversionForArg(arg);
                 BoundExpression argument = arguments[arg];
 
+                // TODO2
                 if (!kind.IsIdentity || argument.Kind == BoundKind.TupleLiteral)
                 {
                     TypeSymbolWithAnnotations type = GetCorrespondingParameterType(ref result, parameters, arg);

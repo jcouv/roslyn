@@ -199,6 +199,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <summary>When boundRHS is a tuple literal, fix it up by inferring its types.</summary>
         private BoundExpression FixTupleLiteral(ArrayBuilder<DeconstructionVariable> checkedVariables, BoundExpression boundRHS, CSharpSyntaxNode syntax, DiagnosticBag diagnostics)
         {
+            // TODO2
             if (boundRHS.Kind == BoundKind.TupleLiteral)
             {
                 // Let's fix the literal up by figuring out its type
@@ -474,6 +475,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     var variable = lhsVariables[i];
                     if (variable.HasNestedVariables)
                     {
+                        // TODO2
                         if (element.Kind == BoundKind.TupleLiteral)
                         {
                             // (variables) on the left and (elements) on the right
