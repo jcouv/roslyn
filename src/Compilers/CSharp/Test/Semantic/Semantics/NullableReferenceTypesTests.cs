@@ -71280,5 +71280,31 @@ class Program
                 Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "(default, x)").WithArguments("(T?, object? x)", "(T? x, object y)").WithLocation(12, 32));
             comp.VerifyTypes();
         }
+
+        [Fact, WorkItem(32328, "https://github.com/dotnet/roslyn/issues/32328")]
+        public void Bug()
+        {
+            var source = @"
+class C
+{
+    public static void Main()
+    {
+        new C().M(new C());
+    }
+
+    public string M(C? c)
+    {
+        if (c?.M(c = null) != null)
+        {
+            c.ToString();
+        }
+
+        return "";
+    }
+}";
+            // TODO2: the inference from `c?.x != null` should be done before the evaluation of `x`
+            var comp = CreateCompilation(source, options: WithNonNullTypesTrue());
+            comp.VerifyDiagnostics();
+        }
     }
 }
