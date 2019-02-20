@@ -1057,6 +1057,15 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.VBFeaturesResources
         End Property
         
         '''<summary>
+        '''  Looks up a localized string similar to Fix return type.
+        '''</summary>
+        Friend ReadOnly Property Fix_return_type() As String
+            Get
+                Return ResourceManager.GetString("Fix_return_type", resourceCulture)
+            End Get
+        End Property
+        
+        '''<summary>
         '''  Looks up a localized string similar to Followed by a comparison operator and then an expression, Case Is introduces the statements to run if the Select Case expression combined with the Case Is expression evaluates to True..
         '''</summary>
         Friend ReadOnly Property Followed_by_a_comparison_operator_and_then_an_expression_Case_Is_introduces_the_statements_to_run_if_the_Select_Case_expression_combined_with_the_Case_Is_expression_evaluates_to_True() As String
