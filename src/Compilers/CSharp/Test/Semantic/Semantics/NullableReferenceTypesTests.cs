@@ -13751,15 +13751,16 @@ class CL0<T>
 }";
             var comp = CreateCompilation(new[] { source }, options: WithNonNullTypesTrue());
             comp.VerifyDiagnostics(
-                // (5,22): warning CS8604: Possible null reference argument for parameter 'y' in 'void C.G(out object x, ref object y, in object z)'.
+                // (5,22): warning CS8620: Argument of type 'object?' cannot be used for parameter 'y' of type 'object' in 'void C.G(out object x, ref object y, in object z)' due to differences in the nullability of reference types.
                 //         G(out x, ref y, in z);
-                Diagnostic(ErrorCode.WRN_NullReferenceArgument, "y").WithArguments("y", "void C.G(out object x, ref object y, in object z)").WithLocation(5, 22),
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "y").WithArguments("object?", "object", "y", "void C.G(out object x, ref object y, in object z)").WithLocation(5, 22),
                 // (5,28): warning CS8604: Possible null reference argument for parameter 'z' in 'void C.G(out object x, ref object y, in object z)'.
                 //         G(out x, ref y, in z);
                 Diagnostic(ErrorCode.WRN_NullReferenceArgument, "z").WithArguments("z", "void C.G(out object x, ref object y, in object z)").WithLocation(5, 28),
                 // (8,9): warning CS8602: Possible dereference of a null reference.
                 //         z.ToString();
-                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "z").WithLocation(8, 9));
+                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "z").WithLocation(8, 9)
+                );
         }
 
         [Fact]
@@ -15032,9 +15033,9 @@ public class C
 " }, options: WithNonNullTypesTrue());
 
             c.VerifyDiagnostics(
-                // (6,15): warning CS8604: Possible null reference argument for parameter 'value' in 'void C.M(ref string value)'.
+                // (6,15): warning CS8620: Argument of type 'string?' cannot be used as an input of type 'string' for parameter 'value' in 'void C.M(ref string value)' due to differences in the nullability of reference types.
                 //         M(ref s); // warn
-                Diagnostic(ErrorCode.WRN_NullReferenceArgument, "s").WithArguments("value", "void C.M(ref string value)").WithLocation(6, 15)
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "s").WithArguments("string?", "string", "value", "void C.M(ref string value)").WithLocation(6, 15)
                 );
         }
 
@@ -15054,7 +15055,11 @@ public class C
 }
 " }, options: WithNonNullTypesTrue());
 
-            c.VerifyDiagnostics();
+            c.VerifyDiagnostics(
+                // (7,15): warning CS8620: Argument of type 'string?' cannot be used as an input of type 'string' for parameter 'value' in 'void C.M(ref string value)' due to differences in the nullability of reference types.
+                //         M(ref s);
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "s").WithArguments("string?", "string", "value", "void C.M(ref string value)").WithLocation(7, 15)
+                );
         }
 
         [Fact]
@@ -15073,9 +15078,9 @@ public class C
 " }, options: WithNonNullTypesTrue());
 
             c.VerifyDiagnostics(
-                // (6,15): warning CS8600: Converting null literal or possible null value to non-nullable type.
+                // (6,15): warning CS8620: Argument of type 'string' cannot be used as an input of type 'string?' for parameter 'value' in 'void C.M(ref string? value)' due to differences in the nullability of reference types.
                 //         M(ref s); // warn 1
-                Diagnostic(ErrorCode.WRN_ConvertingNullableToNonNullable, "s").WithLocation(6, 15),
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "s").WithArguments("string", "string?", "value", "void C.M(ref string? value)").WithLocation(6, 15),
                 // (7,9): warning CS8602: Possible dereference of a null reference.
                 //         s.ToString(); // warn 2
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "s").WithLocation(7, 9)
@@ -15099,9 +15104,9 @@ public class C
 " }, options: WithNonNullTypesTrue());
 
             c.VerifyDiagnostics(
-                // (7,15): warning CS8600: Converting null literal or possible null value to non-nullable type.
+                // (7,15): warning CS8620: Argument of type 'string' cannot be used as an input of type 'string?' for parameter 'value' in 'void C.M(ref string? value)' due to differences in the nullability of reference types.
                 //         M(ref s); // warn 1
-                Diagnostic(ErrorCode.WRN_ConvertingNullableToNonNullable, "s").WithLocation(7, 15),
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "s").WithArguments("string", "string?", "value", "void C.M(ref string? value)").WithLocation(7, 15),
                 // (8,9): warning CS8602: Possible dereference of a null reference.
                 //         s.ToString(); // warn 2
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "s").WithLocation(8, 9)
@@ -15571,11 +15576,17 @@ class C
         string s2 = """";
         M(ref s2); // 2
         s2.ToString(); // 3
+
+        string s3 = null; // 4
+        M(ref s3); // 5
+        s3.ToString();
     }
     void M(ref string? s) => throw null!;
+    void M2(ref string s) => throw null!;
 }
 ", options: WithNonNullTypesTrue());
 
+            // TODO2
             c.VerifyDiagnostics(
                 // (8,9): warning CS8602: Possible dereference of a null reference.
                 //         s.ToString(); // 1
@@ -15607,9 +15618,9 @@ class C
 ", options: WithNonNullTypesTrue());
 
             c.VerifyDiagnostics(
-                // (7,15): warning CS8604: Possible null reference argument for parameter 's' in 'void C.M(ref string s)'.
+                // (7,15): warning CS8620: Argument of type 'string?' cannot be used as an input of type 'string' for parameter 's' in 'void C.M(ref string s)' due to differences in the nullability of reference types.
                 //         M(ref s);
-                Diagnostic(ErrorCode.WRN_NullReferenceArgument, "s").WithArguments("s", "void C.M(ref string s)").WithLocation(7, 15)
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "s").WithArguments("string?", "string", "s", "void C.M(ref string s)").WithLocation(7, 15)
                 );
         }
 
@@ -15668,9 +15679,9 @@ class C
                 // (9,15): error CS1510: A ref or out value must be an assignable variable
                 //         M(ref ""); // 2
                 Diagnostic(ErrorCode.ERR_RefLvalueExpected, @"""""").WithLocation(9, 15),
-                // (11,15): warning CS8601: Possible null reference assignment.
+                // (11,15): warning CS8620: Argument of type 'string' cannot be used as an input of type 'string?' for parameter 's' in 'void C.M(ref string? s)' due to differences in the nullability of reference types.
                 //         M(ref field); // 3
-                Diagnostic(ErrorCode.WRN_NullReferenceAssignment, "field").WithLocation(11, 15),
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "field").WithArguments("string", "string?", "s", "void C.M(ref string? s)").WithLocation(11, 15),
                 // (12,9): warning CS8602: Possible dereference of a null reference.
                 //         field.ToString(); // 4
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "field").WithLocation(12, 9),
@@ -15711,9 +15722,9 @@ public static class Extension
                 // (8,9): warning CS8602: Possible dereference of a null reference.
                 //         s.ToString(); // 1
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "s").WithLocation(8, 9),
-                // (11,20): warning CS8600: Converting null literal or possible null value to non-nullable type.
+                // (11,20): warning CS8620: Argument of type 'string' cannot be used as an input of type 'string?' for parameter 's' in 'void Extension.M(C c, ref string? s)' due to differences in the nullability of reference types.
                 //         this.M(ref s2); // 2
-                Diagnostic(ErrorCode.WRN_ConvertingNullableToNonNullable, "s2").WithLocation(11, 20),
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "s2").WithArguments("string", "string?", "s", "void Extension.M(C c, ref string? s)").WithLocation(11, 20),
                 // (12,9): warning CS8602: Possible dereference of a null reference.
                 //         s2.ToString(); // 3
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "s2").WithLocation(12, 9)
@@ -15828,9 +15839,9 @@ class C<T>
                 // (14,9): warning CS8602: Possible dereference of a null reference.
                 //         v2.ToString(); // 3
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "v2").WithLocation(14, 9),
-                // (17,25): warning CS8604: Possible null reference argument for parameter 's' in 'string? C<T>.M2<string?>(ref string s, string? u)'.
+                // (17,25): warning CS8620: Argument of type 'string?' cannot be used as an input of type 'string' for parameter 's' in 'string? C<T>.M2<string?>(ref string s, string? u)' due to differences in the nullability of reference types.
                 //         var v3 = M2(ref s, s); // 4
-                Diagnostic(ErrorCode.WRN_NullReferenceArgument, "s").WithArguments("s", "string? C<T>.M2<string?>(ref string s, string? u)").WithLocation(17, 25),
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "s").WithArguments("string?", "string", "s", "string? C<T>.M2<string?>(ref string s, string? u)").WithLocation(17, 25),
                 // (19,9): warning CS8602: Possible dereference of a null reference.
                 //         v3.ToString(); // 5
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "v3").WithLocation(19, 9)
@@ -32103,15 +32114,15 @@ class C
                 // (8,22): warning CS8620: Argument of type 'IIn<object>' cannot be used as an input of type 'IIn<object?>' for parameter 'y' in 'void C.G(ref I<object?> x, ref IIn<object?> y, ref IOut<object?> z)' due to differences in the nullability of reference types.
                 //         G(ref x, ref y, ref z);
                 Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "y").WithArguments("IIn<object>", "IIn<object?>", "y", "void C.G(ref I<object?> x, ref IIn<object?> y, ref IOut<object?> z)").WithLocation(8, 22),
-                // (8,29): warning CS8624: Argument of type 'IOut<object>' cannot be used as an output of type 'IOut<object?>' for parameter 'z' in 'void C.G(ref I<object?> x, ref IIn<object?> y, ref IOut<object?> z)' due to differences in the nullability of reference types.
+                // (8,29): warning CS8620: Argument of type 'IOut<object>' cannot be used as an input of type 'IOut<object?>' for parameter 'z' in 'void C.G(ref I<object?> x, ref IIn<object?> y, ref IOut<object?> z)' due to differences in the nullability of reference types.
                 //         G(ref x, ref y, ref z);
-                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgumentForOutput, "z").WithArguments("IOut<object>", "IOut<object?>", "z", "void C.G(ref I<object?> x, ref IIn<object?> y, ref IOut<object?> z)").WithLocation(8, 29),
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "z").WithArguments("IOut<object>", "IOut<object?>", "z", "void C.G(ref I<object?> x, ref IIn<object?> y, ref IOut<object?> z)").WithLocation(8, 29),
                 // (12,15): warning CS8620: Argument of type 'I<object?>' cannot be used as an input of type 'I<object>' for parameter 'x' in 'void C.F(ref I<object> x, ref IIn<object> y, ref IOut<object> z)' due to differences in the nullability of reference types.
                 //         F(ref x, ref y, ref z);
                 Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "x").WithArguments("I<object?>", "I<object>", "x", "void C.F(ref I<object> x, ref IIn<object> y, ref IOut<object> z)").WithLocation(12, 15),
-                // (12,22): warning CS8624: Argument of type 'IIn<object?>' cannot be used as an output of type 'IIn<object>' for parameter 'y' in 'void C.F(ref I<object> x, ref IIn<object> y, ref IOut<object> z)' due to differences in the nullability of reference types.
+                // (12,22): warning CS8620: Argument of type 'IIn<object?>' cannot be used as an input of type 'IIn<object>' for parameter 'y' in 'void C.F(ref I<object> x, ref IIn<object> y, ref IOut<object> z)' due to differences in the nullability of reference types.
                 //         F(ref x, ref y, ref z);
-                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgumentForOutput, "y").WithArguments("IIn<object?>", "IIn<object>", "y", "void C.F(ref I<object> x, ref IIn<object> y, ref IOut<object> z)").WithLocation(12, 22),
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "y").WithArguments("IIn<object?>", "IIn<object>", "y", "void C.F(ref I<object> x, ref IIn<object> y, ref IOut<object> z)").WithLocation(12, 22),
                 // (12,29): warning CS8620: Argument of type 'IOut<object?>' cannot be used as an input of type 'IOut<object>' for parameter 'z' in 'void C.F(ref I<object> x, ref IIn<object> y, ref IOut<object> z)' due to differences in the nullability of reference types.
                 //         F(ref x, ref y, ref z);
                 Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "z").WithArguments("IOut<object?>", "IOut<object>", "z", "void C.F(ref I<object> x, ref IIn<object> y, ref IOut<object> z)").WithLocation(12, 29));
@@ -38432,12 +38443,12 @@ class C
                 parseOptions: TestOptions.Regular8,
                 options: WithNonNullTypesTrue(TestOptions.ReleaseExe));
             comp.VerifyDiagnostics(
-                // (10,15): warning CS8604: Possible null reference argument for parameter 's' in 'void C.F(ref string s, ref string? t)'.
+                // (10,15): warning CS8620: Argument of type 'string?' cannot be used as an input of type 'string' for parameter 's' in 'void C.F(ref string s, ref string? t)' due to differences in the nullability of reference types.
                 //         F(ref s, ref t);
-                Diagnostic(ErrorCode.WRN_NullReferenceArgument, "s").WithArguments("s", "void C.F(ref string s, ref string? t)").WithLocation(10, 15),
-                // (10,22): warning CS8600: Converting null literal or possible null value to non-nullable type.
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "s").WithArguments("string?", "string", "s", "void C.F(ref string s, ref string? t)").WithLocation(10, 15),
+                // (10,22): warning CS8620: Argument of type 'string' cannot be used as an input of type 'string?' for parameter 't' in 'void C.F(ref string s, ref string? t)' due to differences in the nullability of reference types.
                 //         F(ref s, ref t);
-                Diagnostic(ErrorCode.WRN_ConvertingNullableToNonNullable, "t").WithLocation(10, 22));
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "t").WithArguments("string", "string?", "t", "void C.F(ref string s, ref string? t)").WithLocation(10, 22));
         }
 
         [Fact]
@@ -38464,18 +38475,18 @@ class C
                 new[] { source }, options: WithNonNullTypesTrue(),
                 parseOptions: TestOptions.Regular8);
             comp.VerifyDiagnostics(
-                // (10,15): warning CS8604: Possible null reference argument for parameter 'a' in 'void C.F(ref List<string> a, ref List<string>? b, ref List<string?> c, ref List<string?>? d)'.
+                // (10,15): warning CS8620: Argument of type 'List<string>?' cannot be used as an input of type 'List<string>' for parameter 'a' in 'void C.F(ref List<string> a, ref List<string>? b, ref List<string?> c, ref List<string?>? d)' due to differences in the nullability of reference types.
                 //         F(ref b, ref c, ref d, ref a); // warn 1, 2, 3 and 4
-                Diagnostic(ErrorCode.WRN_NullReferenceArgument, "b").WithArguments("a", "void C.F(ref List<string> a, ref List<string>? b, ref List<string?> c, ref List<string?>? d)").WithLocation(10, 15),
-                // (10,22): warning CS8620: Argument of type 'List<string?>' cannot be used as an input of type 'List<string>' for parameter 'b' in 'void C.F(ref List<string> a, ref List<string>? b, ref List<string?> c, ref List<string?>? d)' due to differences in the nullability of reference types.
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "b").WithArguments("List<string>?", "List<string>", "a", "void C.F(ref List<string> a, ref List<string>? b, ref List<string?> c, ref List<string?>? d)").WithLocation(10, 15),
+                // (10,22): warning CS8620: Argument of type 'List<string?>' cannot be used as an input of type 'List<string>?' for parameter 'b' in 'void C.F(ref List<string> a, ref List<string>? b, ref List<string?> c, ref List<string?>? d)' due to differences in the nullability of reference types.
                 //         F(ref b, ref c, ref d, ref a); // warn 1, 2, 3 and 4
-                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "c").WithArguments("List<string?>", "List<string>", "b", "void C.F(ref List<string> a, ref List<string>? b, ref List<string?> c, ref List<string?>? d)").WithLocation(10, 22),
-                // (10,29): warning CS8604: Possible null reference argument for parameter 'c' in 'void C.F(ref List<string> a, ref List<string>? b, ref List<string?> c, ref List<string?>? d)'.
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "c").WithArguments("List<string?>", "List<string>?", "b", "void C.F(ref List<string> a, ref List<string>? b, ref List<string?> c, ref List<string?>? d)").WithLocation(10, 22),
+                // (10,29): warning CS8620: Argument of type 'List<string?>?' cannot be used as an input of type 'List<string?>' for parameter 'c' in 'void C.F(ref List<string> a, ref List<string>? b, ref List<string?> c, ref List<string?>? d)' due to differences in the nullability of reference types.
                 //         F(ref b, ref c, ref d, ref a); // warn 1, 2, 3 and 4
-                Diagnostic(ErrorCode.WRN_NullReferenceArgument, "d").WithArguments("c", "void C.F(ref List<string> a, ref List<string>? b, ref List<string?> c, ref List<string?>? d)").WithLocation(10, 29),
-                // (10,36): warning CS8620: Argument of type 'List<string>' cannot be used as an input of type 'List<string?>' for parameter 'd' in 'void C.F(ref List<string> a, ref List<string>? b, ref List<string?> c, ref List<string?>? d)' due to differences in the nullability of reference types.
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "d").WithArguments("List<string?>?", "List<string?>", "c", "void C.F(ref List<string> a, ref List<string>? b, ref List<string?> c, ref List<string?>? d)").WithLocation(10, 29),
+                // (10,36): warning CS8620: Argument of type 'List<string>' cannot be used as an input of type 'List<string?>?' for parameter 'd' in 'void C.F(ref List<string> a, ref List<string>? b, ref List<string?> c, ref List<string?>? d)' due to differences in the nullability of reference types.
                 //         F(ref b, ref c, ref d, ref a); // warn 1, 2, 3 and 4
-                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "a").WithArguments("List<string>", "List<string?>", "d", "void C.F(ref List<string> a, ref List<string>? b, ref List<string?> c, ref List<string?>? d)").WithLocation(10, 36));
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInArgument, "a").WithArguments("List<string>", "List<string?>?", "d", "void C.F(ref List<string> a, ref List<string>? b, ref List<string?> c, ref List<string?>? d)").WithLocation(10, 36));
         }
 
         [Fact]
