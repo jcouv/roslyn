@@ -57106,28 +57106,28 @@ class C
 {
     static void F0<T>()
     {
-        default(T).ToString(); // warn 1
+        default(T).ToString(); // 1
         default(T)?.ToString();
     }
     static void F1<T>()
     {
-        T x1 = default; // warn 2
-        x1.ToString(); // warn 3
+        T x1 = default; // 2
+        x1.ToString(); // 3
         x1!.ToString();
         x1?.ToString();
         if (x1 != null) x1.ToString();
         T y1 = x1;
-        y1.ToString();
+        y1.ToString(); // 4
     }
     static void F2<T>(T x2, T[] a2)
     {
-        x2.ToString(); // warn 4
+        x2.ToString(); // 5
         x2!.ToString();
         x2?.ToString();
         if (x2 != null) x2.ToString();
         T y2 = x2;
-        y2.ToString();
-        a2[0].ToString(); // warn 5
+        y2.ToString(); // 6
+        a2[0].ToString(); // 7
     }
     static void F3<T>() where T : new()
     {
@@ -57135,7 +57135,7 @@ class C
         x3.ToString();
         x3!.ToString();
         var a3 = new[] { new T() };
-        a3[0].ToString(); // warn 6
+        a3[0].ToString(); // 8
     }
     static T F4<T>(T x4)
     {
@@ -57145,29 +57145,35 @@ class C
 }";
             var comp = CreateCompilation(new[] { source }, options: WithNonNullTypesTrue());
             comp.VerifyDiagnostics(
-                // (5,9): warning CS8652: A default expression introduces a null value when 'T' is a non-nullable reference type.
-                //         default(T).ToString(); // warn 1
+                // (5,9): warning CS8653: A default expression introduces a null value when 'T' is a non-nullable reference type.
+                //         default(T).ToString(); // 1
                 Diagnostic(ErrorCode.WRN_DefaultExpressionMayIntroduceNullT, "default(T)").WithArguments("T").WithLocation(5, 9),
                 // (5,9): warning CS8602: Possible dereference of a null reference.
-                //         default(T).ToString(); // warn 1
+                //         default(T).ToString(); // 1
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "default(T)").WithLocation(5, 9),
-                // (6,9): warning CS8652: A default expression introduces a null value when 'T' is a non-nullable reference type.
+                // (6,9): warning CS8653: A default expression introduces a null value when 'T' is a non-nullable reference type.
                 //         default(T)?.ToString();
                 Diagnostic(ErrorCode.WRN_DefaultExpressionMayIntroduceNullT, "default(T)").WithArguments("T").WithLocation(6, 9),
-                // (10,16): warning CS8652: A default expression introduces a null value when 'T' is a non-nullable reference type.
-                //         T x1 = default; // warn 2
+                // (10,16): warning CS8653: A default expression introduces a null value when 'T' is a non-nullable reference type.
+                //         T x1 = default; // 2
                 Diagnostic(ErrorCode.WRN_DefaultExpressionMayIntroduceNullT, "default").WithArguments("T").WithLocation(10, 16),
                 // (11,9): warning CS8602: Possible dereference of a null reference.
-                //         x1.ToString(); // warn 3
+                //         x1.ToString(); // 3
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "x1").WithLocation(11, 9),
+                // (16,9): warning CS8602: Possible dereference of a null reference.
+                //         y1.ToString(); // 4
+                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "y1").WithLocation(16, 9),
                 // (20,9): warning CS8602: Possible dereference of a null reference.
-                //         x2.ToString(); // warn 4
+                //         x2.ToString(); // 5
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "x2").WithLocation(20, 9),
+                // (25,9): warning CS8602: Possible dereference of a null reference.
+                //         y2.ToString(); // 6
+                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "y2").WithLocation(25, 9),
                 // (26,9): warning CS8602: Possible dereference of a null reference.
-                //         a2[0].ToString(); // warn 5
+                //         a2[0].ToString(); // 7
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "a2[0]").WithLocation(26, 9),
                 // (34,9): warning CS8602: Possible dereference of a null reference.
-                //         a3[0].ToString(); // warn 6
+                //         a3[0].ToString(); // 8
                 Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "a3[0]").WithLocation(34, 9)
                 );
         }
