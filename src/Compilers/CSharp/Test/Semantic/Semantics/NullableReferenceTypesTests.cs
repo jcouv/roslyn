@@ -85,6 +85,125 @@ namespace System
     }
 }";
 
+        [Fact, WorkItem(29863, "https://github.com/dotnet/roslyn/issues/29863")]
+        public void Linq_Simple()
+        {
+            var comp = CreateCompilation(@"
+using System.Linq;
+public class C
+{
+    static void M(string? s)
+    {
+        var y = from x in MakeList(s) /*T:System.Collections.Generic.IEnumerable<string?>!*/
+            select x;
+
+        _ = y /*T:System.Collections.Generic.IEnumerable<string?>!*/;
+    }
+    static System.Collections.Generic.IEnumerable<T> MakeList<T>(T t) => throw null!;
+}", options: WithNonNullTypesTrue());
+
+            comp.VerifyTypes();
+            comp.VerifyDiagnostics(
+                );
+
+            // TODO2 VerifyTypes doesn't work on `x`
+        }
+
+        [Fact, WorkItem(29863, "https://github.com/dotnet/roslyn/issues/29863")]
+        public void Linq_NullableReceiver()
+        {
+            var comp = CreateCompilation(@"
+public class C
+{
+    static void M()
+    {
+        var z = from x in new C()
+            where x.Test(1)
+            where x.Test(2)
+            select x;
+
+        _ = z /*T:C?*/;
+    }
+    C? Where(System.Func<C, bool> f) => throw null!;
+    C? Select(System.Func<C, C> f) => throw null!;
+    bool Test(int i) => true;
+}", options: WithNonNullTypesTrue());
+
+            comp.VerifyTypes();
+            comp.VerifyDiagnostics(
+                // (7,13): warning CS8602: Possible dereference of a null reference.
+                //             where x.Test(1)
+                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "where x.Test(1)").WithLocation(7, 13),
+                // (8,13): warning CS8602: Possible dereference of a null reference.
+                //             where x.Test(2)
+                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "where x.Test(2)").WithLocation(8, 13)
+                );
+
+            // TODO2 confusing (but correct) diagnostic
+        }
+
+        [Fact, WorkItem(29863, "https://github.com/dotnet/roslyn/issues/29863")]
+        public void Linq_FromWithExplicitType()
+        {
+            var comp = CreateCompilation(@"
+using System.Linq;
+public class C
+{
+    static void M(string? s)
+    {
+        var y = from string x in MakeList(s)
+            select x;
+        _ = y /*T:System.Collections.Generic.IEnumerable<string!>!*/;
+
+        if (s is null) return;
+        var y2 = from string x in MakeList(s)
+            select x;
+        _ = y2 /*T:System.Collections.Generic.IEnumerable<string!>!*/;
+    }
+    static void M2(string s)
+    {
+        var y = from string? x in MakeList(s)
+            select x;
+        _ = y /*T:System.Collections.Generic.IEnumerable<string?>!*/;
+    }
+    static System.Collections.Generic.IEnumerable<T> MakeList<T>(T t) => throw null!;
+}", options: WithNonNullTypesTrue());
+
+            // TODO2 the state of `x` should be maybe-null in the first case and `y` should be IEnumerable<string?>
+            // The expanded form is `Select(Cast<string>((IEnumerable)MakeList(s)), x => x)` which doesn't produce a warning
+
+            comp.VerifyTypes();
+            comp.VerifyDiagnostics();
+        }
+
+        [Fact, WorkItem(29863, "https://github.com/dotnet/roslyn/issues/29863")]
+        public void Linq_WarnInSelect()
+        {
+            var comp = CreateCompilation(@"
+using System.Linq;
+public class C
+{
+    static void M(string? s)
+    {
+        _ = from x in MakeList(s)
+            select x.ToString(); // 1
+
+        if (s is null) return;
+        _ = from x in MakeList(s)
+            select x.ToString(); // 1
+    }
+    static System.Collections.Generic.IEnumerable<T> MakeList<T>(T t) => throw null!;
+}", options: WithNonNullTypesTrue());
+
+            comp.VerifyDiagnostics(
+                // (8,20): warning CS8602: Possible dereference of a null reference.
+                //             select x.ToString(); // 1
+                Diagnostic(ErrorCode.WRN_NullReferenceReceiver, "x").WithLocation(8, 20)
+                );
+        }
+
+        // TODO2 expression trees shouldn't be analyzed
+
         [Fact, WorkItem(32495, "https://github.com/dotnet/roslyn/issues/32495")]
         public void CheckImplicitObjectInitializerReceiver()
         {

@@ -92,6 +92,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                 VisitResult = visitResult;
                 StateForLambda = stateForLambda;
             }
+
+            // TODO2
+            private string GetDebuggerDisplay() =>
+                $"RValueType={RValueType.GetDebuggerDisplay()}, LValueType={LValueType.GetDebuggerDisplay()}";
         }
 
         /// <summary>
@@ -2769,8 +2773,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             var syntax = node.Syntax;
             if (syntax.Kind() != SyntaxKind.InvocationExpression)
             {
+                // TODO2 SelectClause
                 // Unexpected syntax kind.
-                return false;
+                return true;
             }
             var nameSyntax = Binder.GetNameSyntax(((InvocationExpressionSyntax)syntax).Expression, out var _);
             if (nameSyntax == null)
@@ -5488,9 +5493,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override BoundNode VisitRangeVariable(BoundRangeVariable node)
         {
-            var result = base.VisitRangeVariable(node);
-            SetNotNullResult(node); // https://github.com/dotnet/roslyn/issues/29863 Need to review this
-            return result;
+            // TODO2 add assertion?
+            return Visit(node.Value);
         }
 
         public override BoundNode VisitLabel(BoundLabel node)
@@ -5686,10 +5690,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 !type1.Equals(type2, TypeCompareKind.AllIgnoreOptions & ~TypeCompareKind.IgnoreNullableModifiersForReferenceTypes);
         }
 
+        // TODO2 probably need to adjust VisitQueryExpression as well
+
         public override BoundNode VisitQueryClause(BoundQueryClause node)
         {
             var result = base.VisitQueryClause(node);
-            SetNotNullResult(node); // https://github.com/dotnet/roslyn/issues/29863 Implement nullability analysis in LINQ queries
             return result;
         }
 
