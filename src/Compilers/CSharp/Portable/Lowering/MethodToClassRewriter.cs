@@ -248,6 +248,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 node.InvokedAsExtensionMethod,
                 node.ArgsToParamsOpt,
                 node.ResultKind,
+                node.HasInferredTypeArguments,
                 node.BinderOpt,
                 rewrittenType);
         }

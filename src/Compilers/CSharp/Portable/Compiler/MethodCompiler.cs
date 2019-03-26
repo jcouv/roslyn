@@ -1897,6 +1897,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 invokedAsExtensionMethod: false,
                 argsToParamsOpt: ImmutableArray<int>.Empty,
                 resultKind: resultKind,
+                hasInferredTypeArguments: false,
                 binderOpt: null,
                 type: baseConstructor.ReturnType,
                 hasErrors: hasErrors)

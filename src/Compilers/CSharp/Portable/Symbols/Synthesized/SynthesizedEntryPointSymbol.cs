@@ -290,6 +290,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 invokedAsExtensionMethod: false,
                 argsToParamsOpt: default(ImmutableArray<int>),
                 resultKind: LookupResultKind.Viable,
+                hasInferredTypeArguments: false,
                 binderOpt: null,
                 type: method.ReturnType)
             { WasCompilerGenerated = true };
@@ -331,6 +332,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         invokedAsExtensionMethod: false,
                         argsToParamsOpt: default(ImmutableArray<int>),
                         resultKind: LookupResultKind.Viable,
+                        hasInferredTypeArguments: false,
                         binderOpt: binder,
                         type: userMain.ReturnType)
                 { WasCompilerGenerated = true };

@@ -980,8 +980,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                         queryClause: queryClause);
                 }
 
-                return CreateBadCall(node, methodGroup.Name, invokedAsExtensionMethod && analyzedArguments.Arguments.Count > 0 && (object)methodGroup.Receiver == (object)analyzedArguments.Arguments[0] ? null : methodGroup.Receiver,
-                    GetOriginalMethods(result), methodGroup.ResultKind, methodGroup.TypeArguments.ToImmutable(), analyzedArguments, invokedAsExtensionMethod: invokedAsExtensionMethod, isDelegate: ((object)delegateTypeOpt != null));
+                BoundExpression badCallReceiver = invokedAsExtensionMethod && analyzedArguments.Arguments.Count > 0 && (object)methodGroup.Receiver == (object)analyzedArguments.Arguments[0] ? null : methodGroup.Receiver;
+                return CreateBadCall(node, methodGroup.Name, badCallReceiver, GetOriginalMethods(result), methodGroup.ResultKind, methodGroup.TypeArguments.ToImmutable(),
+                    analyzedArguments, invokedAsExtensionMethod: invokedAsExtensionMethod, isDelegate: ((object)delegateTypeOpt != null));
             }
 
             // Otherwise, there were no dynamic arguments and overload resolution found a unique best candidate. 
@@ -1130,35 +1131,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
+            bool hasInferredTypeArguments = method.IsGenericMethod && methodGroup.TypeArguments.IsEmpty();
             return new BoundCall(node, receiver, method, args, argNames, argRefKinds, isDelegateCall: isDelegateCall,
                         expanded: expanded, invokedAsExtensionMethod: invokedAsExtensionMethod,
-                        argsToParamsOpt: argsToParams, resultKind: LookupResultKind.Viable, binderOpt: this, type: returnType, hasErrors: gotError);
-        }
-
-        private bool IsBindingModuleLevelAttribute()
-        {
-            if ((this.Flags & BinderFlags.InContextualAttributeBinder) == 0)
-            {
-                return false;
-            }
-
-            var current = this;
-
-            do
-            {
-                var contextualAttributeBinder = current as ContextualAttributeBinder;
-
-                if (contextualAttributeBinder != null)
-                {
-                    return (object)contextualAttributeBinder.AttributeTarget != null &&
-                           contextualAttributeBinder.AttributeTarget.Kind == SymbolKind.NetModule;
-                }
-
-                current = current.Next;
-            }
-            while (current != null);
-
-            throw ExceptionUtilities.Unreachable;
+                        argsToParamsOpt: argsToParams, resultKind: LookupResultKind.Viable, hasInferredTypeArguments: hasInferredTypeArguments, binderOpt: this, type: returnType, hasErrors: gotError);
         }
 
         /// <param name="node">Invocation syntax node.</param>
@@ -1278,7 +1254,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             args = BuildArgumentsForErrorRecovery(analyzedArguments, methods);
             var argNames = analyzedArguments.GetNames();
             var argRefKinds = analyzedArguments.RefKinds.ToImmutableOrNull();
-            return BoundCall.ErrorCall(node, receiver, method, args, argNames, argRefKinds, isDelegate, invokedAsExtensionMethod: invokedAsExtensionMethod, originalMethods: methods, resultKind: resultKind, binder: this);
+            return BoundCall.ErrorCall(node, receiver, method, args, argNames, argRefKinds, hasInferredTypeArguments: false,
+                isDelegate, invokedAsExtensionMethod: invokedAsExtensionMethod, originalMethods: methods, resultKind: resultKind, binder: this);
         }
 
         private static bool IsUnboundGeneric(MethodSymbol method)
@@ -1483,8 +1460,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             var argNames = analyzedArguments.GetNames();
             var argRefKinds = analyzedArguments.RefKinds.ToImmutableOrNull();
             var originalMethods = (expr.Kind == BoundKind.MethodGroup) ? ((BoundMethodGroup)expr).Methods : ImmutableArray<MethodSymbol>.Empty;
-
-            return BoundCall.ErrorCall(node, expr, method, args, argNames, argRefKinds, isDelegateCall: false, invokedAsExtensionMethod: false, originalMethods: originalMethods, resultKind: resultKind, binder: this);
+            return BoundCall.ErrorCall(node, expr, method, args, argNames, argRefKinds, hasInferredTypeArguments: false, isDelegateCall: false,
+                invokedAsExtensionMethod: false, originalMethods: originalMethods, resultKind: resultKind, binder: this);
         }
 
         private static TypeSymbol GetCommonTypeOrReturnType<TMember>(ImmutableArray<TMember> members)

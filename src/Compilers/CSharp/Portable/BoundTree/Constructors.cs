@@ -86,6 +86,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ImmutableArray<BoundExpression> arguments,
             ImmutableArray<string> namedArguments,
             ImmutableArray<RefKind> refKinds,
+            bool hasInferredTypeArguments,
             bool isDelegateCall,
             bool invokedAsExtensionMethod,
             ImmutableArray<MethodSymbol> originalMethods,
@@ -98,15 +99,16 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(arguments.IsDefaultOrEmpty || (object)receiverOpt != (object)arguments[0]);
 
             var call = new BoundCall(node, receiverOpt, method, arguments, namedArguments,
-                refKinds, isDelegateCall: isDelegateCall, expanded: false, invokedAsExtensionMethod: invokedAsExtensionMethod, argsToParamsOpt: default(ImmutableArray<int>),
-                resultKind: resultKind, binderOpt: binder, type: method.ReturnType, hasErrors: true);
+                refKinds, isDelegateCall: isDelegateCall, expanded: false, invokedAsExtensionMethod: invokedAsExtensionMethod, argsToParamsOpt: default,
+                resultKind, hasInferredTypeArguments: hasInferredTypeArguments, binder, method.ReturnType, hasErrors: true);
             call.OriginalMethodsOpt = originalMethods;
             return call;
         }
 
         public BoundCall Update(BoundExpression receiverOpt, MethodSymbol method, ImmutableArray<BoundExpression> arguments)
         {
-            return this.Update(receiverOpt, method, arguments, ArgumentNamesOpt, ArgumentRefKindsOpt, IsDelegateCall, Expanded, InvokedAsExtensionMethod, ArgsToParamsOpt, ResultKind, BinderOpt, Type);
+            return this.Update(receiverOpt, method, arguments, ArgumentNamesOpt, ArgumentRefKindsOpt, IsDelegateCall, Expanded,
+                InvokedAsExtensionMethod, ArgsToParamsOpt, ResultKind, HasInferredTypeArguments, BinderOpt, Type);
         }
 
         public static BoundCall Synthesized(SyntaxNode syntax, BoundExpression receiverOpt, MethodSymbol method)
@@ -127,19 +129,20 @@ namespace Microsoft.CodeAnalysis.CSharp
         public static BoundCall Synthesized(SyntaxNode syntax, BoundExpression receiverOpt, MethodSymbol method, ImmutableArray<BoundExpression> arguments)
         {
             return new BoundCall(syntax,
-                    receiverOpt,
-                    method,
-                    arguments,
-                    argumentNamesOpt: default(ImmutableArray<string>),
-                    argumentRefKindsOpt: method.ParameterRefKinds,
-                    isDelegateCall: false,
-                    expanded: false,
-                    invokedAsExtensionMethod: false,
-                    argsToParamsOpt: default(ImmutableArray<int>),
-                    resultKind: LookupResultKind.Viable,
-                    binderOpt: null,
-                    type: method.ReturnType,
-                    hasErrors: method.OriginalDefinition is ErrorMethodSymbol
+                receiverOpt,
+                method,
+                arguments,
+                argumentNamesOpt: default(ImmutableArray<string>),
+                argumentRefKindsOpt: method.ParameterRefKinds,
+                isDelegateCall: false,
+                expanded: false,
+                invokedAsExtensionMethod: false,
+                argsToParamsOpt: default(ImmutableArray<int>),
+                resultKind: LookupResultKind.Viable,
+                hasInferredTypeArguments: false,
+                binderOpt: null,
+                type: method.ReturnType,
+                hasErrors: method.OriginalDefinition is ErrorMethodSymbol
                 )
             { WasCompilerGenerated = true };
         }

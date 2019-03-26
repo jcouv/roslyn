@@ -234,6 +234,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     invokedAsExtensionMethod: invokedAsExtensionMethod,
                     argsToParamsOpt: default(ImmutableArray<int>),
                     resultKind: resultKind,
+                    hasInferredTypeArguments: false,
                     binderOpt: null,
                     type: type);
             }
@@ -250,6 +251,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     node.InvokedAsExtensionMethod,
                     default(ImmutableArray<int>),
                     node.ResultKind,
+                    node.HasInferredTypeArguments,
                     node.BinderOpt,
                     node.Type);
             }
@@ -928,6 +930,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             invokedAsExtensionMethod: false,
                             argsToParamsOpt: default(ImmutableArray<int>),
                             resultKind: LookupResultKind.Viable,
+                            hasInferredTypeArguments: false,
                             binderOpt: null,
                             type: arrayEmpty.ReturnType);
                     }

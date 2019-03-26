@@ -110,6 +110,31 @@ public class C
         }
 
         [Fact, WorkItem(29863, "https://github.com/dotnet/roslyn/issues/29863")]
+        public void Linq_NullTest()
+        {
+            var comp = CreateCompilation(@"
+using System.Linq;
+public class C
+{
+    static void M(string? s)
+    {
+        var y = from x in MakeList(s)
+            where x != null
+            select x;
+
+        _ = y /*T:System.Collections.Generic.IEnumerable<string?>!*/;
+    }
+    static System.Collections.Generic.IEnumerable<T> MakeList<T>(T t) => throw null!;
+}", options: WithNonNullTypesTrue());
+
+            // MakeList(s).Where(x != null)
+            comp.VerifyTypes();
+            comp.VerifyDiagnostics();
+
+            // TODO2 Where produced an IEnumerable<string?> result type which is disappointing
+        }
+
+        [Fact, WorkItem(29863, "https://github.com/dotnet/roslyn/issues/29863")]
         public void Linq_NullableReceiver()
         {
             var comp = CreateCompilation(@"
@@ -51546,14 +51571,14 @@ class C
     static void G(object?* x, object* y) // 1
     {
         _ = z/*T:object**/;
-        F(x, x)/*T:object?**/; // 2
-        F(x, y)/*T:object!**/; // 3
-        F(x, z)/*T:object?**/; // 4
-        F(y, x)/*T:object!**/; // 5
-        F(y, y)/*T:object!**/; // 6
-        F(y, z)/*T:object!**/; // 7
-        F(z, x)/*T:object?**/; // 8
-        F(z, y)/*T:object!**/; // 9
+        F(x, x)/*T:object**/; // 2
+        F(x, y)/*T:object**/; // 3
+        F(x, z)/*T:object**/; // 4
+        F(y, x)/*T:object**/; // 5
+        F(y, y)/*T:object**/; // 6
+        F(y, z)/*T:object**/; // 7
+        F(z, x)/*T:object**/; // 8
+        F(z, y)/*T:object**/; // 9
         F(z, z)/*T:object**/;  // 10
     }
 
@@ -51561,6 +51586,7 @@ class C
 
     public static object* z = null; // 11
 }";
+            // We don't reinfer type arguments on bad calls
             var comp = CreateCompilation(new[] { source }, options: WithNonNullTypesTrue(TestOptions.UnsafeDebugDll));
             comp.VerifyTypes();
             comp.VerifyDiagnostics(

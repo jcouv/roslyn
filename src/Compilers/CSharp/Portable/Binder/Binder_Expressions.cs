@@ -2901,7 +2901,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     if (IsNegativeConstantForArraySize(size))
                     {
                         Error(diagnostics, ErrorCode.ERR_NegativeArraySize, dimension);
-						hasErrors = true;
+                        hasErrors = true;
                     }
                 }
 
@@ -3757,6 +3757,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         invokedAsExtensionMethod: false,
                         argsToParamsOpt: argsToParamsOpt,
                         resultKind: LookupResultKind.Viable,
+                        hasInferredTypeArguments: false,
                         binderOpt: this,
                         type: constructorReturnType,
                         hasErrors: hasErrors)
@@ -4714,6 +4715,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     boundCall.ArgsToParamsOpt,
                     boundCall.InvokedAsExtensionMethod,
                     boundCall.ResultKind,
+                    boundCall.HasInferredTypeArguments,
                     binderOpt: boundCall.BinderOpt,
                     boundCall.Type,
                     boundCall.HasAnyErrors)

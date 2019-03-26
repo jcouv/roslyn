@@ -212,6 +212,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 invokedAsExtensionMethod: false,
                 argsToParamsOpt: default(ImmutableArray<int>),
                 resultKind: LookupResultKind.Viable,
+                hasInferredTypeArguments: false,
                 binderOpt: null,
                 type: typeParameter);
 

@@ -317,10 +317,12 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
                     diagnostics,
                     callbackOpt: (BoundExpression expr, TypeWithAnnotations exprType) => dictionary[expr.Syntax] = exprType);
                 diagnostics.Free();
-                var expectedTypes = annotations.SelectAsArray(annotation => annotation.Text);
-                var actualTypes = annotations.SelectAsArray(annotation => toDisplayString(annotation.Expression));
+                int index = 0;
+                var expectedTypes = annotations.SelectAsArray(annotation => index++.ToString() + ": " + annotation.Text);
+                index = 0;
+                var actualTypes = annotations.SelectAsArray(annotation => index++.ToString() + ": " + toDisplayString(annotation.Expression));
                 // Consider reporting the correct source with annotations on mismatch.
-                AssertEx.Equal(expectedTypes, actualTypes, message: method.ToTestDisplayString());
+                AssertEx.Equal(expectedTypes, actualTypes, message: method.ToTestDisplayString(), itemSeparator: Environment.NewLine);
 
                 string toDisplayString(SyntaxNode syntaxOpt)
                 {

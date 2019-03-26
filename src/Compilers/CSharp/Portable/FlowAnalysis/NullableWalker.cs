@@ -93,7 +93,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 StateForLambda = stateForLambda;
             }
 
-            // TODO2
             private string GetDebuggerDisplay() =>
                 $"RValueType={RValueType.GetDebuggerDisplay()}, LValueType={LValueType.GetDebuggerDisplay()}";
         }
@@ -1497,7 +1496,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert(!IsConditionalState);
             var arguments = node.Arguments;
-            var argumentResults = VisitArguments(node, arguments, node.ArgumentRefKindsOpt, node.Constructor, node.ArgsToParamsOpt, node.Expanded);
+            var argumentResults = VisitArguments(node, arguments, node.ArgumentRefKindsOpt, node.Constructor, node.ArgsToParamsOpt, node.Expanded, reinfer: false);
             VisitObjectOrDynamicObjectCreation(node, arguments, argumentResults, node.InitializerExpressionOpt);
             return null;
         }
@@ -1654,7 +1653,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private new void VisitCollectionElementInitializer(BoundCollectionElementInitializer node)
         {
             // Note: we analyze even omitted calls
-            VisitArguments(node, node.Arguments, refKindsOpt: default, node.AddMethod, node.ArgsToParamsOpt, node.Expanded);
+            VisitArguments(node, node.Arguments, refKindsOpt: default, node.AddMethod, node.ArgsToParamsOpt, node.Expanded, reinfer: node.HasInferredTypeArguments);
             SetUnknownResultNullability();
         }
 
@@ -2627,7 +2626,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             method = VisitArguments(node, arguments, refKindsOpt, method.Parameters, node.ArgsToParamsOpt,
-                node.Expanded, node.InvokedAsExtensionMethod, conversions, method).method;
+                node.Expanded, node.InvokedAsExtensionMethod, reinfer: node.HasInferredTypeArguments, conversions, method).method;
 
             if (method.MethodKind == MethodKind.LocalFunction)
             {
@@ -2765,28 +2764,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
-        // https://github.com/dotnet/roslyn/issues/29863 Record in the node whether type
-        // arguments were implicit, to allow for cases where the syntax is not an
-        // invocation (such as a synthesized call from a query interpretation).
-        private static bool HasImplicitTypeArguments(BoundExpression node)
-        {
-            var syntax = node.Syntax;
-            if (syntax.Kind() != SyntaxKind.InvocationExpression)
-            {
-                // TODO2 SelectClause
-                // Unexpected syntax kind.
-                return true;
-            }
-            var nameSyntax = Binder.GetNameSyntax(((InvocationExpressionSyntax)syntax).Expression, out var _);
-            if (nameSyntax == null)
-            {
-                // Unexpected syntax kind.
-                return false;
-            }
-            nameSyntax = nameSyntax.GetUnqualifiedName();
-            return nameSyntax.Kind() != SyntaxKind.GenericName;
-        }
-
         protected override void VisitArguments(ImmutableArray<BoundExpression> arguments, ImmutableArray<RefKind> refKindsOpt, MethodSymbol method)
         {
             // Callers should be using VisitArguments overload below.
@@ -2799,11 +2776,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             ImmutableArray<RefKind> refKindsOpt,
             MethodSymbol method,
             ImmutableArray<int> argsToParamsOpt,
-            bool expanded)
+            bool expanded,
+            bool reinfer)
         {
             ImmutableArray<Conversion> conversions;
             (arguments, conversions) = RemoveArgumentConversions(arguments, refKindsOpt);
-            return VisitArguments(node, arguments, refKindsOpt, method is null ? default : method.Parameters, argsToParamsOpt, expanded, invokedAsExtensionMethod: false, conversions).results;
+            return VisitArguments(node, arguments, refKindsOpt, method is null ? default : method.Parameters, argsToParamsOpt, expanded,
+                invokedAsExtensionMethod: false, reinfer: reinfer, conversions).results;
         }
 
         private ImmutableArray<VisitArgumentResult> VisitArguments(
@@ -2816,7 +2795,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             ImmutableArray<Conversion> conversions;
             (arguments, conversions) = RemoveArgumentConversions(arguments, refKindsOpt);
-            return VisitArguments(node, arguments, refKindsOpt, property is null ? default : property.Parameters, argsToParamsOpt, expanded, invokedAsExtensionMethod: false, conversions).results;
+            return VisitArguments(node, arguments, refKindsOpt, property is null ? default : property.Parameters, argsToParamsOpt, expanded,
+                invokedAsExtensionMethod: false, reinfer: false, conversions).results;
         }
 
         /// <summary>
@@ -2830,6 +2810,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ImmutableArray<int> argsToParamsOpt,
             bool expanded,
             bool invokedAsExtensionMethod,
+            bool reinfer,
             ImmutableArray<Conversion> conversions,
             MethodSymbol method = null)
         {
@@ -2841,7 +2822,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if ((object)method != null && method.IsGenericMethod)
             {
-                if (HasImplicitTypeArguments(node))
+                if (reinfer)
                 {
                     method = InferMethodTypeArguments((BoundCall)node, method, GetArgumentsForMethodTypeInference(arguments, results));
                     parameters = method.Parameters;
@@ -5493,7 +5474,6 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override BoundNode VisitRangeVariable(BoundRangeVariable node)
         {
-            // TODO2 add assertion?
             return Visit(node.Value);
         }
 
@@ -5690,8 +5670,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 !type1.Equals(type2, TypeCompareKind.AllIgnoreOptions & ~TypeCompareKind.IgnoreNullableModifiersForReferenceTypes);
         }
 
-        // TODO2 probably need to adjust VisitQueryExpression as well
-
         public override BoundNode VisitQueryClause(BoundQueryClause node)
         {
             var result = base.VisitQueryClause(node);
@@ -5812,7 +5790,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override BoundNode VisitAttribute(BoundAttribute node)
         {
-            VisitArguments(node, node.ConstructorArguments, ImmutableArray<RefKind>.Empty, node.Constructor, argsToParamsOpt: node.ConstructorArgumentsToParamsOpt, expanded: node.ConstructorExpanded);
+            VisitArguments(node, node.ConstructorArguments, ImmutableArray<RefKind>.Empty, node.Constructor, argsToParamsOpt: node.ConstructorArgumentsToParamsOpt, expanded: node.ConstructorExpanded, reinfer: false);
             foreach (var assignment in node.NamedArguments)
             {
                 Visit(assignment);
