@@ -601,7 +601,7 @@ You can see that:
 A few things this example didn't illustrate:
 - if `M` had returned `IAsyncEnumerator<int>` instead of `IAsyncEnumerable<int>` then we would generate mostly the same thing, except that `Unspeakable` would not implement `IAsyncEnumerable<int>` and would not have a `GetAsyncEnumerator()` method
 - this example didn't include any method type parameters, method parameters, spilled awaits, `yield break` or exception handlers
-- it is possible that C# 8.0 will add some mechanism to pass a `CancellationToken` into async-iterator method bodies, but that is not finalized. I'll update this post accordingly
+
 
 ```C#
 class C
@@ -619,7 +619,8 @@ class C
         public int __state;
         private int __current;
         private bool __disposeMode;
-
+        private CancellationTokenSource __combinedTokens;
+        
         private IAsyncEnumerator<int> __asyncEnumerator;
         private int i;
 
@@ -784,12 +785,20 @@ class C
             catch (System.Exception e)
             {
                 __state = FinishedState;
+                if (__combinedTokens != null)
+                {
+                    __combinedTokens.Dispose();
+                }
                 __promiseOfValueOrEnd.SetException(e);
                 return;
             }
 
         setResultFalseLabel:;
             __state = FinishedState;
+            if (__combinedTokens != null)
+            {
+                __combinedTokens.Dispose();
+            }
             __promiseOfValueOrEnd.SetResult(false);
             return;
 
@@ -901,4 +910,21 @@ I hope you enjoyed this technical deep dive. Although there are always more deta
 Point to Lippert's series
 https://blogs.msdn.microsoft.com/ericlippert/tag/iterators/ (including explanations for disallowing `yield return` in `catch` or `finally` blocks)
 https://blogs.msdn.microsoft.com/ericlippert/tag/async/
+
+TODO: illustrate parameter copy and `[EnumeratorCancellation]` impact to `GetAsyncEnumerator`:
+```C#
+			if (<>3__token1.Equals(default(CancellationToken)))
+			{
+				<Iter>d__.token1 = token;
+			}
+			else if (token.Equals(<>3__token1) || token.Equals(default(CancellationToken)))
+			{
+				<Iter>d__.token1 = <>3__token1;
+			}
+			else
+			{
+				<>x__combinedTokens = CancellationTokenSource.CreateLinkedTokenSource(<>3__token1, token);
+				<Iter>d__.token1 = <>x__combinedTokens.Token;
+			}
+```
 
