@@ -788,6 +788,7 @@ class C
                 if (__combinedTokens != null)
                 {
                     __combinedTokens.Dispose();
+                    __combinedTokens == null;
                 }
                 __promiseOfValueOrEnd.SetException(e);
                 return;
@@ -798,6 +799,7 @@ class C
             if (__combinedTokens != null)
             {
                 __combinedTokens.Dispose();
+                __combinedTokens == null;
             }
             __promiseOfValueOrEnd.SetResult(false);
             return;
