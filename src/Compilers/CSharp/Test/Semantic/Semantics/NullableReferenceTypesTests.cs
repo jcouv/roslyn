@@ -73100,6 +73100,232 @@ class Program
         }
 
         [Fact]
+        [WorkItem(30673, "https://github.com/dotnet/roslyn/issues/30673")]
+        public void TypeSymbolGetHashCode_Annotated()
+        {
+            var text = @"
+class C<T> where T : class
+{
+    C<T?> M() => throw null!;
+}
+";
+
+            var comp = CreateNullableCompilation(text);
+            var type = comp.GetMember<NamedTypeSymbol>("C");
+            Assert.Equal("C<T>", type.ToTestDisplayString());
+            Assert.True(type.IsDefinition);
+
+            var type2 = comp.GetMember<MethodSymbol>("C.M").ReturnType;
+            Assert.Equal("C<T?>", type2.ToTestDisplayString());
+            Assert.False(type2.IsDefinition);
+
+            AssertTypesDifferButHashCodesMatch(type, type2);
+        }
+
+        [Fact]
+        [WorkItem(30673, "https://github.com/dotnet/roslyn/issues/30673")]
+        public void TypeSymbolGetHashCode_NotAnnotated()
+        {
+            var text = @"
+class C<T> where T : class
+{
+    C<T> M() => throw null!;
+}
+";
+
+            var comp = CreateNullableCompilation(text);
+            var type = comp.GetMember<NamedTypeSymbol>("C");
+            Assert.Equal("C<T>", type.ToTestDisplayString());
+            Assert.True(type.IsDefinition);
+
+            var type2 = comp.GetMember<MethodSymbol>("C.M").ReturnType;
+            Assert.Equal("C<T>", type2.ToTestDisplayString());
+            Assert.False(type2.IsDefinition);
+
+            AssertTypesDifferButHashCodesMatch(type, type2);
+        }
+
+        [Fact]
+        [WorkItem(30673, "https://github.com/dotnet/roslyn/issues/30673")]
+        public void TypeSymbolGetHashCode_ContainingType()
+        {
+            var text = @"
+class C<T> where T : class
+{
+    interface I { }
+}
+";
+
+            var comp = CreateNullableCompilation(text);
+            var i = comp.GetMember<NamedTypeSymbol>("C.I");
+            Assert.Equal("C<T>.I", i.ToTestDisplayString());
+            Assert.True(i.IsDefinition);
+
+            var c = i.ContainingType;
+            Assert.Equal("C<T>", c.ToTestDisplayString());
+            Assert.True(c.IsDefinition);
+
+            var c2 = new ConstructedNamedTypeSymbol(c, ImmutableArray.Create(TypeWithAnnotations.Create(c.TypeParameters.Single(), NullableAnnotation.NotAnnotated)));
+            Assert.Equal("C<T>", c2.ToTestDisplayString());
+            Assert.False(c2.IsDefinition);
+
+            AssertTypesDifferButHashCodesMatch(c, c2);
+
+            var i2 = c2.GetTypeMember("I");
+            Assert.Equal("C<T>.I", i2.ToTestDisplayString());
+            Assert.False(i2.IsDefinition);
+
+            AssertTypesDifferButHashCodesMatch(i, i2);
+
+            var c3 = new ConstructedNamedTypeSymbol(c, ImmutableArray.Create(TypeWithAnnotations.Create(c.TypeParameters.Single(), NullableAnnotation.Annotated)));
+            Assert.Equal("C<T?>", c3.ToTestDisplayString());
+            Assert.False(c3.IsDefinition);
+
+            AssertTypesDifferButHashCodesMatch(c, c3);
+
+            var i3 = c3.GetTypeMember("I");
+            Assert.Equal("C<T?>.I", i3.ToTestDisplayString());
+            Assert.False(i3.IsDefinition);
+
+            AssertTypesDifferButHashCodesMatch(i, i3);
+        }
+
+        [Fact]
+        [WorkItem(30673, "https://github.com/dotnet/roslyn/issues/30673")]
+        public void TypeSymbolGetHashCode_ContainingType_Generic()
+        {
+            var text = @"
+class C<T> where T : class
+{
+    interface I<U> where U : class { }
+}
+";
+
+            var comp = CreateNullableCompilation(text);
+            var i = comp.GetMember<NamedTypeSymbol>("C.I");
+            Assert.Equal("C<T>.I<U>", i.ToTestDisplayString());
+            Assert.True(i.IsDefinition);
+
+            var c = i.ContainingType;
+            Assert.Equal("C<T>", c.ToTestDisplayString());
+            Assert.True(c.IsDefinition);
+
+            var c2 = new ConstructedNamedTypeSymbol(c, ImmutableArray.Create(TypeWithAnnotations.Create(c.TypeParameters.Single(), NullableAnnotation.NotAnnotated)));
+            var i2 = c2.GetTypeMember("I");
+            Assert.Equal("C<T>.I<U>", i2.ToTestDisplayString());
+            AssertTypesDifferButHashCodesMatch(i, i2);
+
+            var i2b = new ConstructedNamedTypeSymbol(i2, ImmutableArray.Create(TypeWithAnnotations.Create(i2.TypeParameters.Single(), NullableAnnotation.Annotated)));
+            Assert.Equal("C<T>.I<U?>", i2b.ToTestDisplayString());
+            AssertTypesDifferButHashCodesMatch(i, i2b);
+
+            var c3 = new ConstructedNamedTypeSymbol(c, ImmutableArray.Create(TypeWithAnnotations.Create(c.TypeParameters.Single(), NullableAnnotation.Annotated)));
+            var i3 = c3.GetTypeMember("I");
+            Assert.Equal("C<T?>.I<U>", i3.ToTestDisplayString());
+            AssertTypesDifferButHashCodesMatch(i, i3);
+
+            var i3b = new ConstructedNamedTypeSymbol(i3, ImmutableArray.Create(TypeWithAnnotations.Create(i3.TypeParameters.Single(), NullableAnnotation.Annotated)));
+            Assert.Equal("C<T?>.I<U?>", i3b.ToTestDisplayString());
+            AssertTypesDifferButHashCodesMatch(i, i3b);
+        }
+
+        private static void AssertTypesDifferButHashCodesMatch(TypeSymbol c, TypeSymbol c2)
+        {
+            Assert.False(c.Equals(c2));
+            Assert.True(c.Equals(c2, TypeCompareKind.CLRSignatureCompareOptions));
+
+            Assert.Equal(c2.GetHashCode(), c.GetHashCode());
+        }
+
+        [Fact]
+        [WorkItem(30677, "https://github.com/dotnet/roslyn/issues/30677")]
+        public void ExplicitInterface_UsingOuterDefinition_Simple()
+        {
+            var text = @"
+class Outer<T>
+{
+    protected internal interface Interface
+    {
+        void Method();
+    }
+    internal class C : Outer<T>.Interface
+    {
+        void Interface.Method()
+        {
+        }
+    }
+}
+";
+            // https://github.com/dotnet/roslyn/issues/30677 - Expect no warning
+            var comp = CreateNullableCompilation(text);
+            comp.VerifyDiagnostics(
+                // (10,14): warning CS8643: Nullability of reference types in explicit interface specifier doesn't match interface implemented by the type.
+                //         void Interface.Method()
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInExplicitlyImplementedInterface, "Interface").WithLocation(10, 14)
+                );
+        }
+
+        [Fact]
+        [WorkItem(30677, "https://github.com/dotnet/roslyn/issues/30677")]
+        public void ExplicitInterface_UsingOuterDefinition()
+        {
+            var text = @"
+class Outer<T> where T : class
+{
+    internal class Inner<U> where U : class
+    {
+        protected internal interface Interface
+        {
+            void Method();
+        }
+        // The implemented interface is Outer<T!>.Inner<U!>.Interface
+        internal class Derived6 : Outer<T>.Inner<U>.Interface
+        {
+            // The explicit interface is Outer<T>.Inner<U!>.Interface
+            void Inner<U>.Interface.Method()
+            {
+            }
+        }
+    }
+}
+";
+            // https://github.com/dotnet/roslyn/issues/30677 - Expect no errors
+            CreateCompilation(text, options: WithNonNullTypesTrue()).VerifyDiagnostics(
+                // (14,18): error CS0540: 'Outer<T>.Inner<U>.Derived6.Outer<T>.Inner<U>.Interface.Method()': containing type does not implement interface 'Outer<T>.Inner<U>.Interface'
+                //             void Inner<U>.Interface.Method()
+                Diagnostic(ErrorCode.ERR_ClassDoesntImplementInterface, "Inner<U>.Interface").WithArguments("Outer<T>.Inner<U>.Derived6.Outer<T>.Inner<U>.Interface.Method()", "Outer<T>.Inner<U>.Interface").WithLocation(14, 18)
+                );
+        }
+
+        [Fact]
+        [WorkItem(30677, "https://github.com/dotnet/roslyn/issues/30677")]
+        public void ExplicitInterface_WithExplicitOuter()
+        {
+            var text = @"
+class Outer<T> where T : class
+{
+    internal class Inner<U> where U : class
+    {
+        protected internal interface Interface
+        {
+            void Method();
+        }
+        // The implemented interface is Outer<T!>.Inner<U!>.Interface
+        internal class Derived6 : Outer<T>.Inner<U>.Interface
+        {
+            // The explicit interface is Outer<T!>.Inner<U!>.Interface
+            void Outer<T>.Inner<U>.Interface.Method()
+            {
+            }
+        }
+    }
+}
+";
+
+            CreateCompilation(text, options: WithNonNullTypesTrue()).VerifyDiagnostics();
+        }
+
+        [Fact]
         [WorkItem(30677, "https://github.com/dotnet/roslyn/issues/30677")]
         public void TestErrorsImplementingGenericNestedInterfaces_Explicit()
         {
@@ -73151,7 +73377,7 @@ class Outer<T>
                 // (20,22): error CS0540: 'Outer<T>.Inner<U>.Derived4.Derived5.Method<K>(T, U[], List<U>, Dictionary<K, T>)': containing type does not implement interface 'Outer<T>.Inner<U>.Interface<U, T>'
                 //                 void Inner<U>.Interface<U, T>.Method<K>(T a, U[] b, List<U> c, Dictionary<K, T> D)
                 Diagnostic(ErrorCode.ERR_ClassDoesntImplementInterface, "Inner<U>.Interface<U, T>").WithArguments("Outer<T>.Inner<U>.Derived4.Derived5.Method<K>(T, U[], System.Collections.Generic.List<U>, System.Collections.Generic.Dictionary<K, T>)", "Outer<T>.Inner<U>.Interface<U, T>").WithLocation(20, 22),
-                // (20,47): error CS0539: 'Outer<T>.Inner<U>.Derived4.Derived5.Method<K>(T, U[], List<U>, Dictionary<K, T>)' in explicit interface declaration is not a member of interface
+                // (20,47): error CS0539: 'Outer<T>.Inner<U>.Derived4.Derived5.Method<K>(T, U[], List<U>, Dictionary<K, T>)' in explicit interface declaration is not found among members of the interface that can be implemented
                 //                 void Inner<U>.Interface<U, T>.Method<K>(T a, U[] b, List<U> c, Dictionary<K, T> D)
                 Diagnostic(ErrorCode.ERR_InterfaceMemberNotFound, "Method").WithArguments("Outer<T>.Inner<U>.Derived4.Derived5.Method<K>(T, U[], System.Collections.Generic.List<U>, System.Collections.Generic.Dictionary<K, T>)").WithLocation(20, 47),
                 // (30,22): error CS0540: 'Outer<T>.Inner<U>.Derived4.Derived6.Outer<T>.Inner<U>.Interface<U, T>.Method<K>(T, U[], List<U>, Dictionary<T, K>)': containing type does not implement interface 'Outer<T>.Inner<U>.Interface<U, T>'
@@ -73189,11 +73415,11 @@ class Outer<T>
 }
 ";
 
-            // https://github.com/dotnet/roslyn/issues/30677, https://github.com/dotnet/roslyn/issues/30673 - Expect no errors
+            // https://github.com/dotnet/roslyn/issues/30677 - Expect no errors
             CreateCompilation(source, options: WithNonNullTypesTrue()).VerifyDiagnostics(
-                // (18,18): error CS0540: 'Outer<T>.Inner<U>.Derived3.Outer<T>.Inner<U>.Interface<long, string>.Method<K>(T, U[], List<long>, Dictionary<string, K>)': containing type does not implement interface 'Outer<T>.Inner<U>.Interface<long, string>'
+                // (18,18): warning CS8643: Nullability of reference types in explicit interface specifier doesn't match interface implemented by the type.
                 //             void Inner<U>.Interface<long, string>.Method<K>(T a, U[] B, List<long> C, Dictionary<string, K> d)
-                Diagnostic(ErrorCode.ERR_ClassDoesntImplementInterface, "Inner<U>.Interface<long, string>").WithArguments("Outer<T>.Inner<U>.Derived3.Outer<T>.Inner<U>.Interface<long, string>.Method<K>(T, U[], System.Collections.Generic.List<long>, System.Collections.Generic.Dictionary<string, K>)", "Outer<T>.Inner<U>.Interface<long, string>").WithLocation(18, 18)
+                Diagnostic(ErrorCode.WRN_NullabilityMismatchInExplicitlyImplementedInterface, "Inner<U>.Interface<long, string>").WithLocation(18, 18)
                 );
         }
 
