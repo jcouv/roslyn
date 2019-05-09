@@ -40,10 +40,8 @@ namespace Microsoft.CodeAnalysis.CSharp.CommandLine.UnitTests
             Path.GetDirectoryName(typeof(CommandLineTests).GetTypeInfo().Assembly.Location),
             Path.Combine("dependency", "csc.exe"));
 
-        private static readonly string s_compilerVersionWithoutHash =
-            typeof(CommandLineTests).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion.Split('+')[0];
-        private static readonly string s_compilerCommitHash =
-            typeof(CommandLineTests).Assembly.GetCustomAttribute<CommitHashAttribute>()?.Hash;
+        private static readonly string s_compilerVersionWithoutHash = CommonCompiler.GetInformationalVersionWithoutHash<CommandLineTests>();
+        private static readonly string s_compilerCommitHash = CommonCompiler.GetCommitHash<CommandLineTests>();
         private static readonly string s_compilerShortCommitHash = CommonCompiler.ExtractShortCommitHash(s_compilerCommitHash);
 
         private class TestCommandLineParser : CSharpCommandLineParser

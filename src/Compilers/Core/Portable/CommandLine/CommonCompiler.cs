@@ -134,16 +134,15 @@ namespace Microsoft.CodeAnalysis
         /// <summary>
         /// The assembly file version of this compiler, used in logo and /version output.
         /// </summary>
-        internal virtual string GetAssemblyFileVersion()
+        internal string GetAssemblyFileVersion()
         {
-            Assembly assembly = Type.GetTypeInfo().Assembly;
-            return GetAssemblyFileVersion(assembly);
+            return GetAssemblyFileVersion(Type);
         }
 
-        internal static string GetAssemblyFileVersion(Assembly assembly)
+        internal static string GetAssemblyFileVersion(Type type)
         {
-            string assemblyVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0];
-            string hash = ExtractShortCommitHash(assembly.GetCustomAttribute<CommitHashAttribute>()?.Hash);
+            string assemblyVersion = GetInformationalVersionWithoutHash(type);
+            string hash = ExtractShortCommitHash(GetCommitHash(type));
             return $"{assemblyVersion} ({hash})";
         }
 
@@ -156,6 +155,28 @@ namespace Microsoft.CodeAnalysis
             }
 
             return hash;
+        }
+
+        internal static string GetInformationalVersionWithoutHash<T>()
+        {
+            return GetInformationalVersionWithoutHash(typeof(T));
+        }
+
+        internal static string GetInformationalVersionWithoutHash(Type type)
+        {
+            // The attribute stores a SemVer2-formatted string: `A.B.C(-...)?(+...)?`
+            // We remove the section after the + (if any is present)
+            return type.Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0];
+        }
+
+        internal static string GetCommitHash<T>()
+        {
+            return GetCommitHash(typeof(T));
+        }
+
+        internal static string GetCommitHash(Type type)
+        {
+            return type.Assembly.GetCustomAttribute<CommitHashAttribute>()?.Hash;
         }
 
         /// <summary>

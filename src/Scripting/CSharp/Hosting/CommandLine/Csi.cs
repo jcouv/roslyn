@@ -20,11 +20,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Scripting.Hosting
 
         internal override Type Type => typeof(CSharpInteractiveCompiler);
 
-        internal override string GetAssemblyFileVersion()
-        {
-            return Type.GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion.Split('+')[0]; // remove SHA, if any
-        }
-
         internal override MetadataReferenceResolver GetCommandLineMetadataReferenceResolver(TouchedFileLogger loggerOpt)
         {
             return CommandLineRunner.GetMetadataReferenceResolver(Arguments, loggerOpt);
