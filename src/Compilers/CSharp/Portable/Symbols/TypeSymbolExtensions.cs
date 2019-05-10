@@ -1174,6 +1174,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// </summary>
         internal static int ComputeHashCode(this NamedTypeSymbol type)
         {
+            Debug.Assert(type.Equals(type.OriginalDefinition, TypeCompareKind.CLRSignatureCompareOptions) == wasConstructedForAnnotations(type));
+
             if (wasConstructedForAnnotations(type))
             {
                 // A type that uses its own type parameters as type arguments was constructed only for the purpose of adding annotations
@@ -1221,7 +1223,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                     for (int i = 0; i < typeArguments.Length; i++)
                     {
-                        if ((object)typeArguments[i].Type != typeParameters[i])
+                        if (!typeArguments[i].Type.OriginalDefinition.Equals(typeParameters[i], TypeCompareKind.CLRSignatureCompareOptions))
                         {
                             return false;
                         }
