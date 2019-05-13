@@ -66652,6 +66652,32 @@ class D
             comp1.VerifyDiagnostics();
         }
 
+        [Fact]
+        [WorkItem(35406, "https://github.com/dotnet/roslyn/issues/35406")]
+        public void ObliviousConstraint()
+        {
+            var source =
+@"
+#nullable disable
+class A<T1, T2, T3> where T2 : class where T3 : object
+{
+#nullable enable
+    void M2()
+    {
+        T1 x2 = default; // is a warning deserved here?
+        T2 y2 = default; // is a warning deserved here?
+        T3 z2 = default; // is a warning deserved here?
+        _ = x2;
+        _ = y2;
+        _ = z2;
+    }
+}
+";
+            var comp = CreateNullableCompilation(source);
+            comp.VerifyDiagnostics(
+                );
+        }
+
         // https://github.com/dotnet/roslyn/issues/29981: Should report CS8600 for `T1 t = (T1)NullableObject();`
         // and `T3 t = (T3)NullableObject();`. (See VisitConversion which skips reporting because the
         // `object?` has an Unboxing conversion. Should report warning on unconverted operand
