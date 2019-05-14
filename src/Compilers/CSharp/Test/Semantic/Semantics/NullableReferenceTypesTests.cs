@@ -73192,7 +73192,7 @@ class C<T> where T : class
 
         [Fact]
         [WorkItem(30673, "https://github.com/dotnet/roslyn/issues/30673")]
-        public void TypeSymbolGetHashCode_ContainingType_Generic()
+        public void TypeSymbolGetHashCode_ContainingType_GenericNestedType()
         {
             var text = @"
 class C<T> where T : class
@@ -73215,7 +73215,7 @@ class C<T> where T : class
             Assert.Equal("C<T>", cDefinition.ToTestDisplayString(includeNonNullable: true));
             Assert.True(cDefinition.IsDefinition);
 
-            // Construct from cDefinition with T from cDefinition
+            // Construct from cDefinition with unannotated T from cDefinition
             var c2 = cDefinition.Construct(ImmutableArray.Create(TypeWithAnnotations.Create(cDefinition.TypeParameters.Single(), NullableAnnotation.NotAnnotated)));
             var i2 = c2.GetTypeMember("I");
             Assert.Equal("C<T!>.I<U>", i2.ToTestDisplayString(includeNonNullable: true));
@@ -73245,14 +73245,29 @@ class C<T> where T : class
             var i3b = i3.Construct(ImmutableArray.Create(TypeWithAnnotations.Create(i3.TypeParameters.Single(), NullableAnnotation.Annotated)));
             Assert.Equal("C<T?>.I<U?>", i3b.ToTestDisplayString(includeNonNullable: true));
             AssertHashCodesMatch(iDefinition, i3b);
+
+            // Construct from cDefinition with modified T from cDefinition
+            var modifiers = ImmutableArray.Create(CSharpCustomModifier.CreateOptional(comp.GetSpecialType(SpecialType.System_Object)));
+            var c4 = cDefinition.Construct(ImmutableArray.Create(TypeWithAnnotations.Create(cDefinition.TypeParameters.Single(), customModifiers: modifiers)));
+            Assert.Equal("C<T modopt(System.Object)>", c4.ToTestDisplayString());
+            Assert.False(c4.IsDefinition);
+            AssertHashCodesMatch(cDefinition, c4);
+
+            var i4 = c4.GetTypeMember("I");
+            Assert.Equal("C<T modopt(System.Object)>.I<U>", i4.ToTestDisplayString());
+            Assert.Same(i4.OriginalDefinition, iDefinition);
+            Assert.False(iDefinition.Equals(i4, TypeCompareKind.ConsiderEverything));
+            Assert.False(iDefinition.Equals(i4, TypeCompareKind.CLRSignatureCompareOptions));
+            Assert.True(iDefinition.Equals(i4, TypeCompareKind.IgnoreCustomModifiersAndArraySizesAndLowerBounds));
+            Assert.Equal(iDefinition.GetHashCode(), i4.GetHashCode());
         }
 
         private static void AssertHashCodesMatch(TypeSymbol c, TypeSymbol c2)
         {
             Assert.False(c.Equals(c2));
-            Assert.True(c.Equals(c2, TypeCompareKind.CLRSignatureCompareOptions));
+            Assert.True(c.Equals(c2, TypeCompareKind.AllIgnoreOptions));
 
-            Assert.True(c2.GetHashCode() == c.GetHashCode(), "hash codes differed even though types matched (ignoring nullability)");
+            Assert.Equal(c2.GetHashCode(), c.GetHashCode());
         }
 
         [Fact]

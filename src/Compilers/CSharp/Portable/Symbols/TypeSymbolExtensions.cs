@@ -1174,7 +1174,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// </summary>
         internal static int ComputeHashCode(this NamedTypeSymbol type)
         {
-            Debug.Assert(type.Equals(type.OriginalDefinition, TypeCompareKind.CLRSignatureCompareOptions) == wasConstructedForAnnotations(type));
+            Debug.Assert(!type.Equals(type.OriginalDefinition, TypeCompareKind.AllIgnoreOptions) || wasConstructedForAnnotations(type));
 
             if (wasConstructedForAnnotations(type))
             {

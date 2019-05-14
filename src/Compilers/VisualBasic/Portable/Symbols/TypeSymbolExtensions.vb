@@ -285,12 +285,6 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
                 Dim t1IsDefinition = t1.IsDefinition
                 Dim t2IsDefinition = t2.IsDefinition
 
-                If (t1IsDefinition <> t2IsDefinition) AndAlso
-                   Not ((compareKind And TypeCompareKind.IgnoreCustomModifiersAndArraySizesAndLowerBounds) <> 0 AndAlso
-                            (DirectCast(t1, NamedTypeSymbol).HasTypeArgumentsCustomModifiers OrElse DirectCast(t2, NamedTypeSymbol).HasTypeArgumentsCustomModifiers)) Then
-                    Return False
-                End If
-
                 If Not (t1IsDefinition AndAlso t2IsDefinition) Then ' This is a generic instantiation case
 
                     If Not t1.OriginalDefinition.Equals(t2.OriginalDefinition) Then
@@ -326,16 +320,16 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
                             Exit Do
                         End If
 
-                        If (container1.IsDefinition <> container2.IsDefinition) AndAlso
-                            Not ((compareKind And TypeCompareKind.IgnoreCustomModifiersAndArraySizesAndLowerBounds) <> 0 AndAlso
-                            (container1.HasTypeArgumentsCustomModifiers OrElse container2.HasTypeArgumentsCustomModifiers)) Then
-
-                            Return False
-                        End If
                     Loop
 
                     Return True
                 End If
+            ElseIf kind = SymbolKind.TypeParameter Then
+                If Not t1.OriginalDefinition.Equals(t2.OriginalDefinition) Then
+                    Return False ' different definition
+                End If
+
+                Return t1.ContainingSymbol.ContainingType.IsSameType(t2.ContainingSymbol.ContainingType, compareKind)
             End If
 
             Return t1.Equals(t2)
