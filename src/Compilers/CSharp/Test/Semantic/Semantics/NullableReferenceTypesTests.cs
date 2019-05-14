@@ -73206,23 +73206,36 @@ class C<T> where T : class
             Assert.Equal("C<T>.I<U>", iDefinition.ToTestDisplayString(includeNonNullable: true));
             Assert.True(iDefinition.IsDefinition);
 
+            // Construct from iDefinition with annotated U from iDefinition
+            var i1 = iDefinition.Construct(ImmutableArray.Create(TypeWithAnnotations.Create(iDefinition.TypeParameters.Single(), NullableAnnotation.Annotated)));
+            Assert.Equal("C<T>.I<U?>", i1.ToTestDisplayString(includeNonNullable: true));
+            AssertHashCodesMatch(iDefinition, i1);
+
             var cDefinition = iDefinition.ContainingType;
             Assert.Equal("C<T>", cDefinition.ToTestDisplayString(includeNonNullable: true));
             Assert.True(cDefinition.IsDefinition);
 
+            // Construct from cDefinition with T from cDefinition
             var c2 = cDefinition.Construct(ImmutableArray.Create(TypeWithAnnotations.Create(cDefinition.TypeParameters.Single(), NullableAnnotation.NotAnnotated)));
             var i2 = c2.GetTypeMember("I");
             Assert.Equal("C<T!>.I<U>", i2.ToTestDisplayString(includeNonNullable: true));
             Assert.Same(i2.OriginalDefinition, iDefinition);
             AssertHashCodesMatch(i2, iDefinition);
 
-            var i2constructed = i2.Construct(iDefinition.TypeParameters.Single());
-            Assert.Equal("C<T!>.I<U>", i2constructed.ToTestDisplayString(includeNonNullable: true));
-            AssertHashCodesMatch(iDefinition, i2constructed);
+            // Construct from i2 with U from iDefinition
+            var i2a = i2.Construct(iDefinition.TypeParameters.Single());
+            Assert.Equal("C<T!>.I<U>", i2a.ToTestDisplayString(includeNonNullable: true));
+            AssertHashCodesMatch(iDefinition, i2a);
 
-            var i2b = i2.Construct(ImmutableArray.Create(TypeWithAnnotations.Create(i2.TypeParameters.Single(), NullableAnnotation.Annotated)));
+            // Construct from i2 with annotated U from iDefinition
+            var i2b = i2.Construct(ImmutableArray.Create(TypeWithAnnotations.Create(iDefinition.TypeParameters.Single(), NullableAnnotation.Annotated)));
             Assert.Equal("C<T!>.I<U?>", i2b.ToTestDisplayString(includeNonNullable: true));
             AssertHashCodesMatch(iDefinition, i2b);
+
+            // Construct from i2 with U from i2
+            var i2c = i2.Construct(ImmutableArray.Create(TypeWithAnnotations.Create(i2.TypeParameters.Single(), NullableAnnotation.Annotated)));
+            Assert.Equal("C<T!>.I<U?>", i2c.ToTestDisplayString(includeNonNullable: true));
+            AssertHashCodesMatch(iDefinition, i2c);
 
             var c3 = cDefinition.Construct(ImmutableArray.Create(TypeWithAnnotations.Create(cDefinition.TypeParameters.Single(), NullableAnnotation.Annotated)));
             var i3 = c3.GetTypeMember("I");
