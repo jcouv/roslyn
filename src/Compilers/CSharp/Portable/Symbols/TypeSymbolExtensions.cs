@@ -1178,8 +1178,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (wasConstructedForAnnotations(type))
             {
-                // A type that uses its own type parameters as type arguments was constructed only for the purpose of adding annotations
-                // In that case we'll want to compute a hash that ignores such annotations and matches the object-hash from the definition
+                // A type that uses its own type parameters as type arguments was constructed only for the purpose of adding annotations.
+                // In that case we'll use the hash from the definition.
 
                 return type.OriginalDefinition.GetHashCode();
             }
@@ -1219,18 +1219,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 do
                 {
                     var typeArguments = type.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics;
-                    var typeParameters = type.ConstructedFrom.TypeParameters;
+                    var typeParameters = type.OriginalDefinition.TypeParameters;
 
                     for (int i = 0; i < typeArguments.Length; i++)
                     {
-                        if (!typeArguments[i].Type.OriginalDefinition.Equals(typeParameters[i], TypeCompareKind.CLRSignatureCompareOptions))
+                        if (!typeParameters[i].Equals(typeArguments[i].Type.OriginalDefinition))
                         {
                             return false;
                         }
                     }
 
                     type = type.ContainingType;
-
                 }
                 while (type is object && !type.IsDefinition);
 

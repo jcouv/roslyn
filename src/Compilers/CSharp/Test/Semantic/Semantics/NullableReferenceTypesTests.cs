@@ -73112,11 +73112,11 @@ class C<T> where T : class
 
             var comp = CreateNullableCompilation(text);
             var type = comp.GetMember<NamedTypeSymbol>("C");
-            Assert.Equal("C<T>", type.ToTestDisplayString());
+            Assert.Equal("C<T>", type.ToTestDisplayString(includeNonNullable: true));
             Assert.True(type.IsDefinition);
 
             var type2 = comp.GetMember<MethodSymbol>("C.M").ReturnType;
-            Assert.Equal("C<T?>", type2.ToTestDisplayString());
+            Assert.Equal("C<T?>", type2.ToTestDisplayString(includeNonNullable: true));
             Assert.False(type2.IsDefinition);
 
             AssertHashCodesMatch(type, type2);
@@ -73135,11 +73135,11 @@ class C<T> where T : class
 
             var comp = CreateNullableCompilation(text);
             var type = comp.GetMember<NamedTypeSymbol>("C");
-            Assert.Equal("C<T>", type.ToTestDisplayString());
+            Assert.Equal("C<T>", type.ToTestDisplayString(includeNonNullable: true));
             Assert.True(type.IsDefinition);
 
             var type2 = comp.GetMember<MethodSymbol>("C.M").ReturnType;
-            Assert.Equal("C<T>", type2.ToTestDisplayString());
+            Assert.Equal("C<T!>", type2.ToTestDisplayString(includeNonNullable: true));
             Assert.False(type2.IsDefinition);
 
             AssertHashCodesMatch(type, type2);
@@ -73158,33 +73158,33 @@ class C<T> where T : class
 
             var comp = CreateNullableCompilation(text);
             var iDefinition = comp.GetMember<NamedTypeSymbol>("C.I");
-            Assert.Equal("C<T>.I", iDefinition.ToTestDisplayString());
+            Assert.Equal("C<T>.I", iDefinition.ToTestDisplayString(includeNonNullable: true));
             Assert.True(iDefinition.IsDefinition);
 
             var cDefinition = iDefinition.ContainingType;
-            Assert.Equal("C<T>", cDefinition.ToTestDisplayString());
+            Assert.Equal("C<T>", cDefinition.ToTestDisplayString(includeNonNullable: true));
             Assert.True(cDefinition.IsDefinition);
 
             var c2 = cDefinition.Construct(ImmutableArray.Create(TypeWithAnnotations.Create(cDefinition.TypeParameters.Single(), NullableAnnotation.NotAnnotated)));
-            Assert.Equal("C<T>", c2.ToTestDisplayString());
+            Assert.Equal("C<T!>", c2.ToTestDisplayString(includeNonNullable: true));
             Assert.False(c2.IsDefinition);
 
             AssertHashCodesMatch(cDefinition, c2);
 
             var i2 = c2.GetTypeMember("I");
-            Assert.Equal("C<T>.I", i2.ToTestDisplayString());
+            Assert.Equal("C<T!>.I", i2.ToTestDisplayString(includeNonNullable: true));
             Assert.False(i2.IsDefinition);
 
             AssertHashCodesMatch(iDefinition, i2);
 
             var c3 = cDefinition.Construct(ImmutableArray.Create(TypeWithAnnotations.Create(cDefinition.TypeParameters.Single(), NullableAnnotation.Annotated)));
-            Assert.Equal("C<T?>", c3.ToTestDisplayString());
+            Assert.Equal("C<T?>", c3.ToTestDisplayString(includeNonNullable: true));
             Assert.False(c3.IsDefinition);
 
             AssertHashCodesMatch(cDefinition, c3);
 
             var i3 = c3.GetTypeMember("I");
-            Assert.Equal("C<T?>.I", i3.ToTestDisplayString());
+            Assert.Equal("C<T?>.I", i3.ToTestDisplayString(includeNonNullable: true));
             Assert.False(i3.IsDefinition);
 
             AssertHashCodesMatch(iDefinition, i3);
@@ -73203,34 +73203,34 @@ class C<T> where T : class
 
             var comp = CreateNullableCompilation(text);
             var iDefinition = comp.GetMember<NamedTypeSymbol>("C.I");
-            Assert.Equal("C<T>.I<U>", iDefinition.ToTestDisplayString());
+            Assert.Equal("C<T>.I<U>", iDefinition.ToTestDisplayString(includeNonNullable: true));
             Assert.True(iDefinition.IsDefinition);
 
             var cDefinition = iDefinition.ContainingType;
-            Assert.Equal("C<T>", cDefinition.ToTestDisplayString());
+            Assert.Equal("C<T>", cDefinition.ToTestDisplayString(includeNonNullable: true));
             Assert.True(cDefinition.IsDefinition);
 
             var c2 = cDefinition.Construct(ImmutableArray.Create(TypeWithAnnotations.Create(cDefinition.TypeParameters.Single(), NullableAnnotation.NotAnnotated)));
             var i2 = c2.GetTypeMember("I");
-            Assert.Equal("C<T>.I<U>", i2.ToTestDisplayString());
-            Assert.True((object)i2.OriginalDefinition == iDefinition);
+            Assert.Equal("C<T!>.I<U>", i2.ToTestDisplayString(includeNonNullable: true));
+            Assert.Same(i2.OriginalDefinition, iDefinition);
             AssertHashCodesMatch(i2, iDefinition);
 
             var i2constructed = i2.Construct(iDefinition.TypeParameters.Single());
-            Assert.Equal("C<T>.I<U>", i2constructed.ToTestDisplayString());
+            Assert.Equal("C<T!>.I<U>", i2constructed.ToTestDisplayString(includeNonNullable: true));
             AssertHashCodesMatch(iDefinition, i2constructed);
 
             var i2b = i2.Construct(ImmutableArray.Create(TypeWithAnnotations.Create(i2.TypeParameters.Single(), NullableAnnotation.Annotated)));
-            Assert.Equal("C<T>.I<U?>", i2b.ToTestDisplayString());
+            Assert.Equal("C<T!>.I<U?>", i2b.ToTestDisplayString(includeNonNullable: true));
             AssertHashCodesMatch(iDefinition, i2b);
 
             var c3 = cDefinition.Construct(ImmutableArray.Create(TypeWithAnnotations.Create(cDefinition.TypeParameters.Single(), NullableAnnotation.Annotated)));
             var i3 = c3.GetTypeMember("I");
-            Assert.Equal("C<T?>.I<U>", i3.ToTestDisplayString());
+            Assert.Equal("C<T?>.I<U>", i3.ToTestDisplayString(includeNonNullable: true));
             AssertHashCodesMatch(iDefinition, i3);
 
             var i3b = i3.Construct(ImmutableArray.Create(TypeWithAnnotations.Create(i3.TypeParameters.Single(), NullableAnnotation.Annotated)));
-            Assert.Equal("C<T?>.I<U?>", i3b.ToTestDisplayString());
+            Assert.Equal("C<T?>.I<U?>", i3b.ToTestDisplayString(includeNonNullable: true));
             AssertHashCodesMatch(iDefinition, i3b);
         }
 
@@ -73487,7 +73487,6 @@ class Outer<T>
 }
 ";
 
-            // https://github.com/dotnet/roslyn/issues/30677 - Expect no errors
             CreateCompilation(source, options: WithNonNullTypesTrue()).VerifyDiagnostics(
                 // (18,18): warning CS8643: Nullability of reference types in explicit interface specifier doesn't match interface implemented by the type.
                 //             void Inner<U>.Interface<long, string>.Method<K>(T a, U[] B, List<long> C, Dictionary<string, K> d)
