@@ -2874,7 +2874,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
-        private static TypeWithAnnotations ApplyLValueAnnotations(TypeWithAnnotations declaredType, FlowAnalysisAnnotations flowAnalysisAnnotations = FlowAnalysisAnnotations.None)
+        private static TypeWithAnnotations ApplyLValueAnnotations(TypeWithAnnotations declaredType, FlowAnalysisAnnotations flowAnalysisAnnotations)
         {
             if ((flowAnalysisAnnotations & FlowAnalysisAnnotations.DisallowNull) != 0)
             {
@@ -2890,6 +2890,32 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 var typeSymbol = declaredType.Type;
                 if (declaredType.NullableAnnotation.IsAnnotated() || (typeSymbol.IsValueType && typeSymbol.IsNullableType()))
+                {
+                    return declaredType;
+                }
+
+                return TypeWithAnnotations.Create(typeSymbol, NullableAnnotation.Annotated, declaredType.CustomModifiers);
+            }
+
+            return declaredType;
+        }
+
+        private static TypeWithAnnotations ApplyRValueAnnotations(TypeWithAnnotations declaredType, FlowAnalysisAnnotations flowAnalysisAnnotations)
+        {
+            if ((flowAnalysisAnnotations & FlowAnalysisAnnotations.NotNull) == FlowAnalysisAnnotations.NotNull)
+            {
+                var typeSymbol = declaredType.Type;
+                if (declaredType.NullableAnnotation.IsNotAnnotated() || (typeSymbol.IsValueType && !typeSymbol.IsNullableType()))
+                {
+                    return declaredType;
+                }
+
+                return TypeWithAnnotations.Create(typeSymbol, NullableAnnotation.NotAnnotated, declaredType.CustomModifiers);
+            }
+            else if ((flowAnalysisAnnotations & FlowAnalysisAnnotations.MaybeNull) == FlowAnalysisAnnotations.MaybeNull)
+            {
+                var typeSymbol = declaredType.Type;
+                if (!declaredType.NullableAnnotation.IsNotAnnotated() || (typeSymbol.IsValueType && typeSymbol.IsNullableType()))
                 {
                     return declaredType;
                 }
@@ -3268,12 +3294,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                             else
                             {
                                 // types match, but state would let a null in
-                                ReportNullableAssignmentIfNecessary(argumentNoConversion, parameterType, resultType, useLegacyWarnings: false);
+                                ReportNullableAssignmentIfNecessary(argumentNoConversion, ApplyLValueAnnotations(parameterType, parameterAnnotations), resultType, useLegacyWarnings: false);
                             }
                         }
 
                         // Check assignment from a fictional value from the parameter to the argument.
-                        var parameterWithState = parameterType.ToTypeWithState();
+                        var parameterWithState = TypeWithState.Create(parameterType, parameterAnnotations);
                         if (argumentNoConversion.IsSuppressed)
                         {
                             parameterWithState = parameterWithState.WithNotNullState();
@@ -3289,13 +3315,15 @@ namespace Microsoft.CodeAnalysis.CSharp
                     break;
                 case RefKind.Out:
                     {
-                        var parameterWithState = parameterType.ToTypeWithState();
+                        var lValueType = result.LValueType;
+                        var parameterWithAnnotations = ApplyRValueAnnotations(parameterType, parameterAnnotations);
+                        var parameterWithState = TypeWithState.Create(parameterWithAnnotations, parameterAnnotations);
                         if (argumentNoConversion is BoundLocal local && local.DeclarationKind == BoundLocalDeclarationKind.WithInferredType)
                         {
-                            _variableTypes[local.LocalSymbol] = parameterType;
+                            _variableTypes[local.LocalSymbol] = parameterWithAnnotations;
+                            lValueType = parameterWithAnnotations;
                         }
 
-                        var lValueType = result.LValueType;
                         // Check assignment from a fictional value from the parameter to the argument.
                         var parameterValue = new BoundParameter(argumentNoConversion.Syntax, parameter);
 
