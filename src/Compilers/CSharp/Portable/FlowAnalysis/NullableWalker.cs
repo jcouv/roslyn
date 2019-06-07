@@ -3017,8 +3017,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var builder = ArrayBuilder<VisitArgumentResult>.GetInstance(n);
             for (int i = 0; i < n; i++)
             {
-                (_, _, FlowAnalysisAnnotations parameterAnnotations) = GetCorrespondingParameter(i, parameters, argsToParamsOpt, expanded);
-
+                FlowAnalysisAnnotations parameterAnnotations = GetCorrespondingParameter(i, parameters, argsToParamsOpt, expanded).Annotations;
                 builder.Add(VisitArgumentEvaluate(arguments[i], GetRefKind(refKindsOpt, i), parameterAnnotations));
             }
 
