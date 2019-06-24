@@ -297,6 +297,11 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
 
                     Do
 
+                        If container1 Is container1.ConstructedFrom AndAlso container2 Is container2.ConstructedFrom Then
+                            ' No need to compare type arguments (that would cause cycles)
+                            Continue Do
+                        End If
+
                         If (compareKind And Global.Microsoft.CodeAnalysis.TypeCompareKind.IgnoreCustomModifiersAndArraySizesAndLowerBounds) = 0 AndAlso
                            Not HasSameTypeArgumentCustomModifiers(container1, container2) Then
 
@@ -329,7 +334,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
                     Return False ' different definition
                 End If
 
-                Return t1.ContainingSymbol.ContainingType.IsSameType(t2.ContainingSymbol.ContainingType, compareKind)
+                Return t1.ContainingType.IsSameType(t2.ContainingType, compareKind)
             End If
 
             Return t1.Equals(t2)

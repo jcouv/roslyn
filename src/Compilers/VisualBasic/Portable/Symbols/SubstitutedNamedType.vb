@@ -31,24 +31,6 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
             _substitution = substitution
         End Sub
 
-        Protected Shared Function WasConstructedForModifiers(type As NamedTypeSymbol) As Boolean
-            Do
-                Dim typeArguments = type.TypeArgumentsNoUseSiteDiagnostics
-                Dim typeParameters = type.OriginalDefinition.TypeParameters
-
-                For i = 0 To typeArguments.Length - 1
-                    If Not typeParameters(i).IsSameType(typeArguments(i).OriginalDefinition, TypeCompareKind.ConsiderEverything) Then
-                        Return False
-                    End If
-                Next
-
-                type = type.ContainingType
-
-            Loop While type IsNot Nothing AndAlso Not type.IsDefinition
-
-            Return True
-        End Function
-
         Public NotOverridable Overrides ReadOnly Property Name As String
             Get
                 Return OriginalDefinition.Name
@@ -509,7 +491,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
 
         Public Overrides Function GetHashCode() As Integer
             Dim _hash As Integer = OriginalDefinition.GetHashCode()
-            If WasConstructedForModifiers(Me) Then
+            If Me._substitution.WasConstructedForModifiers() Then
                 Return _hash
             End If
 
@@ -1000,7 +982,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
             End Function
 
             Public Overrides Function GetHashCode() As Integer
-                If WasConstructedForModifiers(Me) Then
+                If Me._substitution.WasConstructedForModifiers() Then
                     Return OriginalDefinition.GetHashCode()
                 End If
 
