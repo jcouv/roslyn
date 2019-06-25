@@ -4,6 +4,7 @@ Imports System.Collections.Immutable
 Imports Microsoft.CodeAnalysis.Test.Utilities
 Imports Microsoft.CodeAnalysis.Text
 Imports Microsoft.CodeAnalysis.VisualBasic.Symbols
+Imports Microsoft.CodeAnalysis.VisualBasic.Syntax
 Imports Roslyn.Test.Utilities
 
 Namespace Microsoft.CodeAnalysis.VisualBasic.UnitTests
@@ -3878,6 +3879,101 @@ End Class
                                                                     ImmutableArray.Create(modifiedT, modifiedU, modifiedV)))
             Assert.Equal("C(Of T modopt(System.Object)).C2(Of U modopt(System.Object)).I(Of V modopt(System.Object))", i.ToTestDisplayString())
             AssertHashCodesMatch(iDefinition, i)
+        End Sub
+
+        <WorkItem(30673, "https://github.com/dotnet/roslyn/issues/30673")>
+        <Fact>
+        Public Sub TypeSymbolGetHashCode_SubstitutedErrorType()
+            Dim missing = CompilationUtils.CreateCompilationWithMscorlib40(
+<compilation name="TypeSymbolGetHashCode_SubstitutedErrorType">
+    <file name="a.vb">
+Public Class C(Of T)
+    Public Class D(Of U)
+    End Class
+End Class
+    </file>
+</compilation>)
+            AssertNoDeclarationDiagnostics(missing)
+
+            Dim reference = CompilationUtils.CreateCompilationWithMscorlib40(
+<compilation name="TypeSymbolGetHashCode_SubstitutedErrorType">
+    <file name="a.vb">
+Public Class Reference(Of T, U)
+    Inherits C(Of T).D(Of U)
+End Class
+    </file>
+</compilation>, references:={missing.EmitToImageReference()})
+            AssertNoDeclarationDiagnostics(reference)
+
+            Dim compilation = CompilationUtils.CreateCompilationWithMscorlib40(
+<compilation name="TypeSymbolGetHashCode_SubstitutedErrorType">
+    <file name="a.vb">
+Public Class Program(Of V, W)
+    Inherits Reference(Of V, W)
+End Class
+    </file>
+</compilation>, references:={reference.EmitToImageReference()})
+
+            compilation.AssertTheseDiagnostics(<errors><![CDATA[
+BC31091: Import of type 'C(Of ).D(Of )' from assembly or module 'TypeSymbolGetHashCode_SubstitutedErrorType.dll' failed.
+Public Class Program(Of V, W)
+             ~~~~~~~
+BC31091: Import of type 'C(Of ).D(Of )' from assembly or module 'TypeSymbolGetHashCode_SubstitutedErrorType.dll' failed.
+    Inherits Reference(Of V, W)
+             ~~~~~~~~~~~~~~~~~~
+            ]]></errors>)
+
+
+            ' TODO2
+            Dim modifiers = ImmutableArray.Create(VisualBasicCustomModifier.CreateOptional(compilation.GetSpecialType(SpecialType.System_Object)))
+
+            Dim programType = compilation.GlobalNamespace.GetTypeMember("Program")
+            Dim errorType = programType.BaseType.BaseType
+
+            'Dim iDefinition = compilation.GetMember(Of NamedTypeSymbol)("C.I")
+            'Assert.Equal("C(Of T).I(Of U)", iDefinition.ToTestDisplayString())
+            'Assert.True(iDefinition.IsDefinition)
+
+            '' Construct from iDefinition with modified U from iDefinition
+            'Dim modifiedU = ImmutableArray.Create(New TypeWithModifiers(iDefinition.TypeParameters.Single(), modifiers))
+            'Dim i1 = iDefinition.Construct(TypeSubstitution.Create(iDefinition, iDefinition.TypeParameters, modifiedU))
+            'Assert.Equal("C(Of T).I(Of U modopt(System.Object))", i1.ToTestDisplayString())
+            'AssertHashCodesMatch(iDefinition, i1)
+
+            'Dim cDefinition = iDefinition.ContainingType
+            'Assert.Equal("C(Of T)", cDefinition.ToTestDisplayString())
+            'Assert.True(cDefinition.IsDefinition)
+
+            '' Construct from cDefinition with modified T from cDefinition
+            'Dim modifiedT = ImmutableArray.Create(New TypeWithModifiers(cDefinition.TypeParameters.Single(), modifiers))
+            'Dim c2 = cDefinition.Construct(TypeSubstitution.Create(cDefinition, cDefinition.TypeParameters, modifiedT))
+            'Dim i2 = c2.GetTypeMember("I")
+            'Assert.Equal("C(Of T modopt(System.Object)).I(Of U)", i2.ToTestDisplayString())
+            'Assert.Same(i2.OriginalDefinition, iDefinition)
+            'AssertHashCodesMatch(iDefinition, i2)
+
+            '' Construct from i2 with U from iDefinition
+            'Dim i2a = i2.Construct(iDefinition.TypeParameters.Single())
+            'Assert.Equal("C(Of T modopt(System.Object)).I(Of U)", i2a.ToTestDisplayString())
+            'AssertHashCodesMatch(iDefinition, i2a)
+
+            '' Construct from i2 (reconstructed) with modified U from iDefinition
+            'Dim i2b = iDefinition.Construct(TypeSubstitution.Create(iDefinition,
+            '                                                        ImmutableArray.Create(cDefinition.TypeParameters.Single(), iDefinition.TypeParameters.Single()),
+            '                                                        ImmutableArray.Create(modifiedT.Single(), modifiedU.Single())))
+            'Assert.Equal("C(Of T modopt(System.Object)).I(Of U modopt(System.Object))", i2b.ToTestDisplayString())
+            'AssertHashCodesMatch(iDefinition, i2b)
+
+            '' Construct from cDefinition with modified T from cDefinition
+            'Dim c4 = cDefinition.Construct(TypeSubstitution.Create(cDefinition, cDefinition.TypeParameters, modifiedT))
+            'Assert.Equal("C(Of T modopt(System.Object))", c4.ToTestDisplayString())
+            'Assert.False(c4.IsDefinition)
+            'AssertHashCodesMatch(cDefinition, c4)
+
+            'Dim i4 = c4.GetTypeMember("I")
+            'Assert.Equal("C(Of T modopt(System.Object)).I(Of U)", i4.ToTestDisplayString())
+            'Assert.Same(i4.OriginalDefinition, iDefinition)
+            'AssertHashCodesMatch(iDefinition, i4)
         End Sub
 
         Private Shared Sub AssertHashCodesMatch(c As TypeSymbol, c2 As TypeSymbol)
