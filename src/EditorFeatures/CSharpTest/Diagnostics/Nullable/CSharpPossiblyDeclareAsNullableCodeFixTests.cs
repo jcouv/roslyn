@@ -1,15 +1,17 @@
 ﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.CodeRefactorings;
+using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.CodeRefactorings.DeclareAsNullable;
+using Microsoft.CodeAnalysis.CSharp.CodeFixes.PossiblyDeclareAsNullable;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Test.Utilities;
+using Roslyn.Test.Utilities;
 using Xunit;
 
-namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.CodeRefactorings.DeclareAsNullable
+namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.Diagnostics.PossiblyDeclareAsNullable
 {
-    // TODO:
+    // TODO2
     // a.b.c.s$$ == null
     // somet$$hing?.x
     // symbol not from this project
@@ -17,18 +19,23 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.CodeRefactorings.Declar
     // (object)x == null
     // ReferenceEquals and other equality methods
 
-    [Trait(Traits.Feature, Traits.Features.CodeActionsPossiblyDeclareAsNullable)]
-    public class PossiblyDeclareAsNullableRefactoringTests : AbstractCSharpCodeActionTest
+
+    [Trait(Traits.Feature, Traits.Features.CodeActionsDeclareAsNullable)]
+    public class CSharpPossiblyDeclareAsNullableCodeFixTests : AbstractCSharpDiagnosticProviderBasedUserDiagnosticTest
     {
-        protected override CodeRefactoringProvider CreateCodeRefactoringProvider(Workspace workspace, TestParameters parameters)
-            => new PossiblyDeclareAsNullableCodeRefactoringProvider();
+        internal override (DiagnosticAnalyzer, CodeFixProvider) CreateDiagnosticProviderAndFixer(Workspace workspace)
+            => (new CSharpPossiblyDeclareAsNullableDiagnosticAnalyzer(), new CSharpPossiblyDeclareAsNullableCodeFixProvider());
 
         private static readonly TestParameters s_nullableFeature = new TestParameters(parseOptions: new CSharpParseOptions(LanguageVersion.CSharp8));
+
+        private readonly string NonNullTypes = @"
+#nullable enable
+";
 
         [Fact]
         public async Task TestParameterEqualsNull()
         {
-            var code = @"
+            var code = NonNullTypes + @"
 class C
 {
     static void M(string s)
@@ -40,7 +47,7 @@ class C
     }
 }";
 
-            var expected = @"
+            var expected = NonNullTypes + @"
 class C
 {
     static void M(string? s)
@@ -401,6 +408,42 @@ partial class C
 }";
 
             await TestMissingInRegularAndScriptAsync(code, parameters: s_nullableFeature);
+        }
+
+        [Fact]
+        public async Task FixAll()
+        {
+            await TestInRegularAndScript1Async(
+NonNullTypes + @"
+class Program
+{
+    static string M()
+    {
+        return {|FixAllInDocument:null|};
+    }
+    static string M2(bool b)
+    {
+        if (b)
+            return null;
+        else
+            return null;
+    }
+}",
+NonNullTypes + @"
+class Program
+{
+    static string? M()
+    {
+        return null;
+    }
+    static string? M2(bool b)
+    {
+        if (b)
+            return null;
+        else
+            return null;
+    }
+}", parameters: s_nullableFeature);
         }
     }
 }
