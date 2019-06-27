@@ -15,6 +15,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Editing;
 using Microsoft.CodeAnalysis.PooledObjects;
 using Microsoft.CodeAnalysis.Shared.Extensions;
+using Microsoft.CodeAnalysis.Text;
 using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp.CodeFixes.PossiblyDeclareAsNullable
@@ -41,159 +42,179 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeFixes.PossiblyDeclareAsNullable
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
             var node = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
 
-            var declarationTypeToFix = TryGetDeclarationTypeToFix(node);
-            if (declarationTypeToFix == null)
+            var symbolToFix = await IsFixableAsync(context.Document, null, node, null, context.CancellationToken).ConfigureAwait(false);
+            if (symbolToFix is object)
+            {
+                context.RegisterCodeFix(new MyCodeAction(
+                    c => FixAsync(context.Document, diagnostic, c)),
+                    context.Diagnostics);
+            }
+        }
+
+        //protected override async Task FixAllAsync(
+        //    Document document, ImmutableArray<Diagnostic> diagnostics,
+        //    SyntaxEditor editor, CancellationToken cancellationToken)
+        //{
+        //    var root = editor.OriginalRoot;
+
+        //    // a method can have multiple `return null;` statements, but we should only fix its return type once
+        //    var alreadyHandled = PooledHashSet<TypeSyntax>.GetInstance();
+
+        //    foreach (var diagnostic in diagnostics)
+        //    {
+        //        var node = diagnostic.Location.FindNode(getInnermostNodeForTie: true, cancellationToken);
+        //        await MakeDeclarationNullableAsync(document, editor, node, alreadyHandled, cancellationToken).ConfigureAwait(false);
+        //    }
+
+        //    alreadyHandled.Free();
+        //}
+
+        private static async Task<ISymbol> IsFixableAsync(Document document, SyntaxEditor editor, SyntaxNode node, HashSet<TypeSyntax> alreadyHandled, CancellationToken cancellationToken)
+        {
+            var symbolToFix = await TryGetSymbolToFixAsync(document, root, textSpan, cancellationToken).ConfigureAwait(false);
+            if (symbolToFix == null ||
+                symbolToFix.Locations.Length != 1 ||
+                !symbolToFix.IsNonImplicitAndFromSource())
+            {
+                return null;
+            }
+
+            if (!IsFixableType(symbolToFix))
+            {
+                return null;
+            }
+
+            return symbolToFix;
+        }
+
+        private static async Task MakeDeclarationNullableAsync(Document document, SyntaxEditor editor, SyntaxNode node, HashSet<TypeSyntax> alreadyHandled, CancellationToken cancellationToken)
+        {
+            //var declarationTypeToFix = TryGetDeclarationTypeToFix(node);
+            //if (declarationTypeToFix != null && alreadyHandled.Add(declarationTypeToFix))
+            //{
+            //    var fixedDeclaration = SyntaxFactory.NullableType(declarationTypeToFix.WithoutTrivia()).WithTriviaFrom(declarationTypeToFix);
+            //    editor.ReplaceNode(declarationTypeToFix, fixedDeclaration);
+            //}
+
+            var textSpan = context.Span;
+            var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+
+            var symbolToFix = await IsFixableAsync(document, editor, node, alreadyHandled, cancellationToken).ConfigureAwait(false);
+            if (symbolToFix == null)
             {
                 return;
             }
 
-            context.RegisterCodeFix(new MyCodeAction(
-                c => FixAsync(context.Document, diagnostic, c)),
-                context.Diagnostics);
-        }
+            var declarationLocation = symbolToFix.Locations[0];
+            var node = declarationLocation.FindNode(getInnermostNodeForTie: true, cancellationToken);
 
-        protected override Task FixAllAsync(
-            Document document, ImmutableArray<Diagnostic> diagnostics,
-            SyntaxEditor editor, CancellationToken cancellationToken)
-        {
-            var root = editor.OriginalRoot;
-
-            // a method can have multiple `return null;` statements, but we should only fix its return type once
-            var alreadyHandled = PooledHashSet<TypeSyntax>.GetInstance();
-
-            foreach (var diagnostic in diagnostics)
+            var typeToFix = TryGetTypeToFix(node);
+            if (typeToFix == null || typeToFix is NullableTypeSyntax)
             {
-                var node = diagnostic.Location.FindNode(getInnermostNodeForTie: true, cancellationToken);
-                MakeDeclarationNullable(document, editor, node, alreadyHandled);
-            }
-
-            alreadyHandled.Free();
-            return Task.CompletedTask;
-        }
-
-        private static void MakeDeclarationNullable(Document document, SyntaxEditor editor, SyntaxNode node, HashSet<TypeSyntax> alreadyHandled)
-        {
-            var declarationTypeToFix = TryGetDeclarationTypeToFix(node);
-            if (declarationTypeToFix != null && alreadyHandled.Add(declarationTypeToFix))
-            {
-                var fixedDeclaration = SyntaxFactory.NullableType(declarationTypeToFix.WithoutTrivia()).WithTriviaFrom(declarationTypeToFix);
-                editor.ReplaceNode(declarationTypeToFix, fixedDeclaration);
+                return;
             }
         }
 
-        private static TypeSyntax TryGetDeclarationTypeToFix(SyntaxNode node)
+        private static TypeSyntax TryGetTypeToFix(SyntaxNode node)
         {
-            if (!node.IsKind(SyntaxKind.NullLiteralExpression, SyntaxKind.AsExpression))
+            switch (node)
             {
-                return null;
-            }
+                case ParameterSyntax parameter:
+                    return parameter.Type;
 
-            if (node.IsParentKind(SyntaxKind.ReturnStatement, SyntaxKind.YieldReturnStatement))
-            {
-                var containingMember = node.GetAncestors().FirstOrDefault(a => a.IsKind(
-                    SyntaxKind.MethodDeclaration, SyntaxKind.PropertyDeclaration, SyntaxKind.ParenthesizedLambdaExpression, SyntaxKind.SimpleLambdaExpression,
-                    SyntaxKind.LocalFunctionStatement, SyntaxKind.AnonymousMethodExpression, SyntaxKind.ConstructorDeclaration, SyntaxKind.DestructorDeclaration,
-                    SyntaxKind.OperatorDeclaration, SyntaxKind.IndexerDeclaration, SyntaxKind.EventDeclaration));
+                case VariableDeclaratorSyntax declarator:
+                    if (declarator.IsParentKind(SyntaxKind.VariableDeclaration))
+                    {
+                        var declaration = (VariableDeclarationSyntax)declarator.Parent;
+                        return declaration.Variables.Count == 1 ? declaration.Type : null;
+                    }
 
-                if (containingMember == null)
-                {
                     return null;
-                }
 
-                var onYield = node.IsParentKind(SyntaxKind.YieldReturnStatement);
+                case PropertyDeclarationSyntax property:
+                    return property.Type;
 
-                switch (containingMember)
-                {
-                    case MethodDeclarationSyntax method:
-                        // string M() { return null; }
-                        // async Task<string> M() { return null; }
-                        // IEnumerable<string> M() { yield return null; }
-                        return TryGetReturnType(method.ReturnType, method.Modifiers, onYield);
-
-                    case LocalFunctionStatementSyntax localFunction:
-                        // string local() { return null; }
-                        // async Task<string> local() { return null; }
-                        // IEnumerable<string> local() { yield return null; }
-                        return TryGetReturnType(localFunction.ReturnType, localFunction.Modifiers, onYield);
-
-                    case PropertyDeclarationSyntax property:
-                        // string x { get { return null; } }
-                        // IEnumerable<string> Property { get { yield return null; } }
-                        return TryGetReturnType(property.Type, modifiers: default, onYield);
-
-                    default:
+                case MethodDeclarationSyntax method:
+                    if (method.Modifiers.Any(SyntaxKind.PartialKeyword))
+                    {
+                        // partial methods should only return void (ie. already an error scenario)
                         return null;
-                }
-            }
+                    }
 
-            // string x = null;
-            if (node.Parent?.Parent?.IsParentKind(SyntaxKind.VariableDeclaration) == true)
-            {
-                var variableDeclaration = (VariableDeclarationSyntax)node.Parent.Parent.Parent;
-                if (variableDeclaration.Variables.Count != 1)
-                {
-                    // string x = null, y = null;
-                    return null;
-                }
-
-                return variableDeclaration.Type;
-            }
-
-            // string x { get; set; } = null;
-            if (node.Parent.IsParentKind(SyntaxKind.PropertyDeclaration) == true)
-            {
-                var propertyDeclaration = (PropertyDeclarationSyntax)node.Parent.Parent;
-                return propertyDeclaration.Type;
-            }
-
-            // void M(string x = null) { }
-            if (node.Parent.IsParentKind(SyntaxKind.Parameter) == true)
-            {
-                var parameter = (ParameterSyntax)node.Parent.Parent;
-                return parameter.Type;
-            }
-
-            // static string M() => null;
-            if (node.IsParentKind(SyntaxKind.ArrowExpressionClause) && node.Parent.IsParentKind(SyntaxKind.MethodDeclaration))
-            {
-                var arrowMethod = (MethodDeclarationSyntax)node.Parent.Parent;
-                return arrowMethod.ReturnType;
+                    return method.ReturnType;
             }
 
             return null;
+        }
 
-            // local functions
-            TypeSyntax TryGetReturnType(TypeSyntax returnType, SyntaxTokenList modifiers, bool onYield)
+
+        private static bool IsFixableType(ISymbol symbolToFix)
+        {
+            ITypeSymbol type = null;
+            switch (symbolToFix)
             {
-                if (modifiers.Any(SyntaxKind.AsyncKeyword) || onYield)
-                {
-                    // async Task<string> M() { return null; }
-                    // async IAsyncEnumerable<string> M() { yield return null; }
-                    // IEnumerable<string> M() { yield return null; }
-                    return TryGetSingleTypeArgument(returnType);
-                }
-
-                // string M() { return null; }
-                return returnType;
+                case IParameterSymbol parameter:
+                    type = parameter.Type;
+                    break;
+                case ILocalSymbol local:
+                    type = local.Type;
+                    break;
+                case IPropertySymbol property:
+                    type = property.Type;
+                    break;
+                case IMethodSymbol method when method.IsDefinition:
+                    type = method.ReturnType;
+                    break;
+                case IFieldSymbol field:
+                    type = field.Type;
+                    break;
+                default:
+                    return false;
             }
 
-            TypeSyntax TryGetSingleTypeArgument(TypeSyntax type)
-            {
-                switch (type)
-                {
-                    case QualifiedNameSyntax qualified:
-                        return TryGetSingleTypeArgument(qualified.Right);
+            return type?.IsReferenceType == true;
+        }
 
-                    case GenericNameSyntax generic:
-                        var typeArguments = generic.TypeArgumentList.Arguments;
-                        if (typeArguments.Count == 1)
-                        {
-                            return typeArguments[0];
-                        }
-                        break;
-                }
+        private static async Task<ISymbol> TryGetSymbolToFixAsync(Document document, SyntaxNode root, TextSpan textSpan, CancellationToken cancellationToken)
+        {
+            var token = root.FindToken(textSpan.Start);
+
+            if (!token.IsKind(SyntaxKind.EqualsEqualsToken, SyntaxKind.ExclamationEqualsToken, SyntaxKind.NullKeyword))
+            {
                 return null;
             }
+
+            BinaryExpressionSyntax equals;
+            if (token.Parent.IsKind(SyntaxKind.EqualsExpression, SyntaxKind.NotEqualsExpression))
+            {
+                equals = (BinaryExpressionSyntax)token.Parent;
+            }
+            else if (token.Parent.IsKind(SyntaxKind.NullLiteralExpression) && token.Parent.IsParentKind(SyntaxKind.EqualsExpression, SyntaxKind.NotEqualsExpression))
+            {
+                equals = (BinaryExpressionSyntax)token.Parent.Parent;
+            }
+            else
+            {
+                return null;
+            }
+
+            ExpressionSyntax value;
+            if (equals.Right.IsKind(SyntaxKind.NullLiteralExpression))
+            {
+                value = equals.Left;
+            }
+            else if (equals.Left.IsKind(SyntaxKind.NullLiteralExpression))
+            {
+                value = equals.Right;
+            }
+            else
+            {
+                return null;
+            }
+
+            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+
+            return semanticModel.GetSymbolInfo(value).Symbol;
         }
 
         private class MyCodeAction : CodeAction.DocumentChangeAction
