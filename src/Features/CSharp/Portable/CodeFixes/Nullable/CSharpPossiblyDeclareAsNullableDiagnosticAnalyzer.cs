@@ -3,9 +3,11 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Extensions;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Shared.Extensions;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Microsoft.CodeAnalysis.CSharp.CodeFixes.PossiblyDeclareAsNullable
@@ -47,11 +49,130 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeFixes.PossiblyDeclareAsNullable
 
         private void AnalyzeNode(SyntaxNodeAnalysisContext context)
         {
-            //if (IsBrokenLambda(context) || context.Node is TIncompleteMemberSyntax)
-            //{
-            //    ReportUnboundIdentifierNames(context, context.Node);
-            //}
+            if (IsFixable(context.Node, context.SemanticModel) != null)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(s_possiblyDeclareAsNullableRule, context.Node.GetLocation()));
+
+            }
         }
+
+        internal static ISymbol IsFixable(SyntaxNode node, SemanticModel model)
+        {
+            var symbolToFix = TryGetSymbolToFix(node, model);
+            if (symbolToFix == null ||
+                symbolToFix.Locations.Length != 1 ||
+                !symbolToFix.IsNonImplicitAndFromSource())
+            {
+                return null;
+            }
+
+            if (!IsFixableType(symbolToFix))
+            {
+                return null;
+            }
+
+            return symbolToFix;
+        }
+
+        internal static TypeSyntax TryGetTypeToFix(SyntaxNode node)
+        {
+            switch (node)
+            {
+                case ParameterSyntax parameter:
+                    return parameter.Type;
+
+                case VariableDeclaratorSyntax declarator:
+                    if (declarator.IsParentKind(SyntaxKind.VariableDeclaration))
+                    {
+                        var declaration = (VariableDeclarationSyntax)declarator.Parent;
+                        return declaration.Variables.Count == 1 ? declaration.Type : null;
+                    }
+
+                    return null;
+
+                case PropertyDeclarationSyntax property:
+                    return property.Type;
+
+                case MethodDeclarationSyntax method:
+                    if (method.Modifiers.Any(SyntaxKind.PartialKeyword))
+                    {
+                        // partial methods should only return void (ie. already an error scenario)
+                        return null;
+                    }
+
+                    return method.ReturnType;
+            }
+
+            return null;
+        }
+
+        private static bool IsFixableType(ISymbol symbolToFix)
+        {
+            ITypeSymbol type = null;
+            switch (symbolToFix)
+            {
+                case IParameterSymbol parameter:
+                    type = parameter.Type;
+                    break;
+                case ILocalSymbol local:
+                    type = local.Type;
+                    break;
+                case IPropertySymbol property:
+                    type = property.Type;
+                    break;
+                case IMethodSymbol method when method.IsDefinition:
+                    type = method.ReturnType;
+                    break;
+                case IFieldSymbol field:
+                    type = field.Type;
+                    break;
+                default:
+                    return false;
+            }
+
+            return type?.IsReferenceType == true;
+        }
+
+        private static ISymbol TryGetSymbolToFix(SyntaxNode node, SemanticModel model)
+        {
+            //var token = root.FindToken(textSpan.Start);
+
+            //if (!token.IsKind(SyntaxKind.EqualsEqualsToken, SyntaxKind.ExclamationEqualsToken, SyntaxKind.NullKeyword))
+            //{
+            //    return null;
+            //}
+
+            BinaryExpressionSyntax equals;
+            if (node.IsKind(SyntaxKind.EqualsExpression, SyntaxKind.NotEqualsExpression))
+            {
+                equals = (BinaryExpressionSyntax)node;
+            }
+            else if (node.IsKind(SyntaxKind.NullLiteralExpression) && node.IsParentKind(SyntaxKind.EqualsExpression, SyntaxKind.NotEqualsExpression))
+            {
+                equals = (BinaryExpressionSyntax)node.Parent;
+            }
+            else
+            {
+                return null;
+            }
+
+            ExpressionSyntax value;
+            if (equals.Right.IsKind(SyntaxKind.NullLiteralExpression))
+            {
+                value = equals.Left;
+            }
+            else if (equals.Left.IsKind(SyntaxKind.NullLiteralExpression))
+            {
+                value = equals.Right;
+            }
+            else
+            {
+                return null;
+            }
+
+            return model.GetSymbolInfo(value).Symbol;
+        }
+
 
         //protected DiagnosticDescriptor GetDiagnosticDescriptor(string id, LocalizableString messageFormat)
         //{
