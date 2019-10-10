@@ -1271,14 +1271,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        public override int Arity
-        {
-            get
-            {
-                return 0;
-            }
-        }
-
         public override ImmutableArray<TypeParameterSymbol> TypeParameters
         {
             get

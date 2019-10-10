@@ -5720,9 +5720,11 @@ class C
             var vt8 = comp.GetWellKnownType(WellKnownType.System_ValueTuple_TRest)
                           .Construct(intType, stringType, intType, stringType, intType, stringType, intType,
                                      comp.GetWellKnownType(WellKnownType.System_ValueTuple_T1).Construct(stringType));
+            Assert.Equal(8, vt8.Arity);
 
             var tuple8WithoutNames = comp.CreateTupleTypeSymbol(vt8, default(ImmutableArray<string>));
 
+            Assert.Equal(8, tuple8WithoutNames.Arity);
             Assert.True(tuple8WithoutNames.IsTupleType);
             Assert.Equal("(System.Int32, System.String, System.Int32, System.String, System.Int32, System.String, System.Int32, System.String)",
                         tuple8WithoutNames.ToTestDisplayString());
@@ -5745,8 +5747,10 @@ class C
             var vt8 = comp.GetWellKnownType(WellKnownType.System_ValueTuple_TRest)
                           .Construct(intType, stringType, intType, stringType, intType, stringType, intType,
                                      comp.GetWellKnownType(WellKnownType.System_ValueTuple_T1).Construct(stringType));
+            Assert.Equal(8, vt8.Arity);
 
             var tuple8WithNames = comp.CreateTupleTypeSymbol(vt8, ImmutableArray.Create("Alice1", "Alice2", "Alice3", "Alice4", "Alice5", "Alice6", "Alice7", "Alice8"));
+            Assert.Equal(8, tuple8WithNames.Arity);
 
             Assert.True(tuple8WithNames.IsTupleType);
             Assert.Equal("(System.Int32 Alice1, System.String Alice2, System.Int32 Alice3, System.String Alice4, System.Int32 Alice5, System.String Alice6, System.Int32 Alice7, System.String Alice8)",
@@ -10564,13 +10568,13 @@ class C
 "System.ITupleInternal.get_Size",
 "System.ITupleInternal.Size" },
                          m2Tuple.MemberNames.ToArray());
-            Assert.Equal(0, m1Tuple.Arity);
+            Assert.Equal(2, m1Tuple.Arity);
             Assert.True(m1Tuple.TypeParameters.IsEmpty);
             Assert.Equal("System.ValueType", m1Tuple.BaseType().ToTestDisplayString());
             Assert.Null(m1Tuple.ComImportCoClass);
             Assert.True(m1Tuple.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics.All(t => t.CustomModifiers.IsEmpty));
             Assert.False(m1Tuple.IsComImport);
-            Assert.True(m1Tuple.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics.IsEmpty);
+            Assert.True(m1Tuple.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics.IsEmpty); // TODO2
             Assert.True(m1Tuple.GetAttributes().IsEmpty);
             Assert.Equal("System.Int32 (System.Int32 a2, System.Int32 b2).Item1", m2Tuple.GetMembers("Item1").Single().ToTestDisplayString());
             Assert.Equal("System.Int32 (System.Int32 a2, System.Int32 b2).a2", m2Tuple.GetMembers("a2").Single().ToTestDisplayString());
@@ -11818,7 +11822,7 @@ class C
                          m1Tuple.MemberNames.ToArray());
             Assert.Equal(new string[] { "Item1", "a2", "Item2", "b2", ".ctor", "ToString" },
                          m2Tuple.MemberNames.ToArray());
-            Assert.Equal(0, m1Tuple.Arity);
+            Assert.Equal(2, m1Tuple.Arity);
             Assert.True(m1Tuple.TypeParameters.IsEmpty);
             Assert.Equal("System.ValueType", m1Tuple.BaseType().ToTestDisplayString());
             Assert.Null(m1Tuple.ComImportCoClass);
@@ -17670,15 +17674,34 @@ class Program
         [Fact]
         public void ConstructToTuple()
         {
-            var tupleComp = CreateCompilation(trivial2uple + trivial3uple + trivialRemainingTuples);
-            var comp = CSharpCompilation.Create("test", references: new[] { MscorlibRef, tupleComp.ToMetadataReference() });
+            var comp = CSharpCompilation.Create("test", references: s_valueTupleRefs);
+
+            ITypeSymbol intType = comp.GetSpecialType(SpecialType.System_Int32);
+            ITypeSymbol stringType = comp.GetSpecialType(SpecialType.System_String);
+
+            var vt1 = (INamedTypeSymbol)comp.GetWellKnownType(WellKnownType.System_ValueTuple_T1);
+            var int1 = vt1.Construct(intType);
+            Assert.True(int1.IsTupleType); // TODO2 test other APIs
+
+            var vt2 = (INamedTypeSymbol)comp.GetWellKnownType(WellKnownType.System_ValueTuple_T2);
+            var int_string1 = vt2.Construct(intType, stringType);
+            Assert.True(int_string1.IsTupleType); // TODO2 test other APIs
+
+            var int_string2 = vt2.Construct(ImmutableArray.Create(intType, stringType), ImmutableArray.Create(CodeAnalysis.NullableAnnotation.None, CodeAnalysis.NullableAnnotation.None));
+            Assert.True(int_string2.IsTupleType);
+        }
+
+        [Fact]
+        public void ConstructToTuple_ErrorType()
+        {
+            var comp = CSharpCompilation.Create("test"); // no ValueTuple
 
             ITypeSymbol intType = comp.GetSpecialType(SpecialType.System_Int32);
             ITypeSymbol stringType = comp.GetSpecialType(SpecialType.System_String);
 
             var namedType = (INamedTypeSymbol)comp.GetWellKnownType(WellKnownType.System_ValueTuple_T2);
             var int_string1 = namedType.Construct(intType, stringType);
-            Assert.True(int_string1.IsTupleType);
+            Assert.True(int_string1.IsTupleType); // TODO2
 
             var int_string2 = namedType.Construct(ImmutableArray.Create(intType, stringType), ImmutableArray.Create(CodeAnalysis.NullableAnnotation.None, CodeAnalysis.NullableAnnotation.None));
             Assert.True(int_string2.IsTupleType);

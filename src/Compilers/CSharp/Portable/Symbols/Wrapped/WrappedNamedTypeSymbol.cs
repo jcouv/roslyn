@@ -42,7 +42,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             get { return _underlyingType.IsImplicitlyDeclared; }
         }
 
-        public override int Arity
+        public sealed override int Arity
         {
             get
             {
