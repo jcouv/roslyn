@@ -1283,7 +1283,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             get
             {
-                return ImmutableArray<TypeWithAnnotations>.Empty;
+                return _underlyingType.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics;
             }
         }
 

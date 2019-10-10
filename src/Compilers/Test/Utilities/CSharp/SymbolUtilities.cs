@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -91,6 +92,21 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
         public static string ToTestDisplayString(this ISymbol symbol)
         {
             return CodeAnalysis.Test.Extensions.SymbolExtensions.ToTestDisplayString(symbol);
+        }
+
+        public static string[] ToTestDisplayStrings(this ImmutableArray<ISymbol> symbols)
+        {
+            return symbols.Select(s => s.ToTestDisplayString()).ToArray();
+        }
+
+        public static string[] ToTestDisplayStrings(this ImmutableArray<ITypeSymbol> symbols)
+        {
+            return symbols.Select(s => s.ToTestDisplayString()).ToArray();
+        }
+
+        public static string[] ToTestDisplayStrings(this ImmutableArray<TypeWithAnnotations> types)
+        {
+            return types.Select(s => s.ToTestDisplayString()).ToArray();
         }
 
         private static SymbolDisplayFormat GetDisplayFormat(bool includeNonNullable)

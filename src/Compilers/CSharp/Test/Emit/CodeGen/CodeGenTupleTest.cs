@@ -3081,9 +3081,14 @@ class C
 
                 var x = nodes.OfType<VariableDeclaratorSyntax>().First();
 
+                var xSymbol = (ILocalSymbol)model.GetDeclaredSymbol(x);
                 Assert.Equal("(System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, "
                     + "System.String, System.Int32, System.Int32, System.Int32, System.Int32) x",
-                    model.GetDeclaredSymbol(x).ToTestDisplayString());
+                    xSymbol.ToTestDisplayString());
+                var type = (INamedTypeSymbol)xSymbol.Type;
+                AssertEx.Equal(
+                    new[] { "System.Int32", "System.Int32", "System.Int32", "System.Int32", "System.Int32", "System.Int32", "System.Int32", "(System.String, System.Int32, System.Int32, System.Int32, System.Int32)", },
+                    type.TypeArguments.ToTestDisplayStrings());
             };
 
             var verifier = CompileAndVerify(source, expectedOutput: @"1 2 3 4 5 6 7 Alice 2 3 4 5", sourceSymbolValidator: validator);
@@ -10574,7 +10579,7 @@ class C
             Assert.Null(m1Tuple.ComImportCoClass);
             Assert.True(m1Tuple.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics.All(t => t.CustomModifiers.IsEmpty));
             Assert.False(m1Tuple.IsComImport);
-            Assert.True(m1Tuple.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics.IsEmpty); // TODO2
+            Assert.Equal(new[] { "System.Int32", "System.Int32" }, m1Tuple.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics.ToTestDisplayStrings());
             Assert.True(m1Tuple.GetAttributes().IsEmpty);
             Assert.Equal("System.Int32 (System.Int32 a2, System.Int32 b2).Item1", m2Tuple.GetMembers("Item1").Single().ToTestDisplayString());
             Assert.Equal("System.Int32 (System.Int32 a2, System.Int32 b2).a2", m2Tuple.GetMembers("a2").Single().ToTestDisplayString());
@@ -11828,7 +11833,7 @@ class C
             Assert.Null(m1Tuple.ComImportCoClass);
             Assert.True(m1Tuple.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics.All(t => t.CustomModifiers.IsEmpty));
             Assert.False(m1Tuple.IsComImport);
-            Assert.True(m1Tuple.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics.IsEmpty);
+            Assert.Equal(new[] { "System.Int32", "System.Int32" }, m1Tuple.TypeArgumentsWithAnnotationsNoUseSiteDiagnostics.ToTestDisplayStrings());
             Assert.True(m1Tuple.GetAttributes().IsEmpty);
             Assert.Equal("System.Int32 (System.Int32 a2, System.Int32 b2).Item1", m2Tuple.GetMembers("Item1").Single().ToTestDisplayString());
             Assert.Equal("System.Int32 (System.Int32 a2, System.Int32 b2).a2", m2Tuple.GetMembers("a2").Single().ToTestDisplayString());
