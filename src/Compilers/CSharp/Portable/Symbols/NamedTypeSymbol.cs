@@ -1621,12 +1621,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         INamedTypeSymbol INamedTypeSymbol.Construct(params ITypeSymbol[] typeArguments)
         {
-            return Construct(ConstructTypeArguments(typeArguments), unbound: false);
+            var namedType = Construct(ConstructTypeArguments(typeArguments), unbound: false);
+            return (NamedTypeSymbol)TupleTypeSymbol.TransformToTupleIfCompatible(namedType);
         }
 
         INamedTypeSymbol INamedTypeSymbol.Construct(ImmutableArray<ITypeSymbol> typeArguments, ImmutableArray<CodeAnalysis.NullableAnnotation> typeArgumentNullableAnnotations)
         {
-            return Construct(ConstructTypeArguments(typeArguments, typeArgumentNullableAnnotations), unbound: false);
+            var namedType = Construct(ConstructTypeArguments(typeArguments, typeArgumentNullableAnnotations), unbound: false);
+            return (NamedTypeSymbol)TupleTypeSymbol.TransformToTupleIfCompatible(namedType);
         }
 
         INamedTypeSymbol INamedTypeSymbol.ConstructUnboundGenericType()

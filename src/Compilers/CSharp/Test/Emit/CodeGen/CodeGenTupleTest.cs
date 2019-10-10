@@ -17668,6 +17668,23 @@ class Program
         }
 
         [Fact]
+        public void ConstructToTuple()
+        {
+            var tupleComp = CreateCompilation(trivial2uple + trivial3uple + trivialRemainingTuples);
+            var comp = CSharpCompilation.Create("test", references: new[] { MscorlibRef, tupleComp.ToMetadataReference() });
+
+            ITypeSymbol intType = comp.GetSpecialType(SpecialType.System_Int32);
+            ITypeSymbol stringType = comp.GetSpecialType(SpecialType.System_String);
+
+            var namedType = (INamedTypeSymbol)comp.GetWellKnownType(WellKnownType.System_ValueTuple_T2);
+            var int_string1 = namedType.Construct(intType, stringType);
+            Assert.True(int_string1.IsTupleType);
+
+            var int_string2 = namedType.Construct(ImmutableArray.Create(intType, stringType), ImmutableArray.Create(CodeAnalysis.NullableAnnotation.None, CodeAnalysis.NullableAnnotation.None));
+            Assert.True(int_string2.IsTupleType); // TODO2
+        }
+
+        [Fact]
         public void ClassifyConversionIdentity01()
         {
             var tupleComp = CreateCompilation(trivial2uple + trivial3uple + trivialRemainingTuples);
@@ -17694,7 +17711,9 @@ class Program
             ITypeSymbol intType = comp.GetSpecialType(SpecialType.System_Int32);
             ITypeSymbol stringType = comp.GetSpecialType(SpecialType.System_String);
 
-            var int_string1 = comp.GetWellKnownType(WellKnownType.System_ValueTuple_T2).Construct((TypeSymbol)intType, (TypeSymbol)stringType);
+            var int_string1 = ((INamedTypeSymbol)comp.GetWellKnownType(WellKnownType.System_ValueTuple_T2)).Construct((ITypeSymbol)intType, (ITypeSymbol)stringType);
+            Assert.True(int_string1.IsTupleType); // TODO2
+            // TODO2 test different overloads of Construct
             var int_string2 = comp.CreateTupleTypeSymbol(ImmutableArray.Create(intType, stringType));
             var int_stringNamed = comp.CreateTupleTypeSymbol(ImmutableArray.Create(intType, stringType), ImmutableArray.Create("a", "b"));
 
