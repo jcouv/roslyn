@@ -3064,7 +3064,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         protected override INamedTypeSymbol CommonGetTypeByMetadataName(string metadataName)
         {
-            return this.GetTypeByMetadataName(metadataName);
+            return (INamedTypeSymbol)TupleTypeSymbol.TransformToTupleIfCompatible(this.GetTypeByMetadataName(metadataName));
         }
 
         protected override INamedTypeSymbol CommonScriptClass

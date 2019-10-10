@@ -17681,7 +17681,19 @@ class Program
             Assert.True(int_string1.IsTupleType);
 
             var int_string2 = namedType.Construct(ImmutableArray.Create(intType, stringType), ImmutableArray.Create(CodeAnalysis.NullableAnnotation.None, CodeAnalysis.NullableAnnotation.None));
-            Assert.True(int_string2.IsTupleType); // TODO2
+            Assert.True(int_string2.IsTupleType);
+            // TODO2
+        }
+
+        [Fact]
+        public void GetTypeByMetadataNamedToTuple()
+        {
+            var tupleComp = CreateCompilation(trivial2uple + trivial3uple + trivialRemainingTuples);
+            var comp = CSharpCompilation.Create("test", references: new[] { MscorlibRef, tupleComp.ToMetadataReference() });
+
+            var vt2 = ((Compilation)comp).GetTypeByMetadataName("System.ValueTuple`2");
+            Assert.True(vt2.IsTupleType);
+            // TODO2
         }
 
         [Fact]
