@@ -2,6 +2,7 @@
 
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Microsoft.CodeAnalysis.Test.Utilities;
@@ -567,6 +568,90 @@ public class C
                 //             _.ToString(); // error
                 Diagnostic(ErrorCode.ERR_NameNotInContext, "_").WithArguments("_").WithLocation(15, 13)
                 );
+        }
+
+        [Fact]
+        public void DiscardParameters_EmittedNames_Lambda()
+        {
+            var comp = CreateCompilation(@"
+using System;
+public class C
+{
+    public static void M()
+    {
+        Action<int, int> f1 = (_, _) =>
+        {
+        };
+    }
+}");
+            comp.VerifyDiagnostics();
+            var comp2 = CreateCompilation("", references: new[] { comp.EmitToImageReference() }, options: TestOptions.ReleaseDll.WithMetadataImportOptions(MetadataImportOptions.All));
+            var c = comp2.GetTypeByMetadataName("C");
+            var closure = (PENamedTypeSymbol)c.GetMember("<>c");
+            var invoke = closure.GetMember("<M>b__0_0");
+            Assert.Equal("void C.<>c.<M>b__0_0(System.Int32 <>_discardParameter0, System.Int32 <>_discardParameter1)", invoke.ToTestDisplayString());
+        }
+
+        [Fact]
+        public void DiscardParameters_EmittedNames_LambdaWithParams()
+        {
+            var comp = CreateCompilation(@"
+using System;
+public class C
+{
+    public static void M()
+    {
+        Action<int, int[]> f1 = (int _, params int[] _) =>
+        {
+        };
+    }
+}");
+            comp.VerifyDiagnostics(
+                // (7,41): error CS1670: params is not valid in this context
+                //         Action<int, int[]> f1 = (int _, params int[] _) =>
+                Diagnostic(ErrorCode.ERR_IllegalParams, "params int[] _").WithLocation(7, 41)
+                );
+        }
+
+        [Fact]
+        public void DiscardParameters_EmittedNames_LambdaWithNamesAndDiscards()
+        {
+            var comp = CreateCompilation(@"
+using System;
+public class C
+{
+    public static void M()
+    {
+        Action<int, string, string, int, string> f1 = (_1, _, _, _2, _) =>
+        {
+        };
+    }
+}");
+            comp.VerifyDiagnostics();
+            var comp2 = CreateCompilation("", references: new[] { comp.EmitToImageReference() }, options: TestOptions.ReleaseDll.WithMetadataImportOptions(MetadataImportOptions.All));
+            var c = comp2.GetTypeByMetadataName("C");
+            var closure = (PENamedTypeSymbol)c.GetMember("<>c");
+            var invoke = closure.GetMember("<M>b__0_0");
+            Assert.Equal("void C.<>c.<M>b__0_0(System.Int32 _1, System.String <>_discardParameter1, System.String <>_discardParameter2, System.Int32 _2, System.String <>_discardParameter4)", invoke.ToTestDisplayString());
+        }
+
+        [Fact]
+        public void DiscardParameters_EmittedNames_LambdaWithNamesAndDiscards_InDelegates()
+        {
+            var comp = CreateCompilation(@"
+public class C
+{
+    public static void M()
+    {
+        System.Func<int, int, long> f1 = delegate(int _, int _) { return 3L; };
+    }
+}");
+            comp.VerifyDiagnostics();
+            var comp2 = CreateCompilation("", references: new[] { comp.EmitToImageReference() }, options: TestOptions.ReleaseDll.WithMetadataImportOptions(MetadataImportOptions.All));
+            var c = comp2.GetTypeByMetadataName("C");
+            var closure = (PENamedTypeSymbol)c.GetMember("<>c");
+            var invoke = closure.GetMember("<M>b__0_0");
+            Assert.Equal("System.Int64 C.<>c.<M>b__0_0(System.Int32 <>_discardParameter0, System.Int32 <>_discardParameter1)", invoke.ToTestDisplayString());
         }
     }
 }
