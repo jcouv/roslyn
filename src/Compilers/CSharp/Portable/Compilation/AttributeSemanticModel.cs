@@ -6,6 +6,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp
 {
@@ -26,10 +27,40 @@ namespace Microsoft.CodeAnalysis.CSharp
             SyntaxTreeSemanticModel parentSemanticModelOpt = null,
             ImmutableDictionary<Symbol, Symbol> parentRemappedSymbolsOpt = null,
             int speculatedPosition = 0)
-            : base(syntax, attributeType, new ExecutableCodeBinder(syntax, rootBinder.ContainingMember(), rootBinder), containingSemanticModelOpt, parentSemanticModelOpt, snapshotManagerOpt: null, parentRemappedSymbolsOpt: parentRemappedSymbolsOpt, speculatedPosition)
+            : base(syntax, attributeType,
+                  AdjustBinderForAttributes(syntax, rootBinder, containingSemanticModelOpt),
+                  containingSemanticModelOpt, parentSemanticModelOpt, snapshotManagerOpt: null, parentRemappedSymbolsOpt: parentRemappedSymbolsOpt, speculatedPosition)
         {
             Debug.Assert(syntax != null);
             _aliasOpt = aliasOpt;
+        }
+
+        private static Binder AdjustBinderForAttributes(SyntaxNode syntax, Binder rootBinder, SyntaxTreeSemanticModel containingSemanticModelOpt)
+        {
+            Symbol attributeMember;
+            if (containingSemanticModelOpt is null)
+            {
+                attributeMember = null;
+            }
+            else if (syntax.Parent.Parent is MethodDeclarationSyntax method)
+            {
+                attributeMember = containingSemanticModelOpt.GetDeclaredMemberSymbol(method);
+            }
+            else if (syntax.Parent.Parent is ConstructorDeclarationSyntax constructor)
+            {
+                attributeMember = containingSemanticModelOpt.GetDeclaredMemberSymbol(constructor);
+            }
+            else if (syntax.Parent.Parent is ParameterSyntax parameter && parameter.Parent.Parent is MemberDeclarationSyntax parameterMember)
+            {
+                attributeMember = containingSemanticModelOpt.GetDeclaredMemberSymbol(parameterMember);
+            }
+            else
+            {
+                attributeMember = null;
+            }
+
+            // Note: we only need the attribute member (not the attribute target) for semantic model scenarios
+            return new ExecutableCodeBinder(syntax, rootBinder.ContainingMember(), new ContextualAttributeBinder(rootBinder, attributeTarget: null, attributeMember));
         }
 
         /// <summary>

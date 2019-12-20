@@ -852,6 +852,11 @@
         <target state="translated">deklaracje zmiennych wyrażeń w inicjatorach elementów członkowskich i zapytaniach</target>
         <note />
       </trans-unit>
+      <trans-unit id="IDS_FeatureExtendedNameofScope">
+        <source>extended nameof scope</source>
+        <target state="new">extended nameof scope</target>
+        <note />
+      </trans-unit>
       <trans-unit id="IDS_FeatureExtensibleFixedStatement">
         <source>extensible fixed statement</source>
         <target state="translated">rozszerzalna instrukcja fixed</target>

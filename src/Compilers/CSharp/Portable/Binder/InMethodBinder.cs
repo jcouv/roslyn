@@ -222,9 +222,16 @@ namespace Microsoft.CodeAnalysis.CSharp
                 _lazyParameterMap = parameterMap;
             }
 
+            bool found = false;
             foreach (var parameterSymbol in parameterMap[name])
             {
                 result.MergeEqual(originalBinder.CheckViability(parameterSymbol, arity, options, null, diagnose, ref useSiteDiagnostics));
+                found = true;
+            }
+
+            if (found && (this.Flags & BinderFlags.InContextualAttributeBinder) != 0)
+            {
+                MessageID.IDS_FeatureExtendedNameofScope.CheckFeatureAvailability(ref useSiteDiagnostics, Compilation);
             }
         }
 

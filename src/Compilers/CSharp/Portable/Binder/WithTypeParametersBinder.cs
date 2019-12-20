@@ -43,9 +43,16 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return;
             }
 
+            bool found = false;
             foreach (var typeParameter in TypeParameterMap[name])
             {
                 result.MergeEqual(originalBinder.CheckViability(typeParameter, arity, options, null, diagnose, ref useSiteDiagnostics));
+                found = true;
+            }
+
+            if (found && (this.Flags & BinderFlags.InContextualAttributeBinder) != 0)
+            {
+                MessageID.IDS_FeatureExtendedNameofScope.CheckFeatureAvailability(ref useSiteDiagnostics, Compilation);
             }
         }
     }

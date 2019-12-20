@@ -136,11 +136,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             get
             {
-                return DecodeFlowAnalysisAttributes(GetDecodedWellKnownAttributeData());
+                return DecodeFlowAnalysisAttributes(GetEarlyDecodedWellKnownAttributeData());
             }
         }
 
-        private static FlowAnalysisAnnotations DecodeFlowAnalysisAttributes(ParameterWellKnownAttributeData attributeData)
+        private static FlowAnalysisAnnotations DecodeFlowAnalysisAttributes(ParameterEarlyWellKnownAttributeData attributeData)
         {
             if (attributeData == null)
             {
@@ -183,7 +183,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         }
 
         internal override ImmutableHashSet<string> NotNullIfParameterNotNull
-            => GetDecodedWellKnownAttributeData()?.NotNullIfParameterNotNull ?? ImmutableHashSet<string>.Empty;
+            => GetEarlyDecodedWellKnownAttributeData()?.NotNullIfParameterNotNull ?? ImmutableHashSet<string>.Empty;
 
         internal bool HasEnumeratorCancellationAttribute
         {
@@ -529,6 +529,50 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 return EarlyDecodeAttributeForDefaultParameterValue(AttributeDescription.DateTimeConstantAttribute, ref arguments);
             }
+            else if (CSharpAttributeData.IsTargetEarlyAttribute(arguments.AttributeType, arguments.AttributeSyntax, AttributeDescription.AllowNullAttribute))
+            {
+                arguments.GetOrCreateData<ParameterEarlyWellKnownAttributeData>().HasAllowNullAttribute = true;
+            }
+            else if (CSharpAttributeData.IsTargetEarlyAttribute(arguments.AttributeType, arguments.AttributeSyntax, AttributeDescription.DisallowNullAttribute))
+            {
+                arguments.GetOrCreateData<ParameterEarlyWellKnownAttributeData>().HasDisallowNullAttribute = true;
+            }
+            else if (CSharpAttributeData.IsTargetEarlyAttribute(arguments.AttributeType, arguments.AttributeSyntax, AttributeDescription.MaybeNullAttribute))
+            {
+                arguments.GetOrCreateData<ParameterEarlyWellKnownAttributeData>().HasMaybeNullAttribute = true;
+            }
+            else if (CSharpAttributeData.IsTargetEarlyAttribute(arguments.AttributeType, arguments.AttributeSyntax, AttributeDescription.MaybeNullWhenAttribute))
+            {
+                if (bindAttribute(ref arguments, out CSharpAttributeData attribute))
+                {
+                    arguments.GetOrCreateData<ParameterEarlyWellKnownAttributeData>().MaybeNullWhenAttribute = DecodeMaybeNullWhenOrNotNullWhenOrDoesNotReturnIfAttribute(AttributeDescription.MaybeNullWhenAttribute, attribute);
+                }
+            }
+            else if (CSharpAttributeData.IsTargetEarlyAttribute(arguments.AttributeType, arguments.AttributeSyntax, AttributeDescription.NotNullAttribute))
+            {
+                arguments.GetOrCreateData<ParameterEarlyWellKnownAttributeData>().HasNotNullAttribute = true;
+            }
+            else if (CSharpAttributeData.IsTargetEarlyAttribute(arguments.AttributeType, arguments.AttributeSyntax, AttributeDescription.NotNullWhenAttribute))
+            {
+                if (bindAttribute(ref arguments, out CSharpAttributeData attribute))
+                {
+                    arguments.GetOrCreateData<ParameterEarlyWellKnownAttributeData>().NotNullWhenAttribute = DecodeMaybeNullWhenOrNotNullWhenOrDoesNotReturnIfAttribute(AttributeDescription.NotNullWhenAttribute, attribute);
+                }
+            }
+            else if (CSharpAttributeData.IsTargetEarlyAttribute(arguments.AttributeType, arguments.AttributeSyntax, AttributeDescription.DoesNotReturnIfAttribute))
+            {
+                if (bindAttribute(ref arguments, out CSharpAttributeData attribute))
+                {
+                    arguments.GetOrCreateData<ParameterEarlyWellKnownAttributeData>().DoesNotReturnIfAttribute = DecodeMaybeNullWhenOrNotNullWhenOrDoesNotReturnIfAttribute(AttributeDescription.DoesNotReturnIfAttribute, attribute);
+                }
+            }
+            else if (CSharpAttributeData.IsTargetEarlyAttribute(arguments.AttributeType, arguments.AttributeSyntax, AttributeDescription.NotNullIfNotNullAttribute))
+            {
+                if (bindAttribute(ref arguments, out CSharpAttributeData attribute))
+                {
+                    arguments.GetOrCreateData<ParameterEarlyWellKnownAttributeData>().AddNotNullIfParameterNotNull(attribute.DecodeNotNullIfNotNullAttribute());
+                }
+            }
             else if (!IsOnPartialImplementation(arguments.AttributeSyntax))
             {
                 if (CSharpAttributeData.IsTargetEarlyAttribute(arguments.AttributeType, arguments.AttributeSyntax, AttributeDescription.CallerLineNumberAttribute))
@@ -546,6 +590,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
 
             return base.EarlyDecodeWellKnownAttribute(ref arguments);
+
+            static bool bindAttribute(ref EarlyDecodeWellKnownAttributeArguments<EarlyWellKnownAttributeBinder, NamedTypeSymbol, AttributeSyntax, AttributeLocation> arguments, out CSharpAttributeData attribute)
+            {
+                attribute = arguments.Binder.GetAttribute(arguments.AttributeSyntax, arguments.AttributeType, generatedDiagnostics: out _);
+                return !attribute.HasErrors;
+            }
         }
 
         private CSharpAttributeData EarlyDecodeAttributeForDefaultParameterValue(AttributeDescription description, ref EarlyDecodeWellKnownAttributeArguments<EarlyWellKnownAttributeBinder, NamedTypeSymbol, AttributeSyntax, AttributeLocation> arguments)
@@ -675,38 +725,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 // NullableAttribute should not be set explicitly.
                 arguments.Diagnostics.Add(ErrorCode.ERR_ExplicitNullableAttribute, arguments.AttributeSyntaxOpt.Location);
             }
-            else if (attribute.IsTargetAttribute(this, AttributeDescription.AllowNullAttribute))
-            {
-                arguments.GetOrCreateData<ParameterWellKnownAttributeData>().HasAllowNullAttribute = true;
-            }
-            else if (attribute.IsTargetAttribute(this, AttributeDescription.DisallowNullAttribute))
-            {
-                arguments.GetOrCreateData<ParameterWellKnownAttributeData>().HasDisallowNullAttribute = true;
-            }
-            else if (attribute.IsTargetAttribute(this, AttributeDescription.MaybeNullAttribute))
-            {
-                arguments.GetOrCreateData<ParameterWellKnownAttributeData>().HasMaybeNullAttribute = true;
-            }
-            else if (attribute.IsTargetAttribute(this, AttributeDescription.MaybeNullWhenAttribute))
-            {
-                arguments.GetOrCreateData<ParameterWellKnownAttributeData>().MaybeNullWhenAttribute = DecodeMaybeNullWhenOrNotNullWhenOrDoesNotReturnIfAttribute(AttributeDescription.MaybeNullWhenAttribute, attribute, arguments.Diagnostics);
-            }
-            else if (attribute.IsTargetAttribute(this, AttributeDescription.NotNullAttribute))
-            {
-                arguments.GetOrCreateData<ParameterWellKnownAttributeData>().HasNotNullAttribute = true;
-            }
-            else if (attribute.IsTargetAttribute(this, AttributeDescription.NotNullWhenAttribute))
-            {
-                arguments.GetOrCreateData<ParameterWellKnownAttributeData>().NotNullWhenAttribute = DecodeMaybeNullWhenOrNotNullWhenOrDoesNotReturnIfAttribute(AttributeDescription.NotNullWhenAttribute, attribute, arguments.Diagnostics);
-            }
-            else if (attribute.IsTargetAttribute(this, AttributeDescription.DoesNotReturnIfAttribute))
-            {
-                arguments.GetOrCreateData<ParameterWellKnownAttributeData>().DoesNotReturnIfAttribute = DecodeMaybeNullWhenOrNotNullWhenOrDoesNotReturnIfAttribute(AttributeDescription.DoesNotReturnIfAttribute, attribute, arguments.Diagnostics);
-            }
-            else if (attribute.IsTargetAttribute(this, AttributeDescription.NotNullIfNotNullAttribute))
-            {
-                arguments.GetOrCreateData<ParameterWellKnownAttributeData>().AddNotNullIfParameterNotNull(attribute.DecodeNotNullIfNotNullAttribute());
-            }
             else if (attribute.IsTargetAttribute(this, AttributeDescription.EnumeratorCancellationAttribute))
             {
                 arguments.GetOrCreateData<ParameterWellKnownAttributeData>().HasEnumeratorCancellationAttribute = true;
@@ -714,7 +732,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        private static bool? DecodeMaybeNullWhenOrNotNullWhenOrDoesNotReturnIfAttribute(AttributeDescription description, CSharpAttributeData attribute, DiagnosticBag diagnostics)
+        private static bool? DecodeMaybeNullWhenOrNotNullWhenOrDoesNotReturnIfAttribute(AttributeDescription description, CSharpAttributeData attribute)
         {
             var arguments = attribute.CommonConstructorArguments;
             return arguments.Length == 1 && arguments[0].TryDecodeValue(SpecialType.System_Boolean, out bool value) ?

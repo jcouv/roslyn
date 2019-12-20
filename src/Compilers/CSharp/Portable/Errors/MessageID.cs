@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Roslyn.Utilities;
 
@@ -187,6 +188,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         IDS_FeatureSwitchExpression = MessageBase + 12763,
         IDS_FeatureAsyncUsing = MessageBase + 12764,
         IDS_FeatureLambdaDiscardParameters = MessageBase + 12765,
+        IDS_FeatureExtendedNameofScope = MessageBase + 12766,
     }
 
     // Message IDs may refer to strings that need to be localized.
@@ -265,6 +267,20 @@ namespace Microsoft.CodeAnalysis.CSharp
             return true;
         }
 
+        internal static bool CheckFeatureAvailability(
+            this MessageID feature,
+            ref HashSet<DiagnosticInfo> diagnostics,
+            Compilation compilation)
+        {
+            if (GetFeatureAvailabilityDiagnosticInfo(feature, (CSharpCompilation)compilation) is { } diagInfo)
+            {
+                diagnostics ??= new HashSet<DiagnosticInfo>();
+                diagnostics.Add(diagInfo);
+                return false;
+            }
+            return true;
+        }
+
         internal static CSDiagnosticInfo? GetFeatureAvailabilityDiagnosticInfo(this MessageID feature, CSharpParseOptions options)
             => options.IsFeatureEnabled(feature) ? null : GetDisabledFeatureDiagnosticInfo(feature, options.LanguageVersion);
 
@@ -295,6 +311,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // Preview features.
                 case MessageID.IDS_FeatureLambdaDiscardParameters: // semantic check
+                case MessageID.IDS_FeatureExtendedNameofScope: // semantic check
                     return LanguageVersion.Preview;
 
                 // C# 8.0 features.

@@ -1534,7 +1534,19 @@ namespace Microsoft.CodeAnalysis.CSharp
             var argument = node.ArgumentList.Arguments[0].Expression;
             string name = "";
             // We relax the instance-vs-static requirement for top-level member access expressions by creating a NameofBinder binder.
-            var nameofBinder = new NameofBinder(argument, this);
+
+            NameofBinder nameofBinder;
+            if ((this.Flags & BinderFlags.InContextualAttributeBinder) != 0 &&
+                getContextualAttributeBinder().AttributedMember is MethodSymbol attributeMember)
+            {
+                // A nameof inside an attribute gets access to additional scopes containing the member's parameters and type parameters
+                nameofBinder = new NameofBinder(argument, new InMethodBinder(attributeMember, new WithMethodTypeParametersBinder(attributeMember, this)));
+            }
+            else
+            {
+                nameofBinder = new NameofBinder(argument, this);
+            }
+
             var boundArgument = nameofBinder.BindExpression(argument, diagnostics);
             if (!boundArgument.HasAnyErrors && CheckSyntaxForNameofArgument(argument, out name, diagnostics) && boundArgument.Kind == BoundKind.MethodGroup)
             {
@@ -1551,6 +1563,24 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             return new BoundNameOfOperator(node, boundArgument, ConstantValue.Create(name), Compilation.GetSpecialType(SpecialType.System_String));
+
+            ContextualAttributeBinder getContextualAttributeBinder()
+            {
+                var current = this;
+
+                do
+                {
+                    if (current is ContextualAttributeBinder contextualAttributeBinder)
+                    {
+                        return contextualAttributeBinder;
+                    }
+
+                    current = current.Next;
+                }
+                while (current != null);
+
+                throw ExceptionUtilities.Unreachable;
+            }
         }
 
         private void EnsureNameofExpressionSymbols(BoundMethodGroup methodGroup, DiagnosticBag diagnostics)

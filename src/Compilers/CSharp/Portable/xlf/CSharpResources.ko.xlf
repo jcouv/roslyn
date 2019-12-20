@@ -852,6 +852,11 @@
         <target state="translated">멤버 이니셜라이저 및 쿼리에서 식 변수 선언</target>
         <note />
       </trans-unit>
+      <trans-unit id="IDS_FeatureExtendedNameofScope">
+        <source>extended nameof scope</source>
+        <target state="new">extended nameof scope</target>
+        <note />
+      </trans-unit>
       <trans-unit id="IDS_FeatureExtensibleFixedStatement">
         <source>extensible fixed statement</source>
         <target state="translated">확장 가능한 fixed 문</target>

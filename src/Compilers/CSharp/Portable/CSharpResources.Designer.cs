@@ -11384,6 +11384,15 @@ namespace Microsoft.CodeAnalysis.CSharp {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to extended nameof scope.
+        /// </summary>
+        internal static string IDS_FeatureExtendedNameofScope {
+            get {
+                return ResourceManager.GetString("IDS_FeatureExtendedNameofScope", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to extensible fixed statement.
         /// </summary>
         internal static string IDS_FeatureExtensibleFixedStatement {

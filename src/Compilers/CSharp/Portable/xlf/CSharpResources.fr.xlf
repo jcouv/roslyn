@@ -852,6 +852,11 @@
         <target state="translated">déclaration de variables d'expression dans les initialiseurs de membres et les requêtes</target>
         <note />
       </trans-unit>
+      <trans-unit id="IDS_FeatureExtendedNameofScope">
+        <source>extended nameof scope</source>
+        <target state="new">extended nameof scope</target>
+        <note />
+      </trans-unit>
       <trans-unit id="IDS_FeatureExtensibleFixedStatement">
         <source>extensible fixed statement</source>
         <target state="translated">instruction fixed extensible</target>

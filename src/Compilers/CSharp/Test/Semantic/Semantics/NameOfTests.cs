@@ -2,11 +2,8 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-using System;
-using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
-using Microsoft.CodeAnalysis.Test.Utilities;
 using Roslyn.Test.Utilities;
 using Xunit;
 using System.Threading;
@@ -16,6 +13,578 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
 {
     public class NameofTests : CSharpTestBase
     {
+        [Fact]
+        public void NameOfOnMethod_LangVersion()
+        {
+            var source = @"
+class C
+{
+    [My(nameof(parameter), nameof(TParameter))]
+    void M<TParameter>(string parameter) { }
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name1, string name2) { }
+}
+";
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics(
+                // (4,16): error CS8652: The feature 'extended nameof scope' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     [My(nameof(parameter), nameof(TParameter))]
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "parameter").WithArguments("extended nameof scope").WithLocation(4, 16),
+                // (4,35): error CS8652: The feature 'extended nameof scope' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     [My(nameof(parameter), nameof(TParameter))]
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "TParameter").WithArguments("extended nameof scope").WithLocation(4, 35)
+                );
+
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void NameOfOnConstructor_LangVersion()
+        {
+            var source = @"
+class C
+{
+    [My(nameof(parameter))]
+    C(string parameter) { }
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name) { }
+}
+";
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics(
+                // (4,16): error CS8652: The feature 'extended nameof scope' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     [My(nameof(parameter))]
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "parameter").WithArguments("extended nameof scope").WithLocation(4, 16)
+                );
+            CheckSymbolInNameof(comp, "nameof(parameter)", SymbolKind.Parameter);
+
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics();
+            CheckSymbolInNameof(comp, "nameof(parameter)", SymbolKind.Parameter);
+        }
+
+        [Fact]
+        public void ConstantOnMethod_LangVersion_CompatScenario()
+        {
+            var source = @"
+class C
+{
+    const string constant = """";
+    [My(constant)]
+    void M(string constant) { }
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name) { }
+}
+";
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics();
+            checkSymbol(comp);
+
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics();
+            checkSymbol(comp);
+
+            // Binding outside nameof unaffected
+
+            static void checkSymbol(CSharpCompilation comp)
+            {
+                var tree = comp.SyntaxTrees.Single();
+                var model = comp.GetSemanticModel(tree, ignoreAccessibility: false);
+                var expression = tree.GetRoot().DescendantNodes().OfType<AttributeArgumentSyntax>().Single().Expression;
+                Assert.Equal("constant", expression.ToString());
+                Assert.Equal(SymbolKind.Field, model.GetSymbolInfo(expression).Symbol.Kind);
+            }
+        }
+
+        [Fact]
+        public void MethodNamedNameof()
+        {
+            var source = @"
+class C
+{
+    const string constant = """";
+    [My(nameof(constant))]
+    void M(string constant) { }
+
+    string nameof(string x) => throw null;
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name) { }
+}
+";
+            var comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics(
+                // (5,9): error CS0120: An object reference is required for the non-static field, method, or property 'C.nameof(string)'
+                //     [My(nameof(constant))]
+                Diagnostic(ErrorCode.ERR_ObjectRequired, "nameof").WithArguments("C.nameof(string)").WithLocation(5, 9)
+                );
+            checkSymbol(comp);
+
+            static void checkSymbol(CSharpCompilation comp)
+            {
+                var tree = comp.SyntaxTrees.Single();
+                var model = comp.GetSemanticModel(tree, ignoreAccessibility: false);
+                var expression = tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().Single().ArgumentList.Arguments[0].Expression;
+                Assert.Equal("constant", expression.ToString());
+                Assert.Equal(SymbolKind.Field, model.GetSymbolInfo(expression).Symbol.Kind);
+            }
+        }
+
+        [Fact]
+        public void ConstantOnConstructor_LangVersion_CompatScenario()
+        {
+            var source = @"
+class C
+{
+    const string constant = """";
+    [My(constant)]
+    C(string constant) { }
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name) { }
+}
+";
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics();
+            checkSymbol(comp);
+
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics();
+            checkSymbol(comp);
+
+            // Binding outside nameof unaffected
+
+            static void checkSymbol(CSharpCompilation comp)
+            {
+                var tree = comp.SyntaxTrees.Single();
+                var model = comp.GetSemanticModel(tree, ignoreAccessibility: false);
+                var expression = tree.GetRoot().DescendantNodes().OfType<AttributeArgumentSyntax>().Single().Expression;
+                Assert.Equal("constant", expression.ToString());
+                Assert.Equal(SymbolKind.Field, model.GetSymbolInfo(expression).Symbol.Kind);
+            }
+        }
+
+        [Fact]
+        public void ConstantOnIndexer_LangVersion_CompatScenario()
+        {
+            var source = @"
+class C
+{
+    const string constant = """";
+    [My(constant)]
+    int this[string constant] { get { throw null; } set { throw null; } }
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name) { }
+}
+";
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics();
+            checkSymbol(comp);
+
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics();
+            checkSymbol(comp);
+
+            // Binding outside nameof unaffected
+
+            static void checkSymbol(CSharpCompilation comp)
+            {
+                var tree = comp.SyntaxTrees.Single();
+                var model = comp.GetSemanticModel(tree, ignoreAccessibility: false);
+                var expression = tree.GetRoot().DescendantNodes().OfType<AttributeArgumentSyntax>().Single().Expression;
+                Assert.Equal("constant", expression.ToString());
+                Assert.Equal(SymbolKind.Field, model.GetSymbolInfo(expression).Symbol.Kind);
+            }
+        }
+
+        [Fact]
+        public void NameofOnIndexer_LangVersion()
+        {
+            var source = @"
+class C
+{
+    const string constant = """";
+    [My(nameof(constant))]
+    int this[string constant] { get { throw null; } set { throw null; } }
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name) { }
+}
+";
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics();
+            checkSymbol(comp);
+
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics();
+            checkSymbol(comp);
+
+            static void checkSymbol(CSharpCompilation comp)
+            {
+                var tree = comp.SyntaxTrees.Single();
+                var model = comp.GetSemanticModel(tree, ignoreAccessibility: false);
+                var expression = tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().Single().ArgumentList.Arguments[0].Expression;
+                Assert.Equal("constant", expression.ToString());
+                Assert.Equal(SymbolKind.Field, model.GetSymbolInfo(expression).Symbol.Kind);
+            }
+        }
+
+        [Fact]
+        public void NameOfOnMethod_LangVersion_CompatScenario()
+        {
+            var source = @"
+class C
+{
+    const string field = """";
+    [My(nameof(field))]
+    void M<TParameter>(string field) { }
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name) { }
+}
+";
+            // Binding inside nameof now finds parameter instead of constant field
+
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics(
+                // (5,16): error CS8652: The feature 'extended nameof scope' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     [My(nameof(field))]
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "field").WithArguments("extended nameof scope").WithLocation(5, 16)
+                );
+            CheckSymbolInNameof(comp, "nameof(field)", SymbolKind.Parameter);
+
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics();
+            CheckSymbolInNameof(comp, "nameof(field)", SymbolKind.Parameter);
+        }
+
+        static void CheckSymbolInNameof(CSharpCompilation comp, string expectedSyntax, SymbolKind expectedKind)
+        {
+            var tree = comp.SyntaxTrees.Single();
+            var model = comp.GetSemanticModel(tree, ignoreAccessibility: false);
+            var invocation = tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i => i.Expression.ToString() == "nameof").Single();
+            Assert.Equal(expectedSyntax, invocation.ToString());
+            Assert.Equal(expectedKind, model.GetSymbolInfo(invocation.ArgumentList.Arguments.Single().Expression).Symbol.Kind);
+        }
+
+        [Fact]
+        public void NameOfOnMethod_Parameter()
+        {
+            var source = @"
+class C
+{
+    [My(nameof(parameter))]
+    void M(string parameter) { }
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name) { }
+}
+";
+            var comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview);
+            CheckSymbolInNameof(comp, "nameof(parameter)", SymbolKind.Parameter);
+            comp.VerifyDiagnostics();
+            // TODO2 test speculative semantic model
+        }
+
+        [Fact]
+        public void NameOfOnMethod_TypeParameter()
+        {
+            var source = @"
+class C
+{
+    [My(nameof(TParameter))]
+    void M<TParameter>() { }
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name) { }
+}
+";
+            var comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview);
+            CheckSymbolInNameof(comp, "nameof(TParameter)", SymbolKind.TypeParameter);
+            comp.VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void NameOfOnType_TypeParameter()
+        {
+            var source = @"
+[My(nameof(TParameter))]
+class C<TParameter>
+{
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name) { }
+}
+";
+            var comp = CreateCompilation(source, parseOptions: TestOptions.Regular8);
+            comp.VerifyDiagnostics();
+            CheckSymbolInNameof(comp, "nameof(TParameter)", SymbolKind.TypeParameter);
+        }
+
+        [Fact]
+        public void NameOfOnAssemblyAttribute_TypeParameter()
+        {
+            var source = @"
+[assembly: My(nameof(x))]
+
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name) { }
+}
+";
+            var comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics(
+                // (2,22): error CS0103: The name 'x' does not exist in the current context
+                // [assembly: My(nameof(x))]
+                Diagnostic(ErrorCode.ERR_NameNotInContext, "x").WithArguments("x").WithLocation(2, 22)
+                );
+
+            var tree = comp.SyntaxTrees.Single();
+            var model = comp.GetSemanticModel(tree, ignoreAccessibility: false);
+            var invocation = tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i => i.Expression.ToString() == "nameof").Single();
+            Assert.Equal("nameof(x)", invocation.ToString());
+            Assert.Null(model.GetSymbolInfo(invocation.ArgumentList.Arguments.Single().Expression).Symbol);
+        }
+
+        [Fact]
+        public void NameOfOnLocalFunction()
+        {
+            var source = @"
+class C
+{
+    void M()
+    {
+        [My(nameof(TParameter), nameof(parameter))]
+        void local<TParameter>(string parameter) { }
+    }
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name1, string name2) { }
+}
+";
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics(
+                // (5,6): error CS1513: } expected
+                //     {
+                Diagnostic(ErrorCode.ERR_RbraceExpected, "").WithLocation(5, 6),
+                // (6,20): error CS8652: The feature 'extended nameof scope' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //         [My(nameof(TParameter), nameof(parameter))]
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "TParameter").WithArguments("extended nameof scope").WithLocation(6, 20),
+                // (6,40): error CS8652: The feature 'extended nameof scope' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //         [My(nameof(TParameter), nameof(parameter))]
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "parameter").WithArguments("extended nameof scope").WithLocation(6, 40),
+                // (9,1): error CS1022: Type or namespace definition, or end-of-file expected
+                // }
+                Diagnostic(ErrorCode.ERR_EOFExpected, "}").WithLocation(9, 1)
+                );
+
+            // Once local function allow attributes, this should parse and bind
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics(
+                // (5,6): error CS1513: } expected
+                //     {
+                Diagnostic(ErrorCode.ERR_RbraceExpected, "").WithLocation(5, 6),
+                // (9,1): error CS1022: Type or namespace definition, or end-of-file expected
+                // }
+                Diagnostic(ErrorCode.ERR_EOFExpected, "}").WithLocation(9, 1)
+                );
+        }
+
+        [Fact]
+        public void NameOfOnLocalFunction_OuterVariables()
+        {
+            var source = @"
+class C
+{
+    void M<TParameter>(string parameter)
+    {
+        [My(nameof(TParameter), nameof(parameter))]
+        void local<TParameter>(string parameter) { }
+    }
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name1, string name2) { }
+}
+";
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics(
+                // (5,6): error CS1513: } expected
+                //     {
+                Diagnostic(ErrorCode.ERR_RbraceExpected, "").WithLocation(5, 6),
+                // (6,20): error CS8652: The feature 'extended nameof scope' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //         [My(nameof(TParameter), nameof(parameter))]
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "TParameter").WithArguments("extended nameof scope").WithLocation(6, 20),
+                // (6,40): error CS8652: The feature 'extended nameof scope' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //         [My(nameof(TParameter), nameof(parameter))]
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "parameter").WithArguments("extended nameof scope").WithLocation(6, 40),
+                // (9,1): error CS1022: Type or namespace definition, or end-of-file expected
+                // }
+                Diagnostic(ErrorCode.ERR_EOFExpected, "}").WithLocation(9, 1)
+                );
+
+            // Once local function allow attributes, this should parse and bind to outter variables
+            // Even though this is not a legacy scenario, we'll use the same fallback logic (outter comes first)
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics(
+                // (5,6): error CS1513: } expected
+                //     {
+                Diagnostic(ErrorCode.ERR_RbraceExpected, "").WithLocation(5, 6),
+                // (9,1): error CS1022: Type or namespace definition, or end-of-file expected
+                // }
+                Diagnostic(ErrorCode.ERR_EOFExpected, "}").WithLocation(9, 1)
+                );
+        }
+
+        [Fact]
+        public void NameOfOnMethodParameter()
+        {
+            var source = @"
+class C
+{
+    void M([My(nameof(parameter))] string parameter)
+    {
+    }
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name) { }
+}
+";
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics(
+                // (4,23): error CS8652: The feature 'extended nameof scope' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     void M([My(nameof(parameter))] string parameter)
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "parameter").WithArguments("extended nameof scope").WithLocation(4, 23)
+                );
+            CheckSymbolInNameof(comp, "nameof(parameter)", SymbolKind.Parameter);
+
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics();
+            CheckSymbolInNameof(comp, "nameof(parameter)", SymbolKind.Parameter);
+        }
+
+        [Fact]
+        public void NameOfOnMethodParameter_ReferencingOtherParameter()
+        {
+            var source = @"
+class C
+{
+    void M([My(nameof(parameter))] string x,  string parameter)
+    {
+    }
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name) { }
+}
+";
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics(
+                // (4,23): error CS8652: The feature 'extended nameof scope' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     void M([My(nameof(parameter))] string x,  string parameter)
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "parameter").WithArguments("extended nameof scope").WithLocation(4, 23)
+                );
+            CheckSymbolInNameof(comp, "nameof(parameter)", SymbolKind.Parameter);
+
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics();
+            CheckSymbolInNameof(comp, "nameof(parameter)", SymbolKind.Parameter);
+        }
+
+        [Fact]
+        public void NameOfOnConstructorParameter()
+        {
+            var source = @"
+class C
+{
+    C([My(nameof(parameter))] string parameter) { }
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name) { }
+}
+";
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics(
+                // (4,18): error CS8652: The feature 'extended nameof scope' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     C([My(nameof(parameter))] string parameter) { }
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "parameter").WithArguments("extended nameof scope").WithLocation(4, 18)
+                );
+            CheckSymbolInNameof(comp, "nameof(parameter)", SymbolKind.Parameter);
+
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics();
+            CheckSymbolInNameof(comp, "nameof(parameter)", SymbolKind.Parameter);
+        }
+
+        [Fact]
+        public void NameOfOnMethod_WithOutVar()
+        {
+            var source = @"
+class C
+{
+    [My(M2(out var parameter), nameof(parameter))]
+    void M(string parameter) { }
+
+    static string M2(out string p) => throw null;
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string a, string b) { }
+}
+";
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics(
+                // (4,9): error CS0182: An attribute argument must be a constant expression, typeof expression or array creation expression of an attribute parameter type
+                //     [My(M2(out var parameter), nameof(parameter))]
+                Diagnostic(ErrorCode.ERR_BadAttributeArgument, "M2(out var parameter)").WithLocation(4, 9),
+                // (4,39): error CS8652: The feature 'extended nameof scope' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     [My(M2(out var parameter), nameof(parameter))]
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "parameter").WithArguments("extended nameof scope").WithLocation(4, 39)
+                );
+            CheckSymbolInNameof(comp, "nameof(parameter)", SymbolKind.Parameter);
+        }
+
+        [Fact]
+        public void NameOfOnMethod_OnlyInNameOf()
+        {
+            var source = @"
+class C
+{
+    [My(parameter)]
+    void M(string parameter) { }
+}
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name) { }
+}
+";
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics(
+                // (4,9): error CS0103: The name 'parameter' does not exist in the current context
+                //     [My(parameter)]
+                Diagnostic(ErrorCode.ERR_NameNotInContext, "parameter").WithArguments("parameter").WithLocation(4, 9)
+                );
+        }
+
         [Fact]
         public void TestGoodNameofInstances()
         {
@@ -222,7 +791,7 @@ class Program
     void ParsedAsInvocation()
     {
         string s;
-        // parsed as invocation expression 
+        // parsed as invocation expression
         s = nameof();
         s = nameof(this);
         s = nameof(this.ParsedAsInvocation);
@@ -521,7 +1090,7 @@ class Program
         Console.WriteLine(arg);
     }
 
-    // in attribute with string concatenation 
+    // in attribute with string concatenation
     [Obsolete(""Please do not use this method: "" + nameof(Program.Old), true)]
     static void Old() { }
 }";
@@ -1364,7 +1933,7 @@ class C
     public static string Static1 = null;
     public string Instance2 => string.Empty;
     public static string Static2 => string.Empty;
-      
+
     public void M()
     {
         nameof(C.Instance1).Verify(""Instance1"");

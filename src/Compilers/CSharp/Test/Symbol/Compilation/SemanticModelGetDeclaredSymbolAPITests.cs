@@ -4148,6 +4148,7 @@ static class S
         [Fact]
         public void BindSpeculativeAttribute()
         {
+            // TODO2
             var source = @"
 using System;
 using O=System.ObsoleteAttribute;
@@ -4227,6 +4228,7 @@ class C {
         [Fact]
         public void TestGetSpeculativeSemanticModelForAttribute()
         {
+            // TODO2
             var source = @"
 using System;
 using O=System.ObsoleteAttribute;
