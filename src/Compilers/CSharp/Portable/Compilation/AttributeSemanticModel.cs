@@ -6,6 +6,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp
 {
@@ -26,10 +27,70 @@ namespace Microsoft.CodeAnalysis.CSharp
             SyntaxTreeSemanticModel? parentSemanticModelOpt = null,
             ImmutableDictionary<Symbol, Symbol>? parentRemappedSymbolsOpt = null,
             int speculatedPosition = 0)
-            : base(syntax, attributeType, new ExecutableCodeBinder(syntax, rootBinder.ContainingMember(), rootBinder), containingSemanticModelOpt, parentSemanticModelOpt, snapshotManagerOpt: null, parentRemappedSymbolsOpt: parentRemappedSymbolsOpt, speculatedPosition)
+            : base(syntax, attributeType,
+                  AdjustBinderForAttributes(syntax, rootBinder, containingSemanticModelOpt),
+                  containingSemanticModelOpt, parentSemanticModelOpt, snapshotManagerOpt: null, parentRemappedSymbolsOpt: parentRemappedSymbolsOpt, speculatedPosition)
         {
             Debug.Assert(syntax != null);
             _aliasOpt = aliasOpt;
+        }
+
+        private static Binder AdjustBinderForAttributes(SyntaxNode syntax, Binder rootBinder, SyntaxTreeSemanticModel containingSemanticModelOpt)
+        {
+            Symbol? attributeMember = getAttributeMember(syntax, containingSemanticModelOpt);
+
+            // Note: we only need the attribute member (not the attribute target) for semantic model scenarios
+            return new ExecutableCodeBinder(syntax, rootBinder.ContainingMember(), new ContextualAttributeBinder(rootBinder, attributeTarget: null, attributeMember));
+
+            Symbol? getAttributeMember(SyntaxNode syntax, SyntaxTreeSemanticModel containingSemanticModelOpt)
+            {
+                if (containingSemanticModelOpt is null)
+                {
+                    return null;
+                }
+
+                var grandParent = syntax?.Parent?.Parent;
+                if (tryGetAttributeMemberForMethod(grandParent, out var attributeMemberForMethod))
+                {
+                    return attributeMemberForMethod;
+                }
+
+                if (grandParent is ParameterSyntax parameter
+                    && tryGetAttributeMemberForMethod(parameter?.Parent?.Parent, out var attributeMemberForParameter))
+                {
+                    return attributeMemberForParameter;
+                }
+
+                return null;
+            }
+
+            bool tryGetAttributeMemberForMethod(SyntaxNode? syntax, out Symbol? found)
+            {
+                switch (syntax)
+                {
+                    case MethodDeclarationSyntax method:
+                        found = containingSemanticModelOpt.GetDeclaredMemberSymbol(method);
+                        return true;
+
+                    case LocalFunctionStatementSyntax localFunction:
+                        found = ((Symbols.PublicModel.Symbol)containingSemanticModelOpt.GetDeclaredSymbol(localFunction)).UnderlyingSymbol;
+                        return true;
+
+                    case ConstructorDeclarationSyntax constructor:
+                        found = containingSemanticModelOpt.GetDeclaredMemberSymbol(constructor);
+                        return true;
+
+                    case AnonymousFunctionExpressionSyntax anonymousFunction:
+                        var publicSymbol = containingSemanticModelOpt.GetSymbolInfo(anonymousFunction).Symbol;
+                        Debug.Assert(publicSymbol is not null);
+                        found = ((Symbols.PublicModel.Symbol)publicSymbol).UnderlyingSymbol;
+                        return true;
+
+                    default:
+                        found = null;
+                        return false;
+                }
+            }
         }
 
         /// <summary>

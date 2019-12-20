@@ -124,7 +124,7 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests
             return symbols.Select(s => s.ToDisplayString(format)).ToArray();
         }
 
-        public static string ToTestDisplayString(this ISymbol symbol, bool includeNonNullable)
+        public static string ToTestDisplayString(this ISymbol symbol, bool includeNonNullable = false)
         {
             SymbolDisplayFormat format = GetDisplayFormat(includeNonNullable);
             return symbol.ToDisplayString(format);

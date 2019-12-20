@@ -3,7 +3,10 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
+using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp
@@ -244,6 +247,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         IDS_FeatureCacheStaticMethodGroupConversion = MessageBase + 12816,
         IDS_FeatureRawStringLiterals = MessageBase + 12817,
+        IDS_FeatureExtendedNameofScope = MessageBase + 12818,
     }
 
     // Message IDs may refer to strings that need to be localized.
@@ -322,6 +326,22 @@ namespace Microsoft.CodeAnalysis.CSharp
             return true;
         }
 
+        internal static bool CheckFeatureAvailability(
+            this MessageID feature,
+            ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo,
+            Compilation compilation)
+        {
+            if (GetFeatureAvailabilityDiagnosticInfo(feature, (CSharpCompilation)compilation) is { } diagInfo)
+            {
+                // TODO2
+                useSiteInfo.AddDiagnostics(ImmutableArray.Create(diagInfo));
+                //diagnostics ??= new HashSet<DiagnosticInfo>();
+                //diagnostics.Add(diagInfo);
+                return false;
+            }
+            return true;
+        }
+
         internal static CSDiagnosticInfo? GetFeatureAvailabilityDiagnosticInfo(this MessageID feature, CSharpParseOptions options)
             => options.IsFeatureEnabled(feature) ? null : GetDisabledFeatureDiagnosticInfo(feature, options.LanguageVersion);
 
@@ -360,6 +380,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case MessageID.IDS_FeatureListPattern: // semantic check
                 case MessageID.IDS_FeatureCacheStaticMethodGroupConversion: // lowering check
                 case MessageID.IDS_ParameterNullChecking: // syntax check
+                case MessageID.IDS_FeatureExtendedNameofScope: // semantic check
                     return LanguageVersion.Preview;
 
                 // C# 10.0 features.

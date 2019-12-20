@@ -3542,6 +3542,28 @@ class C { }";
             Assert.Equal("System.ObsoleteAttribute..ctor(System.String message)", symbolInfo.Symbol.ToTestDisplayString());
         }
 
+        [Fact]
+        public void BindSpeculativeAttributeWithNameOfTypeParameter()
+        {
+            new ObsoleteAttribute("goo");
+
+            var source =
+@"using System;
+class C<T> { }";
+            var compilation = CreateCompilation(source);
+
+            var tree = compilation.SyntaxTrees.Single();
+            var model = compilation.GetSemanticModel(tree);
+
+            var position = tree.GetText().ToString().IndexOf("class C<T> {", StringComparison.Ordinal);
+            var attr2 = ParseAttributeSyntax("[ObsoleteAttribute(nameof(T))]");
+            model.TryGetSpeculativeSemanticModel(position, attr2, out SemanticModel model2);
+
+            var symbolInfo = model2.GetSymbolInfo(attr2);
+            Assert.Equal(CandidateReason.None, symbolInfo.CandidateReason);
+            Assert.Equal("System.ObsoleteAttribute..ctor(System.String message)", symbolInfo.Symbol.ToTestDisplayString());
+        }
+
         private AttributeSyntax ParseAttributeSyntax(string source)
         {
             return SyntaxFactory.ParseCompilationUnit(source + " class X {}").Members.First().AsTypeDeclarationSyntax().AttributeLists.First().Attributes.First();

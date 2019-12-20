@@ -2358,7 +2358,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return ((NamespaceSymbol)container).ImplicitType;
         }
 
-        private Symbol GetDeclaredMemberSymbol(CSharpSyntaxNode declarationSyntax)
+        internal Symbol GetDeclaredMemberSymbol(CSharpSyntaxNode declarationSyntax)
         {
             CheckSyntaxNode(declarationSyntax);
 

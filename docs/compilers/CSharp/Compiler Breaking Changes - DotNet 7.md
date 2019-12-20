@@ -98,3 +98,16 @@ https://github.com/dotnet/roslyn/issues/57750
         public S() { Y = 0; } // ok
     }
     ```
+
+6. <a name="7"/> In C# 10, attributes were allowed on local functions and lambdas. In C# 11, method parameters are introduced in scope of `nameof` expressions in attributes on methods and methods parameters. This result an a language version diagnostic when using the new compiler but language version 10 where `nameof(parameter)` was allowed in C# 10 but takes a new meaning in C# 11:
+
+    ```
+    void M(string parameter)
+    {
+        local(null);
+
+        [My(nameof(parameter))] // Error: need to use language version 11 to use the 'extended nameof scope' feature.
+        void local(string parameter) { }
+    }
+    ```
+

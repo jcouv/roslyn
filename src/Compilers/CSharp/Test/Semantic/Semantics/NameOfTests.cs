@@ -222,7 +222,7 @@ class Program
     void ParsedAsInvocation()
     {
         string s;
-        // parsed as invocation expression 
+        // parsed as invocation expression
         s = nameof();
         s = nameof(this);
         s = nameof(this.ParsedAsInvocation);
@@ -503,7 +503,7 @@ class Program
         Console.WriteLine(arg);
     }
 
-    // in attribute with string concatenation 
+    // in attribute with string concatenation
     [Obsolete(""Please do not use this method: "" + nameof(Program.Old), true)]
     static void Old() { }
 }";
@@ -1346,7 +1346,7 @@ class C
     public static string Static1 = null;
     public string Instance2 => string.Empty;
     public static string Static2 => string.Empty;
-      
+
     public void M()
     {
         nameof(C.Instance1).Verify(""Instance1"");
