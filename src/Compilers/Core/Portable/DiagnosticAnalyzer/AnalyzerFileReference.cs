@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -89,8 +90,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                     InitializeDisplayAndId();
                 }
 
-                // Use MemberNotNull when available https://github.com/dotnet/roslyn/issues/41964
-                return _lazyDisplay!;
+                return _lazyDisplay;
             }
         }
 
@@ -103,11 +103,11 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                     InitializeDisplayAndId();
                 }
 
-                // Use MemberNotNull when available https://github.com/dotnet/roslyn/issues/41964
-                return _lazyIdentity!;
+                return _lazyIdentity;
             }
         }
 
+        [MemberNotNull(nameof(_lazyDisplay), nameof(_lazyIdentity))]
         private void InitializeDisplayAndId()
         {
             try
