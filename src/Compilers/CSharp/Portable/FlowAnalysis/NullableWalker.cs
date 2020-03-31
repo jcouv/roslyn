@@ -5677,6 +5677,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     TrackNullableStateOfTupleElements(slot, tupleOpt, arguments, elementTypes, useRestField: false);
                 }
 
+                // TODO2
                 tupleOpt = tupleOpt.WithElementTypes(elementTypesWithAnnotations);
                 if (!_disableDiagnostics)
                 {
