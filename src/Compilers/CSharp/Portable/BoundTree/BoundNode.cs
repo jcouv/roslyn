@@ -427,7 +427,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             private void CheckDeclared(LocalSymbol local)
             {
-                if (!DeclaredLocals.Contains(local) && local.DeclarationKind != LocalDeclarationKind.DiscardPlaceholder)
+                if (!DeclaredLocals.Contains(local))
                 {
                     Debug.Assert(false, "undeclared local " + local.GetDebuggerDisplay());
                 }
@@ -467,7 +467,10 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             public override BoundNode? VisitLocalDeclaration(BoundLocalDeclaration node)
             {
-                CheckDeclared(node.LocalSymbol);
+                if (node.LocalSymbol is object)
+                {
+                    CheckDeclared(node.LocalSymbol);
+                }
                 base.VisitLocalDeclaration(node);
                 return null;
             }

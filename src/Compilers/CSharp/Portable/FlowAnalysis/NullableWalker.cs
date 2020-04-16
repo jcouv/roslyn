@@ -2285,7 +2285,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override BoundNode VisitLocalDeclaration(BoundLocalDeclaration node)
         {
             var local = node.LocalSymbol;
-            int slot = GetOrCreateSlot(local);
+            int slot = local is object ? GetOrCreateSlot(local) : -1;
 
             // We need visit the optional arguments so that we can return nullability information
             // about them, but we don't want to communicate any information about anything underneath.
@@ -2310,11 +2310,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return null;
             }
 
-            TypeWithAnnotations type = local.TypeWithAnnotations;
-            TypeWithState valueType;
             bool inferredType = node.InferredType;
-            if (local.IsRef)
+            TypeWithAnnotations type = node.TypeWithAnnotations;
+            TypeWithState valueType;
+            if (local?.IsRef == true)
             {
+                Debug.Assert(!inferredType); // TODO2 is that correct?
                 valueType = VisitRefExpression(initializer, type);
             }
             else
@@ -2322,6 +2323,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 valueType = VisitOptionalImplicitConversion(initializer, targetTypeOpt: inferredType ? default : type, useLegacyWarnings: true, trackMembers: true, AssignmentKind.Assignment);
             }
 
+            // TODO2
             if (inferredType)
             {
                 if (valueType.HasNullType)
@@ -2339,7 +2341,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            TrackNullableStateForAssignment(initializer, type, slot, valueType, MakeSlot(initializer));
+            if (slot >= 0)
+            {
+                TrackNullableStateForAssignment(initializer, type, slot, valueType, MakeSlot(initializer));
+            }
+
             return null;
         }
 

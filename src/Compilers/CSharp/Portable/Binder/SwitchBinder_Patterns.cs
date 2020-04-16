@@ -213,10 +213,12 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (boundStatement is BoundLocalDeclaration boundLocal)
             {
+                Debug.Assert(boundLocal.LocalSymbol is object);
                 return boundLocal.LocalSymbol.IsUsing;
             }
             else if (boundStatement is BoundMultipleLocalDeclarationsBase boundMultiple && !boundMultiple.LocalDeclarations.IsDefaultOrEmpty)
             {
+                Debug.Assert(boundMultiple.LocalDeclarations[0].LocalSymbol is object);
                 return boundMultiple.LocalDeclarations[0].LocalSymbol.IsUsing;
             }
             return false;

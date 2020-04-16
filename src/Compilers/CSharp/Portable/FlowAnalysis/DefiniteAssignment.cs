@@ -1151,6 +1151,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                         var local = (BoundLocalDeclaration)node;
                         Debug.Assert(local.InitializerOpt == value || value == null);
                         LocalSymbol symbol = local.LocalSymbol;
+                        if (symbol is null) break;
+
                         int slot = GetOrCreateSlot(symbol);
                         SetSlotState(slot, assigned: written || !this.State.Reachable);
                         if (written) NoteWrite(symbol, value, read);
@@ -1685,13 +1687,17 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override BoundNode VisitLocalDeclaration(BoundLocalDeclaration node)
         {
-            int slot = GetOrCreateSlot(node.LocalSymbol); // not initially assigned
-            if (initiallyAssignedVariables?.Contains(node.LocalSymbol) == true)
+            LocalSymbol localSymbol = node.LocalSymbol;
+            if (localSymbol is object)
             {
-                // When data flow analysis determines that the variable is sometimes
-                // used without being assigned first, we want to treat that variable, during region analysis,
-                // as assigned at its point of declaration.
-                Assign(node, value: null);
+                _ = base.GetOrCreateSlot(localSymbol); // not initially assigned
+                if (initiallyAssignedVariables?.Contains(localSymbol) == true)
+                {
+                    // When data flow analysis determines that the variable is sometimes
+                    // used without being assigned first, we want to treat that variable, during region analysis,
+                    // as assigned at its point of declaration.
+                    Assign(node, value: null);
+                }
             }
 
             var result = base.VisitLocalDeclaration(node);

@@ -74,17 +74,16 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundBlock result = body;
             for (int i = declarations.Length - 1; i >= 0; i--) //NB: inner-to-outer = right-to-left
             {
-                LocalSymbol? overrideLocalSymbolOpt = null;
-                LocalSymbol localSymbol = declarations[i].LocalSymbol;
-                bool isDiscard = localSymbol.DeclarationKind == LocalDeclarationKind.DiscardPlaceholder;
                 var declaration = declarations[i];
-                if (isDiscard)
+                LocalSymbol? localSymbol = declaration.LocalSymbol;
+                if (localSymbol is null)
                 {
-                    overrideLocalSymbolOpt = new SynthesizedLocal(_factory.CurrentFunction, TypeWithAnnotations.Create(localSymbol.Type), SynthesizedLocalKind.LoweringTemp);
-                    locals = locals.Add(overrideLocalSymbolOpt);
+                    // introduce a temp for discard
+                    localSymbol = new SynthesizedLocal(_factory.CurrentFunction, declaration.TypeWithAnnotations, SynthesizedLocalKind.LoweringTemp);
+                    locals = locals.Add(localSymbol);
                 }
 
-                result = RewriteDeclarationUsingStatement(syntax, declarations[i], result, iDisposableConversion, awaitKeyword, awaitOpt, disposeMethodOpt, overrideLocalSymbolOpt);
+                result = RewriteDeclarationUsingStatement(syntax, declaration, localSymbol, result, iDisposableConversion, awaitKeyword, awaitOpt, disposeMethodOpt);
             }
 
             // Declare all locals in a single, top-level block so that the scope is correct in the debugger
@@ -212,22 +211,22 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <remarks>
         /// Assumes that the local symbol will be declared (i.e. in the LocalsOpt array) of an enclosing block.
         /// Assumes that using statements with multiple locals have already been split up into multiple using statements.
+        /// The local symbol is null in a discard declaration.
         /// </remarks>
         private BoundBlock RewriteDeclarationUsingStatement(
             SyntaxNode usingSyntax,
             BoundLocalDeclaration localDeclaration,
+            LocalSymbol localSymbol,
             BoundBlock tryBlock,
             Conversion iDisposableConversion,
             SyntaxToken awaitKeywordOpt,
             BoundAwaitableInfo? awaitOpt,
-            MethodSymbol? methodSymbol,
-            LocalSymbol? overrideLocalSymbolOpt)
+            MethodSymbol? methodSymbol)
         {
             Debug.Assert(localDeclaration.InitializerOpt is { });
             SyntaxNode declarationSyntax = localDeclaration.Syntax;
 
-            LocalSymbol localSymbol = overrideLocalSymbolOpt ?? localDeclaration.LocalSymbol;
-            TypeSymbol localType = localSymbol.Type;
+            TypeSymbol localType = localDeclaration.TypeWithAnnotations.Type;
             Debug.Assert((object)localType != null); //otherwise, there wouldn't be a conversion to IDisposable
 
             BoundLocal boundLocal = new BoundLocal(declarationSyntax, localSymbol, localDeclaration.InitializerOpt.ConstantValue, localType);
@@ -239,7 +238,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // will fail, and the Dispose call will never happen.  That is, the finally block will have no effect.
             // Consequently, we can simply skip the whole try-finally construct and just create a block containing
             // the new declaration.
-            if (boundLocal.ConstantValue == ConstantValue.Null)
+            if (boundLocal?.ConstantValue == ConstantValue.Null)
             {
                 //localSymbol will be declared by an enclosing block
                 return BoundBlock.SynthesizedNoLocals(usingSyntax, rewrittenDeclaration, tryBlock);
@@ -247,6 +246,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (localType.IsDynamic())
             {
+                // TODO2
                 TypeSymbol iDisposableType = awaitOpt is null ?
                     _compilation.GetSpecialType(SpecialType.System_IDisposable) :
                     _compilation.GetWellKnownType(WellKnownType.System_IAsyncDisposable);
@@ -265,8 +265,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 return new BoundBlock(
                     syntax: usingSyntax,
-                    locals: ImmutableArray.Create<LocalSymbol>(boundTemp.LocalSymbol), //localSymbol will be declared by an enclosing block
-                    statements: ImmutableArray.Create<BoundStatement>(
+                    locals: ImmutableArray.Create(boundTemp.LocalSymbol), //localSymbol will be declared by an enclosing block
+                    statements: ImmutableArray.Create(
                         rewrittenDeclaration,
                         new BoundExpressionStatement(declarationSyntax, tempAssignment),
                         tryFinally));
@@ -280,6 +280,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
+        /// <summary>
+        /// <paramref name="local"/> is null for a discard.
+        /// </summary>
         private BoundStatement RewriteUsingStatementTryFinally(
             SyntaxNode syntax,
             BoundBlock tryBlock,

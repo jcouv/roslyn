@@ -208,6 +208,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             BoundExpression? initializer = localDecl.InitializerOpt;
             Debug.Assert(!ReferenceEquals(initializer, null));
+            Debug.Assert(localDecl.LocalSymbol is object);
 
             LocalSymbol localSymbol = localDecl.LocalSymbol;
             var fixedCollectionInitializer = (BoundFixedLocalCollectionInitializer)initializer;

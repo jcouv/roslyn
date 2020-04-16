@@ -196,6 +196,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // We won't need to try and bind a second time if it fails, as async dispose can't be pattern based (ref structs are not allowed in async methods)
                 if (type is object && (type.IsRefLikeType || hasAwait))
                 {
+                    Debug.Assert(declarationsOpt[0].LocalSymbol is object);
                     BoundExpression receiver = fromExpression
                                                ? expressionOpt
                                                : new BoundLocal(syntax, declarationsOpt[0].LocalSymbol, null, type) { WasCompilerGenerated = true };

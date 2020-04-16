@@ -920,6 +920,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return true;
         }
 
+#nullable enable
         protected BoundLocalDeclaration BindVariableDeclaration(
             LocalDeclarationKind kind,
             bool isVar,
@@ -929,13 +930,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             AliasSymbol aliasOpt,
             DiagnosticBag diagnostics,
             bool includeBoundType,
-            CSharpSyntaxNode associatedSyntaxNode = null,
+            CSharpSyntaxNode? associatedSyntaxNode = null,
             bool underscoreIsDiscard = false)
         {
             // TODO2
             Debug.Assert(declarator != null);
 
-            SourceLocalSymbol localSymbol = locateDeclaredVariableSymbol(declarator, typeSyntax, kind, underscoreIsDiscard);
+            bool isDiscard = underscoreIsDiscard && declarator.Identifier.IsUnderscoreToken();
+            SourceLocalSymbol? localSymbol = isDiscard ? null : locateDeclaredVariableSymbol(declarator, typeSyntax, kind, underscoreIsDiscard);
             return BindVariableDeclaration(localSymbol,
                                            kind,
                                            isVar,
@@ -953,18 +955,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 EqualsValueClauseSyntax equalsValue = declarator.Initializer;
 
                 LocalDeclarationKind kind = outerKind == LocalDeclarationKind.UsingVariable ? LocalDeclarationKind.UsingVariable : LocalDeclarationKind.RegularVariable;
-                bool isDiscard = underscoreIsDiscard && declarator.Identifier.IsUnderscoreToken();
-                SourceLocalSymbol localSymbol;
-                if (isDiscard)
-                {
-                    Debug.Assert(outerKind == LocalDeclarationKind.UsingVariable);
-                    kind = LocalDeclarationKind.DiscardPlaceholder;
-                    localSymbol = null;
-                }
-                else
-                {
-                    localSymbol = this.LookupLocal(identifier);
-                }
+                SourceLocalSymbol localSymbol = this.LookupLocal(identifier);
 
                 // In error scenarios with misplaced code, it is possible we can't bind the local declaration.
                 // This occurs through the semantic model.  In that case concoct a plausible result.
@@ -984,17 +975,20 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
+        /// <summary>
+        /// <paramref name="localSymbol"/> is null when we're dealing with a discard.
+        /// </summary>
         protected BoundLocalDeclaration BindVariableDeclaration(
-            SourceLocalSymbol localSymbol,
+            SourceLocalSymbol? localSymbol,
             LocalDeclarationKind kind,
             bool isVar,
             VariableDeclaratorSyntax declarator,
             TypeSyntax typeSyntax,
             TypeWithAnnotations declTypeOpt,
-            AliasSymbol aliasOpt,
+            AliasSymbol? aliasOpt,
             DiagnosticBag diagnostics,
             bool includeBoundType,
-            CSharpSyntaxNode associatedSyntaxNode = null)
+            CSharpSyntaxNode? associatedSyntaxNode = null)
         {
             Debug.Assert(declarator != null);
             Debug.Assert(declTypeOpt.HasType || isVar);
@@ -1007,34 +1001,35 @@ namespace Microsoft.CodeAnalysis.CSharp
             // Check for variable declaration errors.
             // Use the binder that owns the scope for the local because this (the current) binder
             // might own nested scope.
-            bool nameConflict = localSymbol.ScopeBinder.ValidateDeclarationNameConflictsInScope(localSymbol, diagnostics);
+            bool nameConflict = localSymbol?.ScopeBinder.ValidateDeclarationNameConflictsInScope(localSymbol, diagnostics) == true;
             bool hasErrors = false;
 
             var containingMethod = this.ContainingMemberOrLambda as MethodSymbol;
-            if (containingMethod != null && containingMethod.IsAsync && localSymbol.RefKind != RefKind.None)
+            RefKind refKind = localSymbol?.RefKind ?? RefKind.None;
+            if (containingMethod != null && containingMethod.IsAsync && refKind != RefKind.None)
             {
                 Error(diagnostics, ErrorCode.ERR_BadAsyncLocalType, declarator);
             }
 
-            EqualsValueClauseSyntax equalsClauseSyntax = declarator.Initializer;
+            EqualsValueClauseSyntax? equalsClauseSyntax = declarator.Initializer;
 
             BindValueKind valueKind;
             ExpressionSyntax value;
-            if (!IsInitializerRefKindValid(equalsClauseSyntax, declarator, localSymbol.RefKind, diagnostics, out valueKind, out value))
+            if (!IsInitializerRefKindValid(equalsClauseSyntax, declarator, refKind, diagnostics, out valueKind, out value))
             {
                 hasErrors = true;
             }
 
-            BoundExpression initializerOpt;
+            BoundExpression? initializerOpt;
             if (isVar)
             {
                 aliasOpt = null;
 
-                initializerOpt = BindInferredVariableInitializer(diagnostics, value, valueKind, localSymbol.RefKind, declarator);
+                initializerOpt = BindInferredVariableInitializer(diagnostics, value, valueKind, refKind, declarator);
 
                 // If we got a good result then swap the inferred type for the "var" 
-                TypeSymbol initializerType = initializerOpt?.Type;
-                if ((object)initializerType != null)
+                TypeSymbol? initializerType = initializerOpt?.Type;
+                if (initializerType is object)
                 {
                     declTypeOpt = TypeWithAnnotations.Create(initializerType);
 
@@ -1077,7 +1072,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             declTypeOpt.Type,
                             initializerOpt,
                             localDiagnostics,
-                            isRefAssignment: localSymbol.RefKind != RefKind.None);
+                            isRefAssignment: refKind != RefKind.None);
                     }
                 }
             }
@@ -1115,17 +1110,20 @@ namespace Microsoft.CodeAnalysis.CSharp
                 hasErrors = true;
             }
 
-            localSymbol.SetTypeWithAnnotations(declTypeOpt);
-
-            if (initializerOpt != null)
+            if (localSymbol is object)
             {
-                var currentScope = LocalScopeDepth;
+                localSymbol.SetTypeWithAnnotations(declTypeOpt);
 
-                localSymbol.SetValEscape(GetValEscape(initializerOpt, currentScope));
-
-                if (localSymbol.RefKind != RefKind.None)
+                if (initializerOpt != null)
                 {
-                    localSymbol.SetRefEscape(GetRefEscape(initializerOpt, currentScope));
+                    var currentScope = LocalScopeDepth;
+
+                    localSymbol.SetValEscape(GetValEscape(initializerOpt, currentScope));
+
+                    if (refKind != RefKind.None)
+                    {
+                        localSymbol.SetRefEscape(GetRefEscape(initializerOpt, currentScope));
+                    }
                 }
             }
 
@@ -1146,6 +1144,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else if (kind == LocalDeclarationKind.Constant && initializerOpt != null && !localDiagnostics.HasAnyResolvedErrors())
             {
+                Debug.Assert(localSymbol is object);
                 var constantValueDiagnostics = localSymbol.GetConstantValueDiagnostics(initializerOpt);
                 foreach (var diagnostic in constantValueDiagnostics)
                 {
@@ -1159,7 +1158,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             diagnostics.AddRangeAndFree(localDiagnostics);
 
-            BoundTypeExpression boundDeclType = null;
+            BoundTypeExpression? boundDeclType = null;
 
             if (includeBoundType)
             {
@@ -1184,6 +1183,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return new BoundLocalDeclaration(
                 syntax: associatedSyntaxNode,
                 localSymbol: localSymbol,
+                typeWithAnnotations: localSymbol.TypeWithAnnotations,
                 declaredTypeOpt: boundDeclType,
                 initializerOpt: hasErrors ? BindToTypeForErrorRecovery(initializerOpt)?.WithHasErrors() : initializerOpt,
                 argumentsOpt: arguments,
@@ -1212,6 +1212,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             return arguments;
         }
+#nullable restore
 
         private bool IsValidFixedVariableInitializer(TypeSymbol declType, SourceLocalSymbol localSymbol, ref BoundExpression initializerOpt, DiagnosticBag diagnostics)
         {

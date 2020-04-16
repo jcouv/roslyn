@@ -831,7 +831,9 @@
         the semantic analysis of the argument list in the bound tree.
   -->
   <Node Name="BoundLocalDeclaration" Base="BoundStatement">
-    <Field Name="LocalSymbol" Type="LocalSymbol"/>
+    <!-- LocalSymbol is null for a declaration with a discard -->
+    <Field Name="LocalSymbol" Type="LocalSymbol?" Null="allow"/>
+    <Field Name="TypeWithAnnotations" Type="TypeWithAnnotations"/>
 
     <!-- Only set for the first declaration in BoundMultipleLocalDeclarations
     unless the type is inferred -->

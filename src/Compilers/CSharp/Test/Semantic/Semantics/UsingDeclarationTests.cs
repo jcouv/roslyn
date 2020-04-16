@@ -72,7 +72,9 @@ class C
             comp.VerifyDiagnostics();
             CompileAndVerify(comp);
         }
-
+        // TODO2 test with nullability
+        // TODO2 test IOperation
+        // TODO2 test using dynamic _ = ...;
 
         [Fact, WorkItem(43292, "https://github.com/dotnet/roslyn/issues/43292")]
         public void UsingDiscard_ExistsInScope()

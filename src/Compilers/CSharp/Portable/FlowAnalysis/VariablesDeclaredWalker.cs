@@ -95,7 +95,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override BoundNode VisitLocalDeclaration(BoundLocalDeclaration node)
         {
-            if (IsInside)
+            if (IsInside && node.LocalSymbol is object)
             {
                 _variablesDeclared.Add(node.LocalSymbol);
             }

@@ -1111,10 +1111,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (node.InitializerOpt != null)
             {
                 // analyze the expression
-                VisitRvalue(node.InitializerOpt, isKnownToBeAnLvalue: node.LocalSymbol.RefKind != RefKind.None);
+                VisitRvalue(node.InitializerOpt, isKnownToBeAnLvalue: node.LocalSymbol is null || node.LocalSymbol.RefKind != RefKind.None);
 
                 // byref assignment is also a potential write
-                if (node.LocalSymbol.RefKind != RefKind.None)
+                if (node.LocalSymbol is object && node.LocalSymbol.RefKind != RefKind.None)
                 {
                     WriteArgument(node.InitializerOpt, node.LocalSymbol.RefKind, method: null);
                 }
