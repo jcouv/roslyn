@@ -929,11 +929,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             AliasSymbol aliasOpt,
             DiagnosticBag diagnostics,
             bool includeBoundType,
-            CSharpSyntaxNode associatedSyntaxNode = null)
+            CSharpSyntaxNode associatedSyntaxNode = null,
+            bool underscoreIsDiscard = false)
         {
+            // TODO2
             Debug.Assert(declarator != null);
 
-            return BindVariableDeclaration(LocateDeclaredVariableSymbol(declarator, typeSyntax, kind),
+            SourceLocalSymbol localSymbol = locateDeclaredVariableSymbol(declarator, typeSyntax, kind, underscoreIsDiscard);
+            return BindVariableDeclaration(localSymbol,
                                            kind,
                                            isVar,
                                            declarator,
@@ -943,6 +946,42 @@ namespace Microsoft.CodeAnalysis.CSharp
                                            diagnostics,
                                            includeBoundType,
                                            associatedSyntaxNode);
+
+            SourceLocalSymbol locateDeclaredVariableSymbol(VariableDeclaratorSyntax declarator, TypeSyntax typeSyntax, LocalDeclarationKind outerKind, bool underscoreIsDiscard)
+            {
+                SyntaxToken identifier = declarator.Identifier;
+                EqualsValueClauseSyntax equalsValue = declarator.Initializer;
+
+                LocalDeclarationKind kind = outerKind == LocalDeclarationKind.UsingVariable ? LocalDeclarationKind.UsingVariable : LocalDeclarationKind.RegularVariable;
+                bool isDiscard = underscoreIsDiscard && declarator.Identifier.IsUnderscoreToken();
+                SourceLocalSymbol localSymbol;
+                if (isDiscard)
+                {
+                    Debug.Assert(outerKind == LocalDeclarationKind.UsingVariable);
+                    kind = LocalDeclarationKind.DiscardPlaceholder;
+                    localSymbol = null;
+                }
+                else
+                {
+                    localSymbol = this.LookupLocal(identifier);
+                }
+
+                // In error scenarios with misplaced code, it is possible we can't bind the local declaration.
+                // This occurs through the semantic model.  In that case concoct a plausible result.
+                if ((object)localSymbol == null)
+                {
+                    localSymbol = SourceLocalSymbol.MakeLocal(
+                        ContainingMemberOrLambda,
+                        this,
+                        allowRefKind: false, // do not allow ref
+                        typeSyntax,
+                        identifier,
+                        kind,
+                        equalsValue);
+                }
+
+                return localSymbol;
+            }
         }
 
         protected BoundLocalDeclaration BindVariableDeclaration(
@@ -1172,33 +1211,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             return arguments;
-        }
-
-        private SourceLocalSymbol LocateDeclaredVariableSymbol(VariableDeclaratorSyntax declarator, TypeSyntax typeSyntax, LocalDeclarationKind outerKind)
-        {
-            LocalDeclarationKind kind = outerKind == LocalDeclarationKind.UsingVariable ? LocalDeclarationKind.UsingVariable : LocalDeclarationKind.RegularVariable;
-            return LocateDeclaredVariableSymbol(declarator.Identifier, typeSyntax, declarator.Initializer, kind);
-        }
-
-        private SourceLocalSymbol LocateDeclaredVariableSymbol(SyntaxToken identifier, TypeSyntax typeSyntax, EqualsValueClauseSyntax equalsValue, LocalDeclarationKind kind)
-        {
-            SourceLocalSymbol localSymbol = this.LookupLocal(identifier);
-
-            // In error scenarios with misplaced code, it is possible we can't bind the local declaration.
-            // This occurs through the semantic model.  In that case concoct a plausible result.
-            if ((object)localSymbol == null)
-            {
-                localSymbol = SourceLocalSymbol.MakeLocal(
-                    ContainingMemberOrLambda,
-                    this,
-                    false, // do not allow ref
-                    typeSyntax,
-                    identifier,
-                    kind,
-                    equalsValue);
-            }
-
-            return localSymbol;
         }
 
         private bool IsValidFixedVariableInitializer(TypeSymbol declType, SourceLocalSymbol localSymbol, ref BoundExpression initializerOpt, DiagnosticBag diagnostics)
@@ -2441,7 +2453,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             return this.Next.BindForParts(diagnostics, originalBinder);
         }
 
-        internal BoundStatement BindForOrUsingOrFixedDeclarations(VariableDeclarationSyntax nodeOpt, LocalDeclarationKind localKind, DiagnosticBag diagnostics, out ImmutableArray<BoundLocalDeclaration> declarations)
+        internal BoundStatement BindForOrUsingOrFixedDeclarations(VariableDeclarationSyntax nodeOpt, LocalDeclarationKind localKind, DiagnosticBag diagnostics,
+            out ImmutableArray<BoundLocalDeclaration> declarations, bool underscoreIsDiscard = false)
         {
             if (nodeOpt == null)
             {
@@ -2480,7 +2493,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 var variableDeclarator = variables[i];
                 bool includeBoundType = i == 0; //To avoid duplicated expressions, only the first declaration should contain the bound type.
-                var declaration = BindVariableDeclaration(localKind, isVar, variableDeclarator, typeSyntax, declType, alias, diagnostics, includeBoundType);
+                var declaration = BindVariableDeclaration(localKind, isVar, variableDeclarator, typeSyntax, declType, alias, diagnostics, includeBoundType, underscoreIsDiscard: underscoreIsDiscard);
 
                 declarationArray[i] = declaration;
             }

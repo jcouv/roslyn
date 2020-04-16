@@ -67,5 +67,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// This occurs as a result of error recovery in incorrect code.
         /// </summary>
         DeclarationExpressionVariable,
+
+        /// <summary>
+        /// Not actually a variable. Those are replaced with temporaries during lowering.
+        /// </summary>
+        DiscardPlaceholder,
     }
 }

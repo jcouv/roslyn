@@ -8,6 +8,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.PooledObjects;
 
 namespace Microsoft.CodeAnalysis.CSharp
 {
@@ -73,7 +74,17 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundBlock result = body;
             for (int i = declarations.Length - 1; i >= 0; i--) //NB: inner-to-outer = right-to-left
             {
-                result = RewriteDeclarationUsingStatement(syntax, declarations[i], result, iDisposableConversion, awaitKeyword, awaitOpt, disposeMethodOpt);
+                LocalSymbol? overrideLocalSymbolOpt = null;
+                LocalSymbol localSymbol = declarations[i].LocalSymbol;
+                bool isDiscard = localSymbol.DeclarationKind == LocalDeclarationKind.DiscardPlaceholder;
+                var declaration = declarations[i];
+                if (isDiscard)
+                {
+                    overrideLocalSymbolOpt = new SynthesizedLocal(_factory.CurrentFunction, TypeWithAnnotations.Create(localSymbol.Type), SynthesizedLocalKind.LoweringTemp);
+                    locals = locals.Add(overrideLocalSymbolOpt);
+                }
+
+                result = RewriteDeclarationUsingStatement(syntax, declarations[i], result, iDisposableConversion, awaitKeyword, awaitOpt, disposeMethodOpt, overrideLocalSymbolOpt);
             }
 
             // Declare all locals in a single, top-level block so that the scope is correct in the debugger
@@ -209,12 +220,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             Conversion iDisposableConversion,
             SyntaxToken awaitKeywordOpt,
             BoundAwaitableInfo? awaitOpt,
-            MethodSymbol? methodSymbol)
+            MethodSymbol? methodSymbol,
+            LocalSymbol? overrideLocalSymbolOpt)
         {
             Debug.Assert(localDeclaration.InitializerOpt is { });
             SyntaxNode declarationSyntax = localDeclaration.Syntax;
 
-            LocalSymbol localSymbol = localDeclaration.LocalSymbol;
+            LocalSymbol localSymbol = overrideLocalSymbolOpt ?? localDeclaration.LocalSymbol;
             TypeSymbol localType = localSymbol.Type;
             Debug.Assert((object)localType != null); //otherwise, there wouldn't be a conversion to IDisposable
 

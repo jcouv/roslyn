@@ -55,6 +55,43 @@ class C
             }
         }
 
+        [Fact, WorkItem(43292, "https://github.com/dotnet/roslyn/issues/43292")]
+        public void UsingDiscard_Emit()
+        {
+            var source = @"
+using System;
+class C
+{
+    void M(IDisposable x)
+    {
+        using var _ = x;
+    }
+}
+";
+            var comp = CreateCompilationWithTasksExtensions(source, parseOptions: TestOptions.Regular8);
+            comp.VerifyDiagnostics();
+            CompileAndVerify(comp);
+        }
+
+
+        [Fact, WorkItem(43292, "https://github.com/dotnet/roslyn/issues/43292")]
+        public void UsingDiscard_ExistsInScope()
+        {
+            // TODO2
+            var source = @"
+using System;
+class C
+{
+    void M(IDisposable x, string _)
+    {
+        using var _ = x;
+    }
+}
+";
+            var comp = CreateCompilationWithTasksExtensions(source, parseOptions: TestOptions.Regular8);
+            comp.VerifyDiagnostics();
+        }
+
         [Fact]
         public void UsingVariableIsNotReportedAsUnused()
         {

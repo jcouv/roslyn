@@ -54,20 +54,29 @@ namespace Microsoft.CodeAnalysis.CSharp
                 syntax = localDeclaration.Declaration.Variables[0];
             }
 
-            BoundStatement rewrittenLocalDeclaration = new BoundExpressionStatement(
-                syntax,
-                new BoundAssignmentOperator(
+            BoundStatement rewrittenLocalDeclaration;
+            if (localSymbol.DeclarationKind == LocalDeclarationKind.DiscardPlaceholder)
+            {
+                // TODO2
+                rewrittenLocalDeclaration = new BoundExpressionStatement(syntax, rewrittenInitializer, hasErrors);
+            }
+            else
+            {
+                rewrittenLocalDeclaration = new BoundExpressionStatement(
                     syntax,
-                    new BoundLocal(
+                    new BoundAssignmentOperator(
                         syntax,
-                        localSymbol,
-                        null,
-                        localSymbol.Type
-                    ),
-                    rewrittenInitializer,
-                    localSymbol.Type,
-                    localSymbol.IsRef),
-                hasErrors);
+                        new BoundLocal(
+                            syntax,
+                            localSymbol,
+                            null,
+                            localSymbol.Type
+                        ),
+                        rewrittenInitializer,
+                        localSymbol.Type,
+                        localSymbol.IsRef),
+                    hasErrors);
+            }
 
             return InstrumentLocalDeclarationIfNecessary(originalOpt, localSymbol, rewrittenLocalDeclaration);
         }
