@@ -451,6 +451,8 @@ namespace Microsoft.CodeAnalysis.LanguageServices
         /// Gets the <see cref="DeclarationKind"/> for the declaration.
         /// </summary>
         DeclarationKind GetDeclarationKind(SyntaxNode declaration);
+
+        bool IsImplicitObjectCreation(SyntaxNode node);
     }
 
     [Flags]

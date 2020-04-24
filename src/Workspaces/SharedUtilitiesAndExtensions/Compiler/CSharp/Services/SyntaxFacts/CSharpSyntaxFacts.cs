@@ -10,6 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Extensions;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.LanguageServices;
@@ -2005,5 +2006,14 @@ namespace Microsoft.CodeAnalysis.CSharp.LanguageServices
 
         internal static bool ParentIsLocalDeclarationStatement(SyntaxNode node)
             => node?.Parent.IsKind(SyntaxKind.LocalDeclarationStatement) ?? false;
+
+        public bool IsImplicitObjectCreation(SyntaxNode node)
+        {
+#if CODE_STYLE
+            return ((CSharpSyntaxNode)node).Kind() == Formatting.SyntaxKindEx.ImplicitObjectCreationExpression;
+#else
+            return ((CSharpSyntaxNode)node).Kind() == SyntaxKind.ImplicitObjectCreationExpression;
+#endif
+        }
     }
 }
