@@ -166,7 +166,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private static TypeWithAnnotations CreateNonLazyType(TypeSymbol typeSymbol, NullableAnnotation nullableAnnotation, ImmutableArray<CustomModifier> customModifiers)
         {
-            return new(typeSymbol, nullableAnnotation, Extensions.Create(customModifiers));
+            return new TypeWithAnnotations(typeSymbol, nullableAnnotation, Extensions.Create(customModifiers));
         }
 
         private static TypeWithAnnotations CreateLazyNullableType(CSharpCompilation compilation, TypeWithAnnotations underlying)
@@ -789,7 +789,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// </summary>
         private abstract class Extensions
         {
-            internal static readonly Extensions Default = new NonLazyType(customModifiers: ImmutableArray<CustomModifier>.Empty);
+            internal static readonly Extensions Default = new(customModifiers: ImmutableArray<CustomModifier>.Empty);
 
             internal static Extensions Create(ImmutableArray<CustomModifier> customModifiers)
             {

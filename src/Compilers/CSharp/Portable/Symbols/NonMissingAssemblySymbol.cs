@@ -60,7 +60,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     // then MergedNamespaceSymbol.Create will just return that one.
 
                     IEnumerable<NamespaceSymbol> allGlobalNamespaces = from m in Modules select m.GlobalNamespace;
-                    var result = MergedNamespaceSymbol.Create(new NamespaceExtent(this),
+                    var result = MergedNamespaceSymbol.Create(new(this),
                                                         null,
                                                         allGlobalNamespaces.AsImmutable());
                     Interlocked.CompareExchange(ref _globalNamespace, result, null);

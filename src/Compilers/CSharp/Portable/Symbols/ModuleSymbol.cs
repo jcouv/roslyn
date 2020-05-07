@@ -261,7 +261,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             var assembly = ContainingAssembly;
             if ((object)assembly != assembly.CorLibrary)
             {
-                throw new ArgumentOutOfRangeException(nameof(referencedAssemblyIndex));
+                throw new(nameof(referencedAssemblyIndex));
             }
 
             return null;
@@ -340,7 +340,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             if (namespaceSymbol == null)
             {
-                throw new ArgumentNullException(nameof(namespaceSymbol));
+                throw new(nameof(namespaceSymbol));
             }
 
             var moduleNs = namespaceSymbol as NamespaceSymbol;

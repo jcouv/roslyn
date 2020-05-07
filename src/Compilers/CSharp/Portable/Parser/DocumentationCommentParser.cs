@@ -115,7 +115,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                 var allRemainderText = SyntaxFactory.XmlText(textTokens.ToList());
 
                 XmlParseErrorCode code = endTag ? XmlParseErrorCode.XML_EndTagNotExpected : XmlParseErrorCode.XML_ExpectedEndOfXml;
-                allRemainderText = WithAdditionalDiagnostics(allRemainderText, new XmlSyntaxDiagnosticInfo(0, 1, code));
+                allRemainderText = WithAdditionalDiagnostics(allRemainderText, new(0, 1, code));
 
                 nodes.Add(allRemainderText);
             }
@@ -697,7 +697,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                     // NOTE: offset is relative to full-span start of colon (i.e. before leading trivia).
                     int offset = -prefixTrailingWidth;
                     int width = prefixTrailingWidth + colonLeadingWidth;
-                    colon = WithAdditionalDiagnostics(colon, new XmlSyntaxDiagnosticInfo(offset, width, XmlParseErrorCode.XML_InvalidWhitespace));
+                    colon = WithAdditionalDiagnostics(colon, new(offset, width, XmlParseErrorCode.XML_InvalidWhitespace));
                 }
 
                 prefix = SyntaxFactory.XmlPrefix(id, colon);
@@ -710,7 +710,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                     // NOTE: offset is relative to full-span start of identifier (i.e. before leading trivia).
                     int offset = -colonTrailingWidth;
                     int width = colonTrailingWidth + localNameLeadingWidth;
-                    id = WithAdditionalDiagnostics(id, new XmlSyntaxDiagnosticInfo(offset, width, XmlParseErrorCode.XML_InvalidWhitespace));
+                    id = WithAdditionalDiagnostics(id, new(offset, width, XmlParseErrorCode.XML_InvalidWhitespace));
 
                     // CONSIDER: Another interpretation would be that the local part of this name is a missing identifier and the identifier
                     // we've just consumed is actually part of something else (e.g. an attribute name).
@@ -804,10 +804,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             switch (expected)
             {
                 case SyntaxKind.IdentifierToken:
-                    return new XmlSyntaxDiagnosticInfo(offset, length, XmlParseErrorCode.XML_ExpectedIdentifier);
+                    return new(offset, length, XmlParseErrorCode.XML_ExpectedIdentifier);
 
                 default:
-                    return new XmlSyntaxDiagnosticInfo(offset, length, XmlParseErrorCode.XML_InvalidToken, SyntaxFacts.GetText(actual));
+                    return new(offset, length, XmlParseErrorCode.XML_InvalidToken, SyntaxFacts.GetText(actual));
             }
         }
 
@@ -825,26 +825,26 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             switch (expected)
             {
                 case SyntaxKind.IdentifierToken:
-                    return new XmlSyntaxDiagnosticInfo(XmlParseErrorCode.XML_ExpectedIdentifier);
+                    return new(XmlParseErrorCode.XML_ExpectedIdentifier);
 
                 default:
-                    return new XmlSyntaxDiagnosticInfo(XmlParseErrorCode.XML_InvalidToken, SyntaxFacts.GetText(actual));
+                    return new(XmlParseErrorCode.XML_InvalidToken, SyntaxFacts.GetText(actual));
             }
         }
 
         private TNode WithXmlParseError<TNode>(TNode node, XmlParseErrorCode code) where TNode : CSharpSyntaxNode
         {
-            return WithAdditionalDiagnostics(node, new XmlSyntaxDiagnosticInfo(0, node.Width, code));
+            return WithAdditionalDiagnostics(node, new(0, node.Width, code));
         }
 
         private TNode WithXmlParseError<TNode>(TNode node, XmlParseErrorCode code, params string[] args) where TNode : CSharpSyntaxNode
         {
-            return WithAdditionalDiagnostics(node, new XmlSyntaxDiagnosticInfo(0, node.Width, code, args));
+            return WithAdditionalDiagnostics(node, new(0, node.Width, code, args));
         }
 
         private SyntaxToken WithXmlParseError(SyntaxToken node, XmlParseErrorCode code, params string[] args)
         {
-            return WithAdditionalDiagnostics(node, new XmlSyntaxDiagnosticInfo(0, node.Width, code, args));
+            return WithAdditionalDiagnostics(node, new(0, node.Width, code, args));
         }
 
         protected override TNode WithAdditionalDiagnostics<TNode>(TNode node, params DiagnosticInfo[] diagnostics)
@@ -1221,7 +1221,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                     if (typeArgumentsMustBeIdentifiers && typeSyntax.Kind != SyntaxKind.IdentifierName)
                     {
                         typeSyntax = this.AddError(typeSyntax, ErrorCode.WRN_ErrorOverride,
-                            new SyntaxDiagnosticInfo(ErrorCode.ERR_TypeParamMustBeIdentifier), $"{(int)ErrorCode.ERR_TypeParamMustBeIdentifier:d4}");
+                            new(ErrorCode.ERR_TypeParamMustBeIdentifier), $"{(int)ErrorCode.ERR_TypeParamMustBeIdentifier:d4}");
                     }
 
                     list.Add(typeSyntax);

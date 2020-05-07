@@ -189,7 +189,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 // 
                 //   .assembly C
                 //   {
-                //      public class C : B { ... new B().E += null ... }       // A.E is not accessible from here
+                //      public class C : B { ... new().E += null ... }       // A.E is not accessible from here
                 //   }
                 //
                 // See InternalsVisibleToAndStrongNameTests: IvtVirtualCall1, IvtVirtualCall2, IvtVirtual_ParamsAndDynamic.
@@ -264,7 +264,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             Debug.Assert(this.IsDefinition);
             Debug.Assert(ReferenceEquals(newOwner.OriginalDefinition, this.ContainingSymbol.OriginalDefinition));
             Debug.Assert(newOwner.IsDefinition || newOwner is SubstitutedNamedTypeSymbol);
-            return newOwner.IsDefinition ? this : new SubstitutedEventSymbol((newOwner as SubstitutedNamedTypeSymbol)!, this);
+            return newOwner.IsDefinition ? this : new((newOwner as SubstitutedNamedTypeSymbol)!, this);
         }
 
         internal abstract bool MustCallMethodsDirectly { get; }

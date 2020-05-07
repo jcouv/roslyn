@@ -39,7 +39,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             string fieldName = GetCapturedVariableFieldName(captured, ref uniqueId);
             TypeSymbol type = GetCapturedVariableFieldType(frame, captured);
-            return new LambdaCapturedVariable(frame, TypeWithAnnotations.Create(type), fieldName, IsThis(captured));
+            return new(frame, TypeWithAnnotations.Create(type), fieldName, IsThis(captured));
         }
 
         private static bool IsThis(Symbol captured)

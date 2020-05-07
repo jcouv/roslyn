@@ -36,7 +36,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public ExtensionMethodScopeEnumerator GetEnumerator()
         {
-            return new ExtensionMethodScopeEnumerator(_binder);
+            return new(_binder);
         }
     }
 
@@ -90,11 +90,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 if (scope.SupportsExtensionMethods)
                 {
-                    return new ExtensionMethodScope(scope, searchUsingsNotNamespace: false);
+                    return new(scope, searchUsingsNotNamespace: false);
                 }
             }
 
-            return new ExtensionMethodScope();
+            return new();
         }
     }
 }

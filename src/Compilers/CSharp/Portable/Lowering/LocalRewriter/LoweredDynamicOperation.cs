@@ -55,7 +55,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert(children.Length > 0);
             var bad = new(children[0].Syntax, LookupResultKind.Empty, ImmutableArray<Symbol?>.Empty, children, resultType);
-            return new LoweredDynamicOperation(null, null, bad, resultType, default(ImmutableArray<LocalSymbol>));
+            return new(null, null, bad, resultType, default(ImmutableArray<LocalSymbol>));
         }
 
         public BoundExpression ToExpression()
@@ -74,7 +74,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                return new BoundSequence(_factory.Syntax, _temps, ImmutableArray.Create(SiteInitialization), SiteInvocation, _resultType) { WasCompilerGenerated = true };
+                return new(_factory.Syntax, _temps, ImmutableArray.Create(SiteInitialization), SiteInvocation, _resultType) { WasCompilerGenerated = true };
             }
         }
     }

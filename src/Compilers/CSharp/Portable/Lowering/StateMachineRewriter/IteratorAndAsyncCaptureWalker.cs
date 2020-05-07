@@ -300,7 +300,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // Locals cannot be used to communicate between the finally block and the rest of the method.
                 // So we just capture any outside variables that are used inside.
-                new OutsideVariablesUsedInside(this, this.topLevelMethod, this).Visit(finallyBlock);
+                new(this, this.topLevelMethod, this).Visit(finallyBlock);
             }
 
             base.VisitFinallyBlock(finallyBlock, ref unsetInFinally);

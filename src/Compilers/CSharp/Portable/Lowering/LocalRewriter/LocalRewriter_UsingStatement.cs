@@ -78,7 +78,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // Declare all locals in a single, top-level block so that the scope is correct in the debugger
             // (Dev10 has them all come into scope at once, not per-declaration.)
-            return new BoundBlock(
+            return new(
                 syntax,
                 locals,
                 ImmutableArray.Create<BoundStatement>(result));
@@ -189,7 +189,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundStatement tryFinally = RewriteUsingStatementTryFinally(usingSyntax, tryBlock, boundTemp, usingSyntax.AwaitKeyword, node.AwaitOpt, node.DisposeMethodOpt);
 
             // { ResourceType temp = expr; try { ... } finally { ... } }
-            return new BoundBlock(
+            return new(
                 syntax: usingSyntax,
                 locals: node.Locals.Add(boundTemp.LocalSymbol),
                 statements: ImmutableArray.Create<BoundStatement>(expressionStatement, tryFinally));
@@ -251,12 +251,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 BoundStatement tryFinally = RewriteUsingStatementTryFinally(usingSyntax, tryBlock, boundTemp, awaitKeywordOpt, awaitOpt, methodSymbol);
 
-                return new BoundBlock(
+                return new(
                     syntax: usingSyntax,
                     locals: ImmutableArray.Create<LocalSymbol>(boundTemp.LocalSymbol), //localSymbol will be declared by an enclosing block
                     statements: ImmutableArray.Create<BoundStatement>(
                         rewrittenDeclaration,
-                        new BoundExpressionStatement(declarationSyntax, tempAssignment),
+                        new(declarationSyntax, tempAssignment),
                         tryFinally));
             }
             else

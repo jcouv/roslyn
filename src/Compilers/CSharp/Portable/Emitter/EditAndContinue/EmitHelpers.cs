@@ -52,7 +52,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             {
                 // TODO: https://github.com/dotnet/roslyn/issues/9004
                 diagnostics.Add(ErrorCode.ERR_ModuleEmitFailure, NoLocation.Singleton, compilation.AssemblyName, e.Message);
-                return new EmitDifferenceResult(success: false, diagnostics: diagnostics.ToReadOnlyAndFree(), baseline: null);
+                return new(success: false, diagnostics: diagnostics.ToReadOnlyAndFree(), baseline: null);
             }
 
             if (testData != null)
@@ -93,7 +93,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                     cancellationToken);
             }
 
-            return new EmitDifferenceResult(
+            return new(
                 success: newBaseline != null,
                 diagnostics: diagnostics.ToReadOnlyAndFree(),
                 baseline: newBaseline);
@@ -126,8 +126,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             // Mapping from previous compilation to the current.
             var anonymousTypeMap = moduleBeingBuilt.GetAnonymousTypeMap();
             var sourceAssembly = ((CSharpCompilation)previousGeneration.Compilation).SourceAssembly;
-            var sourceContext = new((PEModuleBuilder)previousGeneration.PEModuleBuilder, null, new DiagnosticBag(), metadataOnly: false, includePrivateMembers: true);
-            var otherContext = new(moduleBeingBuilt, null, new DiagnosticBag(), metadataOnly: false, includePrivateMembers: true);
+            var sourceContext = new((PEModuleBuilder)previousGeneration.PEModuleBuilder, null, new(), metadataOnly: false, includePrivateMembers: true);
+            var otherContext = new(moduleBeingBuilt, null, new(), metadataOnly: false, includePrivateMembers: true);
 
             var matcher = new(
                 anonymousTypeMap,

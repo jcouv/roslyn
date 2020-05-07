@@ -185,7 +185,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 var messageResourceName = methodCompiler._globalHasErrors ? nameof(CodeAnalysisResources.UnableToDetermineSpecificCauseOfFailure) : nameof(CodeAnalysisResources.ModuleHasInvalidAttributes);
                 diagnostics.Add(ErrorCode.ERR_ModuleEmitFailure, NoLocation.Singleton, ((Cci.INamedEntity)moduleBeingBuiltOpt).Name,
-                    new LocalizableResourceString(messageResourceName, CodeAnalysisResources.ResourceManager, typeof(CodeAnalysisResources)));
+                    new(messageResourceName, CodeAnalysisResources.ResourceManager, typeof(CodeAnalysisResources)));
             }
 
             diagnostics.AddRange(compilation.AdditionalCodegenWarnings);
@@ -261,7 +261,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     methodOrdinal,
                     body,
                     null,
-                    new TypeCompilationState(synthesizedEntryPoint.ContainingType, compilation, moduleBeingBuilt),
+                    new(synthesizedEntryPoint.ContainingType, compilation, moduleBeingBuilt),
                     false,
                     null,
                     ref dynamicAnalysisSpans,
@@ -432,7 +432,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 Debug.Assert((object)scriptInitializer != null);
             }
 
-            var synthesizedSubmissionFields = containingType.IsSubmissionClass ? new SynthesizedSubmissionFields(_compilation, containingType) : null;
+            var synthesizedSubmissionFields = containingType.IsSubmissionClass ? new(_compilation, containingType) : null;
             var processedStaticInitializers = new Binder.ProcessedFieldInitializers();
             var processedInstanceInitializers = new Binder.ProcessedFieldInitializers();
 
@@ -646,7 +646,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(_moduleBeingBuiltOpt != null);
 
             var compilationState = new(null, _compilation, _moduleBeingBuiltOpt);
-            foreach (MethodSymbol method in privateImplClass.GetMethods(new EmitContext(_moduleBeingBuiltOpt, null, diagnostics, metadataOnly: false, includePrivateMembers: true)))
+            foreach (MethodSymbol method in privateImplClass.GetMethods(new(_moduleBeingBuiltOpt, null, diagnostics, metadataOnly: false, includePrivateMembers: true)))
             {
                 Debug.Assert(method.SynthesizesLoweredBoundBody);
                 method.GenerateMethodBody(compilationState, diagnostics);
@@ -1097,7 +1097,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         });
                     }
 
-                    _compilation.EventQueue.TryEnqueue(new SymbolDeclaredCompilationEvent(_compilation, methodSymbol.GetPublicSymbol(), lazySemanticModel));
+                    _compilation.EventQueue.TryEnqueue(new(_compilation, methodSymbol.GetPublicSymbol(), lazySemanticModel));
                 }
 
                 // Don't lower if we're not emitting or if there were errors. 
@@ -1383,7 +1383,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             catch (BoundTreeVisitor.CancelledByStackGuardException ex)
             {
                 ex.AddAnError(diagnostics);
-                return new BoundBadStatement(body.Syntax, ImmutableArray.Create<BoundNode>(body), hasErrors: true);
+                return new(body.Syntax, ImmutableArray.Create<BoundNode>(body), hasErrors: true);
             }
         }
 
@@ -1526,11 +1526,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                     dynamicAnalysisDataOpt = new(dynamicAnalysisSpans);
                 }
 
-                return new MethodBody(
+                return new(
                     builder.RealizedIL,
                     builder.MaxStack,
                     method.PartialDefinitionPart ?? method,
-                    variableSlotAllocatorOpt?.MethodId ?? new DebugId(methodOrdinal, moduleBuilder.CurrentGenerationOrdinal),
+                    variableSlotAllocatorOpt?.MethodId ?? new(methodOrdinal, moduleBuilder.CurrentGenerationOrdinal),
                     localVariables,
                     builder.RealizedSequencePoints,
                     debugDocumentProvider,
@@ -1594,7 +1594,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     while (index >= hoistedVariables.Count)
                     {
                         // Empty slots may be present if variables were deleted during EnC.
-                        hoistedVariables.Add(new EncHoistedLocalInfo(true));
+                        hoistedVariables.Add(new(true));
                     }
 
                     hoistedVariables[index] = new(field.SlotDebugInfo, moduleBuilder.EncTranslateLocalVariableType(field.Type, diagnostics));
@@ -1613,7 +1613,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 int previousAwaiterSlotCount = variableSlotAllocatorOpt.PreviousHoistedLocalSlotCount;
                 while (hoistedVariables.Count < previousAwaiterSlotCount)
                 {
-                    hoistedVariables.Add(new EncHoistedLocalInfo(true));
+                    hoistedVariables.Add(new(true));
                 }
             }
 
@@ -1675,7 +1675,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         // also run the nullable walker, and issue duplicate warnings. We should try to only run the pass
                         // once.
                         // https://github.com/dotnet/roslyn/issues/35041
-                        methodBodyForSemanticModel = NullableWalker.AnalyzeAndRewrite(bodyBinder.Compilation, method, methodBody, bodyBinder, new DiagnosticBag(), createSnapshots: true, out snapshotManager, ref remappedSymbols);
+                        methodBodyForSemanticModel = NullableWalker.AnalyzeAndRewrite(bodyBinder.Compilation, method, methodBody, bodyBinder, new(), createSnapshots: true, out snapshotManager, ref remappedSymbols);
                     }
                     forSemanticModel = new MethodBodySemanticModel.InitialState(syntaxNode, methodBodyForSemanticModel, bodyBinder, snapshotManager, remappedSymbols);
 
@@ -1927,7 +1927,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             CSharpSyntaxNode syntax = constructor.GetNonNullSyntaxNode();
 
             BoundExpression receiver = new(syntax, constructor.ContainingType) { WasCompilerGenerated = true };
-            return new BoundCall(
+            return new(
                 syntax: syntax,
                 receiverOpt: receiver,
                 method: baseConstructor,

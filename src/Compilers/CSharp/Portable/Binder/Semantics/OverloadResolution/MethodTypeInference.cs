@@ -263,7 +263,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // Early out: if the method has no formal parameters then we know that inference will fail.
             if (formalParameterTypes.Length == 0)
             {
-                return new MethodTypeInferenceResult(false, default(ImmutableArray<TypeWithAnnotations>));
+                return new(false, default(ImmutableArray<TypeWithAnnotations>));
 
                 // UNDONE: OPTIMIZATION: We could check to see whether there is a type
                 // UNDONE: parameter which is never used in any formal parameter; if
@@ -434,7 +434,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         continue;
                     }
                 }
-                _fixedResults[i] = TypeWithAnnotations.Create(new ExtendedErrorTypeSymbol(_constructedContainingTypeOfMethod, _methodTypeParameters[i].Name, 0, null, false));
+                _fixedResults[i] = TypeWithAnnotations.Create(new(_constructedContainingTypeOfMethod, _methodTypeParameters[i].Name, 0, null, false));
             }
 
             return _fixedResults.AsImmutable();
@@ -534,7 +534,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // SPEC: bounds. The second phase may have to be repeated a number of times.
             InferTypeArgsFirstPhase(binder, ref useSiteDiagnostics);
             bool success = InferTypeArgsSecondPhase(binder, ref useSiteDiagnostics);
-            return new MethodTypeInferenceResult(success, GetResults());
+            return new(success, GetResults());
         }
 
         ////////////////////////////////////////////////////////////////////////////////

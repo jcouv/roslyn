@@ -17,7 +17,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         internal readonly ImmutableArray<RefKind> parameterRefKinds;
 
         internal static readonly ParameterSignature NoParams =
-            new ParameterSignature(ImmutableArray<TypeWithAnnotations>.Empty, default(ImmutableArray<RefKind>));
+            new(ImmutableArray<TypeWithAnnotations>.Empty, default(ImmutableArray<RefKind>));
 
         private ParameterSignature(ImmutableArray<TypeWithAnnotations> parameterTypesWithAnnotations,
                                    ImmutableArray<RefKind> parameterRefKinds)
@@ -57,7 +57,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
 
             ImmutableArray<RefKind> refKinds = refs != null ? refs.ToImmutableAndFree() : default(ImmutableArray<RefKind>);
-            return new ParameterSignature(types.ToImmutableAndFree(), refKinds);
+            return new(types.ToImmutableAndFree(), refKinds);
         }
 
         internal static void PopulateParameterSignature(ImmutableArray<ParameterSymbol> parameters, ref ParameterSignature lazySignature)

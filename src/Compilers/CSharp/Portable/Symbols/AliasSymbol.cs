@@ -97,12 +97,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         internal static AliasSymbol CreateGlobalNamespaceAlias(NamespaceSymbol globalNamespace, Binder globalNamespaceBinder)
         {
             SyntaxToken aliasName = SyntaxFactory.Identifier(SyntaxFactory.TriviaList(), SyntaxKind.GlobalKeyword, "global", "global", SyntaxFactory.TriviaList());
-            return new AliasSymbol(globalNamespaceBinder, globalNamespace, aliasName, ImmutableArray<Location>.Empty);
+            return new(globalNamespaceBinder, globalNamespace, aliasName, ImmutableArray<Location>.Empty);
         }
 
         internal static AliasSymbol CreateCustomDebugInfoAlias(NamespaceOrTypeSymbol targetSymbol, SyntaxToken aliasToken, Binder binder)
         {
-            return new AliasSymbol(binder, targetSymbol, aliasToken, ImmutableArray.Create(aliasToken.GetLocation()));
+            return new(binder, targetSymbol, aliasToken, ImmutableArray.Create(aliasToken.GetLocation()));
         }
 
         internal AliasSymbol ToNewSubmission(CSharpCompilation compilation)
@@ -119,8 +119,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             var expandedGlobalNamespace = compilation.GlobalNamespace;
             var expandedNamespace = Imports.ExpandPreviousSubmissionNamespace((NamespaceSymbol)previousTarget, expandedGlobalNamespace);
-            var binder = new(expandedGlobalNamespace, new BuckStopsHereBinder(compilation));
-            return new AliasSymbol(binder, expandedNamespace, _aliasName, _locations);
+            var binder = new(expandedGlobalNamespace, new(compilation));
+            return new(binder, expandedNamespace, _aliasName, _locations);
         }
 
         public override string Name

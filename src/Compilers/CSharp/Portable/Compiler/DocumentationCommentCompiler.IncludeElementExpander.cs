@@ -278,13 +278,13 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     if (diagnose)
                     {
-                        _diagnostics.Add(ErrorCode.WRN_FailedInclude, location, filePathValue, xpathValue, new LocalizableErrorArgument(MessageID.IDS_OperationCausedStackOverflow));
+                        _diagnostics.Add(ErrorCode.WRN_FailedInclude, location, filePathValue, xpathValue, new(MessageID.IDS_OperationCausedStackOverflow));
                     }
 
                     commentMessage = ErrorFacts.GetMessage(MessageID.IDS_XMLNOINCLUDE, CultureInfo.CurrentUICulture);
 
                     // Don't inspect the children - we're already in a cycle.
-                    return new XNode[] { new XComment(commentMessage), includeElement.Copy(copyAttributeAnnotations: false) };
+                    return new XNode[] { new(commentMessage), includeElement.Copy(copyAttributeAnnotations: false) };
                 }
 
                 DiagnosticBag includeDiagnostics = DiagnosticBag.GetInstance();
@@ -310,7 +310,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     var resolver = _compilation.Options.XmlReferenceResolver;
                     if (resolver == null)
                     {
-                        includeDiagnostics.Add(ErrorCode.WRN_FailedInclude, location, filePathValue, xpathValue, new CodeAnalysisResourcesLocalizableErrorArgument(nameof(CodeAnalysisResources.XmlReferencesNotSupported)));
+                        includeDiagnostics.Add(ErrorCode.WRN_FailedInclude, location, filePathValue, xpathValue, new(nameof(CodeAnalysisResources.XmlReferencesNotSupported)));
                         commentMessage = MakeCommentMessage(location, MessageID.IDS_XMLFAILEDINCLUDE);
                         return null;
                     }
@@ -320,7 +320,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     if (resolvedFilePath == null)
                     {
                         // NOTE: same behavior as IOException.
-                        includeDiagnostics.Add(ErrorCode.WRN_FailedInclude, location, filePathValue, xpathValue, new CodeAnalysisResourcesLocalizableErrorArgument(nameof(CodeAnalysisResources.FileNotFound)));
+                        includeDiagnostics.Add(ErrorCode.WRN_FailedInclude, location, filePathValue, xpathValue, new(nameof(CodeAnalysisResources.FileNotFound)));
                         commentMessage = MakeCommentMessage(location, MessageID.IDS_XMLFAILEDINCLUDE);
                         return null;
                     }
@@ -365,7 +365,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             if (location.IsInSource)
                             {
                                 // As in Dev11, return only the comment - drop the include element.
-                                return new XNode[] { new XComment(commentMessage) };
+                                return new XNode[] { new(commentMessage) };
                             }
                             else
                             {
@@ -407,7 +407,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             commentMessage = string.Format(ErrorFacts.GetMessage(MessageID.IDS_XMLIGNORED2, CultureInfo.CurrentUICulture), resolvedFilePath);
 
                             // As in Dev11, return only the comment - drop the include element.
-                            return new XNode[] { new XComment(commentMessage) };
+                            return new XNode[] { new(commentMessage) };
                         }
                         else
                         {

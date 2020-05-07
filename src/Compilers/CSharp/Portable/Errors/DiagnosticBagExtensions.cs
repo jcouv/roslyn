@@ -95,7 +95,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     haveErrors = true;
                 }
 
-                diagnostics.Add(new CSDiagnostic(info, location));
+                diagnostics.Add(new(info, location));
             }
 
             return haveErrors;

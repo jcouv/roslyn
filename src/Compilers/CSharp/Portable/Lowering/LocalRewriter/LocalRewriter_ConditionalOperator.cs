@@ -61,7 +61,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                return new BoundConditionalOperator(
+                return new(
                     syntax,
                     isRef,
                     rewrittenCondition,

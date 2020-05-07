@@ -23,7 +23,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var syntax = node.Syntax;
             var targetScriptReference = _previousSubmissionFields.GetOrMakeField(targetType);
             var thisReference = new(syntax, _factory.CurrentType);
-            return new BoundFieldAccess(syntax, thisReference, targetScriptReference, ConstantValue.NotAvailable);
+            return new(syntax, thisReference, targetScriptReference, ConstantValue.NotAvailable);
         }
     }
 }

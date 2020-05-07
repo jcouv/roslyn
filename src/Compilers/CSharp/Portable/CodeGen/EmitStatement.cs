@@ -371,7 +371,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             {
                 _diagnostics.Add(ErrorCode.ERR_InsufficientStack,
                                  BoundTreeVisitor.CancelledByStackGuardException.GetTooLongOrComplexExpressionErrorLocation(condition));
-                throw new EmitCancelledException();
+                throw new();
             }
         }
 
@@ -387,7 +387,7 @@ oneMoreTime:
 
                 if (taken)
                 {
-                    dest = dest ?? new object();
+                    dest = dest ?? new();
                     _builder.EmitBranch(ILOpCode.Br, dest);
                 }
                 else
@@ -458,7 +458,7 @@ oneMoreTime:
                             EmitExpression(binOp.Right, true);
                             ILOpCode revOpCode;
                             ilcode = CodeForJump(binOp, sense, out revOpCode);
-                            dest = dest ?? new object();
+                            dest = dest ?? new();
                             _builder.EmitBranch(ilcode, dest, revOpCode);
                             return;
                     }
@@ -539,7 +539,7 @@ oneMoreTime:
                     _builder.EmitOpCode(ILOpCode.Isinst);
                     EmitSymbolToken(isOp.TargetType.Type, isOp.TargetType.Syntax);
                     ilcode = sense ? ILOpCode.Brtrue : ILOpCode.Brfalse;
-                    dest = dest ?? new object();
+                    dest = dest ?? new();
                     _builder.EmitBranch(ilcode, dest);
                     return;
 
@@ -558,7 +558,7 @@ oneMoreTime:
                     }
 
                     ilcode = sense ? ILOpCode.Brtrue : ILOpCode.Brfalse;
-                    dest = dest ?? new object();
+                    dest = dest ?? new();
                     _builder.EmitBranch(ilcode, dest);
                     return;
             }

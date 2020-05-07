@@ -145,7 +145,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ConstantValue? constantValue = this.FoldConstantConversion(syntax, source, conversion, destination, diagnostics);
             if (conversion.Kind == ConversionKind.DefaultLiteral)
             {
-                source = new BoundDefaultExpression(source.Syntax, targetType: null, constantValue, type: destination)
+                source = new(source.Syntax, targetType: null, constantValue, type: destination)
                     .WithSuppression(source.IsSuppressed);
             }
 
@@ -171,10 +171,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // We manually create an ImplicitNullable conversion
                 // if the destination is nullable, in which case we
                 // target the underlying type e.g. `S? x = new();`
-                // is actually identical to `S? x = new S();`.
+                // is actually identical to `S? x = new();`.
                 HashSet<DiagnosticInfo>? useSiteDiagnostics = null;
                 var conversion = Conversions.ClassifyStandardConversion(null, expr.Type, destination, ref useSiteDiagnostics);
-                expr = new BoundConversion(
+                expr = new(
                     node.Syntax,
                     operand: expr,
                     conversion: conversion,
@@ -347,7 +347,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // Conversion method's parameter type --> conversion method's return type
                 // NB: not calling CreateConversion here because this is the recursive base case.
-                userDefinedConversion = new BoundConversion(
+                userDefinedConversion = new(
                     syntax,
                     convertedOperand,
                     conversion,
@@ -384,7 +384,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // Conversion method's parameter type --> conversion method's "to" type
                 // NB: not calling CreateConversion here because this is the recursive base case.
-                userDefinedConversion = new BoundConversion(
+                userDefinedConversion = new(
                     syntax,
                     convertedOperand,
                     conversion,
@@ -467,7 +467,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 case ConversionKind.StackAllocToPointerType:
                     ReportUnsafeIfNotAllowed(syntax.Location, diagnostics);
-                    stackAllocType = new PointerTypeSymbol(TypeWithAnnotations.Create(elementType));
+                    stackAllocType = new(TypeWithAnnotations.Create(elementType));
                     break;
                 case ConversionKind.StackAllocToSpanType:
                     CheckFeatureAvailability(syntax, MessageID.IDS_FeatureRefStructs, diagnostics);
@@ -477,7 +477,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     throw ExceptionUtilities.UnexpectedValue(conversion.Kind);
             }
 
-            var convertedNode = new BoundConvertedStackAllocExpression(syntax, elementType, boundStackAlloc.Count, boundStackAlloc.InitializerOpt, stackAllocType, boundStackAlloc.HasErrors);
+            var convertedNode = new(syntax, elementType, boundStackAlloc.Count, boundStackAlloc.InitializerOpt, stackAllocType, boundStackAlloc.HasErrors);
 
             var underlyingConversion = conversion.UnderlyingConversions.Single();
             return CreateConversion(syntax, convertedNode, underlyingConversion, isCast: isCast, conversionGroup, destination, diagnostics);
@@ -548,7 +548,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 convertedArguments.Add(CreateConversion(argument.Syntax, argument, elementConversion, isCast: isCast, elementConversionGroup, destType.Type, diagnostics));
             }
 
-            BoundExpression result = new BoundConvertedTupleLiteral(
+            BoundExpression result = new(
                 sourceTuple.Syntax,
                 sourceTuple,
                 wasTargetTyped: true,
@@ -560,7 +560,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (!TypeSymbol.Equals(sourceTuple.Type, destination, TypeCompareKind.ConsiderEverything2))
             {
                 // literal cast is applied to the literal 
-                result = new BoundConversion(
+                result = new(
                     sourceTuple.Syntax,
                     result,
                     conversion,
@@ -575,7 +575,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // even though the literal is already converted to the target type.
             if (isCast)
             {
-                result = new BoundConversion(
+                result = new(
                     syntax,
                     result,
                     Conversion.Identity,

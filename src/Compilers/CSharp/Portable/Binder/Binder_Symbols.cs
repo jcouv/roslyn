@@ -328,7 +328,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             var diagnosticInfo = diagnostics.Add(ErrorCode.ERR_BadSKknown, syntax.Location, syntax, symbol.Symbol.GetKindText(), MessageID.IDS_SK_TYPE.Localize());
-            return TypeWithAnnotations.Create(new ExtendedErrorTypeSymbol(GetContainingNamespaceOrType(symbol.Symbol), symbol.Symbol, LookupResultKind.NotATypeOrNamespace, diagnosticInfo));
+            return TypeWithAnnotations.Create(new(GetContainingNamespaceOrType(symbol.Symbol), symbol.Symbol, LookupResultKind.NotATypeOrNamespace, diagnosticInfo));
         }
 
         /// <summary>
@@ -488,7 +488,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 if (!ShouldCheckConstraints)
                 {
-                    diagnostics.Add(new LazyUseSiteDiagnosticsInfoForNullableType(constructedType), syntax.GetLocation());
+                    diagnostics.Add(new(constructedType), syntax.GetLocation());
                 }
                 else if (constructedType.IsNullableType())
                 {
@@ -521,7 +521,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 if (left.Kind == SymbolKind.NamedType)
                 {
-                    return TypeWithAnnotations.Create(new ExtendedErrorTypeSymbol(left, LookupResultKind.NotATypeOrNamespace, diagnostics.Add(ErrorCode.ERR_ColColWithTypeAlias, node.Alias.Location, node.Alias.Identifier.Text)));
+                    return TypeWithAnnotations.Create(new(left, LookupResultKind.NotATypeOrNamespace, diagnostics.Add(ErrorCode.ERR_ColColWithTypeAlias, node.Alias.Location, node.Alias.Identifier.Text)));
                 }
 
                 return this.BindSimpleNamespaceOrTypeOrAliasSymbol(node.Name, diagnostics, basesBeingResolved, suppressUseSiteDiagnostics, left);
@@ -538,7 +538,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     CheckManagedAddr(Compilation, elementType.Type, node.Location, diagnostics);
                 }
 
-                return TypeWithAnnotations.Create(new PointerTypeSymbol(elementType));
+                return TypeWithAnnotations.Create(new(elementType));
             }
         }
 
@@ -569,7 +569,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
                 else
                 {
-                    diagnostics.Add(new LazyArrayElementCantBeRefAnyDiagnosticInfo(type), node.ElementType.GetLocation());
+                    diagnostics.Add(new(type), node.ElementType.GetLocation());
                 }
             }
 
@@ -745,7 +745,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             switch (syntax.Kind())
             {
                 default:
-                    return TypeWithAnnotations.Create(new ExtendedErrorTypeSymbol(qualifierOpt ?? this.Compilation.Assembly.GlobalNamespace, string.Empty, arity: 0, errorInfo: null));
+                    return TypeWithAnnotations.Create(new(qualifierOpt ?? this.Compilation.Assembly.GlobalNamespace, string.Empty, arity: 0, errorInfo: null));
 
                 case SyntaxKind.IdentifierName:
                     return BindNonGenericSimpleNamespaceOrTypeOrAliasSymbol((IdentifierNameSyntax)syntax, diagnostics, basesBeingResolved, suppressUseSiteDiagnostics, qualifierOpt);
@@ -794,9 +794,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (string.IsNullOrWhiteSpace(identifierValueText))
             {
-                return TypeWithAnnotations.Create(new ExtendedErrorTypeSymbol(
+                return TypeWithAnnotations.Create(new(
                     Compilation.Assembly.GlobalNamespace, identifierValueText, 0,
-                    new CSDiagnosticInfo(ErrorCode.ERR_SingleTypeNameNotFound)));
+                    new(ErrorCode.ERR_SingleTypeNameNotFound)));
             }
 
             var errorResult = CreateErrorIfLookupOnTypeParameter(node.Parent, qualifierOpt, identifierValueText, 0, diagnostics);
@@ -1180,7 +1180,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 var diagnosticInfo = new(ErrorCode.ERR_LookupInTypeVariable, qualifierOpt);
                 diagnostics.Add(diagnosticInfo, node.Location);
-                return new ExtendedErrorTypeSymbol(this.Compilation, name, arity, diagnosticInfo, unreported: false);
+                return new(this.Compilation, name, arity, diagnosticInfo, unreported: false);
             }
 
             return null;
@@ -1263,7 +1263,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             switch (members[0].Kind)
             {
                 case SymbolKind.Method:
-                    return new BoundMethodGroup(
+                    return new(
                         syntax,
                         typeArguments,
                         receiver,
@@ -1274,7 +1274,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         hasErrors);
 
                 case SymbolKind.Property:
-                    return new BoundPropertyGroup(
+                    return new(
                         syntax,
                         members.SelectAsArray(s_toPropertySymbolFunc),
                         receiver,
@@ -1400,7 +1400,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var useSiteDiagnostic = symbol.GetUseSiteDiagnosticForSymbolOrContainingType();
             if (useSiteDiagnostic != null)
             {
-                Symbol.ReportUseSiteDiagnostic(useSiteDiagnostic, diagnostics, new SourceLocation(syntax));
+                Symbol.ReportUseSiteDiagnostic(useSiteDiagnostic, diagnostics, new(syntax));
             }
 
             return true;
@@ -1697,8 +1697,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                                     info = new(ErrorCode.ERR_AmbigContext, originalSymbols,
                                         new object[] {
                                         (where as NameSyntax)?.ErrorDisplayName() ?? simpleName,
-                                        new FormattedSymbol(first, SymbolDisplayFormat.CSharpErrorMessageFormat),
-                                        new FormattedSymbol(second, SymbolDisplayFormat.CSharpErrorMessageFormat) });
+                                        new(first, SymbolDisplayFormat.CSharpErrorMessageFormat),
+                                        new(second, SymbolDisplayFormat.CSharpErrorMessageFormat) });
                                 }
                                 else
                                 {
@@ -1843,8 +1843,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                                     info = new(ErrorCode.ERR_AmbigContext, originalSymbols,
                                         new object[] {
                                         (where as NameSyntax)?.ErrorDisplayName() ?? simpleName,
-                                        new FormattedSymbol(first, SymbolDisplayFormat.CSharpErrorMessageFormat),
-                                        new FormattedSymbol(second, SymbolDisplayFormat.CSharpErrorMessageFormat) });
+                                        new(first, SymbolDisplayFormat.CSharpErrorMessageFormat),
+                                        new(second, SymbolDisplayFormat.CSharpErrorMessageFormat) });
                                 }
                             }
                             else
@@ -1862,7 +1862,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             diagnostics.Add(info, where.Location);
                         }
 
-                        return new ExtendedErrorTypeSymbol(
+                        return new(
                             GetContainingNamespaceOrType(originalSymbols[0]),
                             originalSymbols,
                             LookupResultKind.Ambiguous,
@@ -1939,7 +1939,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
 
                     CSDiagnosticInfo info = NotFound(where, simpleName, arity, (where as NameSyntax)?.ErrorDisplayName() ?? simpleName, diagnostics, aliasOpt, qualifierOpt, options);
-                    return new ExtendedErrorTypeSymbol(qualifierOpt ?? Compilation.Assembly.GlobalNamespace, simpleName, arity, info);
+                    return new(qualifierOpt ?? Compilation.Assembly.GlobalNamespace, simpleName, arity, info);
                 }
 
                 Debug.Assert(symbols.Count > 0);
@@ -1958,7 +1958,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (result.Error != null &&
                     ((object)qualifierOpt == null || qualifierOpt.Kind != SymbolKind.ErrorType)) // Suppress cascading.
                 {
-                    diagnostics.Add(new CSDiagnostic(result.Error, where.Location));
+                    diagnostics.Add(new(result.Error, where.Location));
                 }
 
                 if ((symbols.Count > 1) || (symbols[0] is NamespaceOrTypeSymbol || symbols[0] is AliasSymbol) ||
@@ -1967,7 +1967,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // Bad type or namespace (or things expected as types/namespaces) are packaged up as error types, preserving the symbols and the result kind.
                     // We do this if there are multiple symbols too, because just returning one would be losing important information, and they might
                     // be of different kinds.
-                    return new ExtendedErrorTypeSymbol(GetContainingNamespaceOrType(symbols[0]), symbols.ToImmutable(), result.Kind, result.Error, arity);
+                    return new(GetContainingNamespaceOrType(symbols[0]), symbols.ToImmutable(), result.Kind, result.Error, arity);
                 }
                 else
                 {

@@ -142,7 +142,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         method,
                         newOperand.ResultKind,
                         upconvertType) :
-                    new BoundUnaryOperator(
+                    new(
                         syntax,
                         newKind,
                         newOperand,
@@ -165,7 +165,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             return (oldNode != null) ?
                 oldNode.Update(kind, loweredOperand, oldNode.ConstantValueOpt, method, oldNode.ResultKind, type) :
-                new BoundUnaryOperator(syntax, kind, loweredOperand, null, method, LookupResultKind.Viable, type);
+                new(syntax, kind, loweredOperand, null, method, LookupResultKind.Viable, type);
         }
 
         private BoundExpression LowerLiftedUnaryOperator(
@@ -223,7 +223,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // temp.HasValue ? 
             //          new R?(OP(temp.GetValueOrDefault())) : 
             //          default(R?);
-            return new BoundSequence(
+            return new(
                 syntax: syntax,
                 locals: ImmutableArray.Create<LocalSymbol>(boundTemp.LocalSymbol),
                 sideEffects: ImmutableArray.Create<BoundExpression>(tempAssignment),
@@ -240,7 +240,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (NullableNeverHasValue(loweredOperand))
             {
-                return new BoundDefaultExpression(syntax, type);
+                return new(syntax, type);
             }
 
             // Second, another simple optimization. If we know that the operand is never null
@@ -320,7 +320,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     if (NullableAlwaysHasValue(conditional.Consequence) != null && NullableNeverHasValue(conditional.Alternative))
                     {
-                        return new BoundSequence(
+                        return new(
                             syntax,
                             seq.Locals,
                             seq.SideEffects,
@@ -508,7 +508,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // prefix:  Seq( operand initializers; temp = (T)(operand + 1); operand = temp;          result: temp)
             // postfix: Seq( operand initializers; temp = operand;          operand = (T)(temp + 1); result: temp)
-            return new BoundSequence(
+            return new(
                 syntax: syntax,
                 locals: tempSymbols.ToImmutableAndFree(),
                 sideEffects: tempInitializers.ToImmutableAndFree().Concat(assignments),
@@ -546,7 +546,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // prefix:  Seq{operand initializers; operand = Seq{temp = (T)(operand + 1);  temp;}          result: temp}
             // postfix: Seq{operand initializers; operand = Seq{temp = operand;        ;  (T)(temp + 1);} result: temp}
             tempInitializers.Add(operandAssignment);
-            return new BoundSequence(
+            return new(
                 syntax: syntax,
                 locals: tempSymbols.ToImmutableAndFree(),
                 sideEffects: tempInitializers.ToImmutableAndFree(),
@@ -666,7 +666,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // temp.HasValue ? 
             //          new S?(op_Increment(temp.GetValueOrDefault())) : 
             //          default(S?);
-            return new BoundSequence(
+            return new(
                 syntax: syntax,
                 locals: ImmutableArray.Create<LocalSymbol>(boundTemp.LocalSymbol),
                 sideEffects: ImmutableArray.Create<BoundExpression>(tempAssignment),

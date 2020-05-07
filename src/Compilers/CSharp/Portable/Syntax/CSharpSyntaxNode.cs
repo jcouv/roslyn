@@ -186,19 +186,19 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (stream == null)
             {
-                throw new ArgumentNullException(nameof(stream));
+                throw new(nameof(stream));
             }
 
             if (!stream.CanRead)
             {
-                throw new InvalidOperationException(CodeAnalysisResources.TheStreamCannotBeReadFrom);
+                throw new(CodeAnalysisResources.TheStreamCannotBeReadFrom);
             }
 
             using var reader = ObjectReader.TryGetReader(stream, leaveOpen: true, cancellationToken);
 
             if (reader == null)
             {
-                throw new ArgumentException(CodeAnalysisResources.Stream_contains_invalid_data, nameof(stream));
+                throw new(CodeAnalysisResources.Stream_contains_invalid_data, nameof(stream));
             }
 
             var root = (Syntax.InternalSyntax.CSharpSyntaxNode)reader.ReadValue();
@@ -212,7 +212,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         public new Location GetLocation()
         {
-            return new SourceLocation(this);
+            return new(this);
         }
 
         /// <summary>

@@ -135,7 +135,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (_lazyNativeIntegerTypes[index] is null)
             {
-                Interlocked.CompareExchange(ref _lazyNativeIntegerTypes[index], new NativeIntegerTypeSymbol(underlyingType), null);
+                Interlocked.CompareExchange(ref _lazyNativeIntegerTypes[index], new(underlyingType), null);
             }
 
             return _lazyNativeIntegerTypes[index];

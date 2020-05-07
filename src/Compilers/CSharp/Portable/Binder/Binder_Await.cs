@@ -28,7 +28,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private BoundAwaitExpression BindAwait(BoundExpression expression, SyntaxNode node, DiagnosticBag diagnostics)
         {
             bool hasErrors = false;
-            var placeholder = new BoundAwaitableValuePlaceholder(expression.Syntax, GetValEscape(expression, LocalScopeDepth), expression.Type);
+            var placeholder = new(expression.Syntax, GetValEscape(expression, LocalScopeDepth), expression.Type);
 
             ReportBadAwaitDiagnostics(node, node.Location, diagnostics, ref hasErrors);
             var info = BindAwaitInfo(placeholder, node, diagnostics, ref hasErrors, expressionOpt: expression);
@@ -39,7 +39,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // non-void return type T, the await-expression is classified as a value of type T.
             TypeSymbol awaitExpressionType = info.GetResult?.ReturnType ?? (hasErrors ? CreateErrorType() : Compilation.DynamicType);
 
-            return new BoundAwaitExpression(node, expression, info, awaitExpressionType, hasErrors);
+            return new(node, expression, info, awaitExpressionType, hasErrors);
         }
 
         internal void ReportBadAwaitDiagnostics(SyntaxNode node, Location location, DiagnosticBag diagnostics, ref bool hasErrors)
@@ -151,7 +151,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         {
                             if (((FieldSymbol)containingMemberOrLambda).IsStatic)
                             {
-                                info = new CSDiagnosticInfo(ErrorCode.ERR_BadAwaitInStaticVariableInitializer);
+                                info = new(ErrorCode.ERR_BadAwaitInStaticVariableInitializer);
                             }
                             else
                             {
@@ -183,7 +183,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             if (info == null)
             {
-                info = new CSDiagnosticInfo(ErrorCode.ERR_BadAwaitWithoutAsync);
+                info = new(ErrorCode.ERR_BadAwaitWithoutAsync);
             }
             Error(diagnostics, info, location);
             return true;
@@ -359,7 +359,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </remarks>
         private bool GetIsCompletedProperty(TypeSymbol awaiterType, SyntaxNode node, TypeSymbol awaitedExpressionType, DiagnosticBag diagnostics, [NotNullWhen(true)] out PropertySymbol? isCompletedProperty)
         {
-            var receiver = new BoundLiteral(node, ConstantValue.Null, awaiterType);
+            var receiver = new(node, ConstantValue.Null, awaiterType);
             var name = WellKnownMemberNames.IsCompleted;
             var qualified = BindInstanceMemberAccess(node, node, receiver, name, 0, default(SeparatedSyntaxList<TypeSyntax>), default(ImmutableArray<TypeWithAnnotations>), invoked: false, indexed: false, diagnostics);
             if (qualified.HasAnyErrors)

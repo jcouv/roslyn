@@ -150,17 +150,17 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public static LocalizableResourceString GetMessageFormat(ErrorCode code)
         {
-            return new LocalizableResourceString(code.ToString(), ResourceManager, typeof(ErrorFacts));
+            return new(code.ToString(), ResourceManager, typeof(ErrorFacts));
         }
 
         public static LocalizableResourceString GetTitle(ErrorCode code)
         {
-            return new LocalizableResourceString(code.ToString() + s_titleSuffix, ResourceManager, typeof(ErrorFacts));
+            return new(code.ToString() + s_titleSuffix, ResourceManager, typeof(ErrorFacts));
         }
 
         public static LocalizableResourceString GetDescription(ErrorCode code)
         {
-            return new LocalizableResourceString(code.ToString() + s_descriptionSuffix, ResourceManager, typeof(ErrorFacts));
+            return new(code.ToString() + s_descriptionSuffix, ResourceManager, typeof(ErrorFacts));
         }
 
         public static string GetHelpLink(ErrorCode code)

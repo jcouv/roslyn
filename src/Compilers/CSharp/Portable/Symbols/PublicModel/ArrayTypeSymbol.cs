@@ -28,7 +28,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.PublicModel
         {
             Debug.Assert(nullableAnnotation != _underlying.DefaultNullableAnnotation);
             Debug.Assert(nullableAnnotation != this.NullableAnnotation);
-            return new ArrayTypeSymbol(_underlying, nullableAnnotation);
+            return new(_underlying, nullableAnnotation);
         }
 
         internal override CSharp.Symbol UnderlyingSymbol => _underlying;

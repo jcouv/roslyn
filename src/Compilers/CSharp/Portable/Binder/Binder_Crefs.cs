@@ -733,7 +733,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 : (arity == 0 ? candidateMethod.Arity : arity);
 
                             // CONSIDER: we might want to reuse this method symbol (as long as the MethodKind and Vararg-ness match).
-                            signatureMember = new SignatureOnlyMethodSymbol(
+                            signatureMember = new(
                                 methodKind: candidateMethodKind,
                                 typeParameters: IndexedTypeParameterSymbol.Take(signatureMemberArity),
                                 parameters: parameterSymbols,
@@ -752,7 +752,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     case SymbolKind.Property:
                         {
                             // CONSIDER: we might want to reuse this property symbol.
-                            signatureMember = new SignatureOnlyPropertySymbol(
+                            signatureMember = new(
                                 parameters: parameterSymbols,
                                 // These are ignored by this specific MemberSignatureComparer.
                                 containingType: null,

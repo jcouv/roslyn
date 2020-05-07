@@ -361,7 +361,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var method = UnsafeGetSpecialTypeMethod(syntax, member);
             Debug.Assert((object)method != null);
 
-            return new BoundBinaryOperator(syntax, operatorKind, constantValueOpt: null, method, default(LookupResultKind), loweredLeft, loweredRight, type);
+            return new(syntax, operatorKind, constantValueOpt: null, method, default(LookupResultKind), loweredLeft, loweredRight, type);
         }
 
         /// <summary>
@@ -482,13 +482,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 int currentConditionalAccessID = ++_currentConditionalAccessID;
 
-                return new BoundLoweredConditionalAccess(
+                return new(
                     syntax,
                     receiver,
                     hasValueMethodOpt: null,
                     whenNotNull: BoundCall.Synthesized(
                         syntax,
-                        new BoundConditionalReceiver(syntax, currentConditionalAccessID, expr.Type),
+                        new(syntax, currentConditionalAccessID, expr.Type),
                         objectToStringMethod),
                     whenNullOpt: null,
                     id: currentConditionalAccessID,

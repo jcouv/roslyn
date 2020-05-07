@@ -52,7 +52,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
             var contexts = GetContexts(tree, isGeneratedCode);
 
             var empty = isGeneratedCode ? EmptyGenerated : EmptyNonGenerated;
-            return contexts.IsEmpty ? empty : new NullableContextStateMap(contexts, isGeneratedCode);
+            return contexts.IsEmpty ? empty : new(contexts, isGeneratedCode);
         }
 
         private NullableContextStateMap(ImmutableArray<NullableContextState> contexts, bool isGeneratedCode)
@@ -71,8 +71,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
         {
             // Generated files have an initial nullable context that is "disabled"
             return isGeneratedCode
-                ? new NullableContextState(position, warningsState: NullableContextState.State.Disabled, annotationsState: NullableContextState.State.Disabled)
-                : new NullableContextState(position, warningsState: NullableContextState.State.Unknown, annotationsState: NullableContextState.State.Unknown);
+                ? new(position, warningsState: NullableContextState.State.Disabled, annotationsState: NullableContextState.State.Disabled)
+                : new(position, warningsState: NullableContextState.State.Unknown, annotationsState: NullableContextState.State.Unknown);
         }
 
         internal NullableContextState GetContextState(int position)
@@ -144,9 +144,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
 
                 var context = nn.TargetToken.Kind() switch
                 {
-                    SyntaxKind.None => new NullableContextState(position, setting, setting),
-                    SyntaxKind.WarningsKeyword => new NullableContextState(position, warningsState: setting, annotationsState: previousContext.AnnotationsState),
-                    SyntaxKind.AnnotationsKeyword => new NullableContextState(position, warningsState: previousContext.WarningsState, annotationsState: setting),
+                    SyntaxKind.None => new(position, setting, setting),
+                    SyntaxKind.WarningsKeyword => new(position, warningsState: setting, annotationsState: previousContext.AnnotationsState),
+                    SyntaxKind.AnnotationsKeyword => new(position, warningsState: previousContext.WarningsState, annotationsState: setting),
                     var kind => throw ExceptionUtilities.UnexpectedValue(kind)
                 };
 

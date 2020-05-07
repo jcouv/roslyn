@@ -97,7 +97,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             DeconstructionVariable locals = BindDeconstructionVariables(left, diagnostics, ref declaration, ref expression);
             Debug.Assert(locals.NestedVariables is object);
 
-            var deconstructionDiagnostics = new DiagnosticBag();
+            var deconstructionDiagnostics = new();
             BoundExpression boundRight = rightPlaceholder ?? BindValue(right, deconstructionDiagnostics, BindValueKind.RValue);
 
             boundRight = FixTupleLiteral(locals.NestedVariables, boundRight, deconstruction, deconstructionDiagnostics);
@@ -161,7 +161,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             uint leftEscape = GetBroadestValEscape(lhsTuple, this.LocalScopeDepth);
             boundRHS = ValidateEscape(boundRHS, leftEscape, isByRef: false, diagnostics: diagnostics);
 
-            var boundConversion = new BoundConversion(
+            var boundConversion = new(
                 boundRHS.Syntax,
                 boundRHS,
                 conversion,
@@ -274,7 +274,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return false;
                 }
 
-                var inputPlaceholder = new BoundDeconstructValuePlaceholder(syntax, this.LocalScopeDepth, type);
+                var inputPlaceholder = new(syntax, this.LocalScopeDepth, type);
                 BoundExpression deconstructInvocation = MakeDeconstructInvocationExpression(variables.Count,
                     inputPlaceholder, rightSyntax, diagnostics, outPlaceholders: out ImmutableArray<BoundDeconstructValuePlaceholder> outPlaceholders, out _);
 
@@ -283,7 +283,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return false;
                 }
 
-                deconstructMethod = new DeconstructMethodInfo(deconstructInvocation, inputPlaceholder, outPlaceholders);
+                deconstructMethod = new(deconstructInvocation, inputPlaceholder, outPlaceholders);
 
                 tupleOrDeconstructedTypes = outPlaceholders.SelectAsArray(p => p.Type);
                 SetInferredTypes(variables, tupleOrDeconstructedTypes, diagnostics);
@@ -323,7 +323,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 nestedConversions.Add(nestedConversion);
             }
 
-            conversion = new Conversion(ConversionKind.Deconstruction, deconstructMethod, nestedConversions.ToImmutableAndFree());
+            conversion = new(ConversionKind.Deconstruction, deconstructMethod, nestedConversions.ToImmutableAndFree());
 
             return !hasErrors;
         }
@@ -344,7 +344,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         continue;
                     }
 
-                    variables[i] = new DeconstructionVariable(SetInferredType(pending, foundTypes[i], diagnostics), variable.Syntax);
+                    variables[i] = new(SetInferredType(pending, foundTypes[i], diagnostics), variable.Syntax);
                 }
             }
         }
@@ -398,14 +398,14 @@ namespace Microsoft.CodeAnalysis.CSharp
                             break;
                         case BoundKind.DeconstructionVariablePendingInference:
                             BoundExpression errorLocal = ((DeconstructionVariablePendingInference)variable.Single).FailInference(this, diagnostics);
-                            variables[i] = new DeconstructionVariable(errorLocal, errorLocal.Syntax);
+                            variables[i] = new(errorLocal, errorLocal.Syntax);
                             break;
                         case BoundKind.DiscardExpression:
                             var pending = (BoundDiscardExpression)variable.Single;
                             if ((object?)pending.Type == null)
                             {
                                 Error(diagnostics, ErrorCode.ERR_TypeInferenceFailedForImplicitlyTypedDeconstructionVariable, pending.Syntax, "_");
-                                variables[i] = new DeconstructionVariable(pending.FailInference(this, diagnostics), pending.Syntax);
+                                variables[i] = new(pending.FailInference(this, diagnostics), pending.Syntax);
                             }
                             break;
                     }
@@ -627,7 +627,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 for (int i = 0; i < numCheckedVariables; i++)
                 {
-                    var variable = new OutDeconstructVarPendingInference(receiverSyntax);
+                    var variable = new(receiverSyntax);
                     analyzedArguments.Arguments.Add(variable);
                     analyzedArguments.RefKinds.Add(RefKind.Out);
                     outVars.Add(variable);

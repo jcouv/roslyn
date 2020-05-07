@@ -205,7 +205,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     // Add the set to the ordered list.
                     foreach (var item in set)
                     {
-                        order.Add(new FieldInfo(item, startsCycle: false));
+                        order.Add(new(item, startsCycle: false));
                     }
 
                     lastUpdated = updated;
@@ -244,7 +244,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     CheckGraph(graph);
 
                     // Add the start of the cycle to the ordered list.
-                    order.Add(new FieldInfo(field, startsCycle: true));
+                    order.Add(new(field, startsCycle: true));
 
                     // Need to search the entire graph the next time
                     // through the loop so lastUpdated is not set.

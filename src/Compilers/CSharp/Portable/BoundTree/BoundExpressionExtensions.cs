@@ -124,7 +124,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             switch (node.Kind)
             {
                 case BoundKind.MethodGroup:
-                    // Special case: if we are looking for info on "M" in "new Action(M)" in the context of a parent 
+                    // Special case: if we are looking for info on "M" in "new(M)" in the context of a parent 
                     // then we want to get the symbol that overload resolution chose for M, not on the whole method group M.
                     var delegateCreation = parent as BoundDelegateCreationExpression;
                     if (delegateCreation != null && delegateCreation.MethodOpt is { })

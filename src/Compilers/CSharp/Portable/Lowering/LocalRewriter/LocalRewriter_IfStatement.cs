@@ -63,12 +63,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // consequence;
                 // afterif:
 
-                builder.Add(new BoundConditionalGoto(rewrittenCondition.Syntax, rewrittenCondition, false, afterif));
+                builder.Add(new(rewrittenCondition.Syntax, rewrittenCondition, false, afterif));
                 builder.Add(rewrittenConsequence);
                 builder.Add(BoundSequencePoint.CreateHidden());
-                builder.Add(new BoundLabelStatement(syntax, afterif));
+                builder.Add(new(syntax, afterif));
                 var statements = builder.ToImmutableAndFree();
-                return new BoundStatementList(syntax, statements, hasErrors);
+                return new(syntax, statements, hasErrors);
             }
             else
             {
@@ -88,14 +88,14 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 var alt = new("alternative");
 
-                builder.Add(new BoundConditionalGoto(rewrittenCondition.Syntax, rewrittenCondition, false, alt));
+                builder.Add(new(rewrittenCondition.Syntax, rewrittenCondition, false, alt));
                 builder.Add(rewrittenConsequence);
-                builder.Add(new BoundGotoStatement(syntax, afterif));
-                builder.Add(new BoundLabelStatement(syntax, alt));
+                builder.Add(new(syntax, afterif));
+                builder.Add(new(syntax, alt));
                 builder.Add(rewrittenAlternativeOpt);
                 builder.Add(BoundSequencePoint.CreateHidden());
-                builder.Add(new BoundLabelStatement(syntax, afterif));
-                return new BoundStatementList(syntax, builder.ToImmutableAndFree(), hasErrors);
+                builder.Add(new(syntax, afterif));
+                return new(syntax, builder.ToImmutableAndFree(), hasErrors);
             }
 
         }

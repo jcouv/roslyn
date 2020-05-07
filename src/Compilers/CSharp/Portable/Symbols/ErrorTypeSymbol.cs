@@ -456,14 +456,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         protected override NamedTypeSymbol ConstructCore(ImmutableArray<TypeWithAnnotations> typeArguments, bool unbound)
         {
-            return new ConstructedErrorTypeSymbol(this, typeArguments);
+            return new(this, typeArguments);
         }
 
         internal override NamedTypeSymbol AsMember(NamedTypeSymbol newOwner)
         {
             Debug.Assert(this.IsDefinition);
             Debug.Assert(ReferenceEquals(newOwner.OriginalDefinition, this.ContainingSymbol?.OriginalDefinition));
-            return newOwner.IsDefinition ? this : new SubstitutedNestedErrorTypeSymbol(newOwner, this);
+            return newOwner.IsDefinition ? this : new(newOwner, this);
         }
 
         internal sealed override bool ShouldAddWinRTMembers
@@ -629,7 +629,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         protected override NamedTypeSymbol WithTupleDataCore(TupleExtraData newData)
         {
-            return new ConstructedErrorTypeSymbol(_constructedFrom, _typeArgumentsWithAnnotations, tupleData: newData);
+            return new(_constructedFrom, _typeArgumentsWithAnnotations, tupleData: newData);
         }
 
         public override ImmutableArray<TypeParameterSymbol> TypeParameters

@@ -28,7 +28,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         private NamedTypeSymbol[] _lazySpecialTypes;
 
         private MissingCorLibrarySymbol()
-            : base(new AssemblyIdentity("<Missing Core Assembly>"))
+            : base(new("<Missing Core Assembly>"))
         {
             this.SetCorLibrary(this);
         }

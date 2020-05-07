@@ -110,7 +110,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 Debug.Assert(MoveNextMethod != null);
                 Debug.Assert(CurrentPropertyGetter != null);
 
-                return new ForEachEnumeratorInfo(
+                return new(
                     CollectionType,
                     ElementTypeWithAnnotations,
                     GetEnumeratorMethod,

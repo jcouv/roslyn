@@ -39,7 +39,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         protected override NamedTypeSymbol WithTupleDataCore(TupleExtraData newData)
         {
-            return new NoPiaAmbiguousCanonicalTypeSymbol(_embeddingAssembly, _firstCandidate, _secondCandidate, newData);
+            return new(_embeddingAssembly, _firstCandidate, _secondCandidate, newData);
         }
 
         internal override bool MangleName
@@ -79,7 +79,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             get
             {
-                return new CSDiagnosticInfo(ErrorCode.ERR_NoCanonicalView, _firstCandidate);
+                return new(ErrorCode.ERR_NoCanonicalView, _firstCandidate);
             }
         }
 

@@ -151,7 +151,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // in those cases it is ok to ignore existing _uncommonData.
             Debug.Assert(_kind == ConversionKind.MethodGroup || _kind == ConversionKind.IntPtr);
 
-            return new Conversion(this.Kind, conversionMethod, isExtensionMethod: IsExtensionMethod);
+            return new(this.Kind, conversionMethod, isExtensionMethod: IsExtensionMethod);
         }
 
         internal Conversion SetArrayIndexConversionForDynamic()
@@ -159,9 +159,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(_kind.IsDynamic());
             Debug.Assert(_uncommonData == null);
 
-            return new Conversion(
+            return new(
                 _kind,
-                new UncommonData(
+                new(
                     isExtensionMethod: false,
                     isArrayIndex: true,
                     conversionResult: default,
@@ -214,37 +214,37 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal static Conversion GetTrivialConversion(ConversionKind kind)
         {
             AssertTrivialConversion(kind);
-            return new Conversion(kind);
+            return new(kind);
         }
 
-        internal static Conversion UnsetConversion => new Conversion(ConversionKind.UnsetConversionKind);
-        internal static Conversion NoConversion => new Conversion(ConversionKind.NoConversion);
-        internal static Conversion Identity => new Conversion(ConversionKind.Identity);
-        internal static Conversion ImplicitConstant => new Conversion(ConversionKind.ImplicitConstant);
-        internal static Conversion ImplicitNumeric => new Conversion(ConversionKind.ImplicitNumeric);
-        internal static Conversion ImplicitReference => new Conversion(ConversionKind.ImplicitReference);
-        internal static Conversion ImplicitEnumeration => new Conversion(ConversionKind.ImplicitEnumeration);
-        internal static Conversion ImplicitThrow => new Conversion(ConversionKind.ImplicitThrow);
-        internal static Conversion ObjectCreation => new Conversion(ConversionKind.ObjectCreation);
-        internal static Conversion AnonymousFunction => new Conversion(ConversionKind.AnonymousFunction);
-        internal static Conversion Boxing => new Conversion(ConversionKind.Boxing);
-        internal static Conversion NullLiteral => new Conversion(ConversionKind.NullLiteral);
-        internal static Conversion DefaultLiteral => new Conversion(ConversionKind.DefaultLiteral);
-        internal static Conversion NullToPointer => new Conversion(ConversionKind.NullToPointer);
-        internal static Conversion PointerToVoid => new Conversion(ConversionKind.PointerToVoid);
-        internal static Conversion PointerToPointer => new Conversion(ConversionKind.PointerToPointer);
-        internal static Conversion PointerToInteger => new Conversion(ConversionKind.PointerToInteger);
-        internal static Conversion IntegerToPointer => new Conversion(ConversionKind.IntegerToPointer);
-        internal static Conversion Unboxing => new Conversion(ConversionKind.Unboxing);
-        internal static Conversion ExplicitReference => new Conversion(ConversionKind.ExplicitReference);
-        internal static Conversion IntPtr => new Conversion(ConversionKind.IntPtr);
-        internal static Conversion ExplicitEnumeration => new Conversion(ConversionKind.ExplicitEnumeration);
-        internal static Conversion ExplicitNumeric => new Conversion(ConversionKind.ExplicitNumeric);
-        internal static Conversion ImplicitDynamic => new Conversion(ConversionKind.ImplicitDynamic);
-        internal static Conversion ExplicitDynamic => new Conversion(ConversionKind.ExplicitDynamic);
-        internal static Conversion InterpolatedString => new Conversion(ConversionKind.InterpolatedString);
-        internal static Conversion Deconstruction => new Conversion(ConversionKind.Deconstruction);
-        internal static Conversion PinnedObjectToPointer => new Conversion(ConversionKind.PinnedObjectToPointer);
+        internal static Conversion UnsetConversion => new(ConversionKind.UnsetConversionKind);
+        internal static Conversion NoConversion => new(ConversionKind.NoConversion);
+        internal static Conversion Identity => new(ConversionKind.Identity);
+        internal static Conversion ImplicitConstant => new(ConversionKind.ImplicitConstant);
+        internal static Conversion ImplicitNumeric => new(ConversionKind.ImplicitNumeric);
+        internal static Conversion ImplicitReference => new(ConversionKind.ImplicitReference);
+        internal static Conversion ImplicitEnumeration => new(ConversionKind.ImplicitEnumeration);
+        internal static Conversion ImplicitThrow => new(ConversionKind.ImplicitThrow);
+        internal static Conversion ObjectCreation => new(ConversionKind.ObjectCreation);
+        internal static Conversion AnonymousFunction => new(ConversionKind.AnonymousFunction);
+        internal static Conversion Boxing => new(ConversionKind.Boxing);
+        internal static Conversion NullLiteral => new(ConversionKind.NullLiteral);
+        internal static Conversion DefaultLiteral => new(ConversionKind.DefaultLiteral);
+        internal static Conversion NullToPointer => new(ConversionKind.NullToPointer);
+        internal static Conversion PointerToVoid => new(ConversionKind.PointerToVoid);
+        internal static Conversion PointerToPointer => new(ConversionKind.PointerToPointer);
+        internal static Conversion PointerToInteger => new(ConversionKind.PointerToInteger);
+        internal static Conversion IntegerToPointer => new(ConversionKind.IntegerToPointer);
+        internal static Conversion Unboxing => new(ConversionKind.Unboxing);
+        internal static Conversion ExplicitReference => new(ConversionKind.ExplicitReference);
+        internal static Conversion IntPtr => new(ConversionKind.IntPtr);
+        internal static Conversion ExplicitEnumeration => new(ConversionKind.ExplicitEnumeration);
+        internal static Conversion ExplicitNumeric => new(ConversionKind.ExplicitNumeric);
+        internal static Conversion ImplicitDynamic => new(ConversionKind.ImplicitDynamic);
+        internal static Conversion ExplicitDynamic => new(ConversionKind.ExplicitDynamic);
+        internal static Conversion InterpolatedString => new(ConversionKind.InterpolatedString);
+        internal static Conversion Deconstruction => new(ConversionKind.Deconstruction);
+        internal static Conversion PinnedObjectToPointer => new(ConversionKind.PinnedObjectToPointer);
 
         // trivial conversions that could be underlying in nullable conversion
         // NOTE: tuple conversions can be underlying as well, but they are not trivial 
@@ -269,12 +269,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal static Conversion MakeStackAllocToPointerType(Conversion underlyingConversion)
         {
-            return new Conversion(ConversionKind.StackAllocToPointerType, ImmutableArray.Create(underlyingConversion));
+            return new(ConversionKind.StackAllocToPointerType, ImmutableArray.Create(underlyingConversion));
         }
 
         internal static Conversion MakeStackAllocToSpanType(Conversion underlyingConversion)
         {
-            return new Conversion(ConversionKind.StackAllocToSpanType, ImmutableArray.Create(underlyingConversion));
+            return new(ConversionKind.StackAllocToSpanType, ImmutableArray.Create(underlyingConversion));
         }
 
         internal static Conversion MakeNullableConversion(ConversionKind kind, Conversion nestedConversion)
@@ -307,12 +307,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                     break;
             }
 
-            return new Conversion(kind, nested);
+            return new(kind, nested);
         }
 
         internal static Conversion MakeSwitchExpression(ImmutableArray<Conversion> innerConversions)
         {
-            return new Conversion(ConversionKind.SwitchExpression, innerConversions);
+            return new(ConversionKind.SwitchExpression, innerConversions);
         }
 
         internal ConversionKind Kind
@@ -927,7 +927,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             // The MethodSymbol of CommonConversion only refers to UserDefined conversions, not method groups
             var methodSymbol = IsUserDefined ? MethodSymbol : null;
-            return new CommonConversion(Exists, IsIdentity, IsNumeric, IsReference, IsImplicit, IsNullable, methodSymbol);
+            return new(Exists, IsIdentity, IsNumeric, IsReference, IsImplicit, IsNullable, methodSymbol);
         }
 
         /// <summary>
@@ -1001,23 +1001,23 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 if (self.Method is object)
                 {
-                    sub.Add(new TreeDumperNode("method", self.Method.ToDisplayString(), null));
+                    sub.Add(new("method", self.Method.ToDisplayString(), null));
                 }
 
                 if (!self.DeconstructionInfo.IsDefault)
                 {
-                    sub.Add(new TreeDumperNode("deconstructionInfo", null,
+                    sub.Add(new("deconstructionInfo", null,
                         new[] { BoundTreeDumperNodeProducer.MakeTree(self.DeconstructionInfo.Invocation) }));
                 }
 
                 var underlyingConversions = self.UnderlyingConversions;
                 if (!underlyingConversions.IsDefaultOrEmpty)
                 {
-                    sub.Add(new TreeDumperNode($"underlyingConversions[{underlyingConversions.Length}]", null,
+                    sub.Add(new($"underlyingConversions[{underlyingConversions.Length}]", null,
                         underlyingConversions.SelectAsArray(c => Dump(c))));
                 }
 
-                return new TreeDumperNode("conversion", self.Kind, sub);
+                return new("conversion", self.Kind, sub);
             }
         }
 #endif

@@ -74,7 +74,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (leadingTrivia != null)
             {
                 // PERF: Expand token.LeadingTrivia when node is not null.
-                var leading = this.VisitList(new SyntaxTriviaList(token, leadingTrivia));
+                var leading = this.VisitList(new(token, leadingTrivia));
 
                 if (trailingTrivia != null)
                 {
@@ -83,7 +83,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // PERF: Expand token.TrailingTrivia when node is not null and leadingTrivia is not null.
                     // Also avoid node.Width because it makes a virtual call to GetText. Instead use node.FullWidth - trailingTrivia.FullWidth.
                     var index = leadingTrivia.IsList ? leadingTrivia.SlotCount : 1;
-                    var trailing = this.VisitList(new SyntaxTriviaList(token, trailingTrivia, token.Position + node.FullWidth - trailingTrivia.FullWidth, index));
+                    var trailing = this.VisitList(new(token, trailingTrivia, token.Position + node.FullWidth - trailingTrivia.FullWidth, index));
 
                     if (leading.Node != leadingTrivia)
                     {
@@ -103,7 +103,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // Trailing trivia only
                 // PERF: Expand token.TrailingTrivia when node is not null and leading is null.
                 // Also avoid node.Width because it makes a virtual call to GetText. Instead use node.FullWidth - trailingTrivia.FullWidth.
-                var trailing = this.VisitList(new SyntaxTriviaList(token, trailingTrivia, token.Position + node.FullWidth - trailingTrivia.FullWidth, index: 0));
+                var trailing = this.VisitList(new(token, trailingTrivia, token.Position + node.FullWidth - trailingTrivia.FullWidth, index: 0));
                 return trailing.Node != trailingTrivia ? token.WithTrailingTrivia(trailing) : token;
             }
             else
@@ -200,7 +200,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                         if (visitedSeparator.RawKind == 0)
                         {
-                            throw new InvalidOperationException(CodeAnalysisResources.SeparatorIsExpected);
+                            throw new(CodeAnalysisResources.SeparatorIsExpected);
                         }
                         alternate.AddSeparator(visitedSeparator);
                     }
@@ -208,7 +208,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         if (visitedNode == null)
                         {
-                            throw new InvalidOperationException(CodeAnalysisResources.ElementIsExpected);
+                            throw new(CodeAnalysisResources.ElementIsExpected);
                         }
                     }
                 }

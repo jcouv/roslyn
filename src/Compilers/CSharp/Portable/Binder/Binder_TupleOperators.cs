@@ -30,7 +30,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             TypeSymbol resultType = GetSpecialType(SpecialType.System_Boolean, diagnostics, node);
 
-            return new BoundTupleBinaryOperator(node, convertedLeft, convertedRight, kind, operators, resultType);
+            return new(node, convertedLeft, convertedRight, kind, operators, resultType);
         }
 
         private BoundExpression ApplyConvertedTypes(BoundExpression expr, TupleBinaryOperatorInfo @operator, bool isRight, DiagnosticBag diagnostics)
@@ -59,7 +59,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         builder.Add(ApplyConvertedTypes(arguments[i], multiple.Operators[i], isRight, diagnostics));
                     }
 
-                    return new BoundConvertedTupleLiteral(
+                    return new(
                         tuple.Syntax, tuple, wasTargetTyped: false, builder.ToImmutableAndFree(), tuple.ArgumentNamesOpt, tuple.InferredNamesOpt, tuple.Type, tuple.HasErrors);
                 }
 
@@ -321,7 +321,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             Debug.Assert(targetType.StrippedType().IsTupleType);
-            return new BoundDefaultExpression(expr.Syntax, targetType);
+            return new(expr.Syntax, targetType);
         }
 
         private static bool IsTupleBinaryOperation(BoundExpression left, BoundExpression right)
@@ -373,7 +373,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // placeholder bound nodes with the proper types are sufficient to bind the element-wise binary operators
             TypeSymbol tupleType = expr.Type.StrippedType();
             ImmutableArray<BoundExpression> placeholders = tupleType.TupleElementTypesWithAnnotations
-                .SelectAsArray((t, s) => (BoundExpression)new BoundTupleOperandPlaceholder(s, t.Type), expr.Syntax);
+                .SelectAsArray((t, s) => (BoundExpression)new(s, t.Type), expr.Syntax);
 
             return (placeholders, tupleType.TupleElementNames);
         }

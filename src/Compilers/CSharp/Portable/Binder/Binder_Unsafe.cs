@@ -31,7 +31,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return false;
             }
 
-            diagnostics.Add(new CSDiagnostic(diagnosticInfo, node.Location));
+            diagnostics.Add(new(diagnosticInfo, node.Location));
             return true;
         }
 
@@ -44,7 +44,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return false;
             }
 
-            diagnostics.Add(new CSDiagnostic(diagnosticInfo, location));
+            diagnostics.Add(new(diagnosticInfo, location));
             return true;
         }
 
@@ -58,13 +58,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // Spec 8.2: "An iterator block always defines a safe context, even when its declaration
                 // is nested in an unsafe context."
-                return new CSDiagnosticInfo(ErrorCode.ERR_IllegalInnerUnsafe);
+                return new(ErrorCode.ERR_IllegalInnerUnsafe);
             }
             else if (!this.InUnsafeRegion)
             {
                 return ((object)sizeOfTypeOpt == null)
-                    ? new CSDiagnosticInfo(ErrorCode.ERR_UnsafeNeeded)
-                    : new CSDiagnosticInfo(ErrorCode.ERR_SizeofUnsafe, sizeOfTypeOpt);
+                    ? new(ErrorCode.ERR_UnsafeNeeded)
+                    : new(ErrorCode.ERR_SizeofUnsafe, sizeOfTypeOpt);
             }
             else
             {

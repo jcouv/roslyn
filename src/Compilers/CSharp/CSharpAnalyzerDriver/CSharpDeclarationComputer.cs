@@ -82,7 +82,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         {
                             name = ((QualifiedNameSyntax)name).Left;
                             var declaredSymbol = getSymbol ? nsSymbol?.ContainingNamespace : null;
-                            builder.Add(new DeclarationInfo(name, ImmutableArray<SyntaxNode>.Empty, declaredSymbol));
+                            builder.Add(new(name, ImmutableArray<SyntaxNode>.Empty, declaredSymbol));
                             nsSymbol = declaredSymbol;
                         }
 
@@ -308,7 +308,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // TODO: use 'model.GetDeclaredSymbol(expressionBody)' when compiler is fixed to return the getter symbol for it.
             var declaredAccessor = getSymbol ? (model.GetDeclaredSymbol(declarationWithExpressionBody, cancellationToken) as IPropertySymbol)?.GetMethod : null;
 
-            return new DeclarationInfo(
+            return new(
                 declaredNode: expressionBody,
                 executableCodeBlocks: ImmutableArray.Create<SyntaxNode>(expressionBody),
                 declaredSymbol: declaredAccessor);

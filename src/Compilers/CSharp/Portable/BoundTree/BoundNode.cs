@@ -278,7 +278,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 var flowState = (_attributes & BoundNodeAttributes.TopLevelFlowStateMaybeNull) == 0 ? CodeAnalysis.NullableFlowState.NotNull : CodeAnalysis.NullableFlowState.MaybeNull;
 
-                return new NullabilityInfo(annotation, flowState);
+                return new(annotation, flowState);
             }
         }
 
@@ -331,7 +331,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public virtual BoundNode? Accept(BoundTreeVisitor visitor)
         {
-            throw new NotImplementedException();
+            throw new();
         }
 
         /// <summary>
@@ -354,7 +354,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             public static new string DumpCompact(TreeDumperNode root)
             {
-                return new MyTreeDumper().DoDumpCompact(root);
+                return new().DoDumpCompact(root);
             }
 
             protected override string DumperString(object o)

@@ -222,7 +222,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         // Wrap the binder in a LocalScopeBinder because Binder.BindExpression assumes there
                         // will be one in the binder chain and one isn't necessarily required for the batch case.
-                        binder = new LocalScopeBinder(binder);
+                        binder = new(binder);
 
                         var diagnostics = DiagnosticBag.GetInstance();
                         BoundExpression bound = binder.BindExpression((ExpressionSyntax)node, diagnostics);
@@ -231,11 +231,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                         SymbolInfo info = GetSymbolInfoForNode(options, bound, bound, boundNodeForSyntacticParent: null, binderOpt: null);
                         if ((object)info.Symbol != null)
                         {
-                            result = new SymbolInfo(null, ImmutableArray.Create<ISymbol>(info.Symbol), CandidateReason.NotATypeOrNamespace);
+                            result = new(null, ImmutableArray.Create<ISymbol>(info.Symbol), CandidateReason.NotATypeOrNamespace);
                         }
                         else if (!info.CandidateSymbols.IsEmpty)
                         {
-                            result = new SymbolInfo(null, info.CandidateSymbols, CandidateReason.NotATypeOrNamespace);
+                            result = new(null, info.CandidateSymbols, CandidateReason.NotATypeOrNamespace);
                         }
                     }
                 }
@@ -1223,11 +1223,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 flags |= BinderFlags.FieldInitializer;
             }
 
-            outer = new LocalScopeBinder(outer).WithAdditionalFlagsAndContainingMemberOrLambda(flags, symbol);
+            outer = new(outer).WithAdditionalFlagsAndContainingMemberOrLambda(flags, symbol);
 
             if (initializer != null)
             {
-                outer = new ExecutableCodeBinder(initializer, symbol, outer);
+                outer = new(initializer, symbol, outer);
             }
 
             return outer;
@@ -2102,7 +2102,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             ValidateStatementRange(firstStatement, lastStatement);
             var context = RegionAnalysisContext(firstStatement, lastStatement);
-            var result = new CSharpControlFlowAnalysis(context);
+            var result = new(context);
             return result;
         }
 
@@ -2147,7 +2147,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             var context = RegionAnalysisContext(expression);
-            var result = new CSharpDataFlowAnalysis(context);
+            var result = new(context);
             return result;
         }
 
@@ -2155,7 +2155,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             ValidateStatementRange(firstStatement, lastStatement);
             var context = RegionAnalysisContext(firstStatement, lastStatement);
-            var result = new CSharpDataFlowAnalysis(context);
+            var result = new(context);
             return result;
         }
 

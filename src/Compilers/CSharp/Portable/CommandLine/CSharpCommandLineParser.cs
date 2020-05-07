@@ -252,7 +252,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             {
                                 if (Console.IsInputRedirected)
                                 {
-                                    sourceFiles.Add(new CommandLineSourceFile("-", isScript: true, isInputRedirected: true));
+                                    sourceFiles.Add(new("-", isScript: true, isInputRedirected: true));
                                     sourceFilesSpecified = true;
                                 }
                                 else
@@ -648,7 +648,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 // NOTE(tomat): Dev10 used to report CS1541: ERR_CantIncludeDirectory if the path was a directory.
                                 // Since we now support /referencePaths option we would need to search them to see if the resolved path is a directory.
                                 // An error will be reported by the assembly manager anyways.
-                                metadataReferences.AddRange(ParseSeparatedPaths(value).Select(path => new CommandLineReference(path, MetadataReferenceProperties.Module)));
+                                metadataReferences.AddRange(ParseSeparatedPaths(value).Select(path => new(path, MetadataReferenceProperties.Module)));
                                 resourcesOrModulesSpecified = true;
                             }
                             continue;
@@ -1279,7 +1279,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         case "-":
                             if (Console.IsInputRedirected)
                             {
-                                sourceFiles.Add(new CommandLineSourceFile("-", isScript: false, isInputRedirected: true));
+                                sourceFiles.Add(new("-", isScript: false, isInputRedirected: true));
                                 sourceFilesSpecified = true;
                             }
                             else
@@ -1321,7 +1321,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (!noStdLib && sdkDirectory != null)
             {
-                metadataReferences.Insert(0, new CommandLineReference(Path.Combine(sdkDirectory, "mscorlib.dll"), MetadataReferenceProperties.Assembly));
+                metadataReferences.Insert(0, new(Path.Combine(sdkDirectory, "mscorlib.dll"), MetadataReferenceProperties.Assembly));
             }
 
             if (!platform.Requires64Bit())
@@ -1450,9 +1450,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (nullableContextOptions != NullableContextOptions.Disable && parseOptions.LanguageVersion < MessageID.IDS_FeatureNullableReferenceTypes.RequiredVersion())
             {
-                diagnostics.Add(new CSDiagnostic(new CSDiagnosticInfo(ErrorCode.ERR_NullableOptionNotAvailable,
+                diagnostics.Add(new(new(ErrorCode.ERR_NullableOptionNotAvailable,
                                                  "nullable", nullableContextOptions, parseOptions.LanguageVersion.ToDisplayString(),
-                                                 new CSharpRequiredLanguageVersion(MessageID.IDS_FeatureNullableReferenceTypes.RequiredVersion())), Location.None));
+                                                 new(MessageID.IDS_FeatureNullableReferenceTypes.RequiredVersion())), Location.None));
             }
 
             return new CSharpCommandLineArguments
@@ -1770,7 +1770,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             foreach (string path in paths)
             {
-                yield return new CommandLineAnalyzerReference(path);
+                yield return new(path);
             }
         }
 
@@ -1840,7 +1840,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var aliases = (alias != null) ? ImmutableArray.Create(alias) : ImmutableArray<string>.Empty;
 
                 var properties = new(MetadataImageKind.Assembly, aliases, embedInteropTypes);
-                yield return new CommandLineReference(path, properties);
+                yield return new(path, properties);
             }
         }
 
@@ -1944,9 +1944,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                                             {
                                                 // Use FileShare.ReadWrite because the file could be opened by the current process.
                                                 // For example, it is an XML doc file produced by the build.
-                                                return new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                                                return new(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                                             };
-            return new ResourceDescription(resourceName, fileName, dataProvider, isPublic, embedded, checkArgs: false);
+            return new(resourceName, fileName, dataProvider, isPublic, embedded, checkArgs: false);
         }
 
         private static IEnumerable<string> ParseWarnings(string value)

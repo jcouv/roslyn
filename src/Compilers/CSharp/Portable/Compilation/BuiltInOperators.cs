@@ -279,7 +279,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 opType = _compilation.GetSpecialType(SpecialType.System_Nullable_T).Construct(opType);
             }
 
-            return new UnaryOperatorSignature(kind, opType, opType);
+            return new(kind, opType, opType);
         }
 
         // PERF: Use int instead of BinaryOperatorKind so the compiler can use array literal initialization.
@@ -678,9 +678,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case BinaryOperatorKind.And:
                 case BinaryOperatorKind.Or:
                 case BinaryOperatorKind.Xor:
-                    return new BinaryOperatorSignature(kind, left, left, left);
+                    return new(kind, left, left, left);
                 case BinaryOperatorKind.Addition:
-                    return new BinaryOperatorSignature(kind, left, RightType(kind), ReturnType(kind));
+                    return new(kind, left, RightType(kind), ReturnType(kind));
                 case BinaryOperatorKind.LeftShift:
                 case BinaryOperatorKind.RightShift:
                     TypeSymbol rightType = _compilation.GetSpecialType(SpecialType.System_Int32);
@@ -688,7 +688,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         rightType = _compilation.GetSpecialType(SpecialType.System_Nullable_T).Construct(rightType);
                     }
-                    return new BinaryOperatorSignature(kind, left, rightType, left);
+                    return new(kind, left, rightType, left);
 
                 case BinaryOperatorKind.Equal:
                 case BinaryOperatorKind.NotEqual:
@@ -696,9 +696,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case BinaryOperatorKind.LessThan:
                 case BinaryOperatorKind.GreaterThanOrEqual:
                 case BinaryOperatorKind.LessThanOrEqual:
-                    return new BinaryOperatorSignature(kind, left, left, _compilation.GetSpecialType(SpecialType.System_Boolean));
+                    return new(kind, left, left, _compilation.GetSpecialType(SpecialType.System_Boolean));
             }
-            return new BinaryOperatorSignature(kind, left, RightType(kind), ReturnType(kind));
+            return new(kind, left, RightType(kind), ReturnType(kind));
         }
 
         private TypeSymbol LeftType(BinaryOperatorKind kind)

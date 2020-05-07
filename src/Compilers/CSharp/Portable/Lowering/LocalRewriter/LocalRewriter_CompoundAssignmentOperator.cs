@@ -104,7 +104,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(rewrittenAssignment.Type is { });
             BoundExpression result = (temps.Count == 0 && stores.Count == 0) ?
                 rewrittenAssignment :
-                new BoundSequence(
+                new(
                     node.Syntax,
                     temps.ToImmutable(),
                     stores.ToImmutable(),
@@ -215,7 +215,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             stores.Add(assignmentToTemp);
             temps.Add(receiverTemp.LocalSymbol);
 
-            return new BoundDynamicMemberAccess(memberAccess.Syntax, receiverTemp, memberAccess.TypeArgumentsOpt, memberAccess.Name, memberAccess.Invoked, memberAccess.Indexed, memberAccess.Type);
+            return new(memberAccess.Syntax, receiverTemp, memberAccess.TypeArgumentsOpt, memberAccess.Name, memberAccess.Invoked, memberAccess.Indexed, memberAccess.Type);
         }
 
         private BoundIndexerAccess TransformIndexerAccess(BoundIndexerAccess indexerAccess, ArrayBuilder<BoundExpression> stores, ArrayBuilder<LocalSymbol> temps)
@@ -359,7 +359,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             refKinds.Free();
 
             // This is a temporary object that will be rewritten away before the lowering completes.
-            return new BoundIndexerAccess(
+            return new(
                 syntax,
                 transformedReceiver,
                 indexer,
@@ -473,7 +473,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            return new BoundDynamicIndexerAccess(
+            return new(
                 indexerAccess.Syntax,
                 loweredReceiver,
                 loweredArguments.AsImmutableOrNull(),

@@ -44,32 +44,32 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // CS1979: Query expressions over source type 'dynamic' or with a join sequence of type 'dynamic' are not allowed
                 diagnostics.Add(
-                    new DiagnosticInfoWithSymbols(ErrorCode.ERR_BadDynamicQuery, Array.Empty<object>(), symbols),
-                    new SourceLocation(queryClause));
+                    new(ErrorCode.ERR_BadDynamicQuery, Array.Empty<object>(), symbols),
+                    new(queryClause));
             }
             else if (ImplementsStandardQueryInterface(instanceArgument.Type, name, ref useSiteDiagnostics))
             {
                 // Could not find an implementation of the query pattern for source type '{0}'.  '{1}' not found.  Are you missing a reference to 'System.Core.dll' or a using directive for 'System.Linq'?
-                diagnostics.Add(new DiagnosticInfoWithSymbols(
+                diagnostics.Add(new(
                     ErrorCode.ERR_QueryNoProviderStandard,
                     new object[] { instanceArgument.Type, name },
-                    symbols), new SourceLocation(fromClause != null ? fromClause.Expression : queryClause));
+                    symbols), new(fromClause != null ? fromClause.Expression : queryClause));
             }
             else if (fromClause != null && fromClause.Type == null && HasCastToQueryProvider(instanceArgument.Type, ref useSiteDiagnostics))
             {
                 // Could not find an implementation of the query pattern for source type '{0}'.  '{1}' not found.  Consider explicitly specifying the type of the range variable '{2}'.
-                diagnostics.Add(new DiagnosticInfoWithSymbols(
+                diagnostics.Add(new(
                     ErrorCode.ERR_QueryNoProviderCastable,
                     new object[] { instanceArgument.Type, name, fromClause.Identifier.ValueText },
-                    symbols), new SourceLocation(fromClause.Expression));
+                    symbols), new(fromClause.Expression));
             }
             else
             {
                 // Could not find an implementation of the query pattern for source type '{0}'.  '{1}' not found.
-                diagnostics.Add(new DiagnosticInfoWithSymbols(
+                diagnostics.Add(new(
                     ErrorCode.ERR_QueryNoProvider,
                     new object[] { instanceArgument.Type, name },
-                    symbols), new SourceLocation(fromClause != null ? fromClause.Expression : queryClause));
+                    symbols), new(fromClause != null ? fromClause.Expression : queryClause));
             }
 
             diagnostics.Add(queryClause, useSiteDiagnostics);
@@ -202,7 +202,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     throw ExceptionUtilities.UnexpectedValue(queryClause.Kind());
             }
 
-            diagnostics.Add(new DiagnosticInfoWithSymbols(
+            diagnostics.Add(new(
                 multiple ? ErrorCode.ERR_QueryTypeInferenceFailedMulti : ErrorCode.ERR_QueryTypeInferenceFailed,
                 new object[] { clauseKind, methodName },
                 symbols), queryClause.GetFirstToken().GetLocation());
@@ -234,7 +234,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             TypeSymbol receiverType = receiver?.Type;
-            diagnostics.Add(new DiagnosticInfoWithSymbols(
+            diagnostics.Add(new(
                 ErrorCode.ERR_QueryTypeInferenceFailedSelectMany,
                 new object[] { type, receiverType, methodName },
                 symbols), fromClause.Expression.Location);

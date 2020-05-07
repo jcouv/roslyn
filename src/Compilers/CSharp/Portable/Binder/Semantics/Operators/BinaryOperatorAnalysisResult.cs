@@ -47,17 +47,17 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public static BinaryOperatorAnalysisResult Applicable(BinaryOperatorSignature signature, Conversion leftConversion, Conversion rightConversion)
         {
-            return new BinaryOperatorAnalysisResult(OperatorAnalysisResultKind.Applicable, signature, leftConversion, rightConversion);
+            return new(OperatorAnalysisResultKind.Applicable, signature, leftConversion, rightConversion);
         }
 
         public static BinaryOperatorAnalysisResult Inapplicable(BinaryOperatorSignature signature, Conversion leftConversion, Conversion rightConversion)
         {
-            return new BinaryOperatorAnalysisResult(OperatorAnalysisResultKind.Inapplicable, signature, leftConversion, rightConversion);
+            return new(OperatorAnalysisResultKind.Inapplicable, signature, leftConversion, rightConversion);
         }
 
         public BinaryOperatorAnalysisResult Worse()
         {
-            return new BinaryOperatorAnalysisResult(OperatorAnalysisResultKind.Worse, this.Signature, this.LeftConversion, this.RightConversion);
+            return new(OperatorAnalysisResultKind.Worse, this.Signature, this.LeftConversion, this.RightConversion);
         }
     }
 }

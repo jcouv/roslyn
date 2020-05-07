@@ -84,7 +84,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
                 if (eventType.IsNil)
                 {
-                    _eventTypeWithAnnotations = TypeWithAnnotations.Create(new UnsupportedMetadataTypeSymbol(mrEx));
+                    _eventTypeWithAnnotations = TypeWithAnnotations.Create(new(mrEx));
                 }
             }
 

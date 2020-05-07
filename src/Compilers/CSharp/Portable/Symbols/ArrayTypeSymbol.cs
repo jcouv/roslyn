@@ -57,10 +57,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             // Optimize for most common case - no sizes and all dimensions are zero lower bound.
             if (sizes.IsDefaultOrEmpty && lowerBounds.IsDefault)
             {
-                return new MDArrayNoSizesOrBounds(elementTypeWithAnnotations, rank, array);
+                return new(elementTypeWithAnnotations, rank, array);
             }
 
-            return new MDArrayWithSizesAndBounds(elementTypeWithAnnotations, rank, sizes, lowerBounds, array);
+            return new(elementTypeWithAnnotations, rank, sizes, lowerBounds, array);
         }
 
         internal static ArrayTypeSymbol CreateMDArray(
@@ -77,7 +77,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             TypeWithAnnotations elementTypeWithAnnotations,
             NamedTypeSymbol array)
         {
-            return new SZArray(elementTypeWithAnnotations, array, GetSZArrayInterfaces(elementTypeWithAnnotations, array.ContainingAssembly));
+            return new(elementTypeWithAnnotations, array, GetSZArrayInterfaces(elementTypeWithAnnotations, array.ContainingAssembly));
         }
 
         internal static ArrayTypeSymbol CreateSZArray(
@@ -85,7 +85,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             NamedTypeSymbol array,
             ImmutableArray<NamedTypeSymbol> constructedInterfaces)
         {
-            return new SZArray(elementTypeWithAnnotations, array, constructedInterfaces);
+            return new(elementTypeWithAnnotations, array, constructedInterfaces);
         }
 
         internal static ArrayTypeSymbol CreateSZArray(
@@ -113,14 +113,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             var iListOfT = declaringAssembly.GetSpecialType(SpecialType.System_Collections_Generic_IList_T);
             if (!iListOfT.IsErrorType())
             {
-                constructedInterfaces.Add(new ConstructedNamedTypeSymbol(iListOfT, ImmutableArray.Create(elementTypeWithAnnotations)));
+                constructedInterfaces.Add(new(iListOfT, ImmutableArray.Create(elementTypeWithAnnotations)));
             }
 
             var iReadOnlyListOfT = declaringAssembly.GetSpecialType(SpecialType.System_Collections_Generic_IReadOnlyList_T);
 
             if (!iReadOnlyListOfT.IsErrorType())
             {
-                constructedInterfaces.Add(new ConstructedNamedTypeSymbol(iReadOnlyListOfT, ImmutableArray.Create(elementTypeWithAnnotations)));
+                constructedInterfaces.Add(new(iReadOnlyListOfT, ImmutableArray.Create(elementTypeWithAnnotations)));
             }
 
             return constructedInterfaces.ToImmutableAndFree();
@@ -504,7 +504,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             protected override ArrayTypeSymbol WithElementTypeCore(TypeWithAnnotations newElementType)
             {
                 var newInterfaces = _interfaces.SelectAsArray((i, t) => i.OriginalDefinition.Construct(t), newElementType.Type);
-                return new SZArray(newElementType, BaseTypeNoUseSiteDiagnostics, newInterfaces);
+                return new(newElementType, BaseTypeNoUseSiteDiagnostics, newInterfaces);
             }
 
             public override int Rank
@@ -593,7 +593,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             protected override ArrayTypeSymbol WithElementTypeCore(TypeWithAnnotations elementTypeWithAnnotations)
             {
-                return new MDArrayNoSizesOrBounds(elementTypeWithAnnotations, Rank, BaseTypeNoUseSiteDiagnostics);
+                return new(elementTypeWithAnnotations, Rank, BaseTypeNoUseSiteDiagnostics);
             }
 
             internal override bool HasDefaultSizesAndLowerBounds
@@ -626,7 +626,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             protected override ArrayTypeSymbol WithElementTypeCore(TypeWithAnnotations elementTypeWithAnnotations)
             {
-                return new MDArrayWithSizesAndBounds(elementTypeWithAnnotations, Rank, _sizes, _lowerBounds, BaseTypeNoUseSiteDiagnostics);
+                return new(elementTypeWithAnnotations, Rank, _sizes, _lowerBounds, BaseTypeNoUseSiteDiagnostics);
             }
 
             public override ImmutableArray<int> Sizes

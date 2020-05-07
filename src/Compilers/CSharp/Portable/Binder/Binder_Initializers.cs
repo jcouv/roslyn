@@ -111,7 +111,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             firstDebugImports = parentBinder.ImportChain;
                         }
 
-                        parentBinder = new LocalScopeBinder(parentBinder).WithAdditionalFlagsAndContainingMemberOrLambda(BinderFlags.FieldInitializer, fieldSymbol);
+                        parentBinder = new(parentBinder).WithAdditionalFlagsAndContainingMemberOrLambda(BinderFlags.FieldInitializer, fieldSymbol);
 
                         BoundFieldEqualsValue boundInitializer = BindFieldInitializer(parentBinder, fieldSymbol, initializerNode, diagnostics);
                         boundInitializers.Add(boundInitializer);
@@ -177,7 +177,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         firstDebugImports = scriptClassBinder.ImportChain;
                     }
 
-                    Binder parentBinder = new ExecutableCodeBinder(
+                    Binder parentBinder = new(
                         syntaxRoot,
                         scriptInitializer,
                         new ScriptLocalScopeBinder(labels, scriptClassBinder));
@@ -226,7 +226,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         var submissionResultType = scriptInitializer.ResultType;
                         expression = binder.GenerateConversionForAssignment(submissionResultType, expression, diagnostics);
-                        statement = new BoundExpressionStatement(statement.Syntax, expression, expression.HasErrors);
+                        statement = new(statement.Syntax, expression, expression.HasErrors);
                     }
                 }
 
@@ -271,7 +271,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 initializerDiagnostics = diagnostics;
             }
 
-            binder = new ExecutableCodeBinder(equalsValueClauseNode, fieldSymbol, new LocalScopeBinder(binder));
+            binder = new(equalsValueClauseNode, fieldSymbol, new LocalScopeBinder(binder));
             BoundFieldEqualsValue boundInitValue = binder.BindFieldInitializer(fieldSymbol, equalsValueClauseNode, initializerDiagnostics);
 
             if (isImplicitlyTypedField)

@@ -226,7 +226,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     return ExplicitDefaultConstantValue.Value;
                 }
 
-                throw new InvalidOperationException();
+                throw new();
             }
         }
 

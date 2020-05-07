@@ -167,7 +167,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     elementLocations: default, elementNames: default,
                     compilation: _compilation, shouldCheckConstraints: false, includeNullability: false, errorPositions: default);
 
-                return new BoundConvertedTupleLiteral(
+                return new(
                     right.Syntax, sourceTuple: null, wasTargetTyped: false, arguments: builder!.ToImmutableAndFree(), argumentNamesOpt: default, inferredNamesOpt: default, tupleType);
             }
             else

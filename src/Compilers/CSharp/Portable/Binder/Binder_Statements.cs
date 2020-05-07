@@ -206,7 +206,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             BoundStatement boundBody = BindPossibleEmbeddedStatement(node.Statement, diagnostics);
 
-            return new BoundFixedStatement(node,
+            return new(node,
                                            GetDeclaredLocalsForScope(node),
                                            boundMultipleDeclarations,
                                            boundBody);
@@ -268,7 +268,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             CheckRequiredLangVersionForAsyncIteratorMethods(diagnostics);
-            return new BoundYieldReturnStatement(node, argument);
+            return new(node, argument);
         }
 
         private BoundStatement BindYieldBreakStatement(YieldStatementSyntax node, DiagnosticBag diagnostics)
@@ -284,7 +284,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             ValidateYield(node, diagnostics);
             CheckRequiredLangVersionForAsyncIteratorMethods(diagnostics);
-            return new BoundYieldBreakStatement(node);
+            return new(node);
         }
 
         private BoundStatement BindLockStatement(LockStatementSyntax node, DiagnosticBag diagnostics)
@@ -450,12 +450,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                 hasErrors = true;
             }
 
-            return new BoundThrowStatement(node, boundExpr, hasErrors);
+            return new(node, boundExpr, hasErrors);
         }
 
         private static BoundStatement BindEmpty(EmptyStatementSyntax node)
         {
-            return new BoundNoOpStatement(node, NoOpStatementFlavor.Default);
+            return new(node, NoOpStatementFlavor.Default);
         }
 
         private BoundLabeledStatement BindLabeled(LabeledStatementSyntax node, DiagnosticBag diagnostics)
@@ -471,7 +471,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // In this case we create new label symbol on the fly, and an error is reported by parser
             var symbol = result.Symbols.Count > 0 && result.IsMultiViable ?
                 (LabelSymbol)result.Symbols.First() :
-                new SourceLabelSymbol((MethodSymbol)ContainingMemberOrLambda, node.Identifier);
+                new((MethodSymbol)ContainingMemberOrLambda, node.Identifier);
 
             if (!symbol.IdentifierNodeOrToken.IsToken || symbol.IdentifierNodeOrToken.AsToken() != node.Identifier)
             {
@@ -496,7 +496,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             result.Free();
 
             var body = BindStatement(node.Statement, diagnostics);
-            return new BoundLabeledStatement(node, symbol, body, hasError);
+            return new(node, symbol, body, hasError);
         }
 
         private BoundStatement BindGoto(GotoStatementSyntax node, DiagnosticBag diagnostics)
@@ -509,10 +509,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                     if (boundLabel == null)
                     {
                         // diagnostics already reported
-                        return new BoundBadStatement(node, ImmutableArray.Create<BoundNode>(expression), true);
+                        return new(node, ImmutableArray.Create<BoundNode>(expression), true);
                     }
                     var symbol = boundLabel.Label;
-                    return new BoundGotoStatement(node, symbol, null, boundLabel);
+                    return new(node, symbol, null, boundLabel);
 
                 case SyntaxKind.GotoCaseStatement:
                 case SyntaxKind.GotoDefaultStatement:
@@ -536,7 +536,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         {
                             childNodes = ImmutableArray<BoundNode>.Empty;
                         }
-                        return new BoundBadStatement(node, childNodes, true);
+                        return new(node, childNodes, true);
                     }
                     return binder.BindGotoCaseOrDefault(node, this, diagnostics);
 
@@ -588,7 +588,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Symbol.CheckForBlockAndExpressionBody(
                 node.Body, node.ExpressionBody, node, diagnostics);
 
-            return new BoundLocalFunctionStatement(node, localSymbol, blockBody, expressionBody, hasErrors);
+            return new(node, localSymbol, blockBody, expressionBody, hasErrors);
 
             BoundBlock runAnalysis(BoundBlock block, DiagnosticBag blockDiagnostics)
             {
@@ -712,7 +712,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     bool includeBoundType = i == 0; //To avoid duplicated expressions, only the first declaration should contain the bound type.
                     boundDeclarations[i++] = BindVariableDeclaration(kind, isVar, variableDeclarationSyntax, typeSyntax, declType, alias, diagnostics, includeBoundType);
                 }
-                return new BoundMultipleLocalDeclarations(node, boundDeclarations.AsImmutableOrNull());
+                return new(node, boundDeclarations.AsImmutableOrNull());
             }
         }
 
@@ -1140,7 +1140,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 boundDeclType = new(typeSyntax, aliasOpt, dimensionsOpt: invalidDimensions.ToImmutableAndFree(), typeWithAnnotations: declTypeOpt);
             }
 
-            return new BoundLocalDeclaration(
+            return new(
                 syntax: associatedSyntaxNode,
                 localSymbol: localSymbol,
                 declaredTypeOpt: boundDeclType,
@@ -1352,7 +1352,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 hasErrors = true;
             }
 
-            return new BoundFixedLocalCollectionInitializer(
+            return new(
                 initializerSyntax,
                 pointerType,
                 elementConversion,
@@ -1503,7 +1503,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 type = op1.Type;
             }
 
-            return new BoundAssignmentOperator(node, op1, op2, isRef, type, hasErrors);
+            return new(node, op1, op2, isRef, type, hasErrors);
         }
 
         private static PropertySymbol GetPropertySymbol(BoundExpression expr, out BoundExpression receiver, out SyntaxNode propertySyntax)
@@ -1590,8 +1590,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             var leastOverridden = (EventSymbol)eventSymbol.GetLeastOverriddenMember(this.ContainingType);
             return leastOverridden.HasAssociatedField ?
-                new CSDiagnosticInfo(ErrorCode.ERR_BadEventUsage, leastOverridden, leastOverridden.ContainingType) :
-                new CSDiagnosticInfo(ErrorCode.ERR_BadEventUsageNoField, leastOverridden);
+                new(ErrorCode.ERR_BadEventUsage, leastOverridden, leastOverridden.ContainingType) :
+                new(ErrorCode.ERR_BadEventUsageNoField, leastOverridden);
         }
 
         internal static bool AccessingAutoPropertyFromConstructor(BoundPropertyAccess propertyAccess, Symbol fromMember)
@@ -1742,7 +1742,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            return new BoundBlock(
+            return new(
                 node,
                 locals,
                 GetDeclaredLocalFunctionsForScope(node),
@@ -2024,7 +2024,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         Error(diagnostics, ErrorCode.ERR_LiteralDoubleCast, syntax, (targetType.SpecialType == SpecialType.System_Single) ? "F" : "M", targetType);
                     }
                     else if (conversion.Kind == ConversionKind.ExplicitNumeric && sourceConstantValueOpt != null && sourceConstantValueOpt != ConstantValue.Bad &&
-                        ConversionsBase.HasImplicitConstantExpressionConversion(new BoundLiteral(syntax, ConstantValue.Bad, sourceType), targetType))
+                        ConversionsBase.HasImplicitConstantExpressionConversion(new(syntax, ConstantValue.Bad, sourceType), targetType))
                     {
                         // CLEVERNESS: By passing ConstantValue.Bad, we tell HasImplicitConstantExpressionConversion to ignore the constant
                         // value and only consider the types.
@@ -2301,7 +2301,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (expr.HasDynamicType())
             {
-                return new BoundUnaryOperator(
+                return new(
                     node,
                     UnaryOperatorKind.DynamicTrue,
                     BindToNaturalType(expr, diagnostics),
@@ -2377,7 +2377,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // Consider op_true to be compiler-generated so that it doesn't appear in the semantic model.
             // UNDONE: If we decide to expose the operator in the semantic model, we'll have to remove the 
             // WasCompilerGenerated flag (and possibly suppress the symbol in specific APIs).
-            return new BoundUnaryOperator(node, signature.Kind, resultOperand, ConstantValue.NotAvailable, signature.Method, resultKind, originalUserDefinedOperators, signature.ReturnType)
+            return new(node, signature.Kind, resultOperand, ConstantValue.NotAvailable, signature.Method, resultKind, originalUserDefinedOperators, signature.ReturnType)
             {
                 WasCompilerGenerated = true
             };
@@ -2487,7 +2487,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             return (count == 1) ?
                 (BoundStatement)declarations[0] :
-                new BoundMultipleLocalDeclarations(nodeOpt, declarations);
+                new(nodeOpt, declarations);
         }
 
         internal BoundStatement BindStatementExpressionList(SeparatedSyntaxList<ExpressionSyntax> statements, DiagnosticBag diagnostics)
@@ -2540,9 +2540,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             if ((object)target == null)
             {
                 Error(diagnostics, ErrorCode.ERR_NoBreakOrCont, node);
-                return new BoundBadStatement(node, ImmutableArray<BoundNode>.Empty, hasErrors: true);
+                return new(node, ImmutableArray<BoundNode>.Empty, hasErrors: true);
             }
-            return new BoundBreakStatement(node, target);
+            return new(node, target);
         }
 
         private BoundStatement BindContinue(ContinueStatementSyntax node, DiagnosticBag diagnostics)
@@ -2551,9 +2551,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             if ((object)target == null)
             {
                 Error(diagnostics, ErrorCode.ERR_NoBreakOrCont, node);
-                return new BoundBadStatement(node, ImmutableArray<BoundNode>.Empty, hasErrors: true);
+                return new(node, ImmutableArray<BoundNode>.Empty, hasErrors: true);
             }
-            return new BoundContinueStatement(node, target);
+            return new(node, target);
         }
 
         private static SwitchBinder GetSwitchBinder(Binder binder)
@@ -2681,7 +2681,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (hasErrors)
             {
-                return new BoundReturnStatement(syntax, refKind, BindToTypeForErrorRecovery(arg), hasErrors: true);
+                return new(syntax, refKind, BindToTypeForErrorRecovery(arg), hasErrors: true);
             }
 
             // The return type could be null; we might be attempting to infer the return type either 
@@ -2753,7 +2753,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            return new BoundReturnStatement(syntax, refKind, hasErrors ? BindToTypeForErrorRecovery(arg) : arg, hasErrors);
+            return new(syntax, refKind, hasErrors ? BindToTypeForErrorRecovery(arg) : arg, hasErrors);
         }
 
         internal BoundExpression CreateReturnConversion(
@@ -2836,7 +2836,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var tryBlock = BindEmbeddedBlock(node.Block, diagnostics);
             var catchBlocks = BindCatchBlocks(node.Catches, diagnostics);
             var finallyBlockOpt = (node.Finally != null) ? BindEmbeddedBlock(node.Finally.Block, diagnostics) : null;
-            return new BoundTryStatement(node, tryBlock, catchBlocks, finallyBlockOpt);
+            return new(node, tryBlock, catchBlocks, finallyBlockOpt);
         }
 
         private ImmutableArray<BoundCatchBlock> BindCatchBlocks(SyntaxList<CatchClauseSyntax> catchClauses, DiagnosticBag diagnostics)
@@ -2971,7 +2971,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             var block = BindEmbeddedBlock(node.Block, diagnostics);
-            return new BoundCatchBlock(node, locals, exceptionSource, type, boundFilter, block, hasError);
+            return new(node, locals, exceptionSource, type, boundFilter, block, hasError);
         }
 
         private BoundExpression BindCatchFilter(CatchFilterClauseSyntax filter, DiagnosticBag diagnostics)
@@ -3053,7 +3053,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             // It is possible that an expression is syntactically valid but semantic analysis
-            // reveals it to be illegal in a statement expression: "new MyDelegate(M)" for example
+            // reveals it to be illegal in a statement expression: "new(M)" for example
             // is not legal because it is a delegate-creation-expression and not an
             // object-creation-expression, but of course we don't know that syntactically.
 
@@ -3144,7 +3144,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             // Need to attach the tree for when we generate sequence points.
-            return new BoundBlock(node, locals, ImmutableArray.Create(statement)) { WasCompilerGenerated = node.Kind() != SyntaxKind.ArrowExpressionClause };
+            return new(node, locals, ImmutableArray.Create(statement)) { WasCompilerGenerated = node.Kind() != SyntaxKind.ArrowExpressionClause };
         }
 
         private static bool IsValidExpressionBody(SyntaxNode expressionSyntax, BoundExpression expression)
@@ -3250,14 +3250,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(bodyBinder != null);
 
             // Using BindStatement to bind block to make sure we are reusing results of partial binding in SemanticModel
-            return new BoundConstructorMethodBody(constructor,
+            return new(constructor,
                                                   bodyBinder.GetDeclaredLocalsForScope(constructor),
                                                   constructor.Initializer == null ? null : bodyBinder.BindConstructorInitializer(constructor.Initializer, diagnostics),
                                                   constructor.Body == null ? null : (BoundBlock)bodyBinder.BindStatement(constructor.Body, diagnostics),
                                                   constructor.ExpressionBody == null ?
                                                       null :
                                                       bodyBinder.BindExpressionBodyAsBlock(constructor.ExpressionBody,
-                                                                                           constructor.Body == null ? diagnostics : new DiagnosticBag()));
+                                                                                           constructor.Body == null ? diagnostics : new()));
         }
 
         internal virtual BoundExpressionStatement BindConstructorInitializer(ConstructorInitializerSyntax initializer, DiagnosticBag diagnostics)
@@ -3278,12 +3278,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             // Using BindStatement to bind block to make sure we are reusing results of partial binding in SemanticModel
-            return new BoundNonConstructorMethodBody(declaration,
+            return new(declaration,
                                                      blockBody == null ? null : (BoundBlock)BindStatement(blockBody, diagnostics),
                                                      expressionBody == null ?
                                                          null :
                                                          BindExpressionBodyAsBlock(expressionBody,
-                                                                                   blockBody == null ? diagnostics : new DiagnosticBag()));
+                                                                                   blockBody == null ? diagnostics : new()));
         }
 
         internal virtual ImmutableArray<LocalSymbol> Locals

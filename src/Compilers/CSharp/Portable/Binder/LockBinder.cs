@@ -55,7 +55,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             BoundStatement stmt = originalBinder.BindPossibleEmbeddedStatement(_syntax.Statement, diagnostics);
             Debug.Assert(this.Locals.IsDefaultOrEmpty);
-            return new BoundLockStatement(_syntax, expr, stmt, hasErrors);
+            return new(_syntax, expr, stmt, hasErrors);
         }
     }
 }

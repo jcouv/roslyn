@@ -93,7 +93,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             var effectiveKind = kind.MapSpecifiedToEffectiveKind();
-            return new CSharpParseOptions(this) { SpecifiedKind = kind, Kind = effectiveKind };
+            return new(this) { SpecifiedKind = kind, Kind = effectiveKind };
         }
 
         public CSharpParseOptions WithLanguageVersion(LanguageVersion version)
@@ -104,7 +104,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             var effectiveLanguageVersion = version.MapSpecifiedToEffectiveVersion();
-            return new CSharpParseOptions(this) { SpecifiedLanguageVersion = version, LanguageVersion = effectiveLanguageVersion };
+            return new(this) { SpecifiedLanguageVersion = version, LanguageVersion = effectiveLanguageVersion };
         }
 
         public CSharpParseOptions WithPreprocessorSymbols(IEnumerable<string>? preprocessorSymbols)
@@ -129,7 +129,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpParseOptions(this) { PreprocessorSymbols = symbols };
+            return new(this) { PreprocessorSymbols = symbols };
         }
 
         public new CSharpParseOptions WithDocumentationMode(DocumentationMode documentationMode)
@@ -139,7 +139,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpParseOptions(this) { DocumentationMode = documentationMode };
+            return new(this) { DocumentationMode = documentationMode };
         }
 
         public override ParseOptions CommonWithKind(SourceCodeKind kind)
@@ -166,7 +166,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 features?.ToImmutableDictionary(StringComparer.OrdinalIgnoreCase)
                 ?? ImmutableDictionary<string, string>.Empty;
 
-            return new CSharpParseOptions(this) { _features = dictionary };
+            return new(this) { _features = dictionary };
         }
 
         public override IReadOnlyDictionary<string, string> Features

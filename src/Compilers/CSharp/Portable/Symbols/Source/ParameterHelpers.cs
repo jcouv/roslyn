@@ -522,7 +522,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             // SPEC VIOLATION: 
             // By the spec an optional parameter initializer is required to be either:
             // * a constant,
-            // * new S() where S is a value type
+            // * new() where S is a value type
             // * default(S) where S is a value type.
             // 
             // The native compiler considers default(T) to be a valid
@@ -531,7 +531,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             // We should consider simply allowing this in the spec.
             //
             // Also when valuetype S has a parameterless constructor, 
-            // new S() is clearly not a constant expression and should produce an error
+            // new() is clearly not a constant expression and should produce an error
             if (expression.ConstantValue != null)
             {
                 return true;

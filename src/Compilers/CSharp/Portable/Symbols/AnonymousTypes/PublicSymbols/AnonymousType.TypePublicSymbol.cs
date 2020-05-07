@@ -43,7 +43,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 this.TypeDescriptor = typeDescr;
 
                 var fields = typeDescr.Fields;
-                var properties = fields.SelectAsArray((field, i, type) => new AnonymousTypePropertySymbol(type, field, i), this);
+                var properties = fields.SelectAsArray((field, i, type) => new(type, field, i), this);
 
                 //  members
                 int membersCount = fields.Length * 2 + 1;
@@ -59,7 +59,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 this.Properties = properties;
 
                 // Add a constructor
-                members.Add(new AnonymousTypeConstructorSymbol(this, properties));
+                members.Add(new(this, properties));
                 _members = members.ToImmutableAndFree();
                 Debug.Assert(membersCount == _members.Length);
 

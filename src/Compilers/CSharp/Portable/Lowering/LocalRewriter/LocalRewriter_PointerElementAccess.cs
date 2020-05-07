@@ -25,7 +25,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 var loweredFieldReceiver = VisitExpression(fieldAccess.ReceiverOpt);
                 fieldAccess = fieldAccess.Update(loweredFieldReceiver, fieldAccess.FieldSymbol, fieldAccess.ConstantValueOpt, fieldAccess.ResultKind, fieldAccess.Type);
-                return new BoundAddressOfOperator(receiver.Syntax, fieldAccess, isManaged: true, fieldAccess.Type);
+                return new(receiver.Syntax, fieldAccess, isManaged: true, fieldAccess.Type);
             }
 
             return VisitExpression(receiver);
@@ -36,7 +36,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // Optimization: p[0] == *p
             if (rewrittenIndex.IsDefaultValue())
             {
-                return new BoundPointerIndirectionOperator(
+                return new(
                     node.Syntax,
                     rewrittenExpression,
                     node.Type);
@@ -69,7 +69,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 additionKind |= BinaryOperatorKind.Checked;
             }
 
-            return new BoundPointerIndirectionOperator(
+            return new(
                 node.Syntax,
                 MakeBinaryOperator(
                     node.Syntax,

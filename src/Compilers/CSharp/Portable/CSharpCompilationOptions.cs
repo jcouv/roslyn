@@ -264,7 +264,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal CSharpCompilationOptions WithTopLevelBinderFlags(BinderFlags flags)
         {
-            return (flags == TopLevelBinderFlags) ? this : new CSharpCompilationOptions(this) { TopLevelBinderFlags = flags };
+            return (flags == TopLevelBinderFlags) ? this : new(this) { TopLevelBinderFlags = flags };
         }
 
         internal override ImmutableArray<string> GetImports() => Usings;
@@ -276,7 +276,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { OutputKind = kind };
+            return new(this) { OutputKind = kind };
         }
 
         public new CSharpCompilationOptions WithModuleName(string? moduleName)
@@ -286,7 +286,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { ModuleName = moduleName };
+            return new(this) { ModuleName = moduleName };
         }
 
         public new CSharpCompilationOptions WithScriptClassName(string? name)
@@ -296,7 +296,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { ScriptClassName = name };
+            return new(this) { ScriptClassName = name };
         }
 
         public new CSharpCompilationOptions WithMainTypeName(string? name)
@@ -306,7 +306,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { MainTypeName = name };
+            return new(this) { MainTypeName = name };
         }
 
         public new CSharpCompilationOptions WithCryptoKeyContainer(string? name)
@@ -316,7 +316,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { CryptoKeyContainer = name };
+            return new(this) { CryptoKeyContainer = name };
         }
 
         public new CSharpCompilationOptions WithCryptoKeyFile(string? path)
@@ -331,7 +331,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { CryptoKeyFile = path };
+            return new(this) { CryptoKeyFile = path };
         }
 
         public new CSharpCompilationOptions WithCryptoPublicKey(ImmutableArray<byte> value)
@@ -346,7 +346,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { CryptoPublicKey = value };
+            return new(this) { CryptoPublicKey = value };
         }
 
         public new CSharpCompilationOptions WithDelaySign(bool? value)
@@ -356,7 +356,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { DelaySign = value };
+            return new(this) { DelaySign = value };
         }
 
         public CSharpCompilationOptions WithUsings(ImmutableArray<string> usings)
@@ -366,11 +366,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { Usings = usings };
+            return new(this) { Usings = usings };
         }
 
         public CSharpCompilationOptions WithUsings(IEnumerable<string>? usings) =>
-            new CSharpCompilationOptions(this) { Usings = usings.AsImmutableOrEmpty() };
+            new(this) { Usings = usings.AsImmutableOrEmpty() };
 
         public CSharpCompilationOptions WithUsings(params string[]? usings) => WithUsings((IEnumerable<string>?)usings);
 
@@ -381,7 +381,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { OptimizationLevel = value };
+            return new(this) { OptimizationLevel = value };
         }
 
         public new CSharpCompilationOptions WithOverflowChecks(bool enabled)
@@ -391,7 +391,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { CheckOverflow = enabled };
+            return new(this) { CheckOverflow = enabled };
         }
 
         public CSharpCompilationOptions WithNullableContextOptions(NullableContextOptions options)
@@ -401,7 +401,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { NullableContextOptions = options };
+            return new(this) { NullableContextOptions = options };
         }
 
         public CSharpCompilationOptions WithAllowUnsafe(bool enabled)
@@ -411,7 +411,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { AllowUnsafe = enabled };
+            return new(this) { AllowUnsafe = enabled };
         }
 
         public new CSharpCompilationOptions WithPlatform(Platform platform)
@@ -421,7 +421,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { Platform = platform };
+            return new(this) { Platform = platform };
         }
 
         public new CSharpCompilationOptions WithPublicSign(bool publicSign)
@@ -431,7 +431,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { PublicSign = publicSign };
+            return new(this) { PublicSign = publicSign };
         }
 
         protected override CompilationOptions CommonWithGeneralDiagnosticOption(ReportDiagnostic value) => WithGeneralDiagnosticOption(value);
@@ -452,7 +452,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { GeneralDiagnosticOption = value };
+            return new(this) { GeneralDiagnosticOption = value };
         }
 
         public new CSharpCompilationOptions WithSpecificDiagnosticOptions(ImmutableDictionary<string, ReportDiagnostic>? values)
@@ -467,11 +467,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { SpecificDiagnosticOptions = values };
+            return new(this) { SpecificDiagnosticOptions = values };
         }
 
         public new CSharpCompilationOptions WithSpecificDiagnosticOptions(IEnumerable<KeyValuePair<string, ReportDiagnostic>>? values) =>
-            new CSharpCompilationOptions(this) { SpecificDiagnosticOptions = values.ToImmutableDictionaryOrEmpty() };
+            new(this) { SpecificDiagnosticOptions = values.ToImmutableDictionaryOrEmpty() };
 
         public new CSharpCompilationOptions WithReportSuppressedDiagnostics(bool reportSuppressedDiagnostics)
         {
@@ -480,7 +480,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { ReportSuppressedDiagnostics = reportSuppressedDiagnostics };
+            return new(this) { ReportSuppressedDiagnostics = reportSuppressedDiagnostics };
         }
 
         public CSharpCompilationOptions WithWarningLevel(int warningLevel)
@@ -490,7 +490,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { WarningLevel = warningLevel };
+            return new(this) { WarningLevel = warningLevel };
         }
 
         public new CSharpCompilationOptions WithConcurrentBuild(bool concurrentBuild)
@@ -500,7 +500,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { ConcurrentBuild = concurrentBuild };
+            return new(this) { ConcurrentBuild = concurrentBuild };
         }
 
         public new CSharpCompilationOptions WithDeterministic(bool deterministic)
@@ -510,7 +510,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { Deterministic = deterministic };
+            return new(this) { Deterministic = deterministic };
         }
 
         internal CSharpCompilationOptions WithCurrentLocalTime(DateTime value)
@@ -520,7 +520,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { CurrentLocalTime_internal_protected_set = value };
+            return new(this) { CurrentLocalTime_internal_protected_set = value };
         }
 
         internal CSharpCompilationOptions WithDebugPlusMode(bool debugPlusMode)
@@ -530,7 +530,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { DebugPlusMode_internal_protected_set = debugPlusMode };
+            return new(this) { DebugPlusMode_internal_protected_set = debugPlusMode };
         }
 
         public new CSharpCompilationOptions WithMetadataImportOptions(MetadataImportOptions value)
@@ -540,7 +540,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { MetadataImportOptions = value };
+            return new(this) { MetadataImportOptions = value };
         }
 
         internal CSharpCompilationOptions WithReferencesSupersedeLowerVersions(bool value)
@@ -550,7 +550,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { ReferencesSupersedeLowerVersions_internal_protected_set = value };
+            return new(this) { ReferencesSupersedeLowerVersions_internal_protected_set = value };
         }
 
         public new CSharpCompilationOptions WithXmlReferenceResolver(XmlReferenceResolver? resolver)
@@ -560,7 +560,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { XmlReferenceResolver = resolver };
+            return new(this) { XmlReferenceResolver = resolver };
         }
 
         public new CSharpCompilationOptions WithSourceReferenceResolver(SourceReferenceResolver? resolver)
@@ -570,7 +570,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { SourceReferenceResolver = resolver };
+            return new(this) { SourceReferenceResolver = resolver };
         }
 
         public new CSharpCompilationOptions WithMetadataReferenceResolver(MetadataReferenceResolver? resolver)
@@ -580,7 +580,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { MetadataReferenceResolver = resolver };
+            return new(this) { MetadataReferenceResolver = resolver };
         }
 
         public new CSharpCompilationOptions WithAssemblyIdentityComparer(AssemblyIdentityComparer? comparer)
@@ -592,7 +592,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { AssemblyIdentityComparer = comparer };
+            return new(this) { AssemblyIdentityComparer = comparer };
         }
 
         public new CSharpCompilationOptions WithStrongNameProvider(StrongNameProvider? provider)
@@ -602,7 +602,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            return new CSharpCompilationOptions(this) { StrongNameProvider = provider };
+            return new(this) { StrongNameProvider = provider };
         }
 
         protected override CompilationOptions CommonWithConcurrentBuild(bool concurrent) => WithConcurrentBuild(concurrent);
@@ -637,7 +637,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         [Obsolete]
         protected override CompilationOptions CommonWithFeatures(ImmutableArray<string> features)
         {
-            throw new NotImplementedException();
+            throw new();
         }
 
         internal override void ValidateOptions(ArrayBuilder<Diagnostic> builder)

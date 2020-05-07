@@ -93,11 +93,11 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             return BoundStatementList.Synthesized(syntax, hasErrors,
                 gotoContinue,
-                new BoundLabelStatement(syntax, startLabel),
+                new(syntax, startLabel),
                 rewrittenBody,
-                new BoundLabelStatement(syntax, continueLabel),
+                new(syntax, continueLabel),
                 ifConditionGotoStart,
-                new BoundLabelStatement(syntax, breakLabel));
+                new(syntax, breakLabel));
         }
 
         private BoundStatement RewriteWhileStatement(
@@ -142,13 +142,13 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             return BoundStatementList.Synthesized(syntax, hasErrors,
                 continueLabelStatement,
-                new BoundBlock(syntax,
+                new(syntax,
                                locals,
                                ImmutableArray.Create(
                                     ifNotConditionGotoBreak,
                                     rewrittenBody,
-                                    new BoundGotoStatement(syntax, continueLabel))),
-                new BoundLabelStatement(syntax, breakLabel));
+                                    new(syntax, continueLabel))),
+                new(syntax, breakLabel));
         }
     }
 }

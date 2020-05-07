@@ -46,7 +46,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                return new BoundLiteral(syntax, constantValue, type, hasErrors: constantValue.IsBad);
+                return new(syntax, constantValue, type, hasErrors: constantValue.IsBad);
             }
         }
 
@@ -93,48 +93,48 @@ namespace Microsoft.CodeAnalysis.CSharp
                     if (useField is { HasUseSiteError: false, ContainingType: { HasUseSiteError: false } })
                     {
                         var fieldSymbol = (FieldSymbol)useField;
-                        return new BoundFieldAccess(syntax, null, fieldSymbol, constantValue);
+                        return new(syntax, null, fieldSymbol, constantValue);
                     }
                 }
 
-                //new decimal(int);
+                //new(int);
                 member = SpecialMember.System_Decimal__CtorInt32;
-                arguments.Add(new BoundLiteral(syntax, ConstantValue.Create((int)value), _compilation.GetSpecialType(SpecialType.System_Int32)));
+                arguments.Add(new(syntax, ConstantValue.Create((int)value), _compilation.GetSpecialType(SpecialType.System_Int32)));
             }
             else if (scale == 0 && uint.MinValue <= value && value <= uint.MaxValue)
             {
-                //new decimal(uint);
+                //new(uint);
                 member = SpecialMember.System_Decimal__CtorUInt32;
-                arguments.Add(new BoundLiteral(syntax, ConstantValue.Create((uint)value), _compilation.GetSpecialType(SpecialType.System_UInt32)));
+                arguments.Add(new(syntax, ConstantValue.Create((uint)value), _compilation.GetSpecialType(SpecialType.System_UInt32)));
             }
             else if (scale == 0 && long.MinValue <= value && value <= long.MaxValue)
             {
-                //new decimal(long);
+                //new(long);
                 member = SpecialMember.System_Decimal__CtorInt64;
-                arguments.Add(new BoundLiteral(syntax, ConstantValue.Create((long)value), _compilation.GetSpecialType(SpecialType.System_Int64)));
+                arguments.Add(new(syntax, ConstantValue.Create((long)value), _compilation.GetSpecialType(SpecialType.System_Int64)));
             }
             else if (scale == 0 && ulong.MinValue <= value && value <= ulong.MaxValue)
             {
-                //new decimal(ulong);
+                //new(ulong);
                 member = SpecialMember.System_Decimal__CtorUInt64;
-                arguments.Add(new BoundLiteral(syntax, ConstantValue.Create((ulong)value), _compilation.GetSpecialType(SpecialType.System_UInt64)));
+                arguments.Add(new(syntax, ConstantValue.Create((ulong)value), _compilation.GetSpecialType(SpecialType.System_UInt64)));
             }
             else
             {
-                //new decimal(int low, int mid, int high, bool isNegative, byte scale);
+                //new(int low, int mid, int high, bool isNegative, byte scale);
                 member = SpecialMember.System_Decimal__CtorInt32Int32Int32BooleanByte;
-                arguments.Add(new BoundLiteral(syntax, ConstantValue.Create(low), _compilation.GetSpecialType(SpecialType.System_Int32)));
-                arguments.Add(new BoundLiteral(syntax, ConstantValue.Create(mid), _compilation.GetSpecialType(SpecialType.System_Int32)));
-                arguments.Add(new BoundLiteral(syntax, ConstantValue.Create(high), _compilation.GetSpecialType(SpecialType.System_Int32)));
-                arguments.Add(new BoundLiteral(syntax, ConstantValue.Create(isNegative), _compilation.GetSpecialType(SpecialType.System_Boolean)));
-                arguments.Add(new BoundLiteral(syntax, ConstantValue.Create(scale), _compilation.GetSpecialType(SpecialType.System_Byte)));
+                arguments.Add(new(syntax, ConstantValue.Create(low), _compilation.GetSpecialType(SpecialType.System_Int32)));
+                arguments.Add(new(syntax, ConstantValue.Create(mid), _compilation.GetSpecialType(SpecialType.System_Int32)));
+                arguments.Add(new(syntax, ConstantValue.Create(high), _compilation.GetSpecialType(SpecialType.System_Int32)));
+                arguments.Add(new(syntax, ConstantValue.Create(isNegative), _compilation.GetSpecialType(SpecialType.System_Boolean)));
+                arguments.Add(new(syntax, ConstantValue.Create(scale), _compilation.GetSpecialType(SpecialType.System_Byte)));
             }
 
             var ctor = (MethodSymbol)_compilation.Assembly.GetSpecialTypeMember(member);
             Debug.Assert((object)ctor != null);
             Debug.Assert(ctor.ContainingType.SpecialType == SpecialType.System_Decimal);
 
-            return new BoundObjectCreationExpression(
+            return new(
                 syntax, ctor, arguments.ToImmutableAndFree(),
                 default(ImmutableArray<string>), default(ImmutableArray<RefKind>), false, default(ImmutableArray<int>),
                 constantValue, null, null, ctor.ContainingType);
@@ -146,14 +146,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(constantValue.IsDateTime);
 
             var arguments = new ArrayBuilder<BoundExpression>();
-            arguments.Add(new BoundLiteral(syntax, ConstantValue.Create(constantValue.DateTimeValue.Ticks), _compilation.GetSpecialType(SpecialType.System_Int64)));
+            arguments.Add(new(syntax, ConstantValue.Create(constantValue.DateTimeValue.Ticks), _compilation.GetSpecialType(SpecialType.System_Int64)));
 
             var ctor = (MethodSymbol)_compilation.Assembly.GetSpecialTypeMember(SpecialMember.System_DateTime__CtorInt64);
             Debug.Assert((object)ctor != null);
             Debug.Assert(ctor.ContainingType.SpecialType == SpecialType.System_DateTime);
 
             // This is not a constant from C#'s perspective, so do not mark it as one.
-            return new BoundObjectCreationExpression(
+            return new(
                 syntax, ctor, arguments.ToImmutableAndFree(),
                 default(ImmutableArray<string>), default(ImmutableArray<RefKind>), false, default(ImmutableArray<int>),
                 ConstantValue.NotAvailable, null, null, ctor.ContainingType);

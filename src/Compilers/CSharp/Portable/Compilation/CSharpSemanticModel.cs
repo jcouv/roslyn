@@ -226,10 +226,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // Wrap the binder in another TypeofBinder to overrule its description of where
                 // unbound generic types are allowed.
                 //Debug.Assert(binder is TypeofBinder); // Expectation, not requirement.
-                binder = new TypeofBinder(expression, binder);
+                binder = new(expression, binder);
             }
 
-            binder = new WithNullableContextBinder(SyntaxTree, position, binder);
+            binder = new(SyntaxTree, position, binder);
 
             return new ExecutableCodeBinder(expression, binder.ContainingMemberOrLambda, binder).GetBinder(expression);
         }
@@ -417,7 +417,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var diagnostics = DiagnosticBag.GetInstance();
             AliasSymbol aliasOpt; // not needed.
             NamedTypeSymbol attributeType = (NamedTypeSymbol)binder.BindType(attribute.Name, diagnostics, out aliasOpt).Type;
-            var boundNode = new ExecutableCodeBinder(attribute, binder.ContainingMemberOrLambda, binder).BindAttribute(attribute, attributeType, diagnostics);
+            var boundNode = new(attribute, binder.ContainingMemberOrLambda, binder).BindAttribute(attribute, attributeType, diagnostics);
             diagnostics.Free();
 
             return boundNode;
@@ -795,7 +795,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (binder != null)
             {
                 var diagnostics = DiagnosticBag.GetInstance();
-                binder = new ExecutableCodeBinder(constructorInitializer, binder.ContainingMemberOrLambda, binder);
+                binder = new(constructorInitializer, binder.ContainingMemberOrLambda, binder);
 
                 BoundExpressionStatement bnode = binder.BindConstructorInitializer(constructorInitializer, diagnostics);
                 var binfo = memberModel.GetSymbolInfoForNode(SymbolInfoOptions.DefaultOptions, bnode.Expression, bnode.Expression, boundNodeForSyntacticParent: null, binderOpt: binder);
@@ -2018,8 +2018,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // Type and ConvertedType are the same, but the conversion isn't Identity.
                     type = null;
                     nullability = default;
-                    convertedNullability = new NullabilityInfo(CodeAnalysis.NullableAnnotation.NotAnnotated, CodeAnalysis.NullableFlowState.NotNull);
-                    conversion = new Conversion(ConversionKind.AnonymousFunction, lambda.Symbol, false);
+                    convertedNullability = new(CodeAnalysis.NullableAnnotation.NotAnnotated, CodeAnalysis.NullableFlowState.NotNull);
+                    conversion = new(ConversionKind.AnonymousFunction, lambda.Symbol, false);
                 }
                 else if ((highestBoundExpr as BoundConversion)?.Conversion.IsTupleLiteralConversion == true)
                 {
@@ -2081,19 +2081,19 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         case BoundKind.MethodGroup:
                             {
-                                conversion = new Conversion(ConversionKind.MethodGroup, delegateCreation.MethodOpt, delegateCreation.IsExtensionMethod);
+                                conversion = new(ConversionKind.MethodGroup, delegateCreation.MethodOpt, delegateCreation.IsExtensionMethod);
                                 break;
                             }
                         case BoundKind.Lambda:
                             {
                                 var lambda = (BoundLambda)boundExpr;
-                                conversion = new Conversion(ConversionKind.AnonymousFunction, lambda.Symbol, delegateCreation.IsExtensionMethod);
+                                conversion = new(ConversionKind.AnonymousFunction, lambda.Symbol, delegateCreation.IsExtensionMethod);
                                 break;
                             }
                         case BoundKind.UnboundLambda:
                             {
                                 var lambda = ((UnboundLambda)boundExpr).BindForErrorRecovery();
-                                conversion = new Conversion(ConversionKind.AnonymousFunction, lambda.Symbol, delegateCreation.IsExtensionMethod);
+                                conversion = new(ConversionKind.AnonymousFunction, lambda.Symbol, delegateCreation.IsExtensionMethod);
                                 break;
                             }
                         default:
@@ -3498,14 +3498,14 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         // in a static member
                         resultKind = LookupResultKind.StaticInstanceMismatch;
-                        thisParam = new ThisParameterSymbol(containingMember as MethodSymbol, containingType);
+                        thisParam = new(containingMember as MethodSymbol, containingType);
                     }
                     else
                     {
                         if ((object)typeOfThis == ErrorTypeSymbol.UnknownResultType)
                         {
                             // in an instance member, but binder considered this/base unreferenceable
-                            thisParam = new ThisParameterSymbol(containingMember as MethodSymbol, containingType);
+                            thisParam = new(containingMember as MethodSymbol, containingType);
                             resultKind = LookupResultKind.NotReferencable;
                         }
                         else
@@ -3533,7 +3533,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     break;
 
                 default:
-                    thisParam = new ThisParameterSymbol(containingMember as MethodSymbol, typeOfThis);
+                    thisParam = new(containingMember as MethodSymbol, typeOfThis);
                     resultKind = LookupResultKind.NotReferencable;
                     break;
             }

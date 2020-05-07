@@ -64,7 +64,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             Debug.Assert((object)containingType != null);
             Debug.Assert(!handle.IsNil);
 
-            var metadataDecoder = new MetadataDecoder(moduleSymbol, containingType);
+            var metadataDecoder = new(moduleSymbol, containingType);
             SignatureHeader callingConvention;
             BadImageFormatException propEx;
             var propertyParams = metadataDecoder.GetSignatureForProperty(handle, out callingConvention, out propEx);
@@ -81,7 +81,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             if (propEx != null || isBad)
             {
-                result._lazyUseSiteDiagnostic = new CSDiagnosticInfo(ErrorCode.ERR_BindToBogus, result);
+                result._lazyUseSiteDiagnostic = new(ErrorCode.ERR_BindToBogus, result);
             }
 
             return result;
@@ -137,7 +137,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             if (getEx != null || setEx != null || mrEx != null || isBad)
             {
-                _lazyUseSiteDiagnostic = new CSDiagnosticInfo(ErrorCode.ERR_BindToBogus, this);
+                _lazyUseSiteDiagnostic = new(ErrorCode.ERR_BindToBogus, this);
             }
 
             var returnInfo = propertyParams[0];
@@ -515,7 +515,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
         {
             get
             {
-                var metadataDecoder = new MetadataDecoder(_containingType.ContainingPEModule, _containingType);
+                var metadataDecoder = new(_containingType.ContainingPEModule, _containingType);
                 return (Microsoft.Cci.CallingConvention)(metadataDecoder.GetSignatureHeaderForProperty(_handle).RawValue);
             }
         }

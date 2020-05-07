@@ -259,7 +259,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             ? typeOrValue.Data.ValueExpression
                             : null; // no receiver required
                     }
-                    return new BoundBadExpression(
+                    return new(
                         expr.Syntax,
                         methodGroup.ResultKind,
                         (object)otherSymbol == null ? ImmutableArray<Symbol>.Empty : ImmutableArray.Create(otherSymbol),

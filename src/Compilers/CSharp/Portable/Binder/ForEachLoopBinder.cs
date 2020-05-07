@@ -179,7 +179,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ExpressionSyntax variables = ((ForEachVariableStatementSyntax)_syntax).Variable;
 
             // Tracking narrowest safe-to-escape scope by default, the proper val escape will be set when doing full binding of the foreach statement
-            var valuePlaceholder = new BoundDeconstructValuePlaceholder(_syntax.Expression, this.LocalScopeDepth, inferredType.Type ?? CreateErrorType("var"));
+            var valuePlaceholder = new(_syntax.Expression, this.LocalScopeDepth, inferredType.Type ?? CreateErrorType("var"));
 
             DeclarationExpressionSyntax declaration = null;
             ExpressionSyntax expression = null;
@@ -217,7 +217,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 var expr = _syntax.Expression;
                 ReportBadAwaitDiagnostics(expr, _syntax.AwaitKeyword.GetLocation(), diagnostics, ref hasErrors);
-                var placeholder = new BoundAwaitableValuePlaceholder(expr, valEscape: this.LocalScopeDepth, builder.MoveNextMethod?.ReturnType ?? CreateErrorType());
+                var placeholder = new(expr, valEscape: this.LocalScopeDepth, builder.MoveNextMethod?.ReturnType ?? CreateErrorType());
                 awaitInfo = BindAwaitInfo(placeholder, expr, diagnostics, ref hasErrors);
 
                 if (!hasErrors && awaitInfo.GetResult?.ReturnType.SpecialType != SpecialType.System_Boolean)
@@ -260,7 +260,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         }
 
                         iterationVariableType = declType;
-                        boundIterationVariableType = new BoundTypeExpression(typeSyntax, alias, iterationVariableType);
+                        boundIterationVariableType = new(typeSyntax, alias, iterationVariableType);
 
                         SourceLocalSymbol local = this.IterationVariable;
                         local.SetTypeWithAnnotations(declType);
@@ -322,7 +322,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         var variables = node.Variable;
                         if (variables.IsDeconstructionLeft())
                         {
-                            var valuePlaceholder = new BoundDeconstructValuePlaceholder(_syntax.Expression, collectionEscape, iterationVariableType.Type).MakeCompilerGenerated();
+                            var valuePlaceholder = new(_syntax.Expression, collectionEscape, iterationVariableType.Type).MakeCompilerGenerated();
                             DeclarationExpressionSyntax declaration = null;
                             ExpressionSyntax expression = null;
                             BoundDeconstructionAssignmentOperator deconstruction = BindDeconstruction(
@@ -341,7 +341,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 hasErrors = true;
                             }
 
-                            deconstructStep = new BoundForEachDeconstructStep(variables, deconstruction, valuePlaceholder).MakeCompilerGenerated();
+                            deconstructStep = new(variables, deconstruction, valuePlaceholder).MakeCompilerGenerated();
                         }
                         else
                         {
@@ -359,7 +359,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             }
                         }
 
-                        boundIterationVariableType = new BoundTypeExpression(variables, aliasOpt: null, typeWithAnnotations: iterationVariableType).MakeCompilerGenerated();
+                        boundIterationVariableType = new(variables, aliasOpt: null, typeWithAnnotations: iterationVariableType).MakeCompilerGenerated();
                         break;
                     }
                 default:
@@ -423,7 +423,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
                 else
                 {
-                    SymbolDistinguisher distinguisher = new SymbolDistinguisher(this.Compilation, inferredType.Type, iterationVariableType.Type);
+                    SymbolDistinguisher distinguisher = new(this.Compilation, inferredType.Type, iterationVariableType.Type);
                     diagnostics.Add(ErrorCode.ERR_NoExplicitConv, foreachKeyword.GetLocation(), distinguisher.First, distinguisher.Second);
                 }
                 hasErrors = true;
@@ -477,7 +477,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // We're wrapping the collection expression in a (non-synthesized) conversion so that its converted
             // type (i.e. builder.CollectionType) will be available in the binding API.
-            BoundConversion convertedCollectionExpression = new BoundConversion(
+            BoundConversion convertedCollectionExpression = new(
                 collectionExpr.Syntax,
                 collectionExpr,
                 builder.CollectionConversion,
@@ -529,7 +529,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var expr = _syntax.Expression;
             ReportBadAwaitDiagnostics(expr, _syntax.AwaitKeyword.GetLocation(), diagnostics, ref hasErrors);
 
-            var placeholder = new BoundAwaitableValuePlaceholder(expr, valEscape: this.LocalScopeDepth, awaitableType);
+            var placeholder = new(expr, valEscape: this.LocalScopeDepth, awaitableType);
             builder.DisposeAwaitableInfo = BindAwaitInfo(placeholder, expr, diagnostics, ref hasErrors);
             return hasErrors;
         }
@@ -598,7 +598,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
                 else
                 {
-                    collectionExpr = new BoundBadExpression(
+                    collectionExpr = new(
                         exprSyntax,
                         LookupResultKind.Empty,
                         ImmutableArray<Symbol>.Empty,
@@ -867,8 +867,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // if it wasn't directly convertable to IDisposable, see if it is pattern-disposable
                 // again, we throw away any binding diagnostics, and assume it's not disposable if we encounter errors
-                var patternDisposeDiags = new DiagnosticBag();
-                var receiver = new BoundDisposableValuePlaceholder(_syntax, enumeratorType);
+                var patternDisposeDiags = new();
+                var receiver = new(_syntax, enumeratorType);
                 MethodSymbol disposeMethod = TryFindDisposePatternMethod(receiver, _syntax, isAsync, patternDisposeDiags);
                 if (disposeMethod is object)
                 {
@@ -1041,7 +1041,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             HashSet<DiagnosticInfo> useSiteDiagnostics = null;
             // We create a dummy receiver of the invocation so MethodInvocationOverloadResolution knows it was invoked from an instance, not a type
-            var dummyReceiver = new BoundImplicitReceiver(_syntax.Expression, patternType);
+            var dummyReceiver = new(_syntax.Expression, patternType);
             this.OverloadResolution.MethodInvocationOverloadResolution(
                 methods: candidateMethods,
                 typeArguments: typeArguments,

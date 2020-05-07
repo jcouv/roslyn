@@ -231,7 +231,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // builder.SetException(ex);  OR  if (this.combinedTokens != null) this.combinedTokens.Dispose(); _promiseOfValueOrEnd.SetException(ex);
             BoundStatement callSetException = GenerateSetExceptionCall(exceptionLocal);
 
-            return new BoundCatchBlock(
+            return new(
                 F.Syntax,
                 ImmutableArray.Create(exceptionLocal),
                 F.Local(exceptionLocal),

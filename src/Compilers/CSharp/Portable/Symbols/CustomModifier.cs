@@ -45,12 +45,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal static CustomModifier CreateOptional(NamedTypeSymbol modifier)
         {
-            return new OptionalCustomModifier(modifier);
+            return new(modifier);
         }
 
         internal static CustomModifier CreateRequired(NamedTypeSymbol modifier)
         {
-            return new RequiredCustomModifier(modifier);
+            return new(modifier);
         }
 
         internal static ImmutableArray<CustomModifier> Convert(ImmutableArray<ModifierInfo<TypeSymbol>> customModifiers)

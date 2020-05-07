@@ -317,7 +317,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return;
             }
 
-            // If node and location are null "new SourceLocation(node);" will throw a NullReferenceException
+            // If node and location are null "new(node);" will throw a NullReferenceException
             Debug.Assert(node != null || location != null);
 
             if (Diagnostics != null && this.State.Reachable)
@@ -411,7 +411,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 #if DEBUG
             else
             {
-                NullableWalker.Analyze(compilation, member, node, new DiagnosticBag());
+                NullableWalker.Analyze(compilation, member, node, new());
             }
 #endif
         }
@@ -951,7 +951,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     errorCode = ErrorCode.ERR_UseDefViolation;
                 }
-                Diagnostics.Add(errorCode, new SourceLocation(node), symbolName);
+                Diagnostics.Add(errorCode, new(node), symbolName);
             }
 
             // mark the variable's slot so that we don't complain about the variable again
@@ -1343,7 +1343,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         protected override LocalState TopState()
         {
-            return new LocalState(BitVector.Empty);
+            return new(BitVector.Empty);
         }
 
         protected override LocalState ReachableBottomState()
@@ -1678,7 +1678,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                  currentMethod.MethodKind == MethodKind.LocalFunction) &&
                 _capturedVariables.Contains(localSymbol))
             {
-                Diagnostics.Add(ErrorCode.ERR_FixedLocalInLambda, new SourceLocation(node.Syntax), localSymbol);
+                Diagnostics.Add(ErrorCode.ERR_FixedLocalInLambda, new(node.Syntax), localSymbol);
             }
             return null;
         }
@@ -2196,7 +2196,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             /// <returns></returns>
             public LocalState Clone()
             {
-                return new LocalState(Assigned.Clone());
+                return new(Assigned.Clone());
             }
 
             public bool IsAssigned(int slot)

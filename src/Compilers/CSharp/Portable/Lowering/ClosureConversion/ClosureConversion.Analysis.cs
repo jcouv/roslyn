@@ -518,7 +518,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             internal DebugId GetTopLevelMethodId()
             {
-                return _slotAllocatorOpt?.MethodId ?? new DebugId(_topLevelMethodOrdinal, _compilationState.ModuleBuilderOpt.CurrentGenerationOrdinal);
+                return _slotAllocatorOpt?.MethodId ?? new(_topLevelMethodOrdinal, _compilationState.ModuleBuilderOpt.CurrentGenerationOrdinal);
             }
 
             internal DebugId GetClosureId(SyntaxNode syntax, ArrayBuilder<ClosureDebugInfo> closureDebugInfo)
@@ -537,7 +537,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
 
                 int syntaxOffset = _topLevelMethod.CalculateLocalSyntaxOffset(LambdaUtilities.GetDeclaratorPosition(syntax), syntax.SyntaxTree);
-                closureDebugInfo.Add(new ClosureDebugInfo(syntaxOffset, closureId));
+                closureDebugInfo.Add(new(syntaxOffset, closureId));
 
                 return closureId;
             }

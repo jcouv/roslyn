@@ -37,7 +37,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             : base(sourceAssembly, emitOptions, outputKind, serializationProperties, manifestResources, additionalTypes: ImmutableArray<NamedTypeSymbol>.Empty)
         {
             var initialBaseline = previousGeneration.InitialBaseline;
-            var context = new(this, null, new DiagnosticBag(), metadataOnly: false, includePrivateMembers: true);
+            var context = new(this, null, new(), metadataOnly: false, includePrivateMembers: true);
 
             // Hydrate symbols from initial metadata. Once we do so it is important to reuse these symbols across all generations,
             // in order for the symbol matcher to be able to use reference equality once it maps symbols to initial metadata.
@@ -51,7 +51,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             if (previousGeneration.Ordinal > 0)
             {
                 var previousAssembly = ((CSharpCompilation)previousGeneration.Compilation).SourceAssembly;
-                var previousContext = new((PEModuleBuilder)previousGeneration.PEModuleBuilder, null, new DiagnosticBag(), metadataOnly: false, includePrivateMembers: true);
+                var previousContext = new((PEModuleBuilder)previousGeneration.PEModuleBuilder, null, new(), metadataOnly: false, includePrivateMembers: true);
 
                 matchToPrevious = new(
                     previousGeneration.AnonymousTypeMap,
@@ -164,7 +164,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                     return false;
                 }
 
-                builder.Add(new AnonymousTypeKeyField(fieldName, isKey: false, ignoreCase: false));
+                builder.Add(new(fieldName, isKey: false, ignoreCase: false));
             }
             return true;
         }
@@ -248,7 +248,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             {
                 foreach (var embeddedType in embeddedTypesManager.EmbeddedTypesMap.Keys)
                 {
-                    diagnostics.Add(new CSDiagnosticInfo(ErrorCode.ERR_EncNoPIAReference, embeddedType), Location.None);
+                    diagnostics.Add(new(ErrorCode.ERR_EncNoPIAReference, embeddedType), Location.None);
                 }
             }
         }

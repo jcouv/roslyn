@@ -88,7 +88,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     boundExpression = originalBinder.BindToNaturalType(boundExpression, diagnostics);
                 }
-                Interlocked.CompareExchange(ref _lazyExpressionAndDiagnostics, new ExpressionAndDiagnostics(boundExpression, expressionDiagnostics.ToReadOnlyAndFree()), null);
+                Interlocked.CompareExchange(ref _lazyExpressionAndDiagnostics, new(boundExpression, expressionDiagnostics.ToReadOnlyAndFree()), null);
             }
             Debug.Assert(_lazyExpressionAndDiagnostics != null);
 

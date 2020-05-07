@@ -317,7 +317,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (root == null)
             {
-                throw new ArgumentNullException(nameof(root));
+                throw new(nameof(root));
             }
 
             var directives = root.Kind() == SyntaxKind.CompilationUnit ?
@@ -330,7 +330,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     root,
                     isComment: trivia => trivia.Kind() == SyntaxKind.SingleLineCommentTrivia || trivia.Kind() == SyntaxKind.MultiLineCommentTrivia);
 
-            return new ParsedSyntaxTree(
+            return new(
                 textOpt: null,
                 encodingOpt: encoding,
                 checksumAlgorithm: SourceHashAlgorithm.Sha1,
@@ -351,7 +351,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert(root != null);
 
-            return new DebuggerSyntaxTree(root, text, options);
+            return new(root, text, options);
         }
 
         /// <summary>
@@ -366,7 +366,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert(root != null);
 
-            return new ParsedSyntaxTree(
+            return new(
                 textOpt: null,
                 encodingOpt: null,
                 checksumAlgorithm: SourceHashAlgorithm.Sha1,
@@ -407,7 +407,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (text == null)
             {
-                throw new ArgumentNullException(nameof(text));
+                throw new(nameof(text));
             }
 
             options = options ?? CSharpParseOptions.Default;
@@ -458,14 +458,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             // if we do not easily know the old text, then specify entire text as changed so we do a full reparse.
-            return this.WithChanges(newText, new[] { new TextChangeRange(new TextSpan(0, this.Length), newText.Length) });
+            return this.WithChanges(newText, new[] { new(new(0, this.Length), newText.Length) });
         }
 
         private SyntaxTree WithChanges(SourceText newText, IReadOnlyList<TextChangeRange> changes)
         {
             if (changes == null)
             {
-                throw new ArgumentNullException(nameof(changes));
+                throw new(nameof(changes));
             }
 
             IReadOnlyList<TextChangeRange>? workingChanges = changes;
@@ -508,7 +508,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (oldTree == null)
             {
-                throw new ArgumentNullException(nameof(oldTree));
+                throw new(nameof(oldTree));
             }
 
             return SyntaxDiffer.GetPossiblyDifferentTextSpans(oldTree, this);
@@ -523,7 +523,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (oldTree == null)
             {
-                throw new ArgumentNullException(nameof(oldTree));
+                throw new(nameof(oldTree));
             }
 
             return SyntaxDiffer.GetTextChanges(oldTree, this);
@@ -544,7 +544,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <remarks>The values are not affected by line mapping directives (<c>#line</c>).</remarks>
         public override FileLinePositionSpan GetLineSpan(TextSpan span, CancellationToken cancellationToken = default)
         {
-            return new FileLinePositionSpan(this.FilePath, GetLinePosition(span.Start), GetLinePosition(span.End));
+            return new(this.FilePath, GetLinePosition(span.Start), GetLinePosition(span.End));
         }
 
         /// <summary>
@@ -568,7 +568,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (_lazyLineDirectiveMap == null)
             {
                 // Create the line directive map on demand.
-                Interlocked.CompareExchange(ref _lazyLineDirectiveMap, new CSharpLineDirectiveMap(this), null);
+                Interlocked.CompareExchange(ref _lazyLineDirectiveMap, new(this), null);
             }
 
             return _lazyLineDirectiveMap.TranslateSpan(this.GetText(cancellationToken), this.FilePath, span);
@@ -579,7 +579,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (_lazyLineDirectiveMap == null)
             {
                 // Create the line directive map on demand.
-                Interlocked.CompareExchange(ref _lazyLineDirectiveMap, new CSharpLineDirectiveMap(this), null);
+                Interlocked.CompareExchange(ref _lazyLineDirectiveMap, new(this), null);
             }
 
             return _lazyLineDirectiveMap.GetLineVisibility(this.GetText(cancellationToken), position);
@@ -597,7 +597,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (_lazyLineDirectiveMap == null)
             {
                 // Create the line directive map on demand.
-                Interlocked.CompareExchange(ref _lazyLineDirectiveMap, new CSharpLineDirectiveMap(this), null);
+                Interlocked.CompareExchange(ref _lazyLineDirectiveMap, new(this), null);
             }
 
             return _lazyLineDirectiveMap.TranslateSpanAndVisibility(this.GetText(), this.FilePath, span, out isHiddenPosition);
@@ -612,7 +612,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (_lazyLineDirectiveMap == null)
             {
                 // Create the line directive map on demand.
-                Interlocked.CompareExchange(ref _lazyLineDirectiveMap, new CSharpLineDirectiveMap(this), null);
+                Interlocked.CompareExchange(ref _lazyLineDirectiveMap, new(this), null);
             }
 
             return _lazyLineDirectiveMap.HasAnyHiddenRegions();
@@ -628,7 +628,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (_lazyPragmaWarningStateMap == null)
             {
                 // Create the warning state map on demand.
-                Interlocked.CompareExchange(ref _lazyPragmaWarningStateMap, new CSharpPragmaWarningStateMap(this, IsGeneratedCode()), null);
+                Interlocked.CompareExchange(ref _lazyPragmaWarningStateMap, new(this, IsGeneratedCode()), null);
             }
 
             return _lazyPragmaWarningStateMap.GetWarningState(id, position);
@@ -696,7 +696,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         public override Location GetLocation(TextSpan span)
         {
-            return new SourceLocation(this, span);
+            return new(this, span);
         }
 
         #endregion
@@ -714,7 +714,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (node == null)
             {
-                throw new ArgumentNullException(nameof(node));
+                throw new(nameof(node));
             }
 
             return GetDiagnostics(node.Green, node.Position);
@@ -724,7 +724,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (greenNode == null)
             {
-                throw new InvalidOperationException();
+                throw new();
             }
 
             if (greenNode.ContainsDiagnostics)
@@ -755,7 +755,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (token.Node == null)
             {
-                throw new InvalidOperationException();
+                throw new();
             }
             return GetDiagnostics(token.Node, token.Position);
         }
@@ -771,7 +771,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (trivia.UnderlyingNode == null)
             {
-                throw new InvalidOperationException();
+                throw new();
             }
             return GetDiagnostics(trivia.UnderlyingNode, trivia.Position);
         }
@@ -788,7 +788,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (nodeOrToken.UnderlyingNode == null)
             {
-                throw new InvalidOperationException();
+                throw new();
             }
             return GetDiagnostics(nodeOrToken.UnderlyingNode, nodeOrToken.Position);
         }

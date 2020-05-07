@@ -12,7 +12,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
     {
         internal override DirectiveStack ApplyDirectives(DirectiveStack stack)
         {
-            return stack.Add(new Directive(this));
+            return stack.Add(new(this));
         }
     }
 }

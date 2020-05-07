@@ -215,7 +215,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (value == null)
             {
-                throw new ArgumentNullException(nameof(value));
+                throw new(nameof(value));
             }
 
             const char quote = '"';

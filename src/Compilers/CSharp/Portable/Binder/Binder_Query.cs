@@ -207,7 +207,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         // there should have been a syntax error if we get here.
                         Debug.Assert(state.fromExpression.Type is { });
-                        return new BoundBadExpression(
+                        return new(
                             state.selectOrGroup, LookupResultKind.OverloadResolutionFailure, ImmutableArray<Symbol?>.Empty,
                             ImmutableArray.Create(state.fromExpression), state.fromExpression.Type);
                     }
@@ -574,7 +574,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 lambdaBodyBinder = lambdaBodyBinder.GetRequiredBinder(let.Expression);
 
                 var yExpression = lambdaBodyBinder.BindRValueWithoutTargetType(let.Expression, d);
-                SourceLocation errorLocation = new(let.SyntaxTree, new TextSpan(let.Identifier.SpanStart, let.Expression.Span.End - let.Identifier.SpanStart));
+                SourceLocation errorLocation = new(let.SyntaxTree, new(let.Identifier.SpanStart, let.Expression.Span.End - let.Identifier.SpanStart));
                 if (!yExpression.HasAnyErrors && !yExpression.HasExpressionType())
                 {
                     Error(d, ErrorCode.ERR_QueryRangeVariableAssignedBadValue, errorLocation, yExpression.Display);
@@ -623,7 +623,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression? unoptimizedForm = null)
         {
             if (unoptimizedForm != null && unoptimizedForm.HasAnyErrors && !expression.HasAnyErrors) unoptimizedForm = null;
-            return new BoundQueryClause(
+            return new(
                 syntax: syntax, value: expression,
                 definedSymbol: definedSymbol,
                 operation: queryInvocation,
@@ -643,9 +643,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             AnonymousTypeDescriptor typeDescriptor = new(
                                                             ImmutableArray.Create<AnonymousTypeField>(
-                                                                new AnonymousTypeField(field1Name, field1Value.Syntax.Location,
+                                                                new(field1Name, field1Value.Syntax.Location,
                                                                                        TypeWithAnnotations.Create(TypeOrError(field1Value))),
-                                                                new AnonymousTypeField(field2Name, field2Value.Syntax.Location,
+                                                                new(field2Name, field2Value.Syntax.Location,
                                                                                         TypeWithAnnotations.Create(TypeOrError(field2Value)))
                                                             ),
                                                             node.Location
@@ -668,7 +668,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private UnboundLambda MakeQueryUnboundLambda(RangeVariableMap qvm, ImmutableArray<RangeVariableSymbol> parameters, ExpressionSyntax expression)
         {
-            return MakeQueryUnboundLambda(expression, new QueryUnboundLambdaState(this, qvm, parameters, (LambdaSymbol lambdaSymbol, Binder lambdaBodyBinder, DiagnosticBag diagnostics) =>
+            return MakeQueryUnboundLambda(expression, new(this, qvm, parameters, (LambdaSymbol lambdaSymbol, Binder lambdaBodyBinder, DiagnosticBag diagnostics) =>
             {
                 lambdaBodyBinder = lambdaBodyBinder.GetRequiredBinder(expression);
                 Debug.Assert(lambdaSymbol != null);
@@ -679,7 +679,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private UnboundLambda MakeQueryUnboundLambdaWithCast(RangeVariableMap qvm, RangeVariableSymbol parameter, ExpressionSyntax expression, TypeSyntax castTypeSyntax, TypeWithAnnotations castType)
         {
-            return MakeQueryUnboundLambda(expression, new QueryUnboundLambdaState(this, qvm, ImmutableArray.Create(parameter), (LambdaSymbol lambdaSymbol, Binder lambdaBodyBinder, DiagnosticBag diagnostics) =>
+            return MakeQueryUnboundLambda(expression, new(this, qvm, ImmutableArray.Create(parameter), (LambdaSymbol lambdaSymbol, Binder lambdaBodyBinder, DiagnosticBag diagnostics) =>
             {
                 lambdaBodyBinder = lambdaBodyBinder.GetRequiredBinder(expression);
                 BoundExpression boundExpression = lambdaBodyBinder.BindValue(expression, diagnostics, BindValueKind.RValue);
@@ -693,7 +693,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private UnboundLambda MakeQueryUnboundLambda(RangeVariableMap qvm, ImmutableArray<RangeVariableSymbol> parameters, CSharpSyntaxNode node, LambdaBodyFactory bodyFactory)
         {
-            return MakeQueryUnboundLambda(node, new QueryUnboundLambdaState(this, qvm, parameters, bodyFactory));
+            return MakeQueryUnboundLambda(node, new(this, qvm, parameters, bodyFactory));
         }
 
         private static UnboundLambda MakeQueryUnboundLambda(CSharpSyntaxNode node, QueryUnboundLambdaState state)
@@ -716,7 +716,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         protected BoundCall MakeQueryInvocation(CSharpSyntaxNode node, BoundExpression receiver, string methodName, TypeSyntax typeArgSyntax, TypeWithAnnotations typeArg, DiagnosticBag diagnostics)
         {
-            return MakeQueryInvocation(node, receiver, methodName, new SeparatedSyntaxList<TypeSyntax>(new SyntaxNodeOrTokenList(typeArgSyntax, 0)), ImmutableArray.Create(typeArg), ImmutableArray<BoundExpression>.Empty, diagnostics);
+            return MakeQueryInvocation(node, receiver, methodName, new SeparatedSyntaxList<TypeSyntax>(new(typeArgSyntax, 0)), ImmutableArray.Create(typeArg), ImmutableArray<BoundExpression>.Empty, diagnostics);
         }
 
         protected BoundCall MakeQueryInvocation(CSharpSyntaxNode node, BoundExpression receiver, string methodName, SeparatedSyntaxList<TypeSyntax> typeArgsSyntax, ImmutableArray<TypeWithAnnotations> typeArgs, ImmutableArray<BoundExpression> args, DiagnosticBag diagnostics)

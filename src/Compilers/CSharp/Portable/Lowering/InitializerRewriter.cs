@@ -21,7 +21,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             var sourceMethod = method as SourceMemberMethodSymbol;
             var syntax = ((object)sourceMethod != null) ? sourceMethod.SyntaxNode : method.GetNonNullSyntaxNode();
-            return new BoundTypeOrInstanceInitializers(syntax, boundInitializers.SelectAsArray(RewriteInitializersAsStatements));
+            return new(syntax, boundInitializers.SelectAsArray(RewriteInitializersAsStatements));
         }
 
         internal static BoundTypeOrInstanceInitializers RewriteScriptInitializer(ImmutableArray<BoundInitializer> boundInitializers, SynthesizedInteractiveInitializerMethod method, out bool hasTrailingExpression)
@@ -63,7 +63,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 Debug.Assert(!submissionResultType.IsVoidType());
 
                 // Note: The trailing expression was already converted to the submission result type in Binder.BindGlobalStatement.
-                boundStatements.Add(new BoundReturnStatement(lastStatement.Syntax, RefKind.None, trailingExpression));
+                boundStatements.Add(new(lastStatement.Syntax, RefKind.None, trailingExpression));
                 hasTrailingExpression = true;
             }
             else
@@ -71,7 +71,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 hasTrailingExpression = false;
             }
 
-            return new BoundTypeOrInstanceInitializers(method.GetNonNullSyntaxNode(), boundStatements.ToImmutableAndFree());
+            return new(method.GetNonNullSyntaxNode(), boundStatements.ToImmutableAndFree());
         }
 
         /// <summary>
@@ -89,12 +89,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             SyntaxNode syntax = fieldInit.Syntax;
             syntax = (syntax as EqualsValueClauseSyntax)?.Value ?? syntax; //we want the attached sequence point to indicate the value node
             var boundReceiver = fieldInit.Field.IsStatic ? null :
-                                        new BoundThisReference(syntax, fieldInit.Field.ContainingType);
+                                        new(syntax, fieldInit.Field.ContainingType);
 
             BoundStatement boundStatement =
-                new BoundExpressionStatement(syntax,
-                    new BoundAssignmentOperator(syntax,
-                        new BoundFieldAccess(syntax,
+                new(syntax,
+                    new(syntax,
+                        new(syntax,
                             boundReceiver,
                             fieldInit.Field,
                             constantValueOpt: null),

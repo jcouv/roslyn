@@ -231,7 +231,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 _containingMemberOrLambda = match;
 
                 binder = match.IsGenericMethod
-                    ? new WithMethodTypeParametersBinder(match, _enclosing)
+                    ? new(match, _enclosing)
                     : _enclosing;
 
                 binder = binder.WithUnsafeRegionIfNecessary(node.Modifiers);
@@ -815,13 +815,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case SyntaxKind.ThrowStatement:
                     Debug.Assert((object)_containingMemberOrLambda == enclosing.ContainingMemberOrLambda);
                     embeddedScopeDesignator = statement;
-                    return new EmbeddedStatementBinder(enclosing, statement);
+                    return new(enclosing, statement);
 
                 case SyntaxKind.SwitchStatement:
                     Debug.Assert((object)_containingMemberOrLambda == enclosing.ContainingMemberOrLambda);
                     var switchStatement = (SwitchStatementSyntax)statement;
                     embeddedScopeDesignator = switchStatement.Expression;
-                    return new ExpressionVariableBinder(switchStatement.Expression, enclosing);
+                    return new(switchStatement.Expression, enclosing);
 
                 default:
                     embeddedScopeDesignator = null;

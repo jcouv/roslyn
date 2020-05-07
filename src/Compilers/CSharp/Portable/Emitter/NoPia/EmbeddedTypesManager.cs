@@ -117,7 +117,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit.NoPia
                     // When emitting a com event interface, we have to tweak the parameters: the spec requires that we use
                     // the original source interface as both source interface and event provider. Otherwise, we'd have to embed
                     // the event provider class too.
-                    return new SynthesizedAttributeData(ctor,
+                    return new(ctor,
                         ImmutableArray.Create<TypedConstant>(attrData.CommonConstructorArguments[0], attrData.CommonConstructorArguments[0]),
                         ImmutableArray<KeyValuePair<string, TypedConstant>>.Empty);
 
@@ -126,12 +126,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit.NoPia
                     // instantiatable. The attribute cannot refer directly to the coclass, however, because we can't embed
                     // classes, and we can't emit a reference to the PIA. We don't actually need
                     // the class name at runtime: we will instead emit a reference to System.Object, as a placeholder.
-                    return new SynthesizedAttributeData(ctor,
-                        ImmutableArray.Create(new TypedConstant(ctor.Parameters[0].Type, TypedConstantKind.Type, ctor.ContainingAssembly.GetSpecialType(SpecialType.System_Object))),
+                    return new(ctor,
+                        ImmutableArray.Create(new(ctor.Parameters[0].Type, TypedConstantKind.Type, ctor.ContainingAssembly.GetSpecialType(SpecialType.System_Object))),
                         ImmutableArray<KeyValuePair<string, TypedConstant>>.Empty);
 
                 default:
-                    return new SynthesizedAttributeData(ctor, attrData.CommonConstructorArguments, attrData.CommonNamedArguments);
+                    return new(ctor, attrData.CommonConstructorArguments, attrData.CommonNamedArguments);
             }
         }
 
@@ -303,12 +303,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit.NoPia
 
         internal static void Error(DiagnosticBag diagnostics, ErrorCode code, SyntaxNode syntaxOpt, params object[] args)
         {
-            Error(diagnostics, syntaxOpt, new CSDiagnosticInfo(code, args));
+            Error(diagnostics, syntaxOpt, new(code, args));
         }
 
         private static void Error(DiagnosticBag diagnostics, SyntaxNode syntaxOpt, DiagnosticInfo info)
         {
-            diagnostics.Add(new CSDiagnostic(info, syntaxOpt == null ? NoLocation.Singleton : syntaxOpt.Location));
+            diagnostics.Add(new(info, syntaxOpt == null ? NoLocation.Singleton : syntaxOpt.Location));
         }
 
         internal Cci.INamedTypeReference EmbedTypeIfNeedTo(
@@ -356,7 +356,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit.NoPia
             // Therefore, the following check can be as simple as:
             Debug.Assert(!IsFrozen, "Set of embedded types is frozen.");
 
-            var noPiaIndexer = new Cci.TypeReferenceIndexer(new EmitContext(ModuleBeingBuilt, syntaxNodeOpt, diagnostics, metadataOnly: false, includePrivateMembers: true));
+            var noPiaIndexer = new Cci.TypeReferenceIndexer(new(ModuleBeingBuilt, syntaxNodeOpt, diagnostics, metadataOnly: false, includePrivateMembers: true));
 
             // Make sure we embed all types referenced by the type declaration: implemented interfaces, etc.
             noPiaIndexer.VisitTypeDefinitionNoMembers(embedded);
@@ -588,7 +588,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit.NoPia
             CommonEmbeddedMember containingPropertyOrMethod,
             ImmutableArray<ParameterSymbol> underlyingParameters)
         {
-            return underlyingParameters.SelectAsArray((p, c) => new EmbeddedParameter(c, p), containingPropertyOrMethod);
+            return underlyingParameters.SelectAsArray((p, c) => new(c, p), containingPropertyOrMethod);
         }
 
         protected override CSharpAttributeData CreateCompilerGeneratedAttribute()

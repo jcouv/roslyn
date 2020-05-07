@@ -292,8 +292,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                         Symbol existingDefinition = submissionSymbols.Symbols.First();
                         if (existingDefinition.Kind != SymbolKind.NamedType || arity == 0)
                         {
-                            CSDiagnosticInfo diagInfo = new CSDiagnosticInfo(ErrorCode.ERR_ConflictingAliasAndDefinition, name, existingDefinition.GetKindText());
-                            var error = new ExtendedErrorTypeSymbol((NamespaceOrTypeSymbol)null, name, arity, diagInfo, unreported: true);
+                            CSDiagnosticInfo diagInfo = new(ErrorCode.ERR_ConflictingAliasAndDefinition, name, existingDefinition.GetKindText());
+                            var error = new((NamespaceOrTypeSymbol)null, name, arity, diagInfo, unreported: true);
                             result.SetFrom(LookupResult.Good(error)); // force lookup to be done w/ error symbol as result
                             break;
                         }
@@ -758,8 +758,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (basesBeingResolved != null && basesBeingResolved.ContainsReference(type.OriginalDefinition))
                 {
                     var other = GetNearestOtherSymbol(basesBeingResolved, type);
-                    var diagInfo = new CSDiagnosticInfo(ErrorCode.ERR_CircularBase, type, other);
-                    var error = new ExtendedErrorTypeSymbol(this.Compilation, name, arity, diagInfo, unreported: true);
+                    var diagInfo = new(ErrorCode.ERR_CircularBase, type, other);
+                    var error = new(this.Compilation, name, arity, diagInfo, unreported: true);
                     result.SetFrom(LookupResult.Good(error)); // force lookup to be done w/ error symbol as result
                 }
 
@@ -1282,15 +1282,15 @@ symIsHidden:;
                 }
                 else if (inaccessibleViaQualifier)
                 {
-                    diagInfo = new CSDiagnosticInfo(ErrorCode.ERR_BadProtectedAccess, unwrappedSymbol, accessThroughType, this.ContainingType);
+                    diagInfo = new(ErrorCode.ERR_BadProtectedAccess, unwrappedSymbol, accessThroughType, this.ContainingType);
                 }
                 else if (IsBadIvtSpecification())
                 {
-                    diagInfo = new CSDiagnosticInfo(ErrorCode.ERR_FriendRefNotEqualToThis, unwrappedSymbol.ContainingAssembly.Identity.ToString(), AssemblyIdentity.PublicKeyToString(this.Compilation.Assembly.PublicKey));
+                    diagInfo = new(ErrorCode.ERR_FriendRefNotEqualToThis, unwrappedSymbol.ContainingAssembly.Identity.ToString(), AssemblyIdentity.PublicKeyToString(this.Compilation.Assembly.PublicKey));
                 }
                 else
                 {
-                    diagInfo = new CSDiagnosticInfo(ErrorCode.ERR_BadAccess, new[] { unwrappedSymbol }, ImmutableArray.Create<Symbol>(unwrappedSymbol), additionalLocations: ImmutableArray<Location>.Empty);
+                    diagInfo = new(ErrorCode.ERR_BadAccess, new[] { unwrappedSymbol }, ImmutableArray.Create<Symbol>(unwrappedSymbol), additionalLocations: ImmutableArray<Location>.Empty);
                 }
 
                 return LookupResult.Inaccessible(symbol, diagInfo);

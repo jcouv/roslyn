@@ -46,7 +46,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     if (ReferenceEquals(propertySymbol, _compilation.GetSpecialTypeMember(SpecialMember.System_Array__Length)) ||
                         !_inExpressionLambda && ReferenceEquals(propertySymbol, _compilation.GetSpecialTypeMember(SpecialMember.System_Array__LongLength)))
                     {
-                        return new BoundArrayLength(syntax, rewrittenReceiverOpt, type);
+                        return new(syntax, rewrittenReceiverOpt, type);
                     }
                 }
             }
@@ -58,7 +58,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 return oldNodeOpt != null ?
                     oldNodeOpt.Update(rewrittenReceiverOpt, propertySymbol, resultKind, type) :
-                    new BoundPropertyAccess(syntax, rewrittenReceiverOpt, propertySymbol, resultKind, type);
+                    new(syntax, rewrittenReceiverOpt, propertySymbol, resultKind, type);
             }
             else
             {
@@ -84,7 +84,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 return oldNodeOpt != null ?
                     oldNodeOpt.Update(rewrittenReceiver, property, LookupResultKind.Viable, property.Type) :
-                    new BoundPropertyAccess(syntax, rewrittenReceiver, property, LookupResultKind.Viable, property.Type);
+                    new(syntax, rewrittenReceiver, property, LookupResultKind.Viable, property.Type);
             }
             else
             {

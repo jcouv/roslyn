@@ -71,7 +71,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                     return TransformNamedType((NamedTypeSymbol)type);
                 default:
                     Debug.Assert(type.TypeKind == TypeKind.Error);
-                    throw new ArgumentException();
+                    throw new();
             }
         }
 
@@ -122,7 +122,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             {
                 return _index++;
             }
-            throw new ArgumentException();
+            throw new();
         }
 
         private static NamedTypeSymbol TransformTypeDefinition(NamedTypeSymbol type)
@@ -133,7 +133,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 case SpecialType.System_UIntPtr:
                     return type.AsNativeInteger();
                 default:
-                    throw new ArgumentException();
+                    throw new();
             }
         }
     }

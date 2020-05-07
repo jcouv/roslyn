@@ -328,7 +328,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             if (!IsValidAccessibility(modifiers))
             {
                 // error CS0107: More than one protection modifier
-                return new CSDiagnosticInfo(ErrorCode.ERR_BadMemberProtection);
+                return new(ErrorCode.ERR_BadMemberProtection);
             }
 
             if (!isExplicitInterfaceImplementation &&
@@ -343,7 +343,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                         if (symbol.ContainingType?.IsInterface == true && !symbol.ContainingAssembly.RuntimeSupportsDefaultInterfaceImplementation)
                         {
-                            return new CSDiagnosticInfo(ErrorCode.ERR_RuntimeDoesNotSupportProtectedAccessForInterfaceMember);
+                            return new(ErrorCode.ERR_RuntimeDoesNotSupportProtectedAccessForInterfaceMember);
                         }
                         break;
                 }

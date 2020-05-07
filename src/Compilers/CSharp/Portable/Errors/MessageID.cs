@@ -222,7 +222,7 @@ namespace Microsoft.CodeAnalysis.CSharp
     {
         public static LocalizableErrorArgument Localize(this MessageID id)
         {
-            return new LocalizableErrorArgument(id);
+            return new(id);
         }
 
         // Returns the string to be used in the /features flag switch to enable the MessageID feature.
@@ -281,13 +281,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             string? requiredFeature = feature.RequiredFeature();
             if (requiredFeature != null)
             {
-                return new CSDiagnosticInfo(ErrorCode.ERR_FeatureIsExperimental, feature.Localize(), requiredFeature);
+                return new(ErrorCode.ERR_FeatureIsExperimental, feature.Localize(), requiredFeature);
             }
 
             LanguageVersion requiredVersion = feature.RequiredVersion();
             return requiredVersion == LanguageVersion.Preview.MapSpecifiedToEffectiveVersion()
-                ? new CSDiagnosticInfo(ErrorCode.ERR_FeatureInPreview, feature.Localize())
-                : new CSDiagnosticInfo(availableVersion.GetErrorCode(), feature.Localize(), new CSharpRequiredLanguageVersion(requiredVersion));
+                ? new(ErrorCode.ERR_FeatureInPreview, feature.Localize())
+                : new(availableVersion.GetErrorCode(), feature.Localize(), new(requiredVersion));
         }
 
         internal static LanguageVersion RequiredVersion(this MessageID feature)

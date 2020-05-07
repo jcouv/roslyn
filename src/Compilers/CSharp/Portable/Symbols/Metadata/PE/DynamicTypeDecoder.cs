@@ -113,7 +113,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             if (dynamicTransformFlags.Length == 0)
             {
-                return new UnsupportedMetadataTypeSymbol();
+                return new();
             }
 
             var decoder = new(dynamicTransformFlags, haveCustomModifierFlags, checkLength, containingAssembly);
@@ -335,7 +335,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             return TypeSymbol.Equals(transformedPointedAtType, pointerType.PointedAtType, TypeCompareKind.ConsiderEverything2) ?
                 pointerType :
-                new PointerTypeSymbol(pointerType.PointedAtTypeWithAnnotations.WithTypeAndModifiers(transformedPointedAtType, pointerType.PointedAtTypeWithAnnotations.CustomModifiers));
+                new(pointerType.PointedAtTypeWithAnnotations.WithTypeAndModifiers(transformedPointedAtType, pointerType.PointedAtTypeWithAnnotations.CustomModifiers));
         }
 
         private bool HasFlag => _index < _dynamicTransformFlags.Length || !_checkLength;

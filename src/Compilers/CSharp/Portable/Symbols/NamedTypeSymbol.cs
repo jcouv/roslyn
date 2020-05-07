@@ -1032,27 +1032,27 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             if (!ReferenceEquals(this, ConstructedFrom))
             {
-                throw new InvalidOperationException(CSharpResources.CannotCreateConstructedFromConstructed);
+                throw new(CSharpResources.CannotCreateConstructedFromConstructed);
             }
 
             if (this.Arity == 0)
             {
-                throw new InvalidOperationException(CSharpResources.CannotCreateConstructedFromNongeneric);
+                throw new(CSharpResources.CannotCreateConstructedFromNongeneric);
             }
 
             if (typeArguments.IsDefault)
             {
-                throw new ArgumentNullException(nameof(typeArguments));
+                throw new(nameof(typeArguments));
             }
 
             if (typeArguments.Any(TypeWithAnnotationsIsNullFunction))
             {
-                throw new ArgumentException(CSharpResources.TypeArgumentCannotBeNull, nameof(typeArguments));
+                throw new(CSharpResources.TypeArgumentCannotBeNull, nameof(typeArguments));
             }
 
             if (typeArguments.Length != this.Arity)
             {
-                throw new ArgumentException(CSharpResources.WrongNumberOfTypeArguments, nameof(typeArguments));
+                throw new(CSharpResources.WrongNumberOfTypeArguments, nameof(typeArguments));
             }
 
             Debug.Assert(!unbound || typeArguments.All(TypeWithAnnotationsIsErrorType));
@@ -1067,7 +1067,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         protected virtual NamedTypeSymbol ConstructCore(ImmutableArray<TypeWithAnnotations> typeArguments, bool unbound)
         {
-            return new ConstructedNamedTypeSymbol(this, typeArguments, unbound);
+            return new(this, typeArguments, unbound);
         }
 
         /// <summary>
@@ -1197,7 +1197,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             Debug.Assert(this.IsDefinition);
             Debug.Assert(ReferenceEquals(newOwner.OriginalDefinition, this.ContainingSymbol.OriginalDefinition));
-            return newOwner.IsDefinition ? this : new SubstitutedNestedTypeSymbol((SubstitutedNamedTypeSymbol)newOwner, this);
+            return newOwner.IsDefinition ? this : new((SubstitutedNamedTypeSymbol)newOwner, this);
         }
 
         #region Use-Site Diagnostics

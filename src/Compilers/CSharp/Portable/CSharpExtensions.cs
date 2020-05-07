@@ -260,12 +260,12 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (index < 0 || index > list.Count)
             {
-                throw new ArgumentOutOfRangeException(nameof(index));
+                throw new(nameof(index));
             }
 
             if (items == null)
             {
-                throw new ArgumentNullException(nameof(items));
+                throw new(nameof(items));
             }
 
             if (list.Count == 0)
@@ -486,7 +486,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// An AliasSymbol will never be returned by this method. What the alias refers to will be
         /// returned instead. To get information about aliases, call GetAliasInfo.
         ///
-        /// If binding the type name C in the expression "new C(...)" the actual constructor bound to
+        /// If binding the type name C in the expression "new(...)" the actual constructor bound to
         /// will be returned (or all constructor if overload resolution failed). This occurs as long as C
         /// unambiguously binds to a single type that has a constructor. If C ambiguously binds to multiple
         /// types, or C binds to a static class, then type(s) are returned.
@@ -746,7 +746,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (conversionExpression is null)
             {
-                throw new ArgumentNullException(nameof(conversionExpression));
+                throw new(nameof(conversionExpression));
             }
 
             if (conversionExpression.Language == LanguageNames.CSharp)
@@ -755,7 +755,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                throw new ArgumentException(string.Format(CSharpResources.IConversionExpressionIsNotCSharpConversion,
+                throw new(string.Format(CSharpResources.IConversionExpressionIsNotCSharpConversion,
                                                           nameof(IConversionOperation)),
                                             nameof(conversionExpression));
             }
@@ -772,7 +772,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (compoundAssignment == null)
             {
-                throw new ArgumentNullException(nameof(compoundAssignment));
+                throw new(nameof(compoundAssignment));
             }
 
             if (compoundAssignment.Language == LanguageNames.CSharp)
@@ -781,7 +781,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                throw new ArgumentException(string.Format(CSharpResources.ICompoundAssignmentOperationIsNotCSharpCompoundAssignment,
+                throw new(string.Format(CSharpResources.ICompoundAssignmentOperationIsNotCSharpCompoundAssignment,
                                                           nameof(compoundAssignment)),
                                             nameof(compoundAssignment));
             }
@@ -798,7 +798,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (compoundAssignment == null)
             {
-                throw new ArgumentNullException(nameof(compoundAssignment));
+                throw new(nameof(compoundAssignment));
             }
 
             if (compoundAssignment.Language == LanguageNames.CSharp)
@@ -807,7 +807,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                throw new ArgumentException(string.Format(CSharpResources.ICompoundAssignmentOperationIsNotCSharpCompoundAssignment,
+                throw new(string.Format(CSharpResources.ICompoundAssignmentOperationIsNotCSharpCompoundAssignment,
                                                           nameof(compoundAssignment)),
                                             nameof(compoundAssignment));
             }

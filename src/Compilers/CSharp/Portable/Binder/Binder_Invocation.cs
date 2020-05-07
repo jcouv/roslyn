@@ -867,13 +867,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                             // Case 1: receiver is a restricted type, and method called is defined on a parent type
                             if (call.ReceiverOpt.Type.IsRestrictedType() && !TypeSymbol.Equals(call.Method.ContainingType, call.ReceiverOpt.Type, TypeCompareKind.ConsiderEverything2))
                             {
-                                SymbolDistinguisher distinguisher = new SymbolDistinguisher(compilation, call.ReceiverOpt.Type, call.Method.ContainingType);
+                                SymbolDistinguisher distinguisher = new(compilation, call.ReceiverOpt.Type, call.Method.ContainingType);
                                 Error(diagnostics, ErrorCode.ERR_NoImplicitConv, call.ReceiverOpt.Syntax, distinguisher.First, distinguisher.Second);
                             }
                             // Case 2: receiver is a base reference, and the child type is restricted
                             else if (call.ReceiverOpt.Kind == BoundKind.BaseReference && this.ContainingType.IsRestrictedType())
                             {
-                                SymbolDistinguisher distinguisher = new SymbolDistinguisher(compilation, this.ContainingType, call.Method.ContainingType);
+                                SymbolDistinguisher distinguisher = new(compilation, this.ContainingType, call.Method.ContainingType);
                                 Error(diagnostics, ErrorCode.ERR_NoImplicitConv, call.ReceiverOpt.Syntax, distinguisher.First, distinguisher.Second);
                             }
                         }
@@ -1266,7 +1266,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var methodContainer = (object)receiver != null && (object)receiver.Type != null
                     ? receiver.Type
                     : this.ContainingType;
-                method = new ErrorMethodSymbol(methodContainer, returnType, name);
+                method = new(methodContainer, returnType, name);
             }
 
             args = BuildArgumentsForErrorRecovery(analyzedArguments, methods);
@@ -1477,9 +1477,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             LookupResultKind resultKind,
             AnalyzedArguments analyzedArguments)
         {
-            TypeSymbol returnType = new ExtendedErrorTypeSymbol(this.Compilation, string.Empty, arity: 0, errorInfo: null);
+            TypeSymbol returnType = new(this.Compilation, string.Empty, arity: 0, errorInfo: null);
             var methodContainer = expr.Type ?? this.ContainingType;
-            MethodSymbol method = new ErrorMethodSymbol(methodContainer, returnType, string.Empty);
+            MethodSymbol method = new(methodContainer, returnType, string.Empty);
 
             var args = BuildArgumentsForErrorRecovery(analyzedArguments);
             var argNames = analyzedArguments.GetNames();
@@ -1535,7 +1535,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var argument = node.ArgumentList.Arguments[0].Expression;
             string name = "";
             // We relax the instance-vs-static requirement for top-level member access expressions by creating a NameofBinder binder.
-            var nameofBinder = new NameofBinder(argument, this);
+            var nameofBinder = new(argument, this);
             var boundArgument = nameofBinder.BindExpression(argument, diagnostics);
             if (!boundArgument.HasAnyErrors && CheckSyntaxForNameofArgument(argument, out name, diagnostics) && boundArgument.Kind == BoundKind.MethodGroup)
             {

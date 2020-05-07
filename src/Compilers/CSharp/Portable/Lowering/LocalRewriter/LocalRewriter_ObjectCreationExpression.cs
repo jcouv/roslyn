@@ -74,7 +74,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             rewrittenObjectCreation = node.UpdateArgumentsAndInitializer(rewrittenArguments, argumentRefKindsOpt, newInitializerExpression: null, changeTypeOpt: node.Constructor.ContainingType);
 
-            // replace "new S()" with a default struct ctor with "default(S)"
+            // replace "new()" with a default struct ctor with "default(S)"
             if (node.Constructor.IsDefaultValueTypeConstructor())
             {
                 rewrittenObjectCreation = new(rewrittenObjectCreation.Syntax, rewrittenObjectCreation.Type!);
@@ -162,7 +162,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 locals = temps.ToImmutableAndFree();
             }
 
-            return new BoundSequence(
+            return new(
                 syntax,
                 locals,
                 sideEffects.ToImmutableAndFree(),
@@ -188,7 +188,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private BoundExpression MakeNewT(SyntaxNode syntax, TypeParameterSymbol typeParameter)
         {
-            // "new T()" is rewritten as: "Activator.CreateInstance<T>()".
+            // "new()" is rewritten as: "Activator.CreateInstance<T>()".
 
             // NOTE: DIFFERENCE FROM DEV12
             // Dev12 tried to statically optimize this and would emit default(T) if T happens to be struct
@@ -200,7 +200,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (!this.TryGetWellKnownTypeMember(syntax, WellKnownMember.System_Activator__CreateInstance_T, out method))
             {
-                return new BoundDefaultExpression(syntax, type: typeParameter, hasErrors: true);
+                return new(syntax, type: typeParameter, hasErrors: true);
             }
 
             Debug.Assert((object)method != null);
@@ -229,12 +229,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             // For the NoPIA feature, we need to gather the GUID from the coclass, and 
             // generate the following:
             //
-            // (IPiaType)System.Activator.CreateInstance(System.Runtime.InteropServices.Marshal.GetTypeFromCLSID(new Guid(GUID)))
+            // (IPiaType)System.Activator.CreateInstance(System.Runtime.InteropServices.Marshal.GetTypeFromCLSID(new(GUID)))
             //
             // If System.Runtime.InteropServices.Marshal.GetTypeFromCLSID is not available (older framework),
             // System.Type.GetTypeFromCLSID() is used to get the type for the CLSID:
             //
-            // (IPiaType)System.Activator.CreateInstance(System.Type.GetTypeFromCLSID(new Guid(GUID)))
+            // (IPiaType)System.Activator.CreateInstance(System.Type.GetTypeFromCLSID(new(GUID)))
 
             SyntaxNode oldSyntax = _factory.Syntax;
             _factory.Syntax = node.Syntax;

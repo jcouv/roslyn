@@ -103,7 +103,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // We don’t want IL to differ based upon whether we write the PDB to a file/stream or not.
                 // Presence of sequence points in the tree affects final IL, therefore, we always generate them.
                 var localRewriter = new(compilation, method, methodOrdinal, statement, containingType, factory, previousSubmissionFields, allowOmissionOfConditionalCalls, diagnostics,
-                                                      dynamicInstrumenter != null ? new DebugInfoInjector(dynamicInstrumenter) : DebugInfoInjector.Singleton);
+                                                      dynamicInstrumenter != null ? new(dynamicInstrumenter) : DebugInfoInjector.Singleton);
 
                 statement.CheckLocalsDefined();
                 var loweredStatement = localRewriter.VisitStatement(statement);
@@ -134,7 +134,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 diagnostics.Add(ex.Diagnostic);
                 sawLambdas = sawLocalFunctions = sawAwaitInExceptionHandler = false;
-                return new BoundBadStatement(statement.Syntax, ImmutableArray.Create<BoundNode>(statement), hasErrors: true);
+                return new(statement.Syntax, ImmutableArray.Create<BoundNode>(statement), hasErrors: true);
             }
         }
 
@@ -335,7 +335,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
                     else
                     {
-                        return new DebugInfoInjector(previous);
+                        return new(previous);
                     }
                 case CompoundInstrumenter compound:
                     // If we hit this it means a new kind of compound instrumenter is in use.
@@ -459,7 +459,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private static BoundExpression BadExpression(SyntaxNode syntax, TypeSymbol resultType, ImmutableArray<BoundExpression> children)
         {
-            return new BoundBadExpression(syntax, LookupResultKind.NotReferencable, ImmutableArray<Symbol?>.Empty, children, resultType);
+            return new(syntax, LookupResultKind.NotReferencable, ImmutableArray<Symbol?>.Empty, children, resultType);
         }
 
         private bool TryGetWellKnownTypeMember<TSymbol>(SyntaxNode? syntax, WellKnownMember member, out TSymbol symbol, bool isOptional = false, Location? location = null) where TSymbol : Symbol
@@ -498,7 +498,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 SpecialType type = (SpecialType)descriptor.DeclaringTypeId;
                 TypeSymbol container = compilation.Assembly.GetSpecialType(type);
                 TypeSymbol returnType = new(compilation: compilation, name: descriptor.Name, errorInfo: null, arity: descriptor.Arity);
-                return new ErrorMethodSymbol(container, returnType, "Missing");
+                return new(container, returnType, "Missing");
             }
         }
 
@@ -524,7 +524,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             MethodSymbol getTypeFromHandle;
             if (!TryGetWellKnownTypeMember(node.Syntax, WellKnownMember.System_Type__GetTypeFromHandle, out getTypeFromHandle))
             {
-                return new BoundTypeOfOperator(node.Syntax, sourceType, null, type, hasErrors: true);
+                return new(node.Syntax, sourceType, null, type, hasErrors: true);
             }
 
             return node.Update(sourceType, getTypeFromHandle, type);
@@ -541,7 +541,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             MethodSymbol getTypeFromHandle;
             if (!TryGetWellKnownTypeMember(node.Syntax, WellKnownMember.System_Type__GetTypeFromHandle, out getTypeFromHandle))
             {
-                return new BoundRefTypeOperator(node.Syntax, operand, null, type, hasErrors: true);
+                return new(node.Syntax, operand, null, type, hasErrors: true);
             }
 
             return node.Update(operand, getTypeFromHandle, type);
@@ -626,7 +626,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 rewrittenStatements = statements.ToImmutableAndFree()!;
             }
 
-            return new BoundStatementList(node.Syntax, rewrittenStatements, node.HasErrors);
+            return new(node.Syntax, rewrittenStatements, node.HasErrors);
         }
 
         public override BoundNode VisitArrayAccess(BoundArrayAccess node)
@@ -933,7 +933,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 try
                 {
-                    new LocalRewritingValidator().Visit(node);
+                    new().Visit(node);
                 }
                 catch (InsufficientExecutionStackException)
                 {

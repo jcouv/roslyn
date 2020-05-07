@@ -231,7 +231,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             catch (InsufficientExecutionStackException ex)
             {
-                throw new CancelledByStackGuardException(ex, node);
+                throw new(ex, node);
             }
         }
 

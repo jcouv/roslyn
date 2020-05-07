@@ -231,7 +231,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                     }
 
                     bool tmp;
-                    return new DirectiveStack(CompleteIf(_directives, out tmp));
+                    return new(CompleteIf(_directives, out tmp));
                 case SyntaxKind.EndRegionDirectiveTrivia:
                     var prevRegion = GetPreviousRegion(_directives);
                     if (prevRegion == null || !prevRegion.Any())
@@ -239,9 +239,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                         goto default; // no matching region directive !! leave directive alone
                     }
 
-                    return new DirectiveStack(CompleteRegion(_directives)); // remove region directives from stack but leave everything else
+                    return new(CompleteRegion(_directives)); // remove region directives from stack but leave everything else
                 default:
-                    return new DirectiveStack(new ConsList<Directive>(directive, _directives != null ? _directives : ConsList<Directive>.Empty));
+                    return new(new ConsList<Directive>(directive, _directives != null ? _directives : ConsList<Directive>.Empty));
             }
         }
 

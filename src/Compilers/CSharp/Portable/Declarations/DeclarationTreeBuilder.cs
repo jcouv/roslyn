@@ -82,14 +82,14 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private static SingleNamespaceOrTypeDeclaration CreateImplicitClass(ImmutableHashSet<string> memberNames, SyntaxReference container, SingleTypeDeclaration.TypeDeclarationFlags declFlags)
         {
-            return new SingleTypeDeclaration(
+            return new(
                 kind: DeclarationKind.ImplicitClass,
                 name: TypeSymbol.ImplicitTypeName,
                 arity: 0,
                 modifiers: DeclarationModifiers.Internal | DeclarationModifiers.Partial | DeclarationModifiers.Sealed,
                 declFlags: declFlags,
                 syntaxReference: container,
-                nameLocation: new SourceLocation(container),
+                nameLocation: new(container),
                 memberNames: memberNames,
                 children: ImmutableArray<SingleTypeDeclaration>.Empty,
                 diagnostics: ImmutableArray<Diagnostic>.Empty);
@@ -135,7 +135,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     membernames,
                     declFlags));
 
-            return new RootSingleNamespaceDeclaration(
+            return new(
                 hasUsings: compilationUnit.Usings.Any(),
                 hasExternAliases: compilationUnit.Externs.Any(),
                 treeNode: _syntaxTree.GetReference(compilationUnit),
@@ -156,7 +156,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var directives = ArrayBuilder<ReferenceDirective>.GetInstance(directiveNodes.Count);
             foreach (var directiveNode in directiveNodes)
             {
-                directives.Add(new ReferenceDirective(directiveNode.File.ValueText, new SourceLocation(directiveNode)));
+                directives.Add(new(directiveNode.File.ValueText, new(directiveNode)));
             }
             return directives.ToImmutableAndFree();
         }
@@ -181,7 +181,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 modifiers: DeclarationModifiers.Internal | DeclarationModifiers.Partial | DeclarationModifiers.Sealed,
                 declFlags: declFlags,
                 syntaxReference: parentReference,
-                nameLocation: new SourceLocation(parentReference),
+                nameLocation: new(parentReference),
                 memberNames: memberNames,
                 children: children,
                 diagnostics: ImmutableArray<Diagnostic>.Empty);
@@ -193,7 +193,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     hasUsings: false,
                     hasExternAliases: false,
                     syntaxReference: parentReference,
-                    nameLocation: new SourceLocation(parentReference),
+                    nameLocation: new(parentReference),
                     children: ImmutableArray.Create(decl),
                     diagnostics: ImmutableArray<Diagnostic>.Empty);
             }
@@ -210,7 +210,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             var children = VisitNamespaceChildren(compilationUnit, compilationUnit.Members, ((Syntax.InternalSyntax.CompilationUnitSyntax)(compilationUnit.Green)).Members);
 
-            return new RootSingleNamespaceDeclaration(
+            return new(
                 hasUsings: compilationUnit.Usings.Any(),
                 hasExternAliases: compilationUnit.Externs.Any(),
                 treeNode: _syntaxTree.GetReference(compilationUnit),
@@ -235,7 +235,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     hasUsings: hasUsings,
                     hasExternAliases: hasExterns,
                     syntaxReference: _syntaxTree.GetReference(currentNode),
-                    nameLocation: new SourceLocation(dotted.Right),
+                    nameLocation: new(dotted.Right),
                     children: children,
                     diagnostics: ImmutableArray<Diagnostic>.Empty);
 
@@ -276,7 +276,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 hasUsings: hasUsings,
                 hasExternAliases: hasExterns,
                 syntaxReference: _syntaxTree.GetReference(currentNode),
-                nameLocation: new SourceLocation(name),
+                nameLocation: new(name),
                 children: children,
                 diagnostics: diagnostics.ToReadOnlyAndFree());
         }
@@ -350,14 +350,14 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             var modifiers = node.Modifiers.ToDeclarationModifiers(diagnostics: diagnostics);
 
-            return new SingleTypeDeclaration(
+            return new(
                 kind: kind,
                 name: node.Identifier.ValueText,
                 modifiers: modifiers,
                 arity: node.Arity,
                 declFlags: declFlags,
                 syntaxReference: _syntaxTree.GetReference(node),
-                nameLocation: new SourceLocation(node.Identifier),
+                nameLocation: new(node.Identifier),
                 memberNames: memberNames,
                 children: VisitTypeChildren(node),
                 diagnostics: diagnostics.ToReadOnlyAndFree());
@@ -399,14 +399,14 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             var modifiers = node.Modifiers.ToDeclarationModifiers(diagnostics: diagnostics);
 
-            return new SingleTypeDeclaration(
+            return new(
                 kind: DeclarationKind.Delegate,
                 name: node.Identifier.ValueText,
                 modifiers: modifiers,
                 declFlags: declFlags,
                 arity: node.Arity,
                 syntaxReference: _syntaxTree.GetReference(node),
-                nameLocation: new SourceLocation(node.Identifier),
+                nameLocation: new(node.Identifier),
                 memberNames: ImmutableHashSet<string>.Empty,
                 children: ImmutableArray<SingleTypeDeclaration>.Empty,
                 diagnostics: diagnostics.ToReadOnlyAndFree());
@@ -430,14 +430,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             var diagnostics = DiagnosticBag.GetInstance();
             var modifiers = node.Modifiers.ToDeclarationModifiers(diagnostics: diagnostics);
 
-            return new SingleTypeDeclaration(
+            return new(
                 kind: DeclarationKind.Enum,
                 name: node.Identifier.ValueText,
                 arity: 0,
                 modifiers: modifiers,
                 declFlags: declFlags,
                 syntaxReference: _syntaxTree.GetReference(node),
-                nameLocation: new SourceLocation(node.Identifier),
+                nameLocation: new(node.Identifier),
                 memberNames: memberNames,
                 children: ImmutableArray<SingleTypeDeclaration>.Empty,
                 diagnostics: diagnostics.ToReadOnlyAndFree());

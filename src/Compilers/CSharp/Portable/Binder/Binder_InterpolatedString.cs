@@ -88,7 +88,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                     hasErrors = true;
                                 }
 
-                                format = new BoundLiteral(interpolation.FormatClause, ConstantValue.Create(text), stringType, hasErrors);
+                                format = new(interpolation.FormatClause, ConstantValue.Create(text), stringType, hasErrors);
                             }
 
                             builder.Add(new BoundStringInsert(interpolation, value, alignment, format, null));

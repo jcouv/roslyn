@@ -1729,7 +1729,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override BoundNode VisitReturnStatement(BoundReturnStatement node)
         {
             var result = VisitReturnStatementNoAdjust(node);
-            PendingBranches.Add(new PendingBranch(node, this.State, label: null));
+            PendingBranches.Add(new(node, this.State, label: null));
             SetUnreachable();
             return result;
         }
@@ -2004,7 +2004,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (AwaitUsingAndForeachAddsPendingBranch && node.AwaitOpt != null)
             {
-                PendingBranches.Add(new PendingBranch(node, this.State, null));
+                PendingBranches.Add(new(node, this.State, null));
             }
             return VisitMultipleLocalDeclarationsBase(node);
         }
@@ -2258,7 +2258,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override BoundNode VisitAwaitExpression(BoundAwaitExpression node)
         {
             VisitRvalue(node.Expression);
-            PendingBranches.Add(new PendingBranch(node, this.State, null));
+            PendingBranches.Add(new(node, this.State, null));
             return null;
         }
 
@@ -2363,7 +2363,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (AwaitUsingAndForeachAddsPendingBranch && ((CommonForEachStatementSyntax)node.Syntax).AwaitKeyword != default)
             {
-                PendingBranches.Add(new PendingBranch(node, this.State, null));
+                PendingBranches.Add(new(node, this.State, null));
             }
 
             return null;
@@ -2551,7 +2551,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override BoundNode VisitBreakStatement(BoundBreakStatement node)
         {
             Debug.Assert(!this.IsConditionalState);
-            PendingBranches.Add(new PendingBranch(node, this.State, node.Label));
+            PendingBranches.Add(new(node, this.State, node.Label));
             SetUnreachable();
             return null;
         }
@@ -2559,7 +2559,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override BoundNode VisitContinueStatement(BoundContinueStatement node)
         {
             Debug.Assert(!this.IsConditionalState);
-            PendingBranches.Add(new PendingBranch(node, this.State, node.Label));
+            PendingBranches.Add(new(node, this.State, node.Label));
             SetUnreachable();
             return null;
         }
@@ -2634,7 +2634,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override BoundNode VisitGotoStatement(BoundGotoStatement node)
         {
             Debug.Assert(!this.IsConditionalState);
-            PendingBranches.Add(new PendingBranch(node, this.State, node.Label));
+            PendingBranches.Add(new(node, this.State, node.Label));
             SetUnreachable();
             return null;
         }
@@ -2700,7 +2700,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (AwaitUsingAndForeachAddsPendingBranch && node.AwaitOpt != null)
             {
-                PendingBranches.Add(new PendingBranch(node, this.State, null));
+                PendingBranches.Add(new(node, this.State, null));
             }
             return null;
         }
@@ -2731,7 +2731,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override BoundNode VisitYieldBreakStatement(BoundYieldBreakStatement node)
         {
             Debug.Assert(!this.IsConditionalState);
-            PendingBranches.Add(new PendingBranch(node, this.State, null));
+            PendingBranches.Add(new(node, this.State, null));
             SetUnreachable();
             return null;
         }
@@ -2739,7 +2739,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override BoundNode VisitYieldReturnStatement(BoundYieldReturnStatement node)
         {
             VisitRvalue(node.Expression);
-            PendingBranches.Add(new PendingBranch(node, this.State, null));
+            PendingBranches.Add(new(node, this.State, null));
             return null;
         }
 
@@ -2856,12 +2856,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(this.IsConditionalState);
             if (node.JumpIfTrue)
             {
-                PendingBranches.Add(new PendingBranch(node, this.StateWhenTrue, node.Label));
+                PendingBranches.Add(new(node, this.StateWhenTrue, node.Label));
                 this.SetState(this.StateWhenFalse);
             }
             else
             {
-                PendingBranches.Add(new PendingBranch(node, this.StateWhenFalse, node.Label));
+                PendingBranches.Add(new(node, this.StateWhenFalse, node.Label));
                 this.SetState(this.StateWhenTrue);
             }
 

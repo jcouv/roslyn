@@ -179,7 +179,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             LabelSymbol label)
         {
             MakeAndSimplifyTestsAndBindings(input, pattern, out ImmutableArray<BoundDagTest> tests, out ImmutableArray<BoundPatternBinding> bindings);
-            return new RemainingTestsForCase(index, syntax, tests, bindings, whenClause, label);
+            return new(index, syntax, tests, bindings, whenClause, label);
         }
 
         private void MakeAndSimplifyTestsAndBindings(
@@ -290,7 +290,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     MakeTestsAndBindings(input, iTuple, tests, bindings);
                     break;
                 default:
-                    throw new NotImplementedException(pattern.Kind.ToString());
+                    throw new(pattern.Kind.ToString());
             }
         }
 
@@ -309,7 +309,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var iTupleType = getLengthProperty.ContainingType;
             Debug.Assert(iTupleType.Name == "ITuple");
 
-            tests.Add(new BoundDagTypeTest(syntax, iTupleType, input));
+            tests.Add(new(syntax, iTupleType, input));
             var valueAsITupleEvaluation = new(syntax, iTupleType, input);
             tests.Add(valueAsITupleEvaluation);
             var valueAsITuple = new(syntax, iTupleType, valueAsITupleEvaluation);
@@ -317,7 +317,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var lengthEvaluation = new(syntax, getLengthProperty, OriginalInput(valueAsITuple, getLengthProperty));
             tests.Add(lengthEvaluation);
             var lengthTemp = new(syntax, this._compilation.GetSpecialType(SpecialType.System_Int32), lengthEvaluation);
-            tests.Add(new BoundDagValueTest(syntax, ConstantValue.Create(patternLength), lengthTemp));
+            tests.Add(new(syntax, ConstantValue.Create(patternLength), lengthTemp));
 
             var getItemPropertyInput = OriginalInput(valueAsITuple, getItemProperty);
             for (int i = 0; i < patternLength; i++)
@@ -370,7 +370,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (variableAccess != null)
             {
                 Debug.Assert(variableAccess.Type.Equals(input.Type, TypeCompareKind.AllIgnoreOptions));
-                bindings.Add(new BoundPatternBinding(variableAccess, input));
+                bindings.Add(new(variableAccess, input));
             }
             else
             {
@@ -387,7 +387,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (input.Type.CanContainNull())
             {
                 // Add a null test
-                tests.Add(new BoundDagNonNullTest(syntax, isExplicitTest, input));
+                tests.Add(new(syntax, isExplicitTest, input));
             }
         }
 
@@ -415,7 +415,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 else
                 {
                     // both type test and cast needed
-                    tests.Add(new BoundDagTypeTest(syntax, type, input));
+                    tests.Add(new(syntax, type, input));
                 }
 
                 var evaluation = new(syntax, type, input);
@@ -434,12 +434,12 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (constant.ConstantValue == ConstantValue.Null)
             {
-                tests.Add(new BoundDagExplicitNullTest(constant.Syntax, input));
+                tests.Add(new(constant.Syntax, input));
             }
             else
             {
                 var convertedInput = MakeConvertToType(input, constant.Syntax, constant.Value.Type, isExplicitTest: false, tests);
-                tests.Add(new BoundDagValueTest(constant.Syntax, constant.ConstantValue, convertedInput));
+                tests.Add(new(constant.Syntax, constant.ConstantValue, convertedInput));
             }
         }
 
@@ -515,7 +515,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // This occurs in error cases.
                     Debug.Assert(recursive.HasAnyErrors);
                     // To prevent this pattern from subsuming other patterns and triggering a cascaded diagnostic, we add a test that will fail.
-                    tests.Add(new BoundDagTypeTest(recursive.Syntax, ErrorType(), input, hasErrors: true));
+                    tests.Add(new(recursive.Syntax, ErrorType(), input, hasErrors: true));
                 }
             }
 
@@ -538,7 +538,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             break;
                         default:
                             Debug.Assert(recursive.HasAnyErrors);
-                            tests.Add(new BoundDagTypeTest(recursive.Syntax, ErrorType(), input, hasErrors: true));
+                            tests.Add(new(recursive.Syntax, ErrorType(), input, hasErrors: true));
                             continue;
                     }
 
@@ -551,13 +551,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (recursive.VariableAccess != null)
             {
                 // we have a "variable" declaration
-                bindings.Add(new BoundPatternBinding(recursive.VariableAccess, input));
+                bindings.Add(new(recursive.VariableAccess, input));
             }
         }
 
         private TypeSymbol ErrorType(string name = "")
         {
-            return new ExtendedErrorTypeSymbol(this._compilation, name, arity: 0, errorInfo: null, unreported: false);
+            return new(this._compilation, name, arity: 0, errorInfo: null, unreported: false);
         }
 
         private BoundDecisionDag MakeDecisionDag(SyntaxNode syntax, ImmutableArray<RemainingTestsForCase> cases)
@@ -752,7 +752,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             var rootDecisionDagNode = decisionDag.RootNode.Dag;
             Debug.Assert(rootDecisionDagNode != null);
-            return new BoundDecisionDag(rootDecisionDagNode.Syntax, rootDecisionDagNode);
+            return new(rootDecisionDagNode.Syntax, rootDecisionDagNode);
         }
 
         private void SplitCases(
@@ -844,7 +844,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
                 else
                 {
-                    return new RemainingTestsForCase(
+                    return new(
                         testsForCase.Index, testsForCase.Syntax, remainingTests.ToImmutableAndFree(),
                         testsForCase.Bindings, testsForCase.WhenClause, testsForCase.CaseLabel);
                 }
@@ -1124,7 +1124,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private static RemainingTestsForCase RemoveEvaluation(RemainingTestsForCase c, BoundDagEvaluation e)
         {
-            return new RemainingTestsForCase(
+            return new(
                 Index: c.Index, Syntax: c.Syntax,
                 RemainingTests: c.RemainingTests.WhereAsArray((d, e) => !(d is BoundDagEvaluation e2) || e2 != e, e),
                 Bindings: c.Bindings, WhenClause: c.WhenClause, CaseLabel: c.CaseLabel);

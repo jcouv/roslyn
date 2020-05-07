@@ -50,7 +50,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         return BadExpression(node.Syntax, node.Type, node);
                     }
 
-                    return new BoundObjectCreationExpression(node.Syntax, nullableCtor, binderOpt: null, rangeCreation);
+                    return new(node.Syntax, nullableCtor, binderOpt: null, rangeCreation);
                 }
 
                 return rangeCreation;
@@ -104,14 +104,14 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return BadExpression(node.Syntax, node.Type, node);
             }
 
-            // new Nullable(makeRange(left.GetValueOrDefault(), right.GetValueOrDefault()))
+            // new(makeRange(left.GetValueOrDefault(), right.GetValueOrDefault()))
             BoundExpression consequence = new(node.Syntax, nullableCtor, binderOpt: null, rangeExpr);
 
             // default
             BoundExpression alternative = new(node.Syntax, node.Type);
 
             // left.HasValue && right.HasValue
-            //     ? new Nullable(makeRange(left.GetValueOrDefault(), right.GetValueOrDefault()))
+            //     ? new(makeRange(left.GetValueOrDefault(), right.GetValueOrDefault()))
             //     : default
             BoundExpression conditionalExpression = RewriteConditionalOperator(
                 syntax: node.Syntax,
@@ -122,7 +122,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 rewrittenType: node.Type,
                 isRef: false);
 
-            return new BoundSequence(
+            return new(
                 syntax: node.Syntax,
                 locals: locals.ToImmutableAndFree(),
                 sideEffects: sideeffects.ToImmutableAndFree(),
@@ -206,7 +206,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             BoundExpression newIndexZero(bool fromEnd) =>
-                // new Index(0, fromEnd: fromEnd)
+                // new(0, fromEnd: fromEnd)
                 F.New(
                     WellKnownMember.System_Index__ctor,
                     ImmutableArray.Create<BoundExpression>(F.Literal(0), F.Literal(fromEnd)));

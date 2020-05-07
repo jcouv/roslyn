@@ -104,7 +104,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             internal RangeVariableSymbol TransparentRangeVariable(Binder binder)
             {
                 var transparentIdentifier = TransparentRangeVariableName();
-                return new RangeVariableSymbol(transparentIdentifier, binder.ContainingMemberOrLambda, null, true);
+                return new(transparentIdentifier, binder.ContainingMemberOrLambda, null, true);
             }
 
             public void Clear()

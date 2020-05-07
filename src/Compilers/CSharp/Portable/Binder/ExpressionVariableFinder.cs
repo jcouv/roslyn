@@ -607,7 +607,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public static ObjectPool<ExpressionVariableFinder> CreatePool()
         {
-            return new ObjectPool<ExpressionVariableFinder>(() => new ExpressionVariableFinder(), 10);
+            return new ObjectPool<ExpressionVariableFinder>(() => new(), 10);
         }
         #endregion
     }
@@ -685,7 +685,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public static ObjectPool<ExpressionFieldFinder> CreatePool()
         {
-            return new ObjectPool<ExpressionFieldFinder>(() => new ExpressionFieldFinder(), 10);
+            return new ObjectPool<ExpressionFieldFinder>(() => new(), 10);
         }
         #endregion
     }

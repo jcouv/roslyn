@@ -1187,7 +1187,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         if (info != null)
                         {
                             Location location = symbol.Locations.IsEmpty ? NoLocation.Singleton : symbol.Locations[0];
-                            _diagnostics.Enqueue(new CSDiagnostic(info, location));
+                            _diagnostics.Enqueue(new(info, location));
                             if (info.Severity >= DiagnosticSeverity.Error)
                             {
                                 continue;

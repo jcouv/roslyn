@@ -122,7 +122,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (values.Length == 0)
             {
-                return new MetadataCreateArray(arrayType,
+                return new(arrayType,
                                                arrayType.GetElementType(context),
                                                ImmutableArray<Cci.IMetadataExpression>.Empty);
             }
@@ -133,7 +133,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 metadataExprs[i] = CreateMetadataExpression(values[i], context);
             }
 
-            return new MetadataCreateArray(arrayType,
+            return new(arrayType,
                                            arrayType.GetElementType(context),
                                            metadataExprs.AsImmutableOrNull());
         }
@@ -144,7 +144,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             var moduleBeingBuilt = (PEModuleBuilder)context.Module;
             var syntaxNodeOpt = (CSharpSyntaxNode)context.SyntaxNodeOpt;
             var diagnostics = context.Diagnostics;
-            return new MetadataTypeOf(moduleBeingBuilt.Translate((TypeSymbol)argument.ValueInternal, syntaxNodeOpt, diagnostics),
+            return new(moduleBeingBuilt.Translate((TypeSymbol)argument.ValueInternal, syntaxNodeOpt, diagnostics),
                                       moduleBeingBuilt.Translate((TypeSymbol)argument.TypeInternal, syntaxNodeOpt, diagnostics));
         }
 
@@ -170,7 +170,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
 
             PEModuleBuilder moduleBeingBuilt = (PEModuleBuilder)context.Module;
-            return new MetadataNamedArgument(symbol, moduleBeingBuilt.Translate(type, syntaxNodeOpt: (CSharpSyntaxNode)context.SyntaxNodeOpt, diagnostics: context.Diagnostics), value);
+            return new(symbol, moduleBeingBuilt.Translate(type, syntaxNodeOpt: (CSharpSyntaxNode)context.SyntaxNodeOpt, diagnostics: context.Diagnostics), value);
         }
 
         private Symbol LookupName(string name)

@@ -138,7 +138,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                         {
                             if (!CryptographicHashProvider.IsSupportedAlgorithm(_sourceAssembly.HashAlgorithm))
                             {
-                                context.Diagnostics.Add(new CSDiagnostic(new CSDiagnosticInfo(ErrorCode.ERR_CryptoHashFailed), NoLocation.Singleton));
+                                context.Diagnostics.Add(new(new(ErrorCode.ERR_CryptoHashFailed), NoLocation.Singleton));
                             }
                         }
                     }
@@ -175,7 +175,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                 }
                 catch (BadImageFormatException)
                 {
-                    diagnostics.Add(new CSDiagnosticInfo(ErrorCode.ERR_BindToBogus, modules[i]), NoLocation.Singleton);
+                    diagnostics.Add(new(ErrorCode.ERR_BindToBogus, modules[i]), NoLocation.Singleton);
                 }
             }
         }
@@ -187,7 +187,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
         internal override SynthesizedAttributeData SynthesizeEmbeddedAttribute()
         {
             // _lazyEmbeddedAttribute should have been created before calling this method.
-            return new SynthesizedAttributeData(
+            return new(
                 _lazyEmbeddedAttribute.Constructors[0],
                 ImmutableArray<TypedConstant>.Empty,
                 ImmutableArray<KeyValuePair<string, TypedConstant>>.Empty);
@@ -198,7 +198,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             if ((object)_lazyNullableAttribute != null)
             {
                 var constructorIndex = (member == WellKnownMember.System_Runtime_CompilerServices_NullableAttribute__ctorTransformFlags) ? 1 : 0;
-                return new SynthesizedAttributeData(
+                return new(
                     _lazyNullableAttribute.Constructors[constructorIndex],
                     arguments,
                     ImmutableArray<KeyValuePair<string, TypedConstant>>.Empty);
@@ -211,7 +211,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
         {
             if ((object)_lazyNullableContextAttribute != null)
             {
-                return new SynthesizedAttributeData(
+                return new(
                     _lazyNullableContextAttribute.Constructors[0],
                     arguments,
                     ImmutableArray<KeyValuePair<string, TypedConstant>>.Empty);
@@ -224,7 +224,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
         {
             if ((object)_lazyNullablePublicOnlyAttribute != null)
             {
-                return new SynthesizedAttributeData(
+                return new(
                     _lazyNullablePublicOnlyAttribute.Constructors[0],
                     arguments,
                     ImmutableArray<KeyValuePair<string, TypedConstant>>.Empty);
@@ -238,7 +238,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             if ((object)_lazyNativeIntegerAttribute != null)
             {
                 var constructorIndex = (member == WellKnownMember.System_Runtime_CompilerServices_NativeIntegerAttribute__ctorTransformFlags) ? 1 : 0;
-                return new SynthesizedAttributeData(
+                return new(
                     _lazyNativeIntegerAttribute.Constructors[constructorIndex],
                     arguments,
                     ImmutableArray<KeyValuePair<string, TypedConstant>>.Empty);
@@ -251,7 +251,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
         {
             if ((object)_lazyIsReadOnlyAttribute != null)
             {
-                return new SynthesizedAttributeData(
+                return new(
                     _lazyIsReadOnlyAttribute.Constructors[0],
                     ImmutableArray<TypedConstant>.Empty,
                     ImmutableArray<KeyValuePair<string, TypedConstant>>.Empty);
@@ -264,7 +264,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
         {
             if ((object)_lazyIsUnmanagedAttribute != null)
             {
-                return new SynthesizedAttributeData(
+                return new(
                     _lazyIsUnmanagedAttribute.Constructors[0],
                     ImmutableArray<TypedConstant>.Empty,
                     ImmutableArray<KeyValuePair<string, TypedConstant>>.Empty);
@@ -277,7 +277,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
         {
             if ((object)_lazyIsByRefLikeAttribute != null)
             {
-                return new SynthesizedAttributeData(
+                return new(
                     _lazyIsByRefLikeAttribute.Constructors[0],
                     ImmutableArray<TypedConstant>.Empty,
                     ImmutableArray<KeyValuePair<string, TypedConstant>>.Empty);
@@ -373,14 +373,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
         }
 
         private SynthesizedEmbeddedAttributeSymbol CreateParameterlessEmbeddedAttributeSymbol(string name, NamespaceSymbol containingNamespace, DiagnosticBag diagnostics)
-            => new SynthesizedEmbeddedAttributeSymbol(
+            => new(
                     name,
                     containingNamespace,
                     SourceModule,
                     baseType: GetWellKnownType(WellKnownType.System_Attribute, diagnostics));
 
         private SynthesizedEmbeddedNullableAttributeSymbol CreateNullableAttributeSymbol(string name, NamespaceSymbol containingNamespace, DiagnosticBag diagnostics)
-            => new SynthesizedEmbeddedNullableAttributeSymbol(
+            => new(
                     name,
                     containingNamespace,
                     SourceModule,
@@ -388,7 +388,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                     GetSpecialType(SpecialType.System_Byte, diagnostics));
 
         private SynthesizedEmbeddedNullableContextAttributeSymbol CreateNullableContextAttributeSymbol(string name, NamespaceSymbol containingNamespace, DiagnosticBag diagnostics)
-            => new SynthesizedEmbeddedNullableContextAttributeSymbol(
+            => new(
                     name,
                     containingNamespace,
                     SourceModule,
@@ -396,7 +396,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                     GetSpecialType(SpecialType.System_Byte, diagnostics));
 
         private SynthesizedEmbeddedNullablePublicOnlyAttributeSymbol CreateNullablePublicOnlyAttributeSymbol(string name, NamespaceSymbol containingNamespace, DiagnosticBag diagnostics)
-            => new SynthesizedEmbeddedNullablePublicOnlyAttributeSymbol(
+            => new(
                     name,
                     containingNamespace,
                     SourceModule,
@@ -404,7 +404,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                     GetSpecialType(SpecialType.System_Boolean, diagnostics));
 
         private SynthesizedEmbeddedNativeIntegerAttributeSymbol CreateNativeIntegerAttributeSymbol(string name, NamespaceSymbol containingNamespace, DiagnosticBag diagnostics)
-            => new SynthesizedEmbeddedNativeIntegerAttributeSymbol(
+            => new(
                     name,
                     containingNamespace,
                     SourceModule,

@@ -46,7 +46,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         protected override NamedTypeSymbol WithTupleDataCore(TupleExtraData newData)
         {
-            return new NoPiaMissingCanonicalTypeSymbol(_embeddingAssembly, _fullTypeName, _guid, _scope, _identifier, newData);
+            return new(_embeddingAssembly, _fullTypeName, _guid, _scope, _identifier, newData);
         }
 
         public AssemblySymbol EmbeddingAssembly
@@ -103,7 +103,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             get
             {
-                return new CSDiagnosticInfo(ErrorCode.ERR_NoCanonicalView, _fullTypeName);
+                return new(ErrorCode.ERR_NoCanonicalView, _fullTypeName);
             }
         }
 

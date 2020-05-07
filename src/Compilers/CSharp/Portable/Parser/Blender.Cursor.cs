@@ -35,7 +35,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
 
             public static Cursor FromRoot(CSharp.CSharpSyntaxNode node)
             {
-                return new Cursor(node, indexInParent: 0);
+                return new(node, indexInParent: 0);
             }
 
             public bool IsFinished
@@ -65,7 +65,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                         var sibling = siblings[i];
                         if (IsNonZeroWidthOrIsEndOfFile(sibling))
                         {
-                            return new Cursor(sibling, i);
+                            return new(sibling, i);
                         }
                     }
 
@@ -81,7 +81,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             {
                 var parent = this.CurrentNodeOrToken.Parent;
                 var index = IndexOfNodeInParent(parent);
-                return new Cursor(parent, index);
+                return new(parent, index);
             }
 
             private static int IndexOfNodeInParent(SyntaxNode node)
@@ -125,7 +125,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                 {
                     var greenToken = Lexer.RescanInterpolatedString((InterpolatedStringExpressionSyntax)node.Green);
                     var redToken = new CodeAnalysis.SyntaxToken(node.Parent, greenToken, node.Position, _indexInParent);
-                    return new Cursor(redToken, _indexInParent);
+                    return new(redToken, _indexInParent);
                 }
 
                 if (node.SlotCount > 0)
@@ -133,7 +133,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                     var child = Microsoft.CodeAnalysis.ChildSyntaxList.ItemInternal(node, 0);
                     if (IsNonZeroWidthOrIsEndOfFile(child))
                     {
-                        return new Cursor(child, 0);
+                        return new(child, 0);
                     }
                 }
 
@@ -143,13 +143,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                 {
                     if (IsNonZeroWidthOrIsEndOfFile(child))
                     {
-                        return new Cursor(child, index);
+                        return new(child, index);
                     }
 
                     index++;
                 }
 
-                return new Cursor();
+                return new();
             }
 
             public Cursor MoveToFirstToken()

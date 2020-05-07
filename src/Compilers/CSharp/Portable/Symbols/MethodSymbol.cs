@@ -410,7 +410,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 //
                 //   .assembly C
                 //   {
-                //      public class C : B { ... new B().M ... }       // A.M is not accessible from here
+                //      public class C : B { ... new().M ... }       // A.M is not accessible from here
                 //   }
                 //
                 // See InternalsVisibleToAndStrongNameTests: IvtVirtualCall1, IvtVirtualCall2, IvtVirtual_ParamsAndDynamic.
@@ -698,7 +698,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             if ((object)receiverType == null)
             {
-                throw new ArgumentNullException(nameof(receiverType));
+                throw new(nameof(receiverType));
             }
 
             if (!this.IsExtensionMethod || this.MethodKind == MethodKind.ReducedExtension)
@@ -776,7 +776,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// <exception cref="System.ArgumentException">If <paramref name="reducedFromTypeParameter"/> doesn't belong to the corresponding <see cref="ReducedFrom"/> method.</exception>
         public virtual TypeSymbol GetTypeInferredDuringReduction(TypeParameterSymbol reducedFromTypeParameter)
         {
-            throw new InvalidOperationException();
+            throw new();
         }
 
         /// <summary>
@@ -804,22 +804,22 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             if (!ReferenceEquals(this, ConstructedFrom) || this.Arity == 0)
             {
-                throw new InvalidOperationException();
+                throw new();
             }
 
             if (typeArguments.IsDefault)
             {
-                throw new ArgumentNullException(nameof(typeArguments));
+                throw new(nameof(typeArguments));
             }
 
             if (typeArguments.Any(NamedTypeSymbol.TypeWithAnnotationsIsNullFunction))
             {
-                throw new ArgumentException(CSharpResources.TypeArgumentCannotBeNull, nameof(typeArguments));
+                throw new(CSharpResources.TypeArgumentCannotBeNull, nameof(typeArguments));
             }
 
             if (typeArguments.Length != this.Arity)
             {
-                throw new ArgumentException(CSharpResources.WrongNumberOfTypeArguments, nameof(typeArguments));
+                throw new(CSharpResources.WrongNumberOfTypeArguments, nameof(typeArguments));
             }
 
             if (ConstructedNamedTypeSymbol.TypeParametersMatchTypeArguments(this.TypeParameters, typeArguments))
@@ -827,14 +827,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return this;
             }
 
-            return new ConstructedMethodSymbol(this, typeArguments);
+            return new(this, typeArguments);
         }
 
         internal MethodSymbol AsMember(NamedTypeSymbol newOwner)
         {
             Debug.Assert(this.IsDefinition);
             Debug.Assert(ReferenceEquals(newOwner.OriginalDefinition, this.ContainingSymbol.OriginalDefinition));
-            return newOwner.IsDefinition ? this : new SubstitutedMethodSymbol(newOwner, this);
+            return newOwner.IsDefinition ? this : new(newOwner, this);
         }
 
         /// <summary>

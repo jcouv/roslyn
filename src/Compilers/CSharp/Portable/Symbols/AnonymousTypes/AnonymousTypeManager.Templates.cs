@@ -176,9 +176,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             // NOTE: the newly created template may be thrown away if another thread wins
             return this.SynthesizedDelegates.GetOrAdd(key,
-                new SynthesizedDelegateValue(
+                new(
                     this,
-                    new SynthesizedDelegateSymbol(
+                    new(
                         this.Compilation.Assembly.GlobalNamespace,
                         key.MakeTypeName(),
                         this.System_Object,
@@ -208,7 +208,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             if (!this.AnonymousTypeTemplates.TryGetValue(typeDescr.Key, out template))
             {
                 // NOTE: the newly created template may be thrown away if another thread wins
-                template = this.AnonymousTypeTemplates.GetOrAdd(typeDescr.Key, new AnonymousTypeTemplateSymbol(this, typeDescr));
+                template = this.AnonymousTypeTemplates.GetOrAdd(typeDescr.Key, new(this, typeDescr));
             }
 
             // Adjust template location if the template is owned by this manager
@@ -230,9 +230,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private AnonymousTypeTemplateSymbol CreatePlaceholderTemplate(Microsoft.CodeAnalysis.Emit.AnonymousTypeKey key)
         {
-            var fields = key.Fields.SelectAsArray(f => new AnonymousTypeField(f.Name, Location.None, default));
+            var fields = key.Fields.SelectAsArray(f => new(f.Name, Location.None, default));
             var typeDescr = new(fields, Location.None);
-            return new AnonymousTypeTemplateSymbol(this, typeDescr);
+            return new(this, typeDescr);
         }
 
         /// <summary>
@@ -341,7 +341,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     }
                 }
                 // Sort type templates using smallest location
-                builder.Sort(new AnonymousTypeComparer(this.Compilation));
+                builder.Sort(new(this.Compilation));
             }
         }
 

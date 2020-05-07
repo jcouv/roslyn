@@ -54,7 +54,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 _index = index;
                 _locations = locations;
                 _getMethod = new(this);
-                _backingField = includeBackingField ? new AnonymousTypeFieldSymbol(this) : null;
+                _backingField = includeBackingField ? new(this) : null;
             }
 
             internal override int? MemberIndexOpt => _index;

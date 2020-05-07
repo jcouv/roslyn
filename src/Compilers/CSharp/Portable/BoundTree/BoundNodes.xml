@@ -681,7 +681,7 @@
          conversions in particular. For instance, with the following declarations, an explicit conversion
          from B to D: expr -> ImplicitReference conversion -> ExplicitUserDefined conversion ->
          ExplicitReference conversion.
-            class A { public static explicit operator C(A a) => new D(); }
+            class A { public static explicit operator C(A a) => new(); }
             class B : A { }
             class C { }
             class D : C { }

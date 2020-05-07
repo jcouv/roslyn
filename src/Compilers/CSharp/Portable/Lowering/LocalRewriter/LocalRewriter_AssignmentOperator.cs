@@ -224,7 +224,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case BoundKind.Local:
                     {
                         Debug.Assert(!isRef || ((BoundLocal)rewrittenLeft).LocalSymbol.RefKind != RefKind.None);
-                        return new BoundAssignmentOperator(
+                        return new(
                             syntax,
                             rewrittenLeft,
                             rewrittenRight,
@@ -235,7 +235,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case BoundKind.Parameter:
                     {
                         Debug.Assert(!isRef || rewrittenLeft.GetRefKind() != RefKind.None);
-                        return new BoundAssignmentOperator(
+                        return new(
                             syntax,
                             rewrittenLeft,
                             rewrittenRight,
@@ -272,7 +272,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 default:
                     {
                         Debug.Assert(!isRef);
-                        return new BoundAssignmentOperator(
+                        return new(
                             syntax,
                             rewrittenLeft,
                             rewrittenRight,
@@ -347,7 +347,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     setMethod,
                     AppendToPossibleNull(rewrittenArguments, rhsAssignment));
 
-                return new BoundSequence(
+                return new(
                     syntax,
                     AppendToPossibleNull(argTemps, rhsTemp),
                     ImmutableArray.Create(setterCall),
@@ -368,7 +368,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
                 else
                 {
-                    return new BoundSequence(
+                    return new(
                         syntax,
                         argTemps,
                         ImmutableArray<BoundExpression>.Empty,

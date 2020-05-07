@@ -279,13 +279,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 case BinaryOperatorKind.Equal:
                 case BinaryOperatorKind.NotEqual:
-                    operators.Add(new BinaryOperatorSignature(kind | BinaryOperatorKind.Delegate, delegateType, delegateType, Compilation.GetSpecialType(SpecialType.System_Boolean)));
+                    operators.Add(new(kind | BinaryOperatorKind.Delegate, delegateType, delegateType, Compilation.GetSpecialType(SpecialType.System_Boolean)));
                     break;
 
                 case BinaryOperatorKind.Addition:
                 case BinaryOperatorKind.Subtraction:
                 default:
-                    operators.Add(new BinaryOperatorSignature(kind | BinaryOperatorKind.Delegate, delegateType, delegateType, delegateType));
+                    operators.Add(new(kind | BinaryOperatorKind.Delegate, delegateType, delegateType, delegateType));
                     break;
             }
         }
@@ -450,18 +450,18 @@ namespace Microsoft.CodeAnalysis.CSharp
             switch (kind)
             {
                 case BinaryOperatorKind.Addition:
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.EnumAndUnderlyingAddition, enumType, underlying, enumType));
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.UnderlyingAndEnumAddition, underlying, enumType, enumType));
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.LiftedEnumAndUnderlyingAddition, nullableEnum, nullableUnderlying, nullableEnum));
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.LiftedUnderlyingAndEnumAddition, nullableUnderlying, nullableEnum, nullableEnum));
+                    operators.Add(new(BinaryOperatorKind.EnumAndUnderlyingAddition, enumType, underlying, enumType));
+                    operators.Add(new(BinaryOperatorKind.UnderlyingAndEnumAddition, underlying, enumType, enumType));
+                    operators.Add(new(BinaryOperatorKind.LiftedEnumAndUnderlyingAddition, nullableEnum, nullableUnderlying, nullableEnum));
+                    operators.Add(new(BinaryOperatorKind.LiftedUnderlyingAndEnumAddition, nullableUnderlying, nullableEnum, nullableEnum));
                     break;
                 case BinaryOperatorKind.Subtraction:
                     if (Strict)
                     {
-                        operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.EnumSubtraction, enumType, enumType, underlying));
-                        operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.EnumAndUnderlyingSubtraction, enumType, underlying, enumType));
-                        operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.LiftedEnumSubtraction, nullableEnum, nullableEnum, nullableUnderlying));
-                        operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.LiftedEnumAndUnderlyingSubtraction, nullableEnum, nullableUnderlying, nullableEnum));
+                        operators.Add(new(BinaryOperatorKind.EnumSubtraction, enumType, enumType, underlying));
+                        operators.Add(new(BinaryOperatorKind.EnumAndUnderlyingSubtraction, enumType, underlying, enumType));
+                        operators.Add(new(BinaryOperatorKind.LiftedEnumSubtraction, nullableEnum, nullableEnum, nullableUnderlying));
+                        operators.Add(new(BinaryOperatorKind.LiftedEnumAndUnderlyingSubtraction, nullableEnum, nullableUnderlying, nullableEnum));
                     }
                     else
                     {
@@ -471,19 +471,19 @@ namespace Microsoft.CodeAnalysis.CSharp
                         // methods being compared during overload resolution, Priority values are used to decide between
                         // two candidates (instead of the usual language-specified rules).
                         bool isExactSubtraction = TypeSymbol.Equals(right.Type?.StrippedType(), underlying, TypeCompareKind.ConsiderEverything2);
-                        operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.EnumSubtraction, enumType, enumType, underlying)
+                        operators.Add(new(BinaryOperatorKind.EnumSubtraction, enumType, enumType, underlying)
                         { Priority = 2 });
-                        operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.EnumAndUnderlyingSubtraction, enumType, underlying, enumType)
+                        operators.Add(new(BinaryOperatorKind.EnumAndUnderlyingSubtraction, enumType, underlying, enumType)
                         { Priority = isExactSubtraction ? 1 : 3 });
-                        operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.LiftedEnumSubtraction, nullableEnum, nullableEnum, nullableUnderlying)
+                        operators.Add(new(BinaryOperatorKind.LiftedEnumSubtraction, nullableEnum, nullableEnum, nullableUnderlying)
                         { Priority = 12 });
-                        operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.LiftedEnumAndUnderlyingSubtraction, nullableEnum, nullableUnderlying, nullableEnum)
+                        operators.Add(new(BinaryOperatorKind.LiftedEnumAndUnderlyingSubtraction, nullableEnum, nullableUnderlying, nullableEnum)
                         { Priority = isExactSubtraction ? 11 : 13 });
 
                         // Due to a bug, the native compiler allows "underlying - enum", so Roslyn does as well.
-                        operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.UnderlyingAndEnumSubtraction, underlying, enumType, enumType)
+                        operators.Add(new(BinaryOperatorKind.UnderlyingAndEnumSubtraction, underlying, enumType, enumType)
                         { Priority = 4 });
-                        operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.LiftedUnderlyingAndEnumSubtraction, nullableUnderlying, nullableEnum, nullableEnum)
+                        operators.Add(new(BinaryOperatorKind.LiftedUnderlyingAndEnumSubtraction, nullableUnderlying, nullableEnum, nullableEnum)
                         { Priority = 14 });
                     }
                     break;
@@ -494,14 +494,14 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case BinaryOperatorKind.GreaterThanOrEqual:
                 case BinaryOperatorKind.LessThanOrEqual:
                     var boolean = Compilation.GetSpecialType(SpecialType.System_Boolean);
-                    operators.Add(new BinaryOperatorSignature(kind | BinaryOperatorKind.Enum, enumType, enumType, boolean));
-                    operators.Add(new BinaryOperatorSignature(kind | BinaryOperatorKind.Lifted | BinaryOperatorKind.Enum, nullableEnum, nullableEnum, boolean));
+                    operators.Add(new(kind | BinaryOperatorKind.Enum, enumType, enumType, boolean));
+                    operators.Add(new(kind | BinaryOperatorKind.Lifted | BinaryOperatorKind.Enum, nullableEnum, nullableEnum, boolean));
                     break;
                 case BinaryOperatorKind.And:
                 case BinaryOperatorKind.Or:
                 case BinaryOperatorKind.Xor:
-                    operators.Add(new BinaryOperatorSignature(kind | BinaryOperatorKind.Enum, enumType, enumType, enumType));
-                    operators.Add(new BinaryOperatorSignature(kind | BinaryOperatorKind.Lifted | BinaryOperatorKind.Enum, nullableEnum, nullableEnum, nullableEnum));
+                    operators.Add(new(kind | BinaryOperatorKind.Enum, enumType, enumType, enumType));
+                    operators.Add(new(kind | BinaryOperatorKind.Lifted | BinaryOperatorKind.Enum, nullableEnum, nullableEnum, nullableEnum));
                     break;
             }
         }
@@ -517,21 +517,21 @@ namespace Microsoft.CodeAnalysis.CSharp
             switch (kind)
             {
                 case BinaryOperatorKind.Addition:
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.PointerAndIntAddition, pointerType, Compilation.GetSpecialType(SpecialType.System_Int32), pointerType));
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.PointerAndUIntAddition, pointerType, Compilation.GetSpecialType(SpecialType.System_UInt32), pointerType));
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.PointerAndLongAddition, pointerType, Compilation.GetSpecialType(SpecialType.System_Int64), pointerType));
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.PointerAndULongAddition, pointerType, Compilation.GetSpecialType(SpecialType.System_UInt64), pointerType));
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.IntAndPointerAddition, Compilation.GetSpecialType(SpecialType.System_Int32), pointerType, pointerType));
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.UIntAndPointerAddition, Compilation.GetSpecialType(SpecialType.System_UInt32), pointerType, pointerType));
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.LongAndPointerAddition, Compilation.GetSpecialType(SpecialType.System_Int64), pointerType, pointerType));
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.ULongAndPointerAddition, Compilation.GetSpecialType(SpecialType.System_UInt64), pointerType, pointerType));
+                    operators.Add(new(BinaryOperatorKind.PointerAndIntAddition, pointerType, Compilation.GetSpecialType(SpecialType.System_Int32), pointerType));
+                    operators.Add(new(BinaryOperatorKind.PointerAndUIntAddition, pointerType, Compilation.GetSpecialType(SpecialType.System_UInt32), pointerType));
+                    operators.Add(new(BinaryOperatorKind.PointerAndLongAddition, pointerType, Compilation.GetSpecialType(SpecialType.System_Int64), pointerType));
+                    operators.Add(new(BinaryOperatorKind.PointerAndULongAddition, pointerType, Compilation.GetSpecialType(SpecialType.System_UInt64), pointerType));
+                    operators.Add(new(BinaryOperatorKind.IntAndPointerAddition, Compilation.GetSpecialType(SpecialType.System_Int32), pointerType, pointerType));
+                    operators.Add(new(BinaryOperatorKind.UIntAndPointerAddition, Compilation.GetSpecialType(SpecialType.System_UInt32), pointerType, pointerType));
+                    operators.Add(new(BinaryOperatorKind.LongAndPointerAddition, Compilation.GetSpecialType(SpecialType.System_Int64), pointerType, pointerType));
+                    operators.Add(new(BinaryOperatorKind.ULongAndPointerAddition, Compilation.GetSpecialType(SpecialType.System_UInt64), pointerType, pointerType));
                     break;
                 case BinaryOperatorKind.Subtraction:
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.PointerAndIntSubtraction, pointerType, Compilation.GetSpecialType(SpecialType.System_Int32), pointerType));
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.PointerAndUIntSubtraction, pointerType, Compilation.GetSpecialType(SpecialType.System_UInt32), pointerType));
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.PointerAndLongSubtraction, pointerType, Compilation.GetSpecialType(SpecialType.System_Int64), pointerType));
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.PointerAndULongSubtraction, pointerType, Compilation.GetSpecialType(SpecialType.System_UInt64), pointerType));
-                    operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.PointerSubtraction, pointerType, pointerType, Compilation.GetSpecialType(SpecialType.System_Int64)));
+                    operators.Add(new(BinaryOperatorKind.PointerAndIntSubtraction, pointerType, Compilation.GetSpecialType(SpecialType.System_Int32), pointerType));
+                    operators.Add(new(BinaryOperatorKind.PointerAndUIntSubtraction, pointerType, Compilation.GetSpecialType(SpecialType.System_UInt32), pointerType));
+                    operators.Add(new(BinaryOperatorKind.PointerAndLongSubtraction, pointerType, Compilation.GetSpecialType(SpecialType.System_Int64), pointerType));
+                    operators.Add(new(BinaryOperatorKind.PointerAndULongSubtraction, pointerType, Compilation.GetSpecialType(SpecialType.System_UInt64), pointerType));
+                    operators.Add(new(BinaryOperatorKind.PointerSubtraction, pointerType, pointerType, Compilation.GetSpecialType(SpecialType.System_Int64)));
                     break;
             }
         }
@@ -549,7 +549,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case BinaryOperatorKind.GreaterThanOrEqual:
                 case BinaryOperatorKind.LessThanOrEqual:
                     var voidPointerType = new(TypeWithAnnotations.Create(Compilation.GetSpecialType(SpecialType.System_Void)));
-                    operators.Add(new BinaryOperatorSignature(kind | BinaryOperatorKind.Pointer, voidPointerType, voidPointerType, Compilation.GetSpecialType(SpecialType.System_Boolean)));
+                    operators.Add(new(kind | BinaryOperatorKind.Pointer, voidPointerType, voidPointerType, Compilation.GetSpecialType(SpecialType.System_Boolean)));
                     break;
             }
         }
@@ -715,7 +715,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private void GetReferenceEquality(BinaryOperatorKind kind, ArrayBuilder<BinaryOperatorSignature> operators)
         {
             var @object = Compilation.GetSpecialType(SpecialType.System_Object);
-            operators.Add(new BinaryOperatorSignature(kind | BinaryOperatorKind.Object, @object, @object, Compilation.GetSpecialType(SpecialType.System_Boolean)));
+            operators.Add(new(kind | BinaryOperatorKind.Object, @object, @object, Compilation.GetSpecialType(SpecialType.System_Boolean)));
         }
 
         private bool CandidateOperators(
@@ -862,19 +862,19 @@ namespace Microsoft.CodeAnalysis.CSharp
                 TypeSymbol rightOperandType = op.GetParameterType(1);
                 TypeSymbol resultType = op.ReturnType;
 
-                operators.Add(new BinaryOperatorSignature(BinaryOperatorKind.UserDefined | kind, leftOperandType, rightOperandType, resultType, op));
+                operators.Add(new(BinaryOperatorKind.UserDefined | kind, leftOperandType, rightOperandType, resultType, op));
 
                 LiftingResult lifting = UserDefinedBinaryOperatorCanBeLifted(leftOperandType, rightOperandType, resultType, kind);
 
                 if (lifting == LiftingResult.LiftOperandsAndResult)
                 {
-                    operators.Add(new BinaryOperatorSignature(
+                    operators.Add(new(
                         BinaryOperatorKind.Lifted | BinaryOperatorKind.UserDefined | kind,
                         MakeNullable(leftOperandType), MakeNullable(rightOperandType), MakeNullable(resultType), op));
                 }
                 else if (lifting == LiftingResult.LiftOperandsButNotResult)
                 {
-                    operators.Add(new BinaryOperatorSignature(
+                    operators.Add(new(
                         BinaryOperatorKind.Lifted | BinaryOperatorKind.UserDefined | kind,
                         MakeNullable(leftOperandType), MakeNullable(rightOperandType), resultType, op));
                 }

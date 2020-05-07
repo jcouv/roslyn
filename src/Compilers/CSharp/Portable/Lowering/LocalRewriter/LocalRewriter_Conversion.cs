@@ -208,7 +208,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                         if (NullableNeverHasValue(rewrittenOperand))
                         {
-                            return new BoundDefaultExpression(syntax, rewrittenType);
+                            return new(syntax, rewrittenType);
                         }
 
                         BoundExpression? nullableValue = NullableAlwaysHasValue(rewrittenOperand);
@@ -224,7 +224,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ConversionKind.DefaultLiteral:
                     if (!_inExpressionLambda || !explicitCastInCode)
                     {
-                        return new BoundDefaultExpression(syntax, rewrittenType);
+                        return new(syntax, rewrittenType);
                     }
 
                     break;
@@ -233,7 +233,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ConversionKind.ExplicitReference:
                     if (rewrittenOperand.IsDefaultValue() && (!_inExpressionLambda || !explicitCastInCode))
                     {
-                        return new BoundDefaultExpression(syntax, rewrittenType);
+                        return new(syntax, rewrittenType);
                     }
 
                     break;
@@ -252,7 +252,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     Debug.Assert(rewrittenOperand.Type is { });
                     if (rewrittenOperand.IsDefaultValue() && (!_inExpressionLambda || !explicitCastInCode))
                     {
-                        return new BoundDefaultExpression(syntax, rewrittenType);
+                        return new(syntax, rewrittenType);
                     }
 
                     if (rewrittenType.SpecialType == SpecialType.System_Decimal || rewrittenOperand.Type.SpecialType == SpecialType.System_Decimal)
@@ -314,7 +314,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         rewrittenOperand.IsDefaultValue() &&
                         (!_inExpressionLambda || !explicitCastInCode))
                     {
-                        return new BoundDefaultExpression(syntax, rewrittenType);
+                        return new(syntax, rewrittenType);
                     }
 
                     if (rewrittenType.SpecialType == SpecialType.System_Decimal)
@@ -339,7 +339,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                         // Instead of loosening this constraint, we return BoundConversion from underlying numeric type to Enum type,
                         // which will be eliminated during emitting (see EmitEnumConversion): e.g., E e = (E)(int) d;
-                        return new BoundConversion(
+                        return new(
                             syntax,
                             rewrittenNode,
                             conversion,
@@ -382,7 +382,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         var receiver = (!method.RequiresInstanceReceiver && !oldNodeOpt.IsExtensionMethod) ? _factory.Type(method.ContainingType) : mg.ReceiverOpt;
                         Debug.Assert(receiver is { });
                         _factory.Syntax = oldSyntax;
-                        return new BoundDelegateCreationExpression(syntax, argument: receiver, methodOpt: method,
+                        return new(syntax, argument: receiver, methodOpt: method,
                                                                    isExtensionMethod: oldNodeOpt.IsExtensionMethod, type: rewrittenType);
                     }
                 default:
@@ -399,7 +399,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     conversionGroupOpt: oldNodeOpt.ConversionGroupOpt,
                     constantValueOpt: constantValueOpt,
                     type: rewrittenType) :
-                new BoundConversion(
+                new(
                     syntax,
                     rewrittenOperand,
                     conversion,
@@ -505,7 +505,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // TODO: Consider doing constant folding for default parameter value conversion.
             //       https://github.com/dotnet/roslyn/issues/19591
-            return new BoundConversion(
+            return new(
                             syntax,
                             operand,
                             conversion,
@@ -719,7 +719,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // Detect the unlowered nullable conversion from a tuple type T1 to Nullable<T2> for a tuple type T2.
                 case BoundConversion { Conversion: { Kind: ConversionKind.ImplicitNullable, UnderlyingConversions: var underlying }, Operand: var convertedArgument } conversion
                         when underlying.Length == 1 && underlying[0].Kind == ConversionKind.ImplicitTuple && !convertedArgument.Type!.IsNullableType():
-                    return new BoundConversion(
+                    return new(
                         syntax: expression.Syntax,
                         operand: convertedArgument,
                         conversion: underlying[0],
@@ -767,7 +767,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 BoundExpression rewrittenConversion = MakeConversionNode(syntax, rewrittenOperand, conversion.UnderlyingConversions[0], rewrittenType.GetNullableUnderlyingType(), @checked);
                 MethodSymbol ctor = UnsafeGetNullableMethod(syntax, rewrittenType, SpecialMember.System_Nullable_T__ctor);
-                return new BoundObjectCreationExpression(syntax, ctor, null, rewrittenConversion);
+                return new(syntax, ctor, null, rewrittenConversion);
             }
             else
             {
@@ -830,12 +830,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 var method = (MethodSymbol)_compilation.Assembly.GetSpecialTypeMember(DecimalConversionMethod(typeFromUnderlying, typeToUnderlying));
                 var conversionKind = conversion.Kind.IsImplicitConversion() ? ConversionKind.ImplicitUserDefined : ConversionKind.ExplicitUserDefined;
-                var result = new(syntax, rewrittenOperand, new Conversion(conversionKind, method, false), @checked, explicitCastInCode: explicitCastInCode, conversionGroup, constantValueOpt: null, rewrittenType);
+                var result = new(syntax, rewrittenOperand, new(conversionKind, method, false), @checked, explicitCastInCode: explicitCastInCode, conversionGroup, constantValueOpt: null, rewrittenType);
                 return result;
             }
             else
             {
-                return new BoundConversion(syntax, rewrittenOperand, conversion, @checked, explicitCastInCode: explicitCastInCode, conversionGroup, constantValueOpt: null, rewrittenType);
+                return new(syntax, rewrittenOperand, conversion, @checked, explicitCastInCode: explicitCastInCode, conversionGroup, constantValueOpt: null, rewrittenType);
             }
         }
 
@@ -893,7 +893,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 rewrittenType: type,
                 isRef: false);
 
-            return new BoundSequence(
+            return new(
                 syntax: syntax,
                 locals: ImmutableArray.Create(boundTemp.LocalSymbol),
                 sideEffects: ImmutableArray.Create<BoundExpression>(tempAssignment),
@@ -912,7 +912,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (NullableNeverHasValue(operand))
             {
-                return new BoundDefaultExpression(syntax, type);
+                return new(syntax, type);
             }
 
             // If the converted expression is known to never be null then we can return 
@@ -942,7 +942,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (NullableNeverHasValue(operand))
             {
-                return new BoundDefaultExpression(syntax, type);
+                return new(syntax, type);
             }
 
             // Second, a trickier optimization. If the conversion is "(T?)(new S?(x))" then
@@ -951,7 +951,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression? nonNullValue = NullableAlwaysHasValue(operand);
             if (nonNullValue != null)
             {
-                return new BoundObjectCreationExpression(
+                return new(
                     syntax,
                     UnsafeGetNullableMethod(syntax, type, SpecialMember.System_Nullable_T__ctor),
                     null,
@@ -1009,7 +1009,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     if (NullableAlwaysHasValue(conditional.Consequence) != null && NullableNeverHasValue(conditional.Alternative))
                     {
-                        return new BoundSequence(
+                        return new(
                             seq.Syntax,
                             seq.Locals,
                             seq.SideEffects,
@@ -1056,7 +1056,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if ((rewrittenOperand.Type.IsArray()) && _compilation.IsReadOnlySpanType(rewrittenType))
             {
-                return new BoundReadOnlySpanFromArray(syntax, rewrittenOperand, conversion.Method, rewrittenType) { WasCompilerGenerated = true };
+                return new(syntax, rewrittenOperand, conversion.Method, rewrittenType) { WasCompilerGenerated = true };
             }
 
             BoundExpression result = BoundCall.Synthesized(syntax, null, conversion.Method, rewrittenOperand);
@@ -1070,7 +1070,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 Debug.Assert(resultType.IsNullableType() && TypeSymbol.Equals(resultType.GetNullableUnderlyingType(), call.Method.ReturnType, TypeCompareKind.ConsiderEverything2));
                 MethodSymbol ctor = UnsafeGetNullableMethod(call.Syntax, resultType, SpecialMember.System_Nullable_T__ctor);
-                return new BoundObjectCreationExpression(call.Syntax, ctor, null, call);
+                return new(call.Syntax, ctor, null, call);
             }
 
             return call;
@@ -1149,7 +1149,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // temp = operand
             // temp.HasValue ? new R?(op_Whatever(temp.GetValueOrDefault())) : default(R?)
-            return new BoundSequence(
+            return new(
                 syntax: syntax,
                 locals: ImmutableArray.Create(boundTemp.LocalSymbol),
                 sideEffects: ImmutableArray.Create<BoundExpression>(tempAssignment),
@@ -1419,7 +1419,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 ConversionKind conversionKind = isImplicit ? ConversionKind.ImplicitUserDefined : ConversionKind.ExplicitUserDefined;
                 var conversion = new(conversionKind, method, isExtensionMethod: false);
 
-                return new BoundConversion(syntax, operand, conversion, @checked: false, explicitCastInCode: false, conversionGroupOpt: null, constantValueOpt: constantValueOpt, type: toType);
+                return new(syntax, operand, conversion, @checked: false, explicitCastInCode: false, conversionGroupOpt: null, constantValueOpt: constantValueOpt, type: toType);
             }
             else
             {
@@ -1461,7 +1461,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             // TODO: how do we distinguish from normal and lifted conversions here?
                             var analysis = UserDefinedConversionAnalysis.Normal(meth, fromConversion, toConversion, fromType, toType);
                             var result = UserDefinedConversionResult.Valid(ImmutableArray.Create<UserDefinedConversionAnalysis>(analysis), 0);
-                            return new Conversion(result, conversion.IsImplicit);
+                            return new(result, conversion.IsImplicit);
                         }
                     }
                 case ConversionKind.IntPtr:
@@ -1556,7 +1556,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // TODO: distinguish between normal and lifted conversions here
             var analysis = UserDefinedConversionAnalysis.Normal(meth, fromConversion, toConversion, fromType, toType);
             var result = UserDefinedConversionResult.Valid(ImmutableArray.Create<UserDefinedConversionAnalysis>(analysis), 0);
-            return new Conversion(result, isImplicit);
+            return new(result, isImplicit);
         }
     }
 }

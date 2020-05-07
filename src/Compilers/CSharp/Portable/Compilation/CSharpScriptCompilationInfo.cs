@@ -24,7 +24,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal override Compilation? CommonPreviousScriptCompilation => PreviousScriptCompilation;
 
         public CSharpScriptCompilationInfo WithPreviousScriptCompilation(CSharpCompilation? compilation) =>
-            (compilation == PreviousScriptCompilation) ? this : new CSharpScriptCompilationInfo(compilation, ReturnTypeOpt, GlobalsType);
+            (compilation == PreviousScriptCompilation) ? this : new(compilation, ReturnTypeOpt, GlobalsType);
 
         internal override ScriptCompilationInfo CommonWithPreviousScriptCompilation(Compilation? compilation) =>
             WithPreviousScriptCompilation((CSharpCompilation?)compilation);

@@ -419,7 +419,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 var descriptor = WellKnownMembers.GetDescriptor(memberValue);
                 var diagnostic = new(
-                    new CSDiagnosticInfo(ErrorCode.ERR_MissingPredefinedMember, (customBuilder ? (object)builderType : descriptor.DeclaringTypeMetadataName), descriptor.Name),
+                    new(ErrorCode.ERR_MissingPredefinedMember, (customBuilder ? (object)builderType : descriptor.DeclaringTypeMetadataName), descriptor.Name),
                     F.Syntax.Location);
                 F.Diagnostics.Add(diagnostic);
                 return false;
@@ -476,7 +476,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     if (!property.Type.Equals(returnType, TypeCompareKind.AllIgnoreOptions))
                     {
                         var badTaskProperty = new(
-                            new CSDiagnosticInfo(ErrorCode.ERR_BadAsyncMethodBuilderTaskProperty, builderType, returnType, property.Type),
+                            new(ErrorCode.ERR_BadAsyncMethodBuilderTaskProperty, builderType, returnType, property.Type),
                             F.Syntax.Location);
                         F.Diagnostics.Add(badTaskProperty);
                         return null;
@@ -486,7 +486,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
             var diagnostic = new(
-                new CSDiagnosticInfo(ErrorCode.ERR_MissingPredefinedMember, builderType, propertyName),
+                new(ErrorCode.ERR_MissingPredefinedMember, builderType, propertyName),
                 F.Syntax.Location);
             F.Diagnostics.Add(diagnostic);
             return null;

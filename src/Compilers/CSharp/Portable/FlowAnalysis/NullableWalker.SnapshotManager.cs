@@ -60,7 +60,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 Snapshot incrementalSnapshot = GetSnapshotForPosition(position);
                 var sharedState = _walkerSharedStates[incrementalSnapshot.SharedStateIndex];
                 var variableState = new(sharedState.VariableSlot, sharedState.VariableBySlot, sharedState.VariableTypes, incrementalSnapshot.VariableState.Clone());
-                return (new NullableWalker(binder.Compilation,
+                return (new(binder.Compilation,
                                            sharedState.Symbol,
                                            useDelegateInvokeParameterTypes: false,
                                            delegateInvokeMethodOpt: null,
@@ -194,7 +194,7 @@ Now {updatedSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}");
                     var snapshotsArray = EnumerableExtensions.SelectAsArray<KeyValuePair<int, Snapshot>, (int, Snapshot)>(_incrementalSnapshots, (kvp) => (kvp.Key, kvp.Value));
 
                     var updatedSymbols = _updatedSymbolMap.ToImmutable();
-                    return new SnapshotManager(_walkerStates.ToImmutableAndFree(), snapshotsArray, updatedSymbols);
+                    return new(_walkerStates.ToImmutableAndFree(), snapshotsArray, updatedSymbols);
                 }
 
                 internal int EnterNewWalker(Symbol symbol)

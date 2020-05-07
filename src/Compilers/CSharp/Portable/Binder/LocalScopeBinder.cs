@@ -320,7 +320,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         protected LocalFunctionSymbol MakeLocalFunction(LocalFunctionStatementSyntax declaration)
         {
-            return new LocalFunctionSymbol(
+            return new(
                 this,
                 this.ContainingMemberOrLambda,
                 declaration);

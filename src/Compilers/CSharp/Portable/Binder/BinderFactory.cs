@@ -37,7 +37,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             public override bool Equals(object obj)
             {
-                throw new NotSupportedException();
+                throw new();
             }
         }
 
@@ -59,7 +59,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             _compilation = compilation;
             _syntaxTree = syntaxTree;
 
-            _binderFactoryVisitorPool = new ObjectPool<BinderFactoryVisitor>(() => new BinderFactoryVisitor(this), 64);
+            _binderFactoryVisitorPool = new ObjectPool<BinderFactoryVisitor>(() => new(this), 64);
 
             // 50 is more or less a guess, but it seems to work fine for scenarios that I tried.
             // we need something big enough to keep binders for most classes and some methods 

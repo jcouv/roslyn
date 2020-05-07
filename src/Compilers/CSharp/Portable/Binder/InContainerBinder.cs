@@ -138,7 +138,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     ImportChain importChain = this.Next.ImportChain;
                     if ((object)_container == null || _container.Kind == SymbolKind.Namespace)
                     {
-                        importChain = new ImportChain(GetImports(basesBeingResolved: null), importChain);
+                        importChain = new(GetImports(basesBeingResolved: null), importChain);
                     }
 
                     Interlocked.CompareExchange(ref _lazyImportChain, importChain, null);
@@ -274,8 +274,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // symbols cannot conflict with using alias names
                     if (arity == 0 && imports.IsUsingAlias(name, originalBinder.IsSemanticModelBinder))
                     {
-                        CSDiagnosticInfo diagInfo = new CSDiagnosticInfo(ErrorCode.ERR_ConflictAliasAndMember, name, _container);
-                        var error = new ExtendedErrorTypeSymbol((NamespaceOrTypeSymbol)null, name, arity, diagInfo, unreported: true);
+                        CSDiagnosticInfo diagInfo = new(ErrorCode.ERR_ConflictAliasAndMember, name, _container);
+                        var error = new((NamespaceOrTypeSymbol)null, name, arity, diagInfo, unreported: true);
                         result.SetFrom(LookupResult.Good(error)); // force lookup to be done w/ error symbol as result
                     }
 

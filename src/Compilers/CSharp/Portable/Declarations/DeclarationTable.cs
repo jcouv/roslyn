@@ -48,7 +48,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             _allOlderRootDeclarations = allOlderRootDeclarations;
             _latestLazyRootDeclaration = latestLazyRootDeclaration;
-            _cache = cache ?? new Cache(this);
+            _cache = cache ?? new(this);
             _typeNames = new Lazy<ICollection<string>>(GetMergedTypeNames);
             _namespaceNames = new Lazy<ICollection<string>>(GetMergedNamespaceNames);
             _referenceDirectives = new Lazy<ICollection<ReferenceDirective>>(GetMergedReferenceDirectives);
@@ -60,14 +60,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             // table.
             if (_latestLazyRootDeclaration == null)
             {
-                return new DeclarationTable(_allOlderRootDeclarations, lazyRootDeclaration, _cache);
+                return new(_allOlderRootDeclarations, lazyRootDeclaration, _cache);
             }
             else
             {
                 // we already had a 'latest' item.  This means we're hearing about a change to a
                 // different tree.  Realize the old latest item, add it to the 'oldest' collection
                 // and don't reuse the cache.
-                return new DeclarationTable(_allOlderRootDeclarations.Add(_latestLazyRootDeclaration.Value), lazyRootDeclaration, cache: null);
+                return new(_allOlderRootDeclarations.Add(_latestLazyRootDeclaration.Value), lazyRootDeclaration, cache: null);
             }
         }
 
@@ -76,7 +76,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // We can only reuse the cache if we're removing the decl that was just added.
             if (_latestLazyRootDeclaration == lazyRootDeclaration)
             {
-                return new DeclarationTable(_allOlderRootDeclarations, latestLazyRootDeclaration: null, cache: _cache);
+                return new(_allOlderRootDeclarations, latestLazyRootDeclaration: null, cache: _cache);
             }
             else
             {
@@ -86,7 +86,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 //
                 // Note: we can keep around the 'latestLazyRootDeclaration'.  There's no need to
                 // realize it if we don't have to.
-                return new DeclarationTable(_allOlderRootDeclarations.Remove(lazyRootDeclaration.Value), _latestLazyRootDeclaration, cache: null);
+                return new(_allOlderRootDeclarations.Remove(lazyRootDeclaration.Value), _latestLazyRootDeclaration, cache: null);
             }
         }
 
@@ -135,7 +135,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // Sort the root namespace declarations to match the order of SyntaxTrees.
                 if (compilation != null)
                 {
-                    builder.Sort(new RootNamespaceLocationComparer(compilation));
+                    builder.Sort(new(compilation));
                 }
                 return MergedNamespaceDeclaration.Create(builder.ToImmutableAndFree());
             }

@@ -56,7 +56,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             interfaces.Add(compilation.GetWellKnownType(WellKnownType.System_Runtime_CompilerServices_IAsyncStateMachine));
             _interfaces = interfaces.ToImmutableAndFree();
 
-            _constructor = isIterator ? (MethodSymbol)new IteratorConstructor(this) : new AsyncConstructor(this);
+            _constructor = isIterator ? (MethodSymbol)new(this) : new(this);
         }
 
         public override TypeKind TypeKind

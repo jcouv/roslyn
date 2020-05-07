@@ -152,60 +152,60 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal static SingleLookupResult Good(Symbol symbol)
         {
-            return new SingleLookupResult(LookupResultKind.Viable, symbol, null);
+            return new(LookupResultKind.Viable, symbol, null);
         }
 
         internal static SingleLookupResult WrongArity(Symbol symbol, DiagnosticInfo error)
         {
-            return new SingleLookupResult(LookupResultKind.WrongArity, symbol, error);
+            return new(LookupResultKind.WrongArity, symbol, error);
         }
 
         internal static SingleLookupResult Empty()
         {
-            return new SingleLookupResult(LookupResultKind.Empty, null, null);
+            return new(LookupResultKind.Empty, null, null);
         }
 
         internal static SingleLookupResult NotReferencable(Symbol symbol, DiagnosticInfo error)
         {
-            return new SingleLookupResult(LookupResultKind.NotReferencable, symbol, error);
+            return new(LookupResultKind.NotReferencable, symbol, error);
         }
 
         internal static SingleLookupResult StaticInstanceMismatch(Symbol symbol, DiagnosticInfo error)
         {
-            return new SingleLookupResult(LookupResultKind.StaticInstanceMismatch, symbol, error);
+            return new(LookupResultKind.StaticInstanceMismatch, symbol, error);
         }
 
         internal static SingleLookupResult Inaccessible(Symbol symbol, DiagnosticInfo error)
         {
-            return new SingleLookupResult(LookupResultKind.Inaccessible, symbol, error);
+            return new(LookupResultKind.Inaccessible, symbol, error);
         }
 
         internal static SingleLookupResult NotInvocable(Symbol unwrappedSymbol, Symbol symbol, bool diagnose)
         {
-            var diagInfo = diagnose ? new CSDiagnosticInfo(ErrorCode.ERR_NonInvocableMemberCalled, unwrappedSymbol) : null;
-            return new SingleLookupResult(LookupResultKind.NotInvocable, symbol, diagInfo);
+            var diagInfo = diagnose ? new(ErrorCode.ERR_NonInvocableMemberCalled, unwrappedSymbol) : null;
+            return new(LookupResultKind.NotInvocable, symbol, diagInfo);
         }
 
         internal static SingleLookupResult NotLabel(Symbol symbol, DiagnosticInfo error)
         {
-            return new SingleLookupResult(LookupResultKind.NotLabel, symbol, error);
+            return new(LookupResultKind.NotLabel, symbol, error);
         }
 
         internal static SingleLookupResult NotTypeOrNamespace(Symbol symbol, DiagnosticInfo error)
         {
-            return new SingleLookupResult(LookupResultKind.NotATypeOrNamespace, symbol, error);
+            return new(LookupResultKind.NotATypeOrNamespace, symbol, error);
         }
 
         internal static SingleLookupResult NotTypeOrNamespace(Symbol unwrappedSymbol, Symbol symbol, bool diagnose)
         {
             // TODO: determine correct diagnosis 
-            var diagInfo = diagnose ? new CSDiagnosticInfo(ErrorCode.ERR_BadSKknown, unwrappedSymbol.Name, unwrappedSymbol.GetKindText(), MessageID.IDS_SK_TYPE.Localize()) : null;
-            return new SingleLookupResult(LookupResultKind.NotATypeOrNamespace, symbol, diagInfo);
+            var diagInfo = diagnose ? new(ErrorCode.ERR_BadSKknown, unwrappedSymbol.Name, unwrappedSymbol.GetKindText(), MessageID.IDS_SK_TYPE.Localize()) : null;
+            return new(LookupResultKind.NotATypeOrNamespace, symbol, diagInfo);
         }
 
         internal static SingleLookupResult NotAnAttributeType(Symbol symbol, DiagnosticInfo error)
         {
-            return new SingleLookupResult(LookupResultKind.NotAnAttributeType, symbol, error);
+            return new(LookupResultKind.NotAnAttributeType, symbol, error);
         }
 
         /// <summary>
@@ -299,7 +299,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal static ObjectPool<LookupResult> CreatePool()
         {
             ObjectPool<LookupResult> pool = null;
-            pool = new ObjectPool<LookupResult>(() => new LookupResult(pool), 128); // we rarely need more than 10
+            pool = new ObjectPool<LookupResult>(() => new(pool), 128); // we rarely need more than 10
             return pool;
         }
 

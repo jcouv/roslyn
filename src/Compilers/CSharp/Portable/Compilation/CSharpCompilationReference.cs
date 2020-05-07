@@ -46,7 +46,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal override CompilationReference WithPropertiesImpl(MetadataReferenceProperties properties)
         {
-            return new CSharpCompilationReference(Compilation, properties);
+            return new(Compilation, properties);
         }
 
         private string GetDebuggerDisplay()

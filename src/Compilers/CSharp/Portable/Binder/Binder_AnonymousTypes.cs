@@ -120,7 +120,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         {
                             if (symbol.Kind == SymbolKind.Property)
                             {
-                                declarators.Add(new BoundAnonymousPropertyDeclaration(fieldSyntaxNodes[i], (PropertySymbol)symbol, field.Type));
+                                declarators.Add(new(fieldSyntaxNodes[i], (PropertySymbol)symbol, field.Type));
                                 break;
                             }
                         }
@@ -136,7 +136,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             //  Finally create a bound node
-            return new BoundAnonymousObjectCreationExpression(
+            return new(
                 node,
                 anonymousType.InstanceConstructors[0],
                 boundExpressions.AsImmutableOrNull(),

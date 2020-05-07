@@ -79,7 +79,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return null;
             }
 
-            return new DynamicAnalysisInjector(
+            return new(
                 method,
                 methodBody,
                 methodBodyFactory,
@@ -490,7 +490,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             // Add an entry in the spans array.
             int spansIndex = _spansBuilder.Count;
-            _spansBuilder.Add(new SourceSpan(
+            _spansBuilder.Add(new(
                 GetSourceDocument(_debugDocumentProvider, syntaxForSpan, span),
                 span.StartLinePosition.Line,
                 span.StartLinePosition.Character,

@@ -75,7 +75,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 if (containingAssembly.IsMissing)
                 {
                     // error CS0012: The type 'Blah' is defined in an assembly that is not referenced. You must add a reference to assembly 'Goo'.
-                    return new CSDiagnosticInfo(ErrorCode.ERR_NoTypeDef, this, containingAssembly.Identity);
+                    return new(ErrorCode.ERR_NoTypeDef, this, containingAssembly.Identity);
                 }
                 else
                 {
@@ -84,7 +84,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     if (containingModule.IsMissing)
                     {
                         // It looks like required module wasn't added to the compilation.
-                        return new CSDiagnosticInfo(ErrorCode.ERR_NoTypeDefFromModule, this, containingModule.Name);
+                        return new(ErrorCode.ERR_NoTypeDefFromModule, this, containingModule.Name);
                     }
 
                     // Both the containing assembly and the module were resolved, but the type isn't.
@@ -105,7 +105,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         // If C is not in that source assembly then we give the following warning:
 
                         // CS7068: Reference to type 'C' claims it is defined in this assembly, but it is not defined in source or any added modules 
-                        return new CSDiagnosticInfo(ErrorCode.ERR_MissingTypeInSource, this);
+                        return new(ErrorCode.ERR_MissingTypeInSource, this);
                     }
                     else
                     {
@@ -114,7 +114,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         // lacks the type C:
 
                         // error CS7069: Reference to type 'C' claims it is defined in 'Alpha', but it could not be found
-                        return new CSDiagnosticInfo(ErrorCode.ERR_MissingTypeInAssembly, this, containingAssembly.Name);
+                        return new(ErrorCode.ERR_MissingTypeInAssembly, this, containingAssembly.Name);
                     }
                 }
             }
@@ -191,7 +191,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             protected override NamedTypeSymbol WithTupleDataCore(TupleExtraData newData)
             {
-                return new TopLevel(_containingModule, _namespaceName, name, arity, mangleName, _isNativeInt, _lazyErrorInfo, _lazyContainingNamespace, _lazyTypeId, newData);
+                return new(_containingModule, _namespaceName, name, arity, mangleName, _isNativeInt, _lazyErrorInfo, _lazyContainingNamespace, _lazyTypeId, newData);
             }
 
             /// <summary>
@@ -307,7 +307,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     if (_lazyErrorInfo == null)
                     {
                         var errorInfo = this.TypeId != (int)SpecialType.None ?
-                            new CSDiagnosticInfo(ErrorCode.ERR_PredefinedTypeNotFound, MetadataHelpers.BuildQualifiedName(_namespaceName, MetadataName)) :
+                            new(ErrorCode.ERR_PredefinedTypeNotFound, MetadataHelpers.BuildQualifiedName(_namespaceName, MetadataName)) :
                             base.ErrorInfo;
                         Interlocked.CompareExchange(ref _lazyErrorInfo, errorInfo, null);
                     }
@@ -334,7 +334,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                 var other = asNativeInt == _isNativeInt ?
                     this :
-                    new TopLevel(_containingModule, _namespaceName, name, arity, mangleName, isNativeInt: asNativeInt, _lazyErrorInfo, _lazyContainingNamespace, _lazyTypeId, TupleData);
+                    new(_containingModule, _namespaceName, name, arity, mangleName, isNativeInt: asNativeInt, _lazyErrorInfo, _lazyContainingNamespace, _lazyTypeId, TupleData);
 
                 Debug.Assert(other.Equals(this));
                 Debug.Assert(other.SpecialType == this.SpecialType);

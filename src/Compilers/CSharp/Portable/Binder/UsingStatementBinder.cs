@@ -117,7 +117,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 originalBinder.BindForOrUsingOrFixedDeclarations(declarationSyntax, LocalDeclarationKind.UsingVariable, diagnostics, out declarationsOpt);
 
                 Debug.Assert(!declarationsOpt.IsEmpty);
-                multipleDeclarationsOpt = new BoundMultipleLocalDeclarations(declarationSyntax, declarationsOpt);
+                multipleDeclarationsOpt = new(declarationSyntax, declarationsOpt);
                 declarationTypeOpt = declarationsOpt[0].DeclaredTypeOpt.Type;
 
                 if (declarationTypeOpt.IsDynamic())
@@ -140,12 +140,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 if (awaitableTypeOpt is null)
                 {
-                    awaitOpt = new BoundAwaitableInfo(syntax, awaitableInstancePlaceholder: null, isDynamic: true, getAwaiter: null, isCompleted: null, getResult: null) { WasCompilerGenerated = true };
+                    awaitOpt = new(syntax, awaitableInstancePlaceholder: null, isDynamic: true, getAwaiter: null, isCompleted: null, getResult: null) { WasCompilerGenerated = true };
                 }
                 else
                 {
                     hasErrors |= ReportUseSiteDiagnostics(awaitableTypeOpt, diagnostics, awaitKeyword);
-                    var placeholder = new BoundAwaitableValuePlaceholder(syntax, valEscape: originalBinder.LocalScopeDepth, awaitableTypeOpt).MakeCompilerGenerated();
+                    var placeholder = new(syntax, valEscape: originalBinder.LocalScopeDepth, awaitableTypeOpt).MakeCompilerGenerated();
                     awaitOpt = originalBinder.BindAwaitInfo(placeholder, syntax, diagnostics, ref hasErrors);
                 }
             }

@@ -163,14 +163,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
 
         Cci.IMethodReference Cci.IGenericMethodInstanceReference.GetGenericMethod(EmitContext context)
         {
-            return new ExpandedVarargsMethodReference(_underlyingMethod.AsGenericMethodInstanceReference.GetGenericMethod(context), _argListParams);
+            return new(_underlyingMethod.AsGenericMethodInstanceReference.GetGenericMethod(context), _argListParams);
         }
 
         Cci.IMethodReference Cci.ISpecializedMethodReference.UnspecializedVersion
         {
             get
             {
-                return new ExpandedVarargsMethodReference(_underlyingMethod.AsSpecializedMethodReference.UnspecializedVersion, _argListParams);
+                return new(_underlyingMethod.AsSpecializedMethodReference.UnspecializedVersion, _argListParams);
             }
         }
 
@@ -199,7 +199,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                     result.Builder.Append("ref ");
                 }
 
-                Append(result, p.GetType(new EmitContext()));
+                Append(result, p.GetType(new()));
             }
 
             result.Builder.Append(")");

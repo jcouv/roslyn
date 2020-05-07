@@ -71,7 +71,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             { }
         }
 
-        protected override LocalFunctionState CreateLocalFunctionState() => new LocalFunctionState(UnreachableState());
+        protected override LocalFunctionState CreateLocalFunctionState() => new(UnreachableState());
 
         protected override bool Meet(ref LocalState self, ref LocalState other)
         {
@@ -98,12 +98,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         protected override LocalState TopState()
         {
-            return new LocalState(true, false);
+            return new(true, false);
         }
 
         protected override LocalState UnreachableState()
         {
-            return new LocalState(false, this.State.Reported);
+            return new(false, this.State.Reported);
         }
 
         protected override LocalState LabelState(LabelSymbol label)
@@ -261,7 +261,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 statement.Syntax.Span.Length != 0)
             {
                 var firstToken = statement.Syntax.GetFirstToken();
-                Diagnostics.Add(ErrorCode.WRN_UnreachableCode, new SourceLocation(firstToken));
+                Diagnostics.Add(ErrorCode.WRN_UnreachableCode, new(firstToken));
                 this.State.Reported = true;
             }
         }
@@ -372,7 +372,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 var syntax = node.SwitchLabels.Last().Pattern.Syntax;
                 Diagnostics.Add(isLastSection ? ErrorCode.ERR_SwitchFallOut : ErrorCode.ERR_SwitchFallThrough,
-                                new SourceLocation(syntax), syntax.ToString());
+                                new(syntax), syntax.ToString());
             }
         }
 

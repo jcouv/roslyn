@@ -61,7 +61,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         }
                     }
 
-                    return new BoundRangeVariable(node, qv, translation, translation.Type);
+                    return new(node, qv, translation, translation.Type);
                 }
 
                 return base.BindRangeVariable(node, qv, diagnostics);
@@ -80,12 +80,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                         Error(diagnostics, info, node);
                     }
 
-                    return new BoundBadExpression(
+                    return new(
                         node,
                         LookupResultKind.Empty,
                         ImmutableArray.Create<Symbol>(receiver.ExpressionSymbol),
                         ImmutableArray.Create(BindToTypeForErrorRecovery(receiver)),
-                        new ExtendedErrorTypeSymbol(this.Compilation, "", 0, info));
+                        new(this.Compilation, "", 0, info));
                 }
 
                 LookupResult lookupResult = LookupResult.GetInstance();

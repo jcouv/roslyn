@@ -15,7 +15,7 @@ namespace Microsoft.CodeAnalysis.CSharp
     {
         private BoundStatement AddSequencePoint(BoundStatement node)
         {
-            return new BoundSequencePoint(node.Syntax, node);
+            return new(node.Syntax, node);
         }
 
         internal static BoundStatement AddSequencePoint(VariableDeclaratorSyntax declaratorSyntax, BoundStatement rewrittenStatement)
@@ -45,7 +45,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             int start = usingSyntax.Span.Start;
             int end = usingSyntax.CloseParenToken.Span.End;
             TextSpan span = TextSpan.FromBounds(start, end);
-            return new BoundSequencePointWithSpan(usingSyntax, rewrittenStatement, span);
+            return new(usingSyntax, rewrittenStatement, span);
         }
 
         private static TextSpan CreateSpanForConstructorInitializer(ConstructorDeclarationSyntax constructorSyntax)
@@ -200,10 +200,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             // Add hidden sequence point unless the condition is a constant expression.
             // Constant expression must stay a const to not invalidate results of control flow analysis.
             var valueExpression = (condition.ConstantValue == null) ?
-                new BoundSequencePointExpression(syntax: null, expression: factory.Local(local), type: condition.Type) :
+                new(syntax: null, expression: factory.Local(local), type: condition.Type) :
                 condition;
 
-            return new BoundSequence(
+            return new(
                 condition.Syntax,
                 ImmutableArray.Create(local),
                 ImmutableArray.Create<BoundExpression>(factory.AssignmentExpression(factory.Local(local), condition)),

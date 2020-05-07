@@ -517,7 +517,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             var typeParameters = member.GetMemberTypeParameters();
             return typeParameters.IsEmpty ?
                 null :
-                new TypeMap(
+                new(
                     typeParameters,
                     IndexedTypeParameterSymbol.Take(member.GetMemberArity()),
                     true);

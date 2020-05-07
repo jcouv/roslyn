@@ -47,9 +47,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                     Debug.Assert(!pinnedTemp.Type.IsManagedType);
 
                     // temp = ref *default(T*);
-                    cleanup[i] = _factory.Assignment(_factory.Local(pinnedTemp), new BoundPointerIndirectionOperator(
+                    cleanup[i] = _factory.Assignment(_factory.Local(pinnedTemp), new(
                         _factory.Syntax,
-                        _factory.Default(new PointerTypeSymbol(pinnedTemp.TypeWithAnnotations)),
+                        _factory.Default(new(pinnedTemp.TypeWithAnnotations)),
                         pinnedTemp.Type),
                         isRef: true);
                 }
@@ -71,7 +71,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 return _factory.Block(
                     localBuilder.ToImmutableAndFree(),
-                    new BoundTryStatement(
+                    new(
                         _factory.Syntax,
                         _factory.Block(statementBuilder.ToImmutableAndFree()),
                         ImmutableArray<BoundCatchBlock>.Empty,
@@ -542,7 +542,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // NOTE: this is a fixed statement address-of in that it's the initial value of the pointer.
             //&temp[0]
-            BoundExpression firstElementAddress = new(factory.Syntax, firstElement, type: new PointerTypeSymbol(arrayElementType));
+            BoundExpression firstElementAddress = new(factory.Syntax, firstElement, type: new(arrayElementType));
             BoundExpression convertedFirstElementAddress = factory.Convert(
                 localType,
                 firstElementAddress,
@@ -556,7 +556,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             //(((temp = array) != null && temp.Length != 0) ? loc = &temp[0] : loc = null)
             BoundStatement localInit = factory.ExpressionStatement(
-                new BoundConditionalOperator(factory.Syntax, false, condition, consequenceAssignment, alternativeAssignment, ConstantValue.NotAvailable, localType));
+                new(factory.Syntax, false, condition, consequenceAssignment, alternativeAssignment, ConstantValue.NotAvailable, localType));
 
             return InstrumentLocalDeclarationIfNecessary(localDecl, localSymbol, localInit);
         }

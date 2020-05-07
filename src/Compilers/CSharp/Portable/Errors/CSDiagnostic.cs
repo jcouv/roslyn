@@ -25,12 +25,12 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (location == null)
             {
-                throw new ArgumentNullException(nameof(location));
+                throw new(nameof(location));
             }
 
             if (location != this.Location)
             {
-                return new CSDiagnostic(this.Info, location, this.IsSuppressed);
+                return new(this.Info, location, this.IsSuppressed);
             }
 
             return this;
@@ -40,7 +40,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (this.Severity != severity)
             {
-                return new CSDiagnostic(this.Info.GetInstanceWithSeverity(severity), this.Location, this.IsSuppressed);
+                return new(this.Info.GetInstanceWithSeverity(severity), this.Location, this.IsSuppressed);
             }
 
             return this;
@@ -50,7 +50,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (this.IsSuppressed != isSuppressed)
             {
-                return new CSDiagnostic(this.Info, this.Location, isSuppressed);
+                return new(this.Info, this.Location, isSuppressed);
             }
 
             return this;

@@ -16,7 +16,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         public bool IsOriginalInput => this.Source is null;
 
-        public static BoundDagTemp ForOriginalInput(SyntaxNode syntax, TypeSymbol type) => new BoundDagTemp(syntax, type, null, 0);
+        public static BoundDagTemp ForOriginalInput(SyntaxNode syntax, TypeSymbol type) => new(syntax, type, null, 0);
 
         public override bool Equals(object? obj) => obj is BoundDagTemp other && this.Equals(other);
 

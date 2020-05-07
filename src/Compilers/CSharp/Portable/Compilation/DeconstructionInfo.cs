@@ -67,7 +67,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 return underlyingConversions.IsDefault
                     ? ImmutableArray<DeconstructionInfo>.Empty
-                    : underlyingConversions.SelectAsArray(c => new DeconstructionInfo(c));
+                    : underlyingConversions.SelectAsArray(c => new(c));
             }
         }
 

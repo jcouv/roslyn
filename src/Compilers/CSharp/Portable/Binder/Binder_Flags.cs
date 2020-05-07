@@ -66,20 +66,20 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             return this.Flags == flags
                 ? this
-                : new Binder(this, flags);
+                : new(this, flags);
         }
 
         internal Binder WithAdditionalFlags(BinderFlags flags)
         {
             return this.Flags.Includes(flags)
                 ? this
-                : new Binder(this, this.Flags | flags);
+                : new(this, this.Flags | flags);
         }
 
         internal Binder WithContainingMemberOrLambda(Symbol containing)
         {
             Debug.Assert((object)containing != null);
-            return new BinderWithContainingMemberOrLambda(this, containing);
+            return new(this, containing);
         }
 
         /// <remarks>
@@ -89,14 +89,14 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal Binder WithAdditionalFlagsAndContainingMemberOrLambda(BinderFlags flags, Symbol containing)
         {
             Debug.Assert((object)containing != null);
-            return new BinderWithContainingMemberOrLambda(this, this.Flags | flags, containing);
+            return new(this, this.Flags | flags, containing);
         }
 
         internal Binder WithUnsafeRegionIfNecessary(SyntaxTokenList modifiers)
         {
             return (this.Flags.Includes(BinderFlags.UnsafeRegion) || !modifiers.Any(SyntaxKind.UnsafeKeyword))
                 ? this
-                : new Binder(this, this.Flags | BinderFlags.UnsafeRegion);
+                : new(this, this.Flags | BinderFlags.UnsafeRegion);
         }
 
         internal Binder WithCheckedOrUncheckedRegion(bool @checked)
@@ -108,7 +108,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             return this.Flags.Includes(added)
                 ? this
-                : new Binder(this, (this.Flags & ~removed) | added);
+                : new(this, (this.Flags & ~removed) | added);
         }
     }
 }

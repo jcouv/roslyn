@@ -119,13 +119,13 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // start:
             //   body;
-            statementBuilder.Add(new BoundLabelStatement(syntax, startLabel));
+            statementBuilder.Add(new(syntax, startLabel));
 
             statementBuilder.Add(rewrittenBody);
 
             // continue:
             //   increment;
-            statementBuilder.Add(new BoundLabelStatement(syntax, continueLabel));
+            statementBuilder.Add(new(syntax, continueLabel));
             if (rewrittenIncrement != null)
             {
                 statementBuilder.Add(rewrittenIncrement);
@@ -133,7 +133,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // end:
             //   GotoIfTrue condition start;
-            statementBuilder.Add(new BoundLabelStatement(syntax, endLabel));
+            statementBuilder.Add(new(syntax, endLabel));
             BoundStatement? branchBack = null;
             if (rewrittenCondition != null)
             {
@@ -162,10 +162,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             statementBuilder.Add(branchBack);
 
             // break:
-            statementBuilder.Add(new BoundLabelStatement(syntax, breakLabel));
+            statementBuilder.Add(new(syntax, breakLabel));
 
             var statements = statementBuilder.ToImmutableAndFree();
-            return new BoundBlock(syntax, outerLocals, statements, hasErrors);
+            return new(syntax, outerLocals, statements, hasErrors);
         }
 
         private BoundStatement RewriteForStatement(
@@ -252,22 +252,22 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // continue:
             //   increment;
-            blockBuilder.Add(new BoundLabelStatement(syntax, node.ContinueLabel));
+            blockBuilder.Add(new(syntax, node.ContinueLabel));
             if (rewrittenIncrement != null)
             {
                 blockBuilder.Add(rewrittenIncrement);
             }
 
             // goto start;
-            blockBuilder.Add(new BoundGotoStatement(syntax, startLabel));
+            blockBuilder.Add(new(syntax, startLabel));
 
-            statementBuilder.Add(new BoundBlock(syntax, node.InnerLocals, blockBuilder.ToImmutableAndFree()));
+            statementBuilder.Add(new(syntax, node.InnerLocals, blockBuilder.ToImmutableAndFree()));
 
             // break:
-            statementBuilder.Add(new BoundLabelStatement(syntax, node.BreakLabel));
+            statementBuilder.Add(new(syntax, node.BreakLabel));
 
             var statements = statementBuilder.ToImmutableAndFree();
-            return new BoundBlock(syntax, node.OuterLocals, statements, node.HasErrors);
+            return new(syntax, node.OuterLocals, statements, node.HasErrors);
         }
     }
 }

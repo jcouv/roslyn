@@ -174,7 +174,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                             symbol: localSymbol,
                             name: null,
                             kind: localSymbol.SynthesizedKind,
-                            id: new LocalDebugId(syntaxOffset, ordinal: 0),
+                            id: new(syntaxOffset, ordinal: 0),
                             pdbAttributes: localSymbol.SynthesizedKind.PdbAttributes(),
                             constraints: slotConstraints,
                             dynamicTransformFlags: ImmutableArray<bool>.Empty,

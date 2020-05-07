@@ -122,7 +122,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             public override SyntaxReference GetReference(SyntaxNode node)
             {
-                return new SimpleSyntaxReference(node);
+                return new(node);
             }
 
             public override SyntaxTree WithRootAndOptions(SyntaxNode root, ParseOptions options)
@@ -132,7 +132,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return this;
                 }
 
-                return new ParsedSyntaxTree(
+                return new(
                     null,
                     _encodingOpt,
                     _checksumAlgorithm,
@@ -154,7 +154,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return this;
                 }
 
-                return new ParsedSyntaxTree(
+                return new(
                     _lazyText,
                     _encodingOpt,
                     _checksumAlgorithm,
@@ -181,7 +181,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return this;
                 }
 
-                return new ParsedSyntaxTree(
+                return new(
                     _lazyText,
                     _encodingOpt,
                     _checksumAlgorithm,

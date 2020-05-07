@@ -122,7 +122,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     fieldAccessorsBuilder.Add(convertedFieldAccess);
                 }
 
-                return new BoundConvertedTupleLiteral(
+                return new(
                     syntax, sourceTuple: null, wasTargetTyped: true, fieldAccessorsBuilder.ToImmutableAndFree(), ImmutableArray<string?>.Empty,
                     ImmutableArray<bool>.Empty, expr.Type, expr.HasErrors);
             }
@@ -158,7 +158,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
 
                     var newArguments = builder.ToImmutableAndFree();
-                    return new BoundConvertedTupleLiteral(
+                    return new(
                         tuple.Syntax, sourceTuple: null, wasTargetTyped: false, newArguments, ImmutableArray<string?>.Empty,
                         ImmutableArray<bool>.Empty, tuple.Type, tuple.HasErrors);
                 }
@@ -203,12 +203,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                         return conv.UpdateOperand(deferredOperand);
                     }
                 case BoundObjectCreationExpression { Arguments: { Length: 0 }, Type: { } eType } _ when eType.IsNullableType():
-                    return new BoundLiteral(expr.Syntax, ConstantValue.Null, expr.Type);
+                    return new(expr.Syntax, ConstantValue.Null, expr.Type);
                 case BoundObjectCreationExpression { Arguments: { Length: 1 }, Type: { } eType } creation when eType.IsNullableType():
                     {
                         var deferredOperand = DeferSideEffectingArgumentToTempForTupleEquality(
                             creation.Arguments[0], effects, temps, enclosingConversionWasExplicit: true);
-                        return new BoundConversion(
+                        return new(
                             syntax: expr.Syntax, operand: deferredOperand,
                             conversion: Conversion.MakeNullableConversion(ConversionKind.ImplicitNullable, Conversion.Identity),
                             @checked: false, explicitCastInCode: true, conversionGroupOpt: null, constantValueOpt: null,
@@ -253,7 +253,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 case TupleBinaryOperatorInfoKind.NullNull:
                     var nullnull = (TupleBinaryOperatorInfo.NullNull)@operator;
-                    return new BoundLiteral(left.Syntax, ConstantValue.Create(nullnull.Kind == BinaryOperatorKind.Equal), boolType);
+                    return new(left.Syntax, ConstantValue.Create(nullnull.Kind == BinaryOperatorKind.Equal), boolType);
 
                 default:
                     throw ExceptionUtilities.UnexpectedValue(@operator.InfoKind);
@@ -445,7 +445,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         {
                             argumentBuilder.Add(MakeBoundConversion(GetTuplePart(operand, i), underlyingConversions[i], types[i], conv));
                         }
-                        return new BoundConvertedTupleLiteral(
+                        return new(
                             syntax: operand.Syntax,
                             sourceTuple: null,
                             wasTargetTyped: false,
@@ -466,7 +466,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             BoundExpression MakeBoundConversion(BoundExpression expr, Conversion conversion, TypeWithAnnotations type, BoundConversion enclosing)
             {
-                return new BoundConversion(
+                return new(
                     expr.Syntax, expr, conversion, enclosing.Checked, enclosing.ExplicitCastInCode,
                     conversionGroupOpt: null, constantValueOpt: null, type: type.Type);
             }
@@ -561,7 +561,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (left.IsLiteralNull() && right.IsLiteralNull())
             {
                 // For `null == null` this is special-cased during initial binding
-                return new BoundLiteral(left.Syntax, ConstantValue.Create(operatorKind == BinaryOperatorKind.Equal), boolType);
+                return new(left.Syntax, ConstantValue.Create(operatorKind == BinaryOperatorKind.Equal), boolType);
             }
 
             BoundExpression binary = MakeBinaryOperator(_factory.Syntax, single.Kind, left, right, single.MethodSymbolOpt?.ReturnType ?? boolType, single.MethodSymbolOpt);

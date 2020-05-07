@@ -29,7 +29,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             GetRawDiagnosticInfos(isNullableEnabled, (CSharpSyntaxTree)location.SourceTree, rawInfos);
             foreach (var rawInfo in rawInfos)
             {
-                diagnostics.Add(new LazyMissingNonNullTypesContextDiagnosticInfo(type, rawInfo), location);
+                diagnostics.Add(new(type, rawInfo), location);
             }
             rawInfos.Free();
         }
@@ -47,7 +47,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (!isNullableEnabled && info?.Severity != DiagnosticSeverity.Error)
             {
                 var code = tree.IsGeneratedCode() ? ErrorCode.WRN_MissingNonNullTypesContextForAnnotationInGeneratedCode : ErrorCode.WRN_MissingNonNullTypesContextForAnnotation;
-                infos.Add(new CSDiagnosticInfo(code));
+                infos.Add(new(code));
             }
         }
 #nullable restore

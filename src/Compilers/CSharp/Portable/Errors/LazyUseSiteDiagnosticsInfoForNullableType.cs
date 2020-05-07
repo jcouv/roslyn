@@ -23,7 +23,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else if (_possiblyNullableTypeSymbol.Type.IsTypeParameterDisallowingAnnotation())
             {
-                return new CSDiagnosticInfo(ErrorCode.ERR_NullableUnconstrainedTypeParameter);
+                return new(ErrorCode.ERR_NullableUnconstrainedTypeParameter);
             }
 
             return null;

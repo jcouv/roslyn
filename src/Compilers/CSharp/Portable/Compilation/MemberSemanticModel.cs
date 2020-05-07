@@ -77,7 +77,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             _parentRemappedSymbolsOpt = parentRemappedSymbolsOpt;
             _speculatedPosition = speculatedPosition;
 
-            _operationFactory = new Lazy<CSharpOperationFactory>(() => new CSharpOperationFactory(this));
+            _operationFactory = new Lazy<CSharpOperationFactory>(() => new(this));
         }
 
         public override CSharpCompilation Compilation
@@ -189,7 +189,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (expression == null)
             {
-                throw new ArgumentNullException(nameof(expression));
+                throw new(nameof(expression));
             }
 
             if (!Compilation.NullableSemanticAnalysisEnabled || bindingOption != SpeculativeBindingOption.BindAsExpression)
@@ -418,7 +418,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if ((object)destination == null)
             {
-                throw new ArgumentNullException(nameof(destination));
+                throw new(nameof(destination));
             }
 
             TypeSymbol csdestination = destination.EnsureCSharpSymbolOrNull(nameof(destination));
@@ -475,7 +475,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if ((object)destination == null)
             {
-                throw new ArgumentNullException(nameof(destination));
+                throw new(nameof(destination));
             }
 
             var binder = this.GetEnclosingBinderInternal(expression, GetAdjustedNodePosition(expression));
@@ -553,22 +553,22 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override ImmutableArray<Diagnostic> GetSyntaxDiagnostics(TextSpan? span = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            throw new NotSupportedException();
+            throw new();
         }
 
         public override ImmutableArray<Diagnostic> GetDeclarationDiagnostics(TextSpan? span = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            throw new NotSupportedException();
+            throw new();
         }
 
         public override ImmutableArray<Diagnostic> GetMethodBodyDiagnostics(TextSpan? span = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            throw new NotSupportedException();
+            throw new();
         }
 
         public override ImmutableArray<Diagnostic> GetDiagnostics(TextSpan? span = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            throw new NotSupportedException();
+            throw new();
         }
 
         public override INamespaceSymbol GetDeclaredSymbol(NamespaceDeclarationSyntax declarationSyntax, CancellationToken cancellationToken = default(CancellationToken))
@@ -890,7 +890,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (node.Kind() != SyntaxKind.AwaitExpression)
             {
-                throw new ArgumentException("node.Kind==" + node.Kind());
+                throw new("node.Kind==" + node.Kind());
             }
 
             var bound = GetUpperBoundNode(node);
@@ -900,7 +900,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return default(AwaitExpressionInfo);
             }
 
-            return new AwaitExpressionInfo(
+            return new(
                 getAwaiter: (IMethodSymbol)awaitableInfo.GetAwaiter?.ExpressionSymbol.GetPublicSymbol(),
                 isCompleted: awaitableInfo.IsCompleted.GetPublicSymbol(),
                 getResult: awaitableInfo.GetResult.GetPublicSymbol(),
@@ -958,7 +958,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            return new ForEachStatementInfo(
+            return new(
                 enumeratorInfoOpt.IsAsync,
                 enumeratorInfoOpt.GetEnumeratorMethod.GetPublicSymbol(),
                 enumeratorInfoOpt.MoveNextMethod.GetPublicSymbol(),
@@ -984,7 +984,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return default;
             }
 
-            return new DeconstructionInfo(boundConversion.Conversion);
+            return new(boundConversion.Conversion);
         }
 
         public override DeconstructionInfo GetDeconstructionInfo(ForEachVariableStatementSyntax node)
@@ -1002,7 +1002,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return default;
             }
 
-            return new DeconstructionInfo(boundDeconstruction.DeconstructionAssignment.Right.Conversion);
+            return new(boundDeconstruction.DeconstructionAssignment.Right.Conversion);
         }
 
         private BoundQueryClause GetBoundQueryClause(CSharpSyntaxNode node)
@@ -1016,7 +1016,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (bound == null) return default(QueryClauseInfo);
             var castInfo = (bound.Cast == null) ? SymbolInfo.None : GetSymbolInfoForNode(SymbolInfoOptions.DefaultOptions, bound.Cast, bound.Cast, boundNodeForSyntacticParent: null, binderOpt: null);
             var operationInfo = GetSymbolInfoForQuery(bound);
-            return new QueryClauseInfo(castInfo: castInfo, operationInfo: operationInfo);
+            return new(castInfo: castInfo, operationInfo: operationInfo);
         }
 
         private SymbolInfo GetSymbolInfoForQuery(BoundQueryClause bound)
@@ -2211,7 +2211,7 @@ done:
                     return null;
                 }
 
-                throw new ArgumentException($"The parent of {nameof(node)} must not be null unless this is a speculative semantic model.", nameof(node));
+                throw new($"The parent of {nameof(node)} must not be null unless this is a speculative semantic model.", nameof(node));
             }
 
             // skip up past parens and ref expressions, as we have no bound nodes for them.
@@ -2315,7 +2315,7 @@ foundParent:;
                 if (binder != null)
                 {
                     Debug.Assert(!(binder is IncrementalBinder));
-                    return new IncrementalBinder(_semanticModel, binder.WithAdditionalFlags(BinderFlags.SemanticModel));
+                    return new(_semanticModel, binder.WithAdditionalFlags(BinderFlags.SemanticModel));
                 }
 
                 return null;

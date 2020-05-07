@@ -67,7 +67,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
                 if ((object)peType == null || peType.MetadataArity <= position)
                 {
-                    return new UnsupportedMetadataTypeSymbol(); // position of type parameter too large
+                    return new(); // position of type parameter too large
                 }
 
                 position -= peType.MetadataArity - peType.Arity;
@@ -89,11 +89,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 else
                 {
                     Debug.Assert(cumulativeArity <= position);
-                    return new UnsupportedMetadataTypeSymbol(); // position of type parameter too large
+                    return new(); // position of type parameter too large
                 }
             }
 
-            return new UnsupportedMetadataTypeSymbol(); // associated type does not have type parameters
+            return new(); // associated type does not have type parameters
         }
 
         private static void GetGenericTypeArgumentSymbol(int position, NamedTypeSymbol namedType, out int cumulativeArity, out TypeSymbol typeArgument)

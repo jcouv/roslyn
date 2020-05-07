@@ -79,7 +79,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
                 }
             }
 
-            return new LineMappingEntry(
+            return new(
                 unmappedLine,
                 mappedLine,
                 mappedPathOpt,
@@ -89,7 +89,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
         protected override LineMappingEntry InitializeFirstEntry()
         {
             // The first entry of the map is always 0,0,null,Unmapped -- the default mapping.
-            return new LineMappingEntry(0, 0, null, PositionState.Unmapped);
+            return new(0, 0, null, PositionState.Unmapped);
         }
 
         public override LineVisibility GetLineVisibility(SourceText sourceText, int position)
@@ -150,7 +150,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
                 Debug.Assert(this.Entries[0].MappedPathOpt == null);
 
                 isHiddenPosition = false;
-                return new FileLinePositionSpan(treeFilePath, unmappedStartPos, unmappedEndPos);
+                return new(treeFilePath, unmappedStartPos, unmappedEndPos);
             }
 
             var entry = FindEntry(unmappedStartPos.Line);

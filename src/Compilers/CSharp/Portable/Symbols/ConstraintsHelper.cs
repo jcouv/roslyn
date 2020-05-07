@@ -116,7 +116,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 var constraintTypesBuilder = ArrayBuilder<TypeWithAnnotations>.GetInstance();
                 var interfacesBuilder = ArrayBuilder<NamedTypeSymbol>.GetInstance();
-                var conversions = new TypeConversions(corLibrary);
+                var conversions = new(corLibrary);
                 HashSet<DiagnosticInfo> useSiteDiagnostics = null;
 
                 // Resolve base types, determine the effective base class and
@@ -294,7 +294,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return null;
             }
 
-            var bounds = new TypeParameterBounds(constraintTypes, interfaces, effectiveBaseClass, deducedBaseType);
+            var bounds = new(constraintTypes, interfaces, effectiveBaseClass, deducedBaseType);
 
             // Additional constraint checks for overrides.
             if (inherited)
@@ -534,7 +534,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             foreach (var pair in diagnosticsBuilder)
             {
                 int ordinal = pair.TypeParameter.Ordinal;
-                var location = new SourceLocation(ordinal < typeArgumentsSyntax.Count ? typeArgumentsSyntax[ordinal] : typeSyntax);
+                var location = new(ordinal < typeArgumentsSyntax.Count ? typeArgumentsSyntax[ordinal] : typeSyntax);
                 diagnostics.Add(new CSDiagnostic(pair.DiagnosticInfo, location));
             }
 
@@ -657,7 +657,7 @@ hasRelatedInterfaces:
 
             foreach (var pair in diagnosticsBuilder)
             {
-                var location = new SourceLocation(syntaxNode);
+                var location = new(syntaxNode);
                 diagnostics.Add(new CSDiagnostic(pair.DiagnosticInfo, location));
             }
 
@@ -974,7 +974,7 @@ hasRelatedInterfaces:
                     errorCode = ErrorCode.ERR_GenericConstraintNotSatisfiedValType;
                 }
 
-                SymbolDistinguisher distinguisher = new SymbolDistinguisher(currentCompilation, constraintType.Type, typeArgument.Type);
+                SymbolDistinguisher distinguisher = new(currentCompilation, constraintType.Type, typeArgument.Type);
                 diagnosticsBuilder.Add(new TypeParameterDiagnosticInfo(typeParameter, new CSDiagnosticInfo(errorCode, containingSymbol.ConstructedFrom(), distinguisher.First, typeParameter, distinguisher.Second)));
                 hasError = true;
             }

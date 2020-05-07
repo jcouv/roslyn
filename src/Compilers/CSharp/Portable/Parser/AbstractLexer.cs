@@ -114,19 +114,19 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
         protected SyntaxDiagnosticInfo MakeError(int position, int width, ErrorCode code)
         {
             int offset = GetLexemeOffsetFromPosition(position);
-            return new SyntaxDiagnosticInfo(offset, width, code);
+            return new(offset, width, code);
         }
 
         protected SyntaxDiagnosticInfo MakeError(int position, int width, ErrorCode code, params object[] args)
         {
             int offset = GetLexemeOffsetFromPosition(position);
-            return new SyntaxDiagnosticInfo(offset, width, code, args);
+            return new(offset, width, code, args);
         }
 
         protected XmlSyntaxDiagnosticInfo MakeError(int position, int width, XmlParseErrorCode code, params object[] args)
         {
             int offset = GetLexemeOffsetFromPosition(position);
-            return new XmlSyntaxDiagnosticInfo(offset, width, code, args);
+            return new(offset, width, code, args);
         }
 
         private int GetLexemeOffsetFromPosition(int position)
@@ -136,22 +136,22 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
 
         protected static SyntaxDiagnosticInfo MakeError(ErrorCode code)
         {
-            return new SyntaxDiagnosticInfo(code);
+            return new(code);
         }
 
         protected static SyntaxDiagnosticInfo MakeError(ErrorCode code, params object[] args)
         {
-            return new SyntaxDiagnosticInfo(code, args);
+            return new(code, args);
         }
 
         protected static XmlSyntaxDiagnosticInfo MakeError(XmlParseErrorCode code)
         {
-            return new XmlSyntaxDiagnosticInfo(0, 0, code);
+            return new(0, 0, code);
         }
 
         protected static XmlSyntaxDiagnosticInfo MakeError(XmlParseErrorCode code, params object[] args)
         {
-            return new XmlSyntaxDiagnosticInfo(0, 0, code, args);
+            return new(0, 0, code, args);
         }
     }
 }

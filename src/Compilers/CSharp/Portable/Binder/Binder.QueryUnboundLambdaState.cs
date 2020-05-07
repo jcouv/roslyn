@@ -37,7 +37,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             public override RefKind RefKind(int index) { return Microsoft.CodeAnalysis.RefKind.None; }
             public override MessageID MessageID { get { return MessageID.IDS_FeatureQueryExpression; } } // TODO: what is the correct ID here?
             public override Location ParameterLocation(int index) { return _parameters[index].Locations[0]; }
-            public override TypeWithAnnotations ParameterTypeWithAnnotations(int index) { throw new ArgumentException(); } // implicitly typed
+            public override TypeWithAnnotations ParameterTypeWithAnnotations(int index) { throw new(); } // implicitly typed
 
             public override void GenerateAnonymousFunctionConversionError(DiagnosticBag diagnostics, TypeSymbol targetType)
             {
@@ -47,12 +47,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             public override Binder ParameterBinder(LambdaSymbol lambdaSymbol, Binder binder)
             {
-                return new WithQueryLambdaParametersBinder(lambdaSymbol, _rangeVariableMap, binder);
+                return new(lambdaSymbol, _rangeVariableMap, binder);
             }
 
             protected override UnboundLambdaState WithCachingCore(bool includeCache)
             {
-                return new QueryUnboundLambdaState(Binder, _rangeVariableMap, _parameters, _bodyFactory, includeCache);
+                return new(Binder, _rangeVariableMap, _parameters, _bodyFactory, includeCache);
             }
 
             protected override BoundExpression GetLambdaExpressionBody(BoundBlock body)

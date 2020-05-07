@@ -32,7 +32,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             BoundExpression result = oldNodeOpt != null ?
                 oldNodeOpt.Update(rewrittenReceiver, fieldSymbol, constantValueOpt, resultKind, type) :
-                new BoundFieldAccess(syntax, rewrittenReceiver, fieldSymbol, constantValueOpt, resultKind, type);
+                new(syntax, rewrittenReceiver, fieldSymbol, constantValueOpt, resultKind, type);
 
             if (fieldSymbol.IsFixedSizeBuffer)
             {
@@ -68,7 +68,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (rewrittenReceiver?.Kind == BoundKind.DefaultExpression)
             {
                 // Optimization: `default((int, string)).Item2` is simply `default(string)`
-                return new BoundDefaultExpression(syntax, tupleField.Type);
+                return new(syntax, tupleField.Type);
             }
 
             if (!TypeSymbol.Equals(underlyingField.ContainingType, currentLinkType, TypeCompareKind.ConsiderEverything2))

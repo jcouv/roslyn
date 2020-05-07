@@ -37,7 +37,7 @@ namespace Microsoft.CodeAnalysis.Operations
         }
 
         private IInstanceReferenceOperation CreateImplicitReceiver(SyntaxNode syntax, TypeSymbol type) =>
-            new InstanceReferenceOperation(InstanceReferenceKind.ImplicitReceiver, _semanticModel, syntax, type.GetPublicSymbol(), constantValue: default, isImplicit: true);
+            new(InstanceReferenceKind.ImplicitReceiver, _semanticModel, syntax, type.GetPublicSymbol(), constantValue: default, isImplicit: true);
 
         internal IArgumentOperation CreateArgumentOperation(ArgumentKind kind, IParameterSymbol parameter, BoundExpression expression)
         {
@@ -46,7 +46,7 @@ namespace Microsoft.CodeAnalysis.Operations
             if (expression.Syntax?.Parent is ArgumentSyntax argument)
             {
                 // if argument syntax doesn't exist, this operation is implicit
-                return new CSharpLazyArgumentOperation(this,
+                return new(this,
                     expression,
                     kind,
                     s_boxedIdentityConversion,
@@ -61,7 +61,7 @@ namespace Microsoft.CodeAnalysis.Operations
                 // We have to create the argument child eagerly here, as we need to use its syntax for this node, but the BoundExpression
                 // syntax may not be the correct syntax in certain scenarios (such as query clauses that need to be skipped).
                 IOperation value = Create(expression);
-                return new ArgumentOperation(
+                return new(
                     value,
                     kind,
                     parameter,
@@ -95,7 +95,7 @@ namespace Microsoft.CodeAnalysis.Operations
                     initializerIsImplicit = true;
                 }
 
-                return new CSharpLazyVariableInitializerOperation(this, boundLocalDeclaration.InitializerOpt, _semanticModel, initializerSyntax, type: null, constantValue: default, initializerIsImplicit);
+                return new(this, boundLocalDeclaration.InitializerOpt, _semanticModel, initializerSyntax, type: null, constantValue: default, initializerIsImplicit);
             }
 
             return null;
@@ -109,12 +109,12 @@ namespace Microsoft.CodeAnalysis.Operations
             Optional<object> constantValue = default;
             bool isImplicit = false;
 
-            return new CSharpLazyVariableDeclaratorOperation(this, boundLocalDeclaration, symbol, _semanticModel, syntax, type, constantValue, isImplicit);
+            return new(this, boundLocalDeclaration, symbol, _semanticModel, syntax, type, constantValue, isImplicit);
         }
 
         internal IVariableDeclaratorOperation CreateVariableDeclarator(BoundLocal boundLocal)
         {
-            return boundLocal == null ? null : new VariableDeclaratorOperation(boundLocal.LocalSymbol.GetPublicSymbol(), initializer: null, ignoredArguments: ImmutableArray<IOperation>.Empty, semanticModel: _semanticModel, syntax: boundLocal.Syntax, type: null, constantValue: default, isImplicit: false);
+            return boundLocal == null ? null : new(boundLocal.LocalSymbol.GetPublicSymbol(), initializer: null, ignoredArguments: ImmutableArray<IOperation>.Empty, semanticModel: _semanticModel, syntax: boundLocal.Syntax, type: null, constantValue: default, isImplicit: false);
         }
 
         internal IOperation CreateReceiverOperation(BoundNode instance, Symbol symbol)
@@ -156,7 +156,7 @@ namespace Microsoft.CodeAnalysis.Operations
             SyntaxNode eventAccessSyntax = ((AssignmentExpressionSyntax)syntax).Left;
             bool isImplicit = boundEventAssignmentOperator.WasCompilerGenerated;
 
-            return new CSharpLazyEventReferenceOperation(this, instance, @event, _semanticModel, eventAccessSyntax, @event.Type, ConvertToOptional(null), isImplicit);
+            return new(this, instance, @event, _semanticModel, eventAccessSyntax, @event.Type, ConvertToOptional(null), isImplicit);
         }
 
         internal IOperation CreateDelegateTargetOperation(BoundNode delegateNode)

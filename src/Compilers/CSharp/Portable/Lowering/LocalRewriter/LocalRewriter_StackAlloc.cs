@@ -47,7 +47,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (type.IsPointerType())
             {
                 var stackSize = RewriteStackAllocCountToSize(rewrittenCount, elementType);
-                return new BoundConvertedStackAllocExpression(stackAllocNode.Syntax, elementType, stackSize, initializerOpt, type);
+                return new(stackAllocNode.Syntax, elementType, stackSize, initializerOpt, type);
             }
             else if (TypeSymbol.Equals(type.OriginalDefinition, _compilation.GetWellKnownType(WellKnownType.System_Span_T), TypeCompareKind.ConsiderEverything2))
             {
@@ -83,7 +83,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var tempAccess = _factory.StoreToTemp(constructorCall, out BoundAssignmentOperator tempAssignment, syntaxOpt: stackAllocNode.Syntax);
                 sideEffects.Add(tempAssignment);
                 locals.Add(tempAccess.LocalSymbol);
-                return new BoundSpillSequence(
+                return new(
                     syntax: stackAllocNode.Syntax,
                     locals: locals.ToImmutableAndFree(),
                     sideEffects: sideEffects.ToImmutableAndFree(),

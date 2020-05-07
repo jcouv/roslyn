@@ -112,7 +112,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             get
             {
-                throw new NotSupportedException();
+                throw new();
             }
         }
 
@@ -144,7 +144,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             get
             {
-                throw new NotSupportedException();
+                throw new();
             }
         }
 
@@ -156,7 +156,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             get
             {
-                throw new NotSupportedException();
+                throw new();
             }
         }
 

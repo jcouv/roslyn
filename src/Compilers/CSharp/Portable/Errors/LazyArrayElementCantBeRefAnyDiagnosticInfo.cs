@@ -21,7 +21,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (_possiblyRestrictedTypeSymbol.IsRestrictedType())
             {
-                return new CSDiagnosticInfo(ErrorCode.ERR_ArrayElementCantBeRefAny, _possiblyRestrictedTypeSymbol.Type);
+                return new(ErrorCode.ERR_ArrayElementCantBeRefAny, _possiblyRestrictedTypeSymbol.Type);
             }
 
             return null;

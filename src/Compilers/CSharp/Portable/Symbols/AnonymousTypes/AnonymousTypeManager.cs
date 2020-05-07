@@ -30,7 +30,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// </summary>
         public NamedTypeSymbol ConstructAnonymousTypeSymbol(AnonymousTypeDescriptor typeDescr)
         {
-            return new AnonymousTypePublicSymbol(this, typeDescr);
+            return new(this, typeDescr);
         }
 
         /// <summary>

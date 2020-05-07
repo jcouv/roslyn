@@ -122,13 +122,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                     null,
                     node.HasErrors);
 
-                return new BoundBlock(
+                return new(
                     lockSyntax,
                     ImmutableArray.Create(boundLockTemp.LocalSymbol, boundLockTakenTemp.LocalSymbol),
                     ImmutableArray.Create(
                         InstrumentLockTargetCapture(node, boundLockTempInit),
                         boundLockTakenTempInit,
-                        new BoundTryStatement(
+                        new(
                             lockSyntax,
                             BoundBlock.SynthesizedNoLocals(lockSyntax, ImmutableArray.Create<BoundStatement>(
                                 enterCall,
@@ -172,13 +172,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                     lockSyntax,
                     enterCallExpr);
 
-                return new BoundBlock(
+                return new(
                     lockSyntax,
                     ImmutableArray.Create(boundLockTemp.LocalSymbol),
                     ImmutableArray.Create(
                         InstrumentLockTargetCapture(node, boundLockTempInit),
                         enterCall,
-                        new BoundTryStatement(
+                        new(
                             lockSyntax,
                             BoundBlock.SynthesizedNoLocals(lockSyntax, rewrittenBody),
                             ImmutableArray<BoundCatchBlock>.Empty,

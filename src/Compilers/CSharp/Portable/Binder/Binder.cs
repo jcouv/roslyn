@@ -488,7 +488,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 if (_lazyConversions == null)
                 {
-                    Interlocked.CompareExchange(ref _lazyConversions, new Conversions(this), null);
+                    Interlocked.CompareExchange(ref _lazyConversions, new(this), null);
                 }
 
                 return _lazyConversions;
@@ -502,7 +502,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 if (_lazyOverloadResolution == null)
                 {
-                    Interlocked.CompareExchange(ref _lazyOverloadResolution, new OverloadResolution(this), null);
+                    Interlocked.CompareExchange(ref _lazyOverloadResolution, new(this), null);
                 }
 
                 return _lazyOverloadResolution;
@@ -511,32 +511,32 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal static void Error(DiagnosticBag diagnostics, DiagnosticInfo info, SyntaxNode syntax)
         {
-            diagnostics.Add(new CSDiagnostic(info, syntax.Location));
+            diagnostics.Add(new(info, syntax.Location));
         }
 
         internal static void Error(DiagnosticBag diagnostics, DiagnosticInfo info, Location location)
         {
-            diagnostics.Add(new CSDiagnostic(info, location));
+            diagnostics.Add(new(info, location));
         }
 
         internal static void Error(DiagnosticBag diagnostics, ErrorCode code, CSharpSyntaxNode syntax)
         {
-            diagnostics.Add(new CSDiagnostic(new CSDiagnosticInfo(code), syntax.Location));
+            diagnostics.Add(new(new(code), syntax.Location));
         }
 
         internal static void Error(DiagnosticBag diagnostics, ErrorCode code, CSharpSyntaxNode syntax, params object[] args)
         {
-            diagnostics.Add(new CSDiagnostic(new CSDiagnosticInfo(code, args), syntax.Location));
+            diagnostics.Add(new(new(code, args), syntax.Location));
         }
 
         internal static void Error(DiagnosticBag diagnostics, ErrorCode code, SyntaxToken token)
         {
-            diagnostics.Add(new CSDiagnostic(new CSDiagnosticInfo(code), token.GetLocation()));
+            diagnostics.Add(new(new(code), token.GetLocation()));
         }
 
         internal static void Error(DiagnosticBag diagnostics, ErrorCode code, SyntaxToken token, params object[] args)
         {
-            diagnostics.Add(new CSDiagnostic(new CSDiagnosticInfo(code, args), token.GetLocation()));
+            diagnostics.Add(new(new(code, args), token.GetLocation()));
         }
 
         internal static void Error(DiagnosticBag diagnostics, ErrorCode code, SyntaxNodeOrToken syntax)
@@ -555,12 +555,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal static void Error(DiagnosticBag diagnostics, ErrorCode code, Location location)
         {
-            diagnostics.Add(new CSDiagnostic(new CSDiagnosticInfo(code), location));
+            diagnostics.Add(new(new(code), location));
         }
 
         internal static void Error(DiagnosticBag diagnostics, ErrorCode code, Location location, params object[] args)
         {
-            diagnostics.Add(new CSDiagnostic(new CSDiagnosticInfo(code, args), location));
+            diagnostics.Add(new(new(code, args), location));
         }
 
         /// <summary>
@@ -753,7 +753,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var locals = this.GetDeclaredLocalsForScope(scopeDesignator);
             return (locals.IsEmpty)
                 ? expression
-                : new BoundSequence(scopeDesignator, locals, ImmutableArray<BoundExpression>.Empty, expression, getType()) { WasCompilerGenerated = true };
+                : new(scopeDesignator, locals, ImmutableArray<BoundExpression>.Empty, expression, getType()) { WasCompilerGenerated = true };
 
             TypeSymbol getType()
             {
@@ -771,7 +771,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return statement;
             }
 
-            return new BoundBlock(statement.Syntax, locals, ImmutableArray.Create(statement))
+            return new(statement.Syntax, locals, ImmutableArray.Create(statement))
             { WasCompilerGenerated = true };
         }
 
@@ -787,7 +787,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return statement;
             }
 
-            return new BoundBlock(statement.Syntax, locals, localFunctions,
+            return new(statement.Syntax, locals, localFunctions,
                                   ImmutableArray.Create(statement))
             { WasCompilerGenerated = true };
         }
@@ -806,16 +806,16 @@ namespace Microsoft.CodeAnalysis.CSharp
                     var sub = new List<TreeDumperNode>();
                     if (!locals.IsEmpty())
                     {
-                        sub.Add(new TreeDumperNode("locals", locals, null));
+                        sub.Add(new("locals", locals, null));
                     }
                     var currentContainer = scope.ContainingMemberOrLambda;
                     if (currentContainer != null && currentContainer != scope.Next?.ContainingMemberOrLambda)
                     {
-                        sub.Add(new TreeDumperNode("containing symbol", currentContainer.ToDisplayString(), null));
+                        sub.Add(new("containing symbol", currentContainer.ToDisplayString(), null));
                     }
                     if (snippet != null)
                     {
-                        sub.Add(new TreeDumperNode($"scope", $"{snippet} ({scope.ScopeDesignator?.Kind()})", null));
+                        sub.Add(new($"scope", $"{snippet} ({scope.ScopeDesignator?.Kind()})", null));
                     }
                     if (current != null)
                     {

@@ -142,7 +142,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                         // Note the language scope of the locals, even though they are included for the purposes of
                         // lifetime analysis in the enclosing scope.
-                        result.Add(new BoundScope(section.Syntax, section.Locals, statements));
+                        result.Add(new(section.Syntax, section.Locals, statements));
                     }
                 }
 

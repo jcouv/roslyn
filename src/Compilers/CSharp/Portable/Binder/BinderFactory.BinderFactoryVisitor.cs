@@ -791,7 +791,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 NamespaceOrTypeSymbol container = outer.Container;
                 NamespaceSymbol ns = ((NamespaceSymbol)container).GetNestedNamespace(name);
                 if ((object)ns == null) return outer;
-                return new InContainerBinder(ns, outer, node, inUsing: inUsing);
+                return new(ns, outer, node, inUsing: inUsing);
             }
 
             public override Binder VisitCompilationUnit(CompilationUnitSyntax parent)
@@ -806,7 +806,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 if (compilationUnit != syntaxTree.GetRoot())
                 {
-                    throw new ArgumentOutOfRangeException(nameof(compilationUnit), "node not part of tree");
+                    throw new(nameof(compilationUnit), "node not part of tree");
                 }
 
                 var extraInfo = inUsing
@@ -855,8 +855,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                             // ever consumed.  Aliases are actually checked in scriptClassBinder (below).
                             // Note: #loaded trees don't consume previous submission imports.
                             result = compilation.PreviousSubmission == null || !isSubmissionTree
-                                ? new InContainerBinder(result, basesBeingResolved => scriptClassBinder.GetImports(basesBeingResolved))
-                                : new InContainerBinder(result, basesBeingResolved =>
+                                ? new(result, basesBeingResolved => scriptClassBinder.GetImports(basesBeingResolved))
+                                : new(result, basesBeingResolved =>
                                     compilation.GetPreviousSubmissionImports().Concat(scriptClassBinder.GetImports(basesBeingResolved)));
                         }
 
@@ -889,7 +889,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             private static BinderCacheKey CreateBinderCacheKey(CSharpSyntaxNode node, NodeUsage usage)
             {
                 Debug.Assert(BitArithmeticUtilities.CountBits((uint)usage) <= 1, "Not a flags enum.");
-                return new BinderCacheKey(node, usage);
+                return new(node, usage);
             }
 
             /// <summary>
@@ -1082,7 +1082,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     Binder outerBinder = VisitCore(memberSyntax.Parent);
                     MethodSymbol method = GetMethodSymbol(baseMethodDeclSyntax, outerBinder);
-                    return new WithParametersBinder(method.Parameters, nextBinder);
+                    return new(method.Parameters, nextBinder);
                 }
 
                 // As in Dev11, we do not allow <param name="value"> on events.
@@ -1106,7 +1106,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     if (parameters.Any())
                     {
-                        return new WithParametersBinder(parameters, nextBinder);
+                        return new(parameters, nextBinder);
                     }
                 }
                 else if (memberKind == SyntaxKind.DelegateDeclaration)
@@ -1119,7 +1119,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     ImmutableArray<ParameterSymbol> parameters = invokeMethod.Parameters;
                     if (parameters.Any())
                     {
-                        return new WithParametersBinder(parameters, nextBinder);
+                        return new(parameters, nextBinder);
                     }
                 }
 
@@ -1152,7 +1152,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     SourceNamedTypeSymbol typeSymbol = ((NamespaceOrTypeSymbol)outerBinder.ContainingMemberOrLambda).GetSourceTypeMember(typeDeclSyntax);
 
                     // NOTE: don't include anything else in the binder chain.
-                    return new WithClassTypeParametersBinder(typeSymbol, nextBinder);
+                    return new(typeSymbol, nextBinder);
                 }
 
                 if (memberSyntax.Kind() == SyntaxKind.MethodDeclaration)
@@ -1162,7 +1162,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         Binder outerBinder = VisitCore(memberSyntax.Parent);
                         MethodSymbol method = GetMethodSymbol(methodDeclSyntax, outerBinder);
-                        return new WithMethodTypeParametersBinder(method, nextBinder);
+                        return new(method, nextBinder);
                     }
                 }
                 else if (memberSyntax.Kind() == SyntaxKind.DelegateDeclaration)
@@ -1172,7 +1172,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     ImmutableArray<TypeParameterSymbol> typeParameters = delegateType.TypeParameters;
                     if (typeParameters.Any())
                     {
-                        return new WithClassTypeParametersBinder(delegateType, nextBinder);
+                        return new(delegateType, nextBinder);
                     }
                 }
 

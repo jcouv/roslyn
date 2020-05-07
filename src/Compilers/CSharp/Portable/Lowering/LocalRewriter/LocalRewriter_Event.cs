@@ -176,7 +176,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (tempAssignment != null) sideEffects.Add(tempAssignment);
             Debug.Assert(sideEffects.Any(), "Otherwise, we shouldn't be building a sequence");
 
-            return new BoundSequence(syntax, tempSymbols, sideEffects.ToImmutableAndFree(), marshalCall, marshalCall.Type!);
+            return new(syntax, tempSymbols, sideEffects.ToImmutableAndFree(), marshalCall, marshalCall.Type!);
         }
 
         private BoundExpression VisitWindowsRuntimeEventFieldAssignmentOperator(SyntaxNode syntax, BoundEventAccess left, BoundExpression rewrittenRight)
@@ -267,7 +267,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     string accessorName = SourcePropertyAccessorSymbol.GetAccessorName(invocationListProperty.Name,
                         getNotSet: true,
                         isWinMdOutput: invocationListProperty.IsCompilationOutputWinMdObj());
-                    _diagnostics.Add(new CSDiagnosticInfo(ErrorCode.ERR_MissingPredefinedMember, invocationListProperty.ContainingType, accessorName), syntax.Location);
+                    _diagnostics.Add(new(ErrorCode.ERR_MissingPredefinedMember, invocationListProperty.ContainingType, accessorName), syntax.Location);
                 }
                 else
                 {
@@ -276,7 +276,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            return new BoundBadExpression(syntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, ImmutableArray.Create(getOrCreateCall), ErrorTypeSymbol.UnknownResultType);
+            return new(syntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, ImmutableArray.Create(getOrCreateCall), ErrorTypeSymbol.UnknownResultType);
         }
 
         private BoundExpression RewriteNoPiaEventAssignmentOperator(BoundEventAssignmentOperator node, BoundExpression rewrittenReceiver, BoundExpression rewrittenArgument)
@@ -323,7 +323,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return result;
             }
 
-            return new BoundBadExpression(node.Syntax, LookupResultKind.NotCreatable, ImmutableArray.Create<Symbol?>(node.Event),
+            return new(node.Syntax, LookupResultKind.NotCreatable, ImmutableArray.Create<Symbol?>(node.Event),
                                           ImmutableArray.Create(rewrittenReceiver, rewrittenArgument), ErrorTypeSymbol.UnknownResultType);
         }
     }

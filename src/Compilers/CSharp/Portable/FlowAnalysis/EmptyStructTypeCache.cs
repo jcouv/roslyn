@@ -38,13 +38,13 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
         public static EmptyStructTypeCache CreateForDev12Compatibility(CSharpCompilation compilation)
-            => new EmptyStructTypeCache(compilation, dev12CompilerCompatibility: true);
+            => new(compilation, dev12CompilerCompatibility: true);
 
         public static EmptyStructTypeCache CreatePrecise()
-            => new EmptyStructTypeCache(null, false);
+            => new(null, false);
 
         public static EmptyStructTypeCache CreateNeverEmpty()
-            => new NeverEmptyStructTypeCache();
+            => new();
 
         /// <summary>
         /// Create a cache for computing whether or not a struct type is "empty".

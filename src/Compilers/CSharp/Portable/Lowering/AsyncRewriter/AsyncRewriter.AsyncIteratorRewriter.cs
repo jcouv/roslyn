@@ -392,7 +392,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // Produce:
                 //  if (state >= StateMachineStates.NotStartedStateMachine /* -3 */)
                 //  {
-                //      throw new NotSupportedException();
+                //      throw new();
                 //  }
                 //  if (state == StateMachineStates.FinishedStateMachine /* -2 */)
                 //  {
@@ -402,7 +402,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 //  _valueOrEndPromise.Reset();
                 //  var inst = this;
                 //  _builder.Start(ref inst);
-                //  return new ValueTask(this, _valueOrEndPromise.Version);
+                //  return new(this, _valueOrEndPromise.Version);
 
                 MethodSymbol IAsyncDisposable_DisposeAsync = F.WellKnownMethod(WellKnownMember.System_IAsyncDisposable__DisposeAsync);
 
@@ -420,7 +420,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 BoundStatement ifInvalidState = F.If(
                     // if (state >= StateMachineStates.NotStartedStateMachine /* -1 */)
                     F.IntGreaterThanOrEqual(F.InstanceField(stateField), F.Literal(StateMachineStates.NotStartedStateMachine)),
-                    // throw new NotSupportedException();
+                    // throw new();
                     thenClause: F.Throw(F.New(F.WellKnownType(WellKnownType.System_NotSupportedException))));
 
                 BoundStatement ifFinished = F.If(
@@ -433,7 +433,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     F.WellKnownMethod(WellKnownMember.System_Threading_Tasks_ValueTask__ctor)
                     .AsMember((NamedTypeSymbol)IAsyncDisposable_DisposeAsync.ReturnType);
 
-                // return new ValueTask(this, _valueOrEndPromise.Version);
+                // return new(this, _valueOrEndPromise.Version);
                 var returnStatement = F.Return(F.New(valueTask_ctor, F.This(), F.Call(F.InstanceField(_promiseOfValueOrEndField), promise_get_Version)));
 
                 F.CloseMethod(F.Block(
@@ -677,7 +677,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     method: method,
                     methodOrdinal: _methodOrdinal,
                     asyncMethodBuilderMemberCollection: _asyncMethodBuilderMemberCollection,
-                    asyncIteratorInfo: new AsyncIteratorInfo(_promiseOfValueOrEndField, _combinedTokensField, _currentField, _disposeModeField, setResultMethod, setExceptionMethod),
+                    asyncIteratorInfo: new(_promiseOfValueOrEndField, _combinedTokensField, _currentField, _disposeModeField, setResultMethod, setExceptionMethod),
                     F: F,
                     state: stateField,
                     builder: _builderField,

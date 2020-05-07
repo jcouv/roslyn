@@ -105,7 +105,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             containingSlot = DescendThroughTupleRestFields(ref symbol, containingSlot, forceContainingSlotsToExist: false);
 
             int slot;
-            return (_variableSlot.TryGetValue(new VariableIdentifier(symbol, containingSlot), out slot)) ? slot : -1;
+            return (_variableSlot.TryGetValue(new(symbol, containingSlot), out slot)) ? slot : -1;
         }
 
         protected virtual bool IsEmptyStructType(TypeSymbol type)
@@ -220,7 +220,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
                     else
                     {
-                        if (!_variableSlot.TryGetValue(new VariableIdentifier(restField, containingSlot), out containingSlot))
+                        if (!_variableSlot.TryGetValue(new(restField, containingSlot), out containingSlot))
                         {
                             return -1;
                         }

@@ -88,7 +88,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                     // Add a type parameter
                     AnonymousTypeParameterSymbol typeParameter =
-                        new AnonymousTypeParameterSymbol(this, fieldIndex, GeneratedNames.MakeAnonymousTypeParameterName(field.Name));
+                        new(this, fieldIndex, GeneratedNames.MakeAnonymousTypeParameterName(field.Name));
                     typeParametersBuilder.Add(typeParameter);
 
                     // Add a property
@@ -105,7 +105,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 this.Properties = propertiesBuilder.ToImmutableAndFree();
 
                 // Add a constructor
-                membersBuilder.Add(new AnonymousTypeConstructorSymbol(this, this.Properties));
+                membersBuilder.Add(new(this, this.Properties));
                 _members = membersBuilder.ToImmutableAndFree();
                 Debug.Assert(membersCount == _members.Length);
 
@@ -117,9 +117,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                 // special members: Equals, GetHashCode, ToString
                 this.SpecialMembers = ImmutableArray.Create<MethodSymbol>(
-                    new AnonymousTypeEqualsMethodSymbol(this),
-                    new AnonymousTypeGetHashCodeMethodSymbol(this),
-                    new AnonymousTypeToStringMethodSymbol(this));
+                    new(this),
+                    new(this),
+                    new(this));
             }
 
             protected override NamedTypeSymbol WithTupleDataCore(TupleExtraData newData)
@@ -127,8 +127,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             internal AnonymousTypeKey GetAnonymousTypeKey()
             {
-                var properties = Properties.SelectAsArray(p => new AnonymousTypeKeyField(p.Name, isKey: false, ignoreCase: false));
-                return new AnonymousTypeKey(properties);
+                var properties = Properties.SelectAsArray(p => new(p.Name, isKey: false, ignoreCase: false));
+                return new(properties);
             }
 
             /// <summary>
@@ -499,10 +499,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                 return Manager.Compilation.TrySynthesizeAttribute(
                     WellKnownMember.System_Diagnostics_DebuggerDisplayAttribute__ctor,
-                    arguments: ImmutableArray.Create(new TypedConstant(Manager.System_String, TypedConstantKind.Primitive, displayString)),
+                    arguments: ImmutableArray.Create(new(Manager.System_String, TypedConstantKind.Primitive, displayString)),
                     namedArguments: ImmutableArray.Create(new KeyValuePair<WellKnownMember, TypedConstant>(
                                         WellKnownMember.System_Diagnostics_DebuggerDisplayAttribute__Type,
-                                        new TypedConstant(Manager.System_String, TypedConstantKind.Primitive, "<Anonymous Type>"))));
+                                        new(Manager.System_String, TypedConstantKind.Primitive, "<Anonymous Type>"))));
             }
         }
     }

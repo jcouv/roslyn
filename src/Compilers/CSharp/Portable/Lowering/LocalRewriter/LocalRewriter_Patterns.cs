@@ -369,7 +369,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     typeEvaluation1.Input == typeDecision.Input)
                 {
                     BoundExpression input = _tempAllocator.GetTemp(test.Input);
-                    BoundExpression output = _tempAllocator.GetTemp(new BoundDagTemp(evaluation.Syntax, typeEvaluation1.Type, evaluation));
+                    BoundExpression output = _tempAllocator.GetTemp(new(evaluation.Syntax, typeEvaluation1.Type, evaluation));
                     Debug.Assert(output.Type is { });
                     sideEffect = _factory.AssignmentExpression(output, _factory.As(input, typeEvaluation1.Type));
                     testExpression = _factory.ObjectNotEqual(output, _factory.Null(output.Type));
@@ -385,7 +385,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     BoundExpression input = _tempAllocator.GetTemp(test.Input);
                     var baseType = typeEvaluation2.Type;
-                    BoundExpression output = _tempAllocator.GetTemp(new BoundDagTemp(evaluation.Syntax, baseType, evaluation));
+                    BoundExpression output = _tempAllocator.GetTemp(new(evaluation.Syntax, baseType, evaluation));
                     sideEffect = _factory.AssignmentExpression(output, _factory.Convert(baseType, input));
                     testExpression = _factory.ObjectNotEqual(output, _factory.Null(baseType));
                     _localRewriter._diagnostics.Add(test.Syntax, useSiteDiagnostics);

@@ -285,7 +285,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
         public static ObjectPool<LocalDefUseInfo> CreatePool()
         {
             ObjectPool<LocalDefUseInfo> pool = null;
-            pool = new ObjectPool<LocalDefUseInfo>(() => new LocalDefUseInfo(pool), 128);
+            pool = new ObjectPool<LocalDefUseInfo>(() => new(pool), 128);
             return pool;
         }
 
@@ -317,7 +317,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
         internal LocalDefUseSpan WithEnd(int end)
         {
-            return new LocalDefUseSpan(this.Start, end);
+            return new(this.Start, end);
         }
 
         public override string ToString()
@@ -526,7 +526,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             }
             catch (InsufficientExecutionStackException ex)
             {
-                throw new CancelledByStackGuardException(ex, node);
+                throw new(ex, node);
             }
         }
 
@@ -1535,7 +1535,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             if (node.OperatorKind.IsChecked() && node.OperatorKind.Operator() == UnaryOperatorKind.UnaryMinus)
             {
                 var origStack = StackDepth();
-                PushEvalStack(new BoundDefaultExpression(node.Syntax, node.Operand.Type), ExprContext.Value);
+                PushEvalStack(new(node.Syntax, node.Operand.Type), ExprContext.Value);
                 BoundExpression operand = (BoundExpression)this.Visit(node.Operand);
                 return node.Update(node.OperatorKind, operand, node.ConstantValueOpt, node.MethodOpt, node.ResultKind, node.Type);
             }
@@ -2000,7 +2000,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             // not the last access, emit Dup.
             if (!IsLastAccess(locInfo, _nodeCounter))
             {
-                return new BoundDup(node.Syntax, node.LocalSymbol.RefKind, node.Type);
+                return new(node.Syntax, node.LocalSymbol.RefKind, node.Type);
             }
 
             // last access - leave the node as is. Emit will do nothing expecting the node on the stack
@@ -2138,7 +2138,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
         internal override LocalSymbol WithSynthesizedLocalKindAndSyntax(SynthesizedLocalKind kind, SyntaxNode syntax)
         {
-            throw new NotImplementedException();
+            throw new();
         }
 
         internal override SyntaxToken IdentifierToken
@@ -2153,27 +2153,27 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
         public override Symbol ContainingSymbol
         {
-            get { throw new NotImplementedException(); }
+            get { throw new(); }
         }
 
         public override TypeWithAnnotations TypeWithAnnotations
         {
-            get { throw new NotImplementedException(); }
+            get { throw new(); }
         }
 
         public override ImmutableArray<Location> Locations
         {
-            get { throw new NotImplementedException(); }
+            get { throw new(); }
         }
 
         public override ImmutableArray<SyntaxReference> DeclaringSyntaxReferences
         {
-            get { throw new NotImplementedException(); }
+            get { throw new(); }
         }
 
         internal override ConstantValue GetConstantValue(SyntaxNode node, LocalSymbol inProgress, DiagnosticBag diagnostics)
         {
-            throw new NotImplementedException();
+            throw new();
         }
 
         internal override bool IsCompilerGenerated
@@ -2183,12 +2183,12 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
         internal override ImmutableArray<Diagnostic> GetConstantValueDiagnostics(BoundExpression boundInitValue)
         {
-            throw new NotImplementedException();
+            throw new();
         }
 
         internal override SyntaxNode GetDeclaratorSyntax()
         {
-            throw new NotImplementedException();
+            throw new();
         }
 
         public override RefKind RefKind

@@ -537,7 +537,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(diagInfo.Severity == DiagnosticSeverity.Error);
 
             // Attach symbols to the diagnostic info.
-            diagInfo = new DiagnosticInfoWithSymbols(
+            diagInfo = new(
                 (ErrorCode)diagInfo.Code,
                 diagInfo.Arguments,
                 symbols);
@@ -731,7 +731,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(badName != null);
 
             // Named argument 'x' specifies a parameter for which a positional argument has already been given
-            Location location = new SourceLocation(badName);
+            Location location = new(badName);
 
             diagnostics.Add(new DiagnosticInfoWithSymbols(
                 ErrorCode.ERR_NamedArgumentUsedInPositional,
@@ -752,7 +752,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(badName != null);
 
             // Named argument 'x' is used out-of-position but is followed by an unnamed argument.
-            Location location = new SourceLocation(badName);
+            Location location = new(badName);
 
             diagnostics.Add(new DiagnosticInfoWithSymbols(
                 ErrorCode.ERR_BadNonTrailingNamedArgument,
@@ -794,7 +794,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // error CS1739: The best overload for 'M' does not have a parameter named 'x'
             // Error CS1746: The delegate 'D' does not have a parameter named 'x'
 
-            Location location = new SourceLocation(badName);
+            Location location = new(badName);
 
             ErrorCode code = (object)delegateTypeBeingInvoked != null ?
                 ErrorCode.ERR_BadNamedArgumentForDelegateInvoke :
@@ -1025,7 +1025,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // The best overloaded method match for '{0}' has some invalid arguments
             // Since we have bad arguments to report, there is no need to report an error on the invocation itself.
-            //var di = new DiagnosticInfoWithSymbols(
+            //var di = new(
             //    ErrorCode.ERR_BadArgTypes,
             //    new object[] { badArg.Method },
             //    symbols);
@@ -1079,7 +1079,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             int parm = badArg.Result.ParameterFromArgument(arg);
-            SourceLocation sourceLocation = new SourceLocation(argument.Syntax);
+            SourceLocation sourceLocation = new(argument.Syntax);
 
             // Early out: if the bad argument is an __arglist parameter then simply report that:
 
@@ -1204,13 +1204,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // have the same format as the display value of the parameter).
                     if (argument.Display is TypeSymbol argType)
                     {
-                        SignatureOnlyParameterSymbol displayArg = new SignatureOnlyParameterSymbol(
+                        SignatureOnlyParameterSymbol displayArg = new(
                             TypeWithAnnotations.Create(argType),
                             ImmutableArray<CustomModifier>.Empty,
                             isParams: false,
                             refKind: refArg);
 
-                        SymbolDistinguisher distinguisher = new SymbolDistinguisher(binder.Compilation, displayArg, UnwrapIfParamsArray(parameter, isLastParameter));
+                        SymbolDistinguisher distinguisher = new(binder.Compilation, displayArg, UnwrapIfParamsArray(parameter, isLastParameter));
 
                         // CS1503: Argument {0}: cannot convert from '{1}' to '{2}'
                         diagnostics.Add(
@@ -1419,7 +1419,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return "Overload resolution failed because the method group was empty.";
             }
 
-            var sb = new StringBuilder();
+            var sb = new();
             if (this.Succeeded)
             {
                 sb.AppendLine("Overload resolution succeeded and chose " + this.ValidResult.Member.ToString());

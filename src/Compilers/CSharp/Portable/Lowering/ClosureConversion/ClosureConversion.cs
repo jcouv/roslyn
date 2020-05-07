@@ -382,7 +382,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     Debug.Assert(!proxies.ContainsKey(captured));
 
                     var hoistedField = LambdaCapturedVariable.Create(synthesizedEnv, captured, ref _synthesizedFieldNameIdDispenser);
-                    proxies.Add(captured, new CapturedToFrameSymbolReplacement(hoistedField, isReusable: false));
+                    proxies.Add(captured, new(hoistedField, isReusable: false));
                     synthesizedEnv.AddHoistedField(hoistedField);
                     CompilationState.ModuleBuilderOpt.AddSynthesizedDefinition(synthesizedEnv, hoistedField);
                 }
@@ -548,7 +548,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             F.Assignment(
                                 F.Field(null, frame.SingletonCache),
                                 F.New(frame.Constructor)),
-                            new BoundReturnStatement(syntax, RefKind.None, null));
+                            new(syntax, RefKind.None, null));
 
                     AddSynthesizedMethod(frame.StaticConstructor, body);
                 }
@@ -585,7 +585,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // If in an instance method of the right type, we can just return the "this" pointer.
             if ((object)_currentFrameThis != null && TypeSymbol.Equals(_currentFrameThis.Type, frameClass, TypeCompareKind.ConsiderEverything2))
             {
-                return new BoundThisReference(syntax, frameClass);
+                return new(syntax, frameClass);
             }
 
             // If the current method has by-ref struct closure parameters, and one of them is correct, use it.
@@ -598,7 +598,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     var potentialParameter = lambda.Parameters[i];
                     if (TypeSymbol.Equals(potentialParameter.Type.OriginalDefinition, frameClass, TypeCompareKind.ConsiderEverything2))
                     {
-                        return new BoundParameter(syntax, potentialParameter);
+                        return new(syntax, potentialParameter);
                     }
                 }
             }
@@ -615,7 +615,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             var localFrame = (LocalSymbol)framePointer;
-            return new BoundLocal(syntax, localFrame, null, localFrame.Type);
+            return new(syntax, localFrame, null, localFrame.Type);
         }
 
         private static void InsertAndFreePrologue<T>(ArrayBuilder<BoundStatement> result, ArrayBuilder<T> prologue) where T : BoundNode
@@ -628,7 +628,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
                 else
                 {
-                    result.Add(new BoundExpressionStatement(node.Syntax, (BoundExpression)(BoundNode)node));
+                    result.Add(new(node.Syntax, (BoundExpression)(BoundNode)node));
                 }
             }
 
@@ -662,9 +662,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 MethodSymbol constructor = frame.Constructor.AsMember(frameType);
                 Debug.Assert(TypeSymbol.Equals(frameType, constructor.ContainingType, TypeCompareKind.ConsiderEverything2));
 
-                prologue.Add(new BoundAssignmentOperator(syntax,
-                    new BoundLocal(syntax, framePointer, null, frameType),
-                    new BoundObjectCreationExpression(syntax: syntax, constructor: constructor, binderOpt: null),
+                prologue.Add(new(syntax,
+                    new(syntax, framePointer, null, frameType),
+                    new(syntax: syntax, constructor: constructor, binderOpt: null),
                     frameType));
             }
 
@@ -676,7 +676,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     var capturedFrame = LambdaCapturedVariable.Create(frame, _innermostFramePointer, ref _synthesizedFieldNameIdDispenser);
                     FieldSymbol frameParent = capturedFrame.AsMember(frameType);
-                    BoundExpression left = new(syntax, new BoundLocal(syntax, framePointer, null, frameType), frameParent, null);
+                    BoundExpression left = new(syntax, new(syntax, framePointer, null, frameType), frameParent, null);
                     BoundExpression right = FrameOfType(syntax, frameParent.Type as NamedTypeSymbol);
                     BoundExpression assignment = new(syntax, left, right, left.Type);
                     prologue.Add(assignment);
@@ -766,7 +766,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         throw ExceptionUtilities.UnexpectedValue(symbol.Kind);
                 }
 
-                var left = proxy.Replacement(syntax, frameType1 => new BoundLocal(syntax, framePointer, null, framePointer.Type));
+                var left = proxy.Replacement(syntax, frameType1 => new(syntax, framePointer, null, framePointer.Type));
                 var assignToProxy = new(syntax, left, value, value.Type);
                 if (_currentMethod.MethodKind == MethodKind.Constructor &&
                     symbol == _currentMethod.ThisParameter &&
@@ -792,7 +792,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ParameterSymbol replacementParameter;
             if (_parameterMap.TryGetValue(node.ParameterSymbol, out replacementParameter))
             {
-                return new BoundParameter(node.Syntax, replacementParameter, node.HasErrors);
+                return new(node.Syntax, replacementParameter, node.HasErrors);
             }
 
             return base.VisitUnhoistedParameter(node);
@@ -1078,7 +1078,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         // Insert the this proxy assignment after the ctor call.
                         // Create bound sequence: { ctor call, thisProxyInitDeferred }
-                        return new BoundSequence(
+                        return new(
                             syntax: node.Syntax,
                             locals: ImmutableArray<LocalSymbol>.Empty,
                             sideEffects: ImmutableArray.Create<BoundExpression>(rewritten),
@@ -1157,7 +1157,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (newLocals.Count == 0)
             {
                 newLocals.Free();
-                return new BoundStatementList(node.Syntax, statements);
+                return new(node.Syntax, statements);
             }
 
             return node.Update(newLocals.ToImmutableAndFree(), statements);
@@ -1262,7 +1262,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         newStatements.Add((BoundStatement)this.Visit(s));
                     }
 
-                    return new BoundBlock(node.Syntax, newLocals.ToImmutableAndFree(), newStatements.ToImmutableAndFree(), node.HasErrors);
+                    return new(node.Syntax, newLocals.ToImmutableAndFree(), newStatements.ToImmutableAndFree(), node.HasErrors);
                 });
             }
             else
@@ -1273,7 +1273,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override BoundNode VisitDelegateCreationExpression(BoundDelegateCreationExpression node)
         {
-            // A delegate creation expression of the form "new Action( ()=>{} )" is treated exactly like
+            // A delegate creation expression of the form "new( ()=>{} )" is treated exactly like
             // (Action)(()=>{})
             if (node.Argument.Kind == BoundKind.Lambda)
             {
@@ -1293,7 +1293,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     ref arguments,
                     ref argRefKinds);
 
-                return new BoundDelegateCreationExpression(
+                return new(
                     node.Syntax,
                     receiver,
                     method,
@@ -1350,7 +1350,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 out topLevelMethodId,
                 out lambdaId);
 
-            return new BoundNoOpStatement(node.Syntax, NoOpStatementFlavor.Default);
+            return new(node.Syntax, NoOpStatementFlavor.Default);
         }
 
         private DebugId GetLambdaId(SyntaxNode syntax, ClosureKind closureKind, int closureOrdinal)
@@ -1409,7 +1409,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             int syntaxOffset = _topLevelMethod.CalculateLocalSyntaxOffset(LambdaUtilities.GetDeclaratorPosition(lambdaOrLambdaBodySyntax), lambdaOrLambdaBodySyntax.SyntaxTree);
-            _lambdaDebugInfoBuilder.Add(new LambdaDebugInfo(syntaxOffset, lambdaId, closureOrdinal));
+            _lambdaDebugInfoBuilder.Add(new(syntaxOffset, lambdaId, closureOrdinal));
             return lambdaId;
         }
 
@@ -1585,7 +1585,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (shouldCacheForStaticMethod || shouldCacheInLoop)
             {
-                // replace the expression "new Delegate(frame.M)" with "frame.cache ?? (frame.cache = new(frame.M));
+                // replace the expression "new(frame.M)" with "frame.cache ?? (frame.cache = new(frame.M));
                 var F = new(_currentMethod, node.Syntax, CompilationState, Diagnostics);
                 try
                 {
@@ -1625,7 +1625,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 catch (SyntheticBoundNodeFactory.MissingPredefinedMember ex)
                 {
                     Diagnostics.Add(ex.Diagnostic);
-                    return new BoundBadExpression(F.Syntax, LookupResultKind.Empty, ImmutableArray<Symbol>.Empty, ImmutableArray.Create<BoundExpression>(node), node.Type);
+                    return new(F.Syntax, LookupResultKind.Empty, ImmutableArray<Symbol>.Empty, ImmutableArray.Create<BoundExpression>(node), node.Type);
                 }
             }
 

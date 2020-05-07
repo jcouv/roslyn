@@ -48,7 +48,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 return (temps.Count == 0 && stores.Count == 0) ?
                     conditionalExpression :
-                    new BoundSequence(
+                    new(
                         syntax,
                         temps.ToImmutableAndFree(),
                         stores.ToImmutableAndFree(),

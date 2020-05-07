@@ -40,7 +40,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert(containingSemanticModel != null);
             Debug.Assert(syntax.IsKind(SyntaxKind.VariableDeclarator) || syntax.IsKind(SyntaxKind.EnumMemberDeclaration));
-            return new InitializerSemanticModel(syntax, fieldSymbol, rootBinder, containingSemanticModel);
+            return new(syntax, fieldSymbol, rootBinder, containingSemanticModel);
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert(containingSemanticModel != null);
             Debug.Assert(syntax.IsKind(SyntaxKind.PropertyDeclaration));
-            return new InitializerSemanticModel(syntax, propertySymbol, rootBinder, containingSemanticModel);
+            return new(syntax, propertySymbol, rootBinder, containingSemanticModel);
         }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal static InitializerSemanticModel Create(SyntaxTreeSemanticModel containingSemanticModel, ParameterSyntax syntax, ParameterSymbol parameterSymbol, Binder rootBinder, ImmutableDictionary<Symbol, Symbol> parentRemappedSymbolsOpt)
         {
             Debug.Assert(containingSemanticModel != null);
-            return new InitializerSemanticModel(syntax, parameterSymbol, rootBinder, containingSemanticModel, parentRemappedSymbolsOpt: parentRemappedSymbolsOpt);
+            return new(syntax, parameterSymbol, rootBinder, containingSemanticModel, parentRemappedSymbolsOpt: parentRemappedSymbolsOpt);
         }
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(rootBinder != null);
             Debug.Assert(rootBinder.IsSemanticModelBinder);
 
-            return new InitializerSemanticModel(syntax, owner, rootBinder, parentSemanticModelOpt: parentSemanticModel, parentRemappedSymbolsOpt: parentRemappedSymbolsOpt, speculatedPosition: position);
+            return new(syntax, owner, rootBinder, parentSemanticModelOpt: parentSemanticModel, parentRemappedSymbolsOpt: parentRemappedSymbolsOpt, speculatedPosition: position);
         }
 
         internal protected override CSharpSyntaxNode GetBindableSyntaxNode(CSharpSyntaxNode node)
@@ -177,7 +177,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         var property = (SourcePropertySymbol)this.MemberSymbol;
                         BoundFieldEqualsValue result = binder.BindFieldInitializer(property.BackingField, equalsValue, diagnostics);
-                        return new BoundPropertyEqualsValue(result.Syntax, property, result.Locals, result.Value);
+                        return new(result.Syntax, property, result.Locals, result.Value);
                     }
 
                 case SymbolKind.Parameter:

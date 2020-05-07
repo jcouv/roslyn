@@ -138,7 +138,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             // emit initializers for all values of the leftmost index.
             for (int i = 0; i < inits.Length; i++)
             {
-                indices.Push(new IndexDesc(i, ((BoundArrayInitialization)inits[i]).Initializers));
+                indices.Push(new(i, ((BoundArrayInitialization)inits[i]).Initializers));
                 EmitAllElementInitializersRecursive(arrayType, indices, includeConstants);
             }
 
@@ -172,7 +172,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 // emit initializers for the less significant indices recursively
                 for (int i = 0; i < inits.Length; i++)
                 {
-                    indices.Push(new IndexDesc(i, ((BoundArrayInitialization)inits[i]).Initializers));
+                    indices.Push(new(i, ((BoundArrayInitialization)inits[i]).Initializers));
                     EmitAllElementInitializersRecursive(arrayType, indices, includeConstants);
                 }
             }

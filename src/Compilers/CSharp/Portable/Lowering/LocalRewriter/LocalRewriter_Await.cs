@@ -23,7 +23,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private BoundExpression RewriteAwaitExpression(SyntaxNode syntax, BoundExpression rewrittenExpression, BoundAwaitableInfo awaitableInfo, TypeSymbol type, bool used)
         {
-            return RewriteAwaitExpression(new BoundAwaitExpression(syntax, rewrittenExpression, awaitableInfo, type) { WasCompilerGenerated = true }, used);
+            return RewriteAwaitExpression(new(syntax, rewrittenExpression, awaitableInfo, type) { WasCompilerGenerated = true }, used);
         }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             _needsSpilling = true;
             var tempAccess = _factory.StoreToTemp(rewrittenAwait, out BoundAssignmentOperator tempAssignment, syntaxOpt: rewrittenAwait.Syntax,
                 kind: SynthesizedLocalKind.Spill);
-            return new BoundSpillSequence(
+            return new(
                 syntax: rewrittenAwait.Syntax,
                 locals: ImmutableArray.Create<LocalSymbol>(tempAccess.LocalSymbol),
                 sideEffects: ImmutableArray.Create<BoundExpression>(tempAssignment),

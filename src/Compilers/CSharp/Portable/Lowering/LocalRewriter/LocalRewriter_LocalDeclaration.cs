@@ -56,9 +56,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             BoundStatement rewrittenLocalDeclaration = new(
                 syntax,
-                new BoundAssignmentOperator(
+                new(
                     syntax,
-                    new BoundLocal(
+                    new(
                         syntax,
                         localSymbol,
                         null,

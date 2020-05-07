@@ -24,12 +24,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public static MergedNamespaceDeclaration Create(ImmutableArray<SingleNamespaceDeclaration> declarations)
         {
-            return new MergedNamespaceDeclaration(declarations);
+            return new(declarations);
         }
 
         public static MergedNamespaceDeclaration Create(SingleNamespaceDeclaration declaration)
         {
-            return new MergedNamespaceDeclaration(ImmutableArray.Create(declaration));
+            return new(ImmutableArray.Create(declaration));
         }
 
         public override DeclarationKind Kind
@@ -45,7 +45,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             LexicalSortKey sortKey = new(_declarations[0].NameLocation, compilation);
             for (var i = 1; i < _declarations.Length; i++)
             {
-                sortKey = LexicalSortKey.First(sortKey, new LexicalSortKey(_declarations[i].NameLocation, compilation));
+                sortKey = LexicalSortKey.First(sortKey, new(_declarations[i].NameLocation, compilation));
             }
 
             return sortKey;
@@ -159,7 +159,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 if (allTypesHaveSameIdentity)
                 {
-                    children.Add(new MergedTypeDeclaration(types.ToImmutableAndFree()));
+                    children.Add(new(types.ToImmutableAndFree()));
                 }
                 else
                 {
@@ -168,7 +168,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     foreach (var typeGroup in typeGroups.Values)
                     {
-                        children.Add(new MergedTypeDeclaration(typeGroup));
+                        children.Add(new(typeGroup));
                     }
                 }
             }

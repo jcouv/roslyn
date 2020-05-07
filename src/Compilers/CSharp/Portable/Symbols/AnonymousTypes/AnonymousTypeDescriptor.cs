@@ -111,8 +111,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             Debug.Assert(!newFieldTypes.IsDefault);
             Debug.Assert(newFieldTypes.Length == this.Fields.Length);
 
-            var newFields = this.Fields.SelectAsArray((field, i, types) => new AnonymousTypeField(field.Name, field.Location, types[i]), newFieldTypes);
-            return new AnonymousTypeDescriptor(newFields, this.Location);
+            var newFields = this.Fields.SelectAsArray((field, i, types) => new(field.Name, field.Location, types[i]), newFieldTypes);
+            return new(newFields, this.Location);
         }
     }
 }

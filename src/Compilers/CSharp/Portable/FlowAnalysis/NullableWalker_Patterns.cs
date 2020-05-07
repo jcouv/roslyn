@@ -181,7 +181,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     var labelResult = labelStateMap.TryGetValue(label.Label, out var s1) ? s1 : (state: UnreachableState(), believedReachable: false);
                     SetState(labelResult.state);
-                    PendingBranches.Add(new PendingBranch(label, this.State, label.Label));
+                    PendingBranches.Add(new(label, this.State, label.Label));
                 }
             }
 
@@ -572,7 +572,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             TypeSymbol inferredType =
                 (inferType ? BestTypeInferrer.InferBestType(placeholders, _conversions, ref useSiteDiagnostics) : null)
                     ?? node.Type?.SetUnknownNullabilityForReferenceTypes()
-                    ?? new ExtendedErrorTypeSymbol(this.compilation, "", arity: 0, errorInfo: null, unreported: false);
+                    ?? new(this.compilation, "", arity: 0, errorInfo: null, unreported: false);
 
             var inferredTypeWithAnnotations = TypeWithAnnotations.Create(inferredType);
 

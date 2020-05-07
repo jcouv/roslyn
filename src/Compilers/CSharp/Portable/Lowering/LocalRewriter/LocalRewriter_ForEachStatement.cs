@@ -321,7 +321,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // if ((object)e != null) ((IDisposable)e).Dispose(); 
                     alwaysOrMaybeDisposeStmt = RewriteIfStatement(
                         syntax: forEachSyntax,
-                        rewrittenCondition: new BoundBinaryOperator(forEachSyntax,
+                        rewrittenCondition: new(forEachSyntax,
                             operatorKind: BinaryOperatorKind.NotEqual,
                             left: MakeConversionNode(
                                 syntax: forEachSyntax,
@@ -381,7 +381,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // if (d != null) d.Dispose();
                 BoundStatement ifStmt = RewriteIfStatement(
                     syntax: forEachSyntax,
-                    rewrittenCondition: new BoundBinaryOperator(forEachSyntax,
+                    rewrittenCondition: new(forEachSyntax,
                         operatorKind: BinaryOperatorKind.NotEqual, // reference equality
                         left: boundDisposableVar,
                         right: MakeLiteral(forEachSyntax, constantValue: ConstantValue.Null, type: null),
@@ -410,7 +410,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             //     /* dispose of e */
             // }
             BoundStatement tryFinally = new(forEachSyntax,
-                tryBlock: new BoundBlock(forEachSyntax,
+                tryBlock: new(forEachSyntax,
                     locals: ImmutableArray<LocalSymbol>.Empty,
                     statements: ImmutableArray.Create<BoundStatement>(rewrittenBody)),
                 catchBlocks: ImmutableArray<BoundCatchBlock>.Empty,
@@ -426,7 +426,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             TypeSymbol awaitExpressionType = disposeAwaitableInfoOpt.GetResult?.ReturnType ?? _compilation.DynamicType;
             var awaitExpr = RewriteAwaitExpression(forEachSyntax, disposeCall, disposeAwaitableInfoOpt, awaitExpressionType, used: false);
-            return new BoundExpressionStatement(forEachSyntax, awaitExpr);
+            return new(forEachSyntax, awaitExpr);
         }
 
         /// <summary>
@@ -671,7 +671,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // The EnC source mapping infrastructure requires each closure within a method body
             // to have a unique syntax offset. Hence we associate the bound block declaring the
             // iteration variable with the foreach statement, not the embedded statement.
-            return new BoundBlock(
+            return new(
                 forEachSyntax,
                 locals: iterationVariables,
                 statements: ImmutableArray.Create(iteratorVariableInitialization, rewrittenBody));
@@ -694,14 +694,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             // The EnC source mapping infrastructure requires each closure within a method body
             // to have a unique syntax offset. Hence we associate the bound block declaring the
             // iteration variable with the foreach statement, not the embedded statement.
-            return new BoundBlock(
+            return new(
                 forEachSyntax,
                 locals: iterationVariables,
                 statements: ImmutableArray.Create(
                     iteratorVariableInitialization,
                     checkAndBreak,
                     rewrittenBody,
-                    new BoundLabelStatement(forEachSyntax, continueLabel)));
+                    new(forEachSyntax, continueLabel)));
         }
 
         /// <summary>
@@ -761,7 +761,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // (V)a[p]
             BoundExpression iterationVarInitValue = MakeConversionNode(
                 syntax: forEachSyntax,
-                rewrittenOperand: new BoundArrayAccess(
+                rewrittenOperand: new(
                     syntax: forEachSyntax,
                     expression: boundArrayVar,
                     indices: ImmutableArray.Create<BoundExpression>(boundPositionVar),
@@ -917,7 +917,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // (V)a[p_0, p_1, ...]
             BoundExpression iterationVarInitValue = MakeConversionNode(
                 syntax: forEachSyntax,
-                rewrittenOperand: new BoundArrayAccess(forEachSyntax,
+                rewrittenOperand: new(forEachSyntax,
                     expression: boundArrayVar,
                     indices: ImmutableArray.Create((BoundExpression[])boundPositionVar),
                     type: arrayType.ElementType),
@@ -963,7 +963,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 GeneratedLabelSymbol breakLabel = dimension == 0 // outermost for-loop
                     ? node.BreakLabel // i.e. the one that break statements will jump to
-                    : new GeneratedLabelSymbol("break"); // Should not affect emitted code since unused
+                    : new("break"); // Should not affect emitted code since unused
 
                 // p_dimension <= q_dimension  //NB: OrEqual
                 BoundExpression exitCondition = new(
@@ -1039,7 +1039,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private static BoundLocal MakeBoundLocal(CSharpSyntaxNode syntax, LocalSymbol local, TypeSymbol type)
         {
-            return new BoundLocal(syntax,
+            return new(syntax,
                 localSymbol: local,
                 constantValueOpt: null,
                 type: type);
@@ -1063,10 +1063,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             // but we add a hidden sequence point to avoid disrupting the stepping experience.
             // A bound sequence point is permitted to have a null syntax to make a hidden sequence point.
             return BoundSequencePoint.CreateHidden(
-                statementOpt: new BoundExpressionStatement(syntax,
-                    expression: new BoundAssignmentOperator(syntax,
+                statementOpt: new(syntax,
+                    expression: new(syntax,
                         left: boundPositionVar,
-                        right: new BoundBinaryOperator(syntax,
+                        right: new(syntax,
                             operatorKind: BinaryOperatorKind.IntAddition, // unchecked, never overflows since array/string index can't be >= Int32.MaxValue
                             left: boundPositionVar,
                             right: MakeLiteral(syntax,
@@ -1138,7 +1138,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return BoundStatementList.Synthesized(syntax, hasErrors: false,
                  startLabelStatement,
                  body,
-                 new BoundGotoStatement(syntax, startLabel));
+                 new(syntax, startLabel));
         }
     }
 }

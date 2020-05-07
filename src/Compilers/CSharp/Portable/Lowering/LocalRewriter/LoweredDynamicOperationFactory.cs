@@ -669,7 +669,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 delegateInvoke,
                 callSiteArguments);
 
-            return new LoweredDynamicOperation(_factory, siteInitialization, siteInvocation, resultType, temps);
+            return new(_factory, siteInitialization, siteInvocation, resultType, temps);
         }
 
         /// <summary>

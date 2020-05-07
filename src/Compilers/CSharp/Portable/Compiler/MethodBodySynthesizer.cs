@@ -38,8 +38,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression receiver = new(syntax, constructor.ContainingType) { WasCompilerGenerated = true };
 
             BoundStatement baseConstructorCall =
-                new BoundExpressionStatement(syntax,
-                    new BoundCall(syntax,
+                new(syntax,
+                    new(syntax,
                         receiverOpt: receiver,
                         method: objectType.InstanceConstructors[0],
                         arguments: ImmutableArray<BoundExpression>.Empty,
@@ -96,11 +96,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(slotIndex >= 0);
 
             // <submission_array>[<slot_index] = this;
-            statements.Add(new BoundExpressionStatement(syntax,
-                new BoundAssignmentOperator(syntax,
-                    new BoundArrayAccess(syntax,
+            statements.Add(new(syntax,
+                new(syntax,
+                    new(syntax,
                         submissionArrayReference,
-                        ImmutableArray.Create<BoundExpression>(new BoundLiteral(syntax, ConstantValue.Create(slotIndex), intType) { WasCompilerGenerated = true }),
+                        ImmutableArray.Create<BoundExpression>(new(syntax, ConstantValue.Create(slotIndex), intType) { WasCompilerGenerated = true }),
                         objectType)
                     { WasCompilerGenerated = true },
                     thisReference,
@@ -114,13 +114,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // <host_object> = (<host_object_type>)<submission_array>[0]
                 statements.Add(
-                    new BoundExpressionStatement(syntax,
-                        new BoundAssignmentOperator(syntax,
-                            new BoundFieldAccess(syntax, thisReference, hostObjectField, ConstantValue.NotAvailable) { WasCompilerGenerated = true },
+                    new(syntax,
+                        new(syntax,
+                            new(syntax, thisReference, hostObjectField, ConstantValue.NotAvailable) { WasCompilerGenerated = true },
                             BoundConversion.Synthesized(syntax,
-                                new BoundArrayAccess(syntax,
+                                new(syntax,
                                     submissionArrayReference,
-                                    ImmutableArray.Create<BoundExpression>(new BoundLiteral(syntax, ConstantValue.Create(0), intType) { WasCompilerGenerated = true }),
+                                    ImmutableArray.Create<BoundExpression>(new(syntax, ConstantValue.Create(0), intType) { WasCompilerGenerated = true }),
                                     objectType),
                                 Conversion.ExplicitReference,
                                 false,
@@ -142,13 +142,13 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 // this.<field> = (<target_script_type>)<submission_array>[<target_submission_index>];
                 statements.Add(
-                    new BoundExpressionStatement(syntax,
-                        new BoundAssignmentOperator(syntax,
-                            new BoundFieldAccess(syntax, thisReference, field, ConstantValue.NotAvailable) { WasCompilerGenerated = true },
+                    new(syntax,
+                        new(syntax,
+                            new(syntax, thisReference, field, ConstantValue.NotAvailable) { WasCompilerGenerated = true },
                             BoundConversion.Synthesized(syntax,
-                                new BoundArrayAccess(syntax,
+                                new(syntax,
                                     submissionArrayReference,
-                                    ImmutableArray.Create<BoundExpression>(new BoundLiteral(syntax, ConstantValue.Create(targetSubmissionIndex), intType) { WasCompilerGenerated = true }),
+                                    ImmutableArray.Create<BoundExpression>(new(syntax, ConstantValue.Create(targetSubmissionIndex), intType) { WasCompilerGenerated = true }),
                                     objectType)
                                 { WasCompilerGenerated = true },
                                 Conversion.ExplicitReference,
@@ -195,10 +195,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var parameter = accessor.Parameters[0];
                 statement = new(
                     accessor.SyntaxNode,
-                    new BoundAssignmentOperator(
+                    new(
                         syntax,
                         fieldAccess,
-                        new BoundParameter(syntax, parameter) { WasCompilerGenerated = true },
+                        new(syntax, parameter) { WasCompilerGenerated = true },
                         property.Type)
                     { WasCompilerGenerated = true });
             }
@@ -274,7 +274,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // _tokenTable
             BoundFieldAccess fieldAccess = new(
                 syntax,
-                field.IsStatic ? null : new BoundThisReference(syntax, accessor.ThisParameter.Type),
+                field.IsStatic ? null : new(syntax, accessor.ThisParameter.Type),
                 field,
                 constantValueOpt: null)
             { WasCompilerGenerated = true };
@@ -357,7 +357,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (updateMethod == null)
             {
                 MemberDescriptor memberDescriptor = SpecialMembers.GetDescriptor(updateMethodId);
-                diagnostics.Add(new CSDiagnostic(new CSDiagnosticInfo(ErrorCode.ERR_MissingPredefinedMember,
+                diagnostics.Add(new(new(ErrorCode.ERR_MissingPredefinedMember,
                                                                       memberDescriptor.DeclaringTypeMetadataName,
                                                                       memberDescriptor.Name),
                                                                       syntax.Location));
@@ -369,7 +369,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             BoundThisReference fieldReceiver = eventSymbol.IsStatic ?
                 null :
-                new BoundThisReference(syntax, thisParameter.Type) { WasCompilerGenerated = true };
+                new(syntax, thisParameter.Type) { WasCompilerGenerated = true };
 
             BoundFieldAccess boundBackingField = new(syntax,
                 receiver: fieldReceiver,
@@ -398,7 +398,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 // _event = (DelegateType)Delegate.Combine(_event, value);
                 BoundStatement eventUpdate = new(syntax,
-                    expression: new BoundAssignmentOperator(syntax,
+                    expression: new(syntax,
                         left: boundBackingField,
                         right: delegateUpdate,
                         type: delegateType)
@@ -430,7 +430,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // tmp0 = _event;
             BoundStatement tmp0Init = new(syntax,
-                expression: new BoundAssignmentOperator(syntax,
+                expression: new(syntax,
                     left: boundTmps[0],
                     right: boundBackingField,
                     type: delegateType)
@@ -444,7 +444,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // tmp1 = tmp0;
             BoundStatement tmp1Update = new(syntax,
-                expression: new BoundAssignmentOperator(syntax,
+                expression: new(syntax,
                     left: boundTmps[1],
                     right: boundTmps[0],
                     type: delegateType)
@@ -462,7 +462,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // tmp2 = (DelegateType)Delegate.Combine(tmp1, value);
             BoundStatement tmp2Update = new(syntax,
-                expression: new BoundAssignmentOperator(syntax,
+                expression: new(syntax,
                     left: boundTmps[2],
                     right: delegateUpdate,
                     type: delegateType)
@@ -477,7 +477,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // tmp0 = Interlocked.CompareExchange<DelegateType>(ref _event, tmp2, tmp1);
             BoundStatement tmp0Update = new(syntax,
-                expression: new BoundAssignmentOperator(syntax,
+                expression: new(syntax,
                     left: boundTmps[0],
                     right: compareExchange,
                     type: delegateType)
@@ -502,7 +502,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 label: loopLabel)
             { WasCompilerGenerated = true };
 
-            return new BoundBlock(syntax,
+            return new(syntax,
                 locals: tmps.AsImmutable(),
                 statements: ImmutableArray.Create<BoundStatement>(
                     tmp0Init,
@@ -533,7 +533,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     syntax,
                     BoundCall.Synthesized(
                         syntax,
-                        new BoundBaseReference(
+                        new(
                             syntax,
                             method.ContainingType)
                         { WasCompilerGenerated = true },
@@ -549,15 +549,15 @@ namespace Microsoft.CodeAnalysis.CSharp
                         ((BlockSyntax)syntax).CloseBraceToken.Span);
                 }
 
-                return new BoundBlock(
+                return new(
                     syntax,
                     ImmutableArray<LocalSymbol>.Empty,
                     ImmutableArray.Create<BoundStatement>(
-                        new BoundTryStatement(
+                        new(
                             syntax,
                             block,
                             ImmutableArray<BoundCatchBlock>.Empty,
-                            new BoundBlock(
+                            new(
                                 syntax,
                                 ImmutableArray<LocalSymbol>.Empty,
                                 ImmutableArray.Create<BoundStatement>(

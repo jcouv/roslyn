@@ -32,7 +32,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             ImmutableDictionary<ISymbolInternal, ImmutableArray<ISymbolInternal>> otherSynthesizedMembersOpt)
         {
             _defs = new(sourceContext, otherContext);
-            _symbols = new(anonymousTypeMap, sourceAssembly, otherAssembly, otherSynthesizedMembersOpt, new DeepTranslator(otherAssembly.GetSpecialType(SpecialType.System_Object)));
+            _symbols = new(anonymousTypeMap, sourceAssembly, otherAssembly, otherSynthesizedMembersOpt, new(otherAssembly.GetSpecialType(SpecialType.System_Object)));
         }
 
         public CSharpSymbolMatcher(
@@ -558,7 +558,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                     return null;
                 }
                 var otherModifiers = VisitCustomModifiers(symbol.PointedAtTypeWithAnnotations.CustomModifiers);
-                return new PointerTypeSymbol(symbol.PointedAtTypeWithAnnotations.WithTypeAndModifiers(otherPointedAtType, otherModifiers));
+                return new(symbol.PointedAtTypeWithAnnotations.WithTypeAndModifiers(otherPointedAtType, otherModifiers));
             }
 
             public override Symbol VisitProperty(PropertySymbol symbol)
@@ -912,7 +912,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             {
                 var translatedPointedAtType = (TypeSymbol)this.Visit(symbol.PointedAtType);
                 var translatedModifiers = VisitCustomModifiers(symbol.PointedAtTypeWithAnnotations.CustomModifiers);
-                return new PointerTypeSymbol(symbol.PointedAtTypeWithAnnotations.WithTypeAndModifiers(translatedPointedAtType, translatedModifiers));
+                return new(symbol.PointedAtTypeWithAnnotations.WithTypeAndModifiers(translatedPointedAtType, translatedModifiers));
             }
 
             public override Symbol VisitTypeParameter(TypeParameterSymbol symbol)

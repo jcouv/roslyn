@@ -451,7 +451,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     haveParseError = true;
                     if (reportDiagnosticsForCurrentTrivia)
                     {
-                        Location location = new(trivia.SyntaxTree, new TextSpan(trivia.SpanStart, 0));
+                        Location location = new(trivia.SyntaxTree, new(trivia.SpanStart, 0));
                         _diagnostics.Add(ErrorCode.WRN_XMLParseError, location, GetDescription(e));
                     }
                 }
@@ -1097,7 +1097,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 _temporaryStringBuilders = new Stack<TemporaryStringBuilder>();
             }
 
-            _temporaryStringBuilders.Push(new TemporaryStringBuilder(_indentDepth));
+            _temporaryStringBuilders.Push(new(_indentDepth));
         }
 
         private string GetAndEndTemporaryString()
@@ -1191,7 +1191,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return "            ";
                 default:
                     Debug.Assert(false, "Didn't expect nesting to reach depth " + depth);
-                    return new string(' ', depth * 4);
+                    return new(' ', depth * 4);
             }
         }
 

@@ -19,7 +19,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // Rewrite the arguments.
             var rewrittenArguments = VisitList(node.Arguments);
 
-            return new BoundObjectCreationExpression(
+            return new(
                 syntax: node.Syntax,
                 constructor: node.Constructor,
                 arguments: rewrittenArguments,

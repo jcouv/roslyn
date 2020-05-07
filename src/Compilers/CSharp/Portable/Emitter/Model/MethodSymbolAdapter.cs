@@ -271,7 +271,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             MethodSymbol methodSymbol = this.ConstructedFrom;
 
-            return new SpecializedMethodReference(methodSymbol);
+            return new(methodSymbol);
         }
 
         Cci.IMethodReference Cci.ISpecializedMethodReference.UnspecializedVersion

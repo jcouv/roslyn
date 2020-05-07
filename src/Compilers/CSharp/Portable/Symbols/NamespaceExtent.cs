@@ -44,7 +44,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     return (ModuleSymbol)_symbolOrCompilation;
                 }
 
-                throw new InvalidOperationException();
+                throw new();
             }
         }
 
@@ -61,7 +61,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     return (AssemblySymbol)_symbolOrCompilation;
                 }
 
-                throw new InvalidOperationException();
+                throw new();
             }
         }
 
@@ -78,7 +78,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     return (CSharpCompilation)_symbolOrCompilation;
                 }
 
-                throw new InvalidOperationException();
+                throw new();
             }
         }
 

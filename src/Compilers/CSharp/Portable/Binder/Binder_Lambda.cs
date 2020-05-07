@@ -262,7 +262,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (data.HasNames)
             {
-                var binder = new LocalScopeBinder(this);
+                var binder = new(this);
                 bool allowShadowingNames = binder.Compilation.IsFeatureEnabled(MessageID.IDS_FeatureNameShadowingInNestedFunctions);
                 var pNames = PooledHashSet<string>.GetInstance();
                 bool seenDiscard = false;

@@ -185,7 +185,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (_staticLocalFunction is object && Symbol.IsCaptured(symbol, _staticLocalFunction))
             {
-                Error(ErrorCode.ERR_StaticLocalFunctionCannotCaptureVariable, node, new FormattedSymbol(symbol, SymbolDisplayFormat.ShortFormat));
+                Error(ErrorCode.ERR_StaticLocalFunctionCannotCaptureVariable, node, new(symbol, SymbolDisplayFormat.ShortFormat));
             }
         }
 

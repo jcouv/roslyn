@@ -232,7 +232,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit.NoPia
             if (hasGuid)
             {
                 // This is an interface with a GuidAttribute, so we will generate the no-parameter TypeIdentifier.
-                return new SynthesizedAttributeData(ctor, ImmutableArray<TypedConstant>.Empty, ImmutableArray<KeyValuePair<string, TypedConstant>>.Empty);
+                return new(ctor, ImmutableArray<TypedConstant>.Empty, ImmutableArray<KeyValuePair<string, TypedConstant>>.Empty);
             }
             else
             {
@@ -248,9 +248,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit.NoPia
                 if ((object)stringType != null)
                 {
                     string guidString = TypeManager.GetAssemblyGuidString(UnderlyingNamedType.ContainingAssembly);
-                    return new SynthesizedAttributeData(ctor,
-                                    ImmutableArray.Create(new TypedConstant(stringType, TypedConstantKind.Primitive, guidString),
-                                                    new TypedConstant(stringType, TypedConstantKind.Primitive,
+                    return new(ctor,
+                                    ImmutableArray.Create(new(stringType, TypedConstantKind.Primitive, guidString),
+                                                    new(stringType, TypedConstantKind.Primitive,
                                                                             UnderlyingNamedType.ToDisplayString(SymbolDisplayFormat.QualifiedNameOnlyFormat))),
                                     ImmutableArray<KeyValuePair<string, TypedConstant>>.Empty);
                 }

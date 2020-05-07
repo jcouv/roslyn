@@ -168,61 +168,61 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public static MemberAnalysisResult NameUsedForPositional(int argumentPosition)
         {
-            return new MemberAnalysisResult(
+            return new(
                 MemberResolutionKind.NameUsedForPositional,
                 badArgumentsOpt: ImmutableArray.Create<int>(argumentPosition));
         }
 
         public static MemberAnalysisResult BadNonTrailingNamedArgument(int argumentPosition)
         {
-            return new MemberAnalysisResult(
+            return new(
                 MemberResolutionKind.BadNonTrailingNamedArgument,
                 badArgumentsOpt: ImmutableArray.Create<int>(argumentPosition));
         }
 
         public static MemberAnalysisResult NoCorrespondingParameter(int argumentPosition)
         {
-            return new MemberAnalysisResult(
+            return new(
                 MemberResolutionKind.NoCorrespondingParameter,
                 badArgumentsOpt: ImmutableArray.Create<int>(argumentPosition));
         }
 
         public static MemberAnalysisResult NoCorrespondingNamedParameter(int argumentPosition)
         {
-            return new MemberAnalysisResult(
+            return new(
                 MemberResolutionKind.NoCorrespondingNamedParameter,
                 badArgumentsOpt: ImmutableArray.Create<int>(argumentPosition));
         }
 
         public static MemberAnalysisResult DuplicateNamedArgument(int argumentPosition)
         {
-            return new MemberAnalysisResult(
+            return new(
                 MemberResolutionKind.DuplicateNamedArgument,
                 badArgumentsOpt: ImmutableArray.Create<int>(argumentPosition));
         }
 
         public static MemberAnalysisResult RequiredParameterMissing(int parameterPosition)
         {
-            return new MemberAnalysisResult(
+            return new(
                 MemberResolutionKind.RequiredParameterMissing,
                 missingParameter: parameterPosition);
         }
 
         public static MemberAnalysisResult UseSiteError()
         {
-            return new MemberAnalysisResult(MemberResolutionKind.UseSiteError);
+            return new(MemberResolutionKind.UseSiteError);
         }
 
         public static MemberAnalysisResult UnsupportedMetadata()
         {
-            return new MemberAnalysisResult(MemberResolutionKind.UnsupportedMetadata);
+            return new(MemberResolutionKind.UnsupportedMetadata);
         }
 
         public static MemberAnalysisResult BadArgumentConversions(ImmutableArray<int> argsToParamsOpt, ImmutableArray<int> badArguments, ImmutableArray<Conversion> conversions)
         {
             Debug.Assert(conversions.Length != 0);
             Debug.Assert(badArguments.Length != 0);
-            return new MemberAnalysisResult(
+            return new(
                 MemberResolutionKind.BadArgumentConversion,
                 badArguments,
                 argsToParamsOpt,
@@ -231,69 +231,69 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public static MemberAnalysisResult InaccessibleTypeArgument()
         {
-            return new MemberAnalysisResult(MemberResolutionKind.InaccessibleTypeArgument);
+            return new(MemberResolutionKind.InaccessibleTypeArgument);
         }
 
         public static MemberAnalysisResult TypeInferenceFailed()
         {
-            return new MemberAnalysisResult(MemberResolutionKind.TypeInferenceFailed);
+            return new(MemberResolutionKind.TypeInferenceFailed);
         }
 
         public static MemberAnalysisResult TypeInferenceExtensionInstanceArgumentFailed()
         {
-            return new MemberAnalysisResult(MemberResolutionKind.TypeInferenceExtensionInstanceArgument);
+            return new(MemberResolutionKind.TypeInferenceExtensionInstanceArgument);
         }
 
         public static MemberAnalysisResult StaticInstanceMismatch()
         {
-            return new MemberAnalysisResult(MemberResolutionKind.StaticInstanceMismatch);
+            return new(MemberResolutionKind.StaticInstanceMismatch);
         }
 
         public static MemberAnalysisResult ConstructedParameterFailedConstraintsCheck(int parameterPosition)
         {
-            return new MemberAnalysisResult(
+            return new(
                 MemberResolutionKind.ConstructedParameterFailedConstraintCheck,
                 missingParameter: parameterPosition);
         }
 
         public static MemberAnalysisResult WrongRefKind()
         {
-            return new MemberAnalysisResult(MemberResolutionKind.WrongRefKind);
+            return new(MemberResolutionKind.WrongRefKind);
         }
 
         public static MemberAnalysisResult WrongReturnType()
         {
-            return new MemberAnalysisResult(MemberResolutionKind.WrongReturnType);
+            return new(MemberResolutionKind.WrongReturnType);
         }
 
         public static MemberAnalysisResult LessDerived()
         {
-            return new MemberAnalysisResult(MemberResolutionKind.LessDerived);
+            return new(MemberResolutionKind.LessDerived);
         }
 
         public static MemberAnalysisResult NormalForm(ImmutableArray<int> argsToParamsOpt, ImmutableArray<Conversion> conversions, bool hasAnyRefOmittedArgument)
         {
-            return new MemberAnalysisResult(MemberResolutionKind.ApplicableInNormalForm, default(ImmutableArray<int>), argsToParamsOpt, conversions, hasAnyRefOmittedArgument: hasAnyRefOmittedArgument);
+            return new(MemberResolutionKind.ApplicableInNormalForm, default(ImmutableArray<int>), argsToParamsOpt, conversions, hasAnyRefOmittedArgument: hasAnyRefOmittedArgument);
         }
 
         public static MemberAnalysisResult ExpandedForm(ImmutableArray<int> argsToParamsOpt, ImmutableArray<Conversion> conversions, bool hasAnyRefOmittedArgument)
         {
-            return new MemberAnalysisResult(MemberResolutionKind.ApplicableInExpandedForm, default(ImmutableArray<int>), argsToParamsOpt, conversions, hasAnyRefOmittedArgument: hasAnyRefOmittedArgument);
+            return new(MemberResolutionKind.ApplicableInExpandedForm, default(ImmutableArray<int>), argsToParamsOpt, conversions, hasAnyRefOmittedArgument: hasAnyRefOmittedArgument);
         }
 
         public static MemberAnalysisResult Worse()
         {
-            return new MemberAnalysisResult(MemberResolutionKind.Worse);
+            return new(MemberResolutionKind.Worse);
         }
 
         public static MemberAnalysisResult Worst()
         {
-            return new MemberAnalysisResult(MemberResolutionKind.Worst);
+            return new(MemberResolutionKind.Worst);
         }
 
         internal static MemberAnalysisResult ConstraintFailure(ImmutableArray<TypeParameterDiagnosticInfo> constraintFailureDiagnostics)
         {
-            return new MemberAnalysisResult(MemberResolutionKind.ConstraintFailure, constraintFailureDiagnosticsOpt: constraintFailureDiagnostics);
+            return new(MemberResolutionKind.ConstraintFailure, constraintFailureDiagnosticsOpt: constraintFailureDiagnostics);
         }
     }
 }

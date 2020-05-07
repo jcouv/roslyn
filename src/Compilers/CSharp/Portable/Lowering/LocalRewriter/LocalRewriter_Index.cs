@@ -30,7 +30,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (!node.Type.IsNullableType())
             {
-                return new BoundObjectCreationExpression(node.Syntax, node.MethodOpt, binderOpt: null, operand, fromEnd);
+                return new(node.Syntax, node.MethodOpt, binderOpt: null, operand, fromEnd);
             }
 
             ArrayBuilder<BoundExpression> sideeffects = ArrayBuilder<BoundExpression>.GetInstance();
@@ -40,7 +40,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             operand = CaptureExpressionInTempIfNeeded(operand, sideeffects, locals);
             BoundExpression condition = MakeOptimizedHasValue(operand.Syntax, operand);
 
-            // new Index(operand, fromEnd: true)
+            // new(operand, fromEnd: true)
             BoundExpression boundOperandGetValueOrDefault = MakeOptimizedGetValueOrDefault(operand.Syntax, operand);
             BoundExpression indexCreation = new(node.Syntax, node.MethodOpt, binderOpt: null, boundOperandGetValueOrDefault, fromEnd);
 
@@ -49,13 +49,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return BadExpression(node.Syntax, node.Type, operand);
             }
 
-            // new Nullable(new Index(operand, fromEnd: true))
+            // new(new(operand, fromEnd: true))
             BoundExpression consequence = new(node.Syntax, nullableCtor, binderOpt: null, indexCreation);
 
             // default
             BoundExpression alternative = new(node.Syntax, node.Type);
 
-            // operand.HasValue ? new Nullable(new Index(operand, fromEnd: true)) : default
+            // operand.HasValue ? new(new(operand, fromEnd: true)) : default
             BoundExpression conditionalExpression = RewriteConditionalOperator(
                 syntax: node.Syntax,
                 rewrittenCondition: condition,
@@ -65,7 +65,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 rewrittenType: node.Type,
                 isRef: false);
 
-            return new BoundSequence(
+            return new(
                 syntax: node.Syntax,
                 locals: locals.ToImmutableAndFree(),
                 sideEffects: sideeffects.ToImmutableAndFree(),

@@ -27,7 +27,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         protected override ConversionsBase CreateInstance(int currentRecursionDepth)
         {
-            return new Conversions(_binder, currentRecursionDepth, IncludeNullability, otherNullabilityOpt: null);
+            return new(_binder, currentRecursionDepth, IncludeNullability, otherNullabilityOpt: null);
         }
 
         private CSharpCompilation Compilation { get { return _binder.Compilation; } }
@@ -35,7 +35,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         protected override ConversionsBase WithNullabilityCore(bool includeNullability)
         {
             Debug.Assert(IncludeNullability != includeNullability);
-            return new Conversions(_binder, currentRecursionDepth, includeNullability, this);
+            return new(_binder, currentRecursionDepth, includeNullability, this);
         }
 
         public override Conversion GetMethodGroupConversion(BoundMethodGroup source, TypeSymbol destination, ref HashSet<DiagnosticInfo> useSiteDiagnostics)
@@ -242,7 +242,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         TypeWithAnnotations.Create(compilation.GetSpecialType(SpecialType.System_Object), customModifiers: parameter.TypeWithAnnotations.CustomModifiers), parameter.RefCustomModifiers, parameter.IsParams, parameter.RefKind);
                 }
 
-                analyzedArguments.Arguments.Add(new BoundParameter(syntax, parameter) { WasCompilerGenerated = true });
+                analyzedArguments.Arguments.Add(new(syntax, parameter) { WasCompilerGenerated = true });
                 analyzedArguments.RefKinds.Add(parameter.RefKind);
             }
         }
@@ -301,7 +301,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             Debug.Assert(method.ParameterCount == delegateType.DelegateInvokeMethod.ParameterCount + (methodGroup.IsExtensionMethodGroup ? 1 : 0));
 
-            return new Conversion(ConversionKind.MethodGroup, method, methodGroup.IsExtensionMethodGroup);
+            return new(ConversionKind.MethodGroup, method, methodGroup.IsExtensionMethodGroup);
         }
 
         public override Conversion GetStackAllocConversion(BoundStackAllocArrayCreation sourceExpression, TypeSymbol destination, ref HashSet<DiagnosticInfo> useSiteDiagnostics)

@@ -1110,7 +1110,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // ...
             // void M<U>(U u) where U : C, IGoo { u.ToString(); } // ???
             // ...
-            // M(new D());
+            // M(new());
             //
             // What should overload resolution do on the call to u.ToString()?
             // 
@@ -2841,7 +2841,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 ImmutableArray<RefKind> parameterRefKinds = member.GetParameterRefKinds();
                 if (parameterRefKinds.IsDefaultOrEmpty)
                 {
-                    return new EffectiveParameters(member.GetParameterTypes(), parameterRefKinds);
+                    return new(member.GetParameterTypes(), parameterRefKinds);
                 }
             }
 
@@ -2878,7 +2878,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             var refKinds = refs != null ? refs.ToImmutableAndFree() : default(ImmutableArray<RefKind>);
-            return new EffectiveParameters(types.ToImmutableAndFree(), refKinds);
+            return new(types.ToImmutableAndFree(), refKinds);
         }
 
         private static RefKind GetEffectiveParameterRefKind(
@@ -2961,7 +2961,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             var refKinds = anyRef ? refs.ToImmutable() : default(ImmutableArray<RefKind>);
             refs.Free();
-            return new EffectiveParameters(types.ToImmutableAndFree(), refKinds);
+            return new(types.ToImmutableAndFree(), refKinds);
         }
 
         private MemberResolutionResult<TMember> IsMemberApplicableInNormalForm<TMember>(

@@ -82,7 +82,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(constantValue == ConstantValue.True || constantValue == ConstantValue.False);
             Debug.Assert((object)type != null);
 
-            return new BoundSequence(
+            return new(
                 syntax: syntax,
                 locals: ImmutableArray<LocalSymbol>.Empty,
                 sideEffects: ImmutableArray.Create<BoundExpression>(loweredOperand),

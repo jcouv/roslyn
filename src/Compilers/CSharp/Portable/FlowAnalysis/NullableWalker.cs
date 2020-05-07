@@ -268,7 +268,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private void SetResult(BoundExpression expression, TypeWithState resultType, TypeWithAnnotations lvalueType, bool updateAnalyzedNullability = true, bool? isLvalue = null)
         {
-            _visitResult = new VisitResult(resultType, lvalueType);
+            _visitResult = new(resultType, lvalueType);
             if (updateAnalyzedNullability)
             {
                 SetAnalyzedNullability(expression, _visitResult, isLvalue);
@@ -854,7 +854,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // use them in addition to any symbols found during this pass of the walker.
                 remappedSymbolsBuilder.AddRange(remappedSymbols);
             }
-            var rewriter = new NullabilityRewriter(updatedNullabilities, snapshotManager, remappedSymbolsBuilder);
+            var rewriter = new(updatedNullabilities, snapshotManager, remappedSymbolsBuilder);
             var rewrittenNode = rewriter.Visit(node);
             remappedSymbols = remappedSymbolsBuilder.ToImmutable();
             return rewrittenNode;
@@ -872,7 +872,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 #if DEBUG
                 // Always run analysis in debug builds so that we can more reliably catch
                 // nullable regressions e.g. https://github.com/dotnet/roslyn/issues/40136
-                diagnostics = new DiagnosticBag();
+                diagnostics = new();
 #else
                 return;
 #endif
@@ -934,7 +934,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ArrayBuilder<(BoundReturnStatement, TypeWithAnnotations)> returnTypesOpt)
         {
             Debug.Assert(diagnostics != null);
-            var walker = new NullableWalker(compilation,
+            var walker = new(compilation,
                                             symbol,
                                             useMethodSignatureParameterTypes,
                                             delegateInvokeMethodOpt,
@@ -2463,7 +2463,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override BoundNode VisitUnconvertedObjectCreationExpression(BoundUnconvertedObjectCreationExpression node)
         {
-            var discardedDiagnostics = new DiagnosticBag();
+            var discardedDiagnostics = new();
             var expr = _binder.BindObjectCreationForErrorRecovery(node, discardedDiagnostics);
             discardedDiagnostics.Free();
             Visit(expr);
@@ -2631,7 +2631,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             // and using that value instead of reconstructing here
                         }
 
-                        var result = new VisitResult(objectInitializer.Type, NullableAnnotation.NotAnnotated, NullableFlowState.NotNull);
+                        var result = new(objectInitializer.Type, NullableAnnotation.NotAnnotated, NullableFlowState.NotNull);
                         SetAnalyzedNullability(objectInitializer, result);
                         SetAnalyzedNullability(node, result);
                     }
@@ -2715,7 +2715,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             _placeholderLocalsOpt ??= PooledDictionary<object, PlaceholderLocal>.GetInstance();
             if (!_placeholderLocalsOpt.TryGetValue(identifier, out PlaceholderLocal placeholder))
             {
-                placeholder = new PlaceholderLocal(_symbol, identifier, type);
+                placeholder = new(_symbol, identifier, type);
                 _placeholderLocalsOpt.Add(identifier, placeholder);
             }
 
@@ -2901,7 +2901,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundNode node,
             Conversions conversions)
         {
-            var walker = new NullableWalker(compilation,
+            var walker = new(compilation,
                                             symbol: null,
                                             useDelegateInvokeParameterTypes: false,
                                             delegateInvokeMethodOpt: null,
@@ -4877,7 +4877,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             parameterWithState = TypeWithState.Create(parameterType.Type, adjustedState);
                         }
 
-                        var parameterValue = new BoundParameter(argument.Syntax, parameter);
+                        var parameterValue = new(argument.Syntax, parameter);
                         var lValueType = result.LValueType;
                         trackNullableStateForAssignment(parameterValue, lValueType, MakeSlot(argument), parameterWithState, argument.IsSuppressed, parameterAnnotations);
 
@@ -4917,7 +4917,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         }
 
                         // track state by assigning from a fictional value from the parameter to the argument.
-                        var parameterValue = new BoundParameter(argument.Syntax, parameter);
+                        var parameterValue = new(argument.Syntax, parameter);
 
                         // If the argument type has annotations, we perform an additional check for nullable value types
                         CheckDisallowedNullAssignment(parameterWithState, leftAnnotations, argument.Syntax.Location);
@@ -6563,7 +6563,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private void TrackAnalyzedNullabilityThroughConversionGroup(TypeWithState resultType, BoundConversion conversionOpt, BoundExpression convertedNode)
         {
-            var visitResult = new VisitResult(resultType);
+            var visitResult = new(resultType);
             var conversionGroup = conversionOpt?.ConversionGroupOpt;
             while (conversionOpt != null && conversionOpt != convertedNode)
             {
@@ -6810,7 +6810,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // conversion case, need to investigate others
             if (!_disableNullabilityAnalysis)
             {
-                var bag = new DiagnosticBag();
+                var bag = new();
                 VisitLambda(node, delegateTypeOpt: null, bag);
                 bag.Free();
             }
@@ -9070,7 +9070,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 #nullable enable
         private sealed class NullabilityInfoTypeComparer : IEqualityComparer<(NullabilityInfo info, TypeSymbol type)>
         {
-            public static readonly NullabilityInfoTypeComparer Instance = new NullabilityInfoTypeComparer();
+            public static readonly NullabilityInfoTypeComparer Instance = new();
 
             public bool Equals((NullabilityInfo info, TypeSymbol type) x, (NullabilityInfo info, TypeSymbol type) y)
             {
@@ -9086,7 +9086,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private sealed class ExpressionAndSymbolEqualityComparer : IEqualityComparer<(BoundNode? expr, Symbol sym)>
         {
-            internal static readonly ExpressionAndSymbolEqualityComparer Instance = new ExpressionAndSymbolEqualityComparer();
+            internal static readonly ExpressionAndSymbolEqualityComparer Instance = new();
 
             private ExpressionAndSymbolEqualityComparer() { }
 

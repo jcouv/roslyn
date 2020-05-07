@@ -431,7 +431,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 namedStringArguments = builder.ToImmutableAndFree();
             }
 
-            return new SynthesizedAttributeData(ctorSymbol, arguments, namedStringArguments);
+            return new(ctorSymbol, arguments, namedStringArguments);
         }
 
         internal SynthesizedAttributeData? SynthesizeDecimalConstantAttribute(decimal value)
@@ -449,11 +449,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             return TrySynthesizeAttribute(
                 WellKnownMember.System_Runtime_CompilerServices_DecimalConstantAttribute__ctor,
                 ImmutableArray.Create(
-                    new TypedConstant(systemByte, TypedConstantKind.Primitive, scale),
-                    new TypedConstant(systemByte, TypedConstantKind.Primitive, (byte)(isNegative ? 128 : 0)),
-                    new TypedConstant(systemUnit32, TypedConstantKind.Primitive, high),
-                    new TypedConstant(systemUnit32, TypedConstantKind.Primitive, mid),
-                    new TypedConstant(systemUnit32, TypedConstantKind.Primitive, low)
+                    new(systemByte, TypedConstantKind.Primitive, scale),
+                    new(systemByte, TypedConstantKind.Primitive, (byte)(isNegative ? 128 : 0)),
+                    new(systemUnit32, TypedConstantKind.Primitive, high),
+                    new(systemUnit32, TypedConstantKind.Primitive, mid),
+                    new(systemUnit32, TypedConstantKind.Primitive, low)
                 ));
         }
 
@@ -465,7 +465,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             return TrySynthesizeAttribute(WellKnownMember.System_Diagnostics_DebuggerBrowsableAttribute__ctor,
-                   ImmutableArray.Create(new TypedConstant(
+                   ImmutableArray.Create(new(
                        GetWellKnownType(WellKnownType.System_Diagnostics_DebuggerBrowsableState),
                        TypedConstantKind.Enum,
                        DebuggerBrowsableState.Never)));
@@ -713,7 +713,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 RoslynDebug.Assert((object)booleanType != null);
                 var transformFlags = DynamicTransformsEncoder.Encode(type, refKindOpt, customModifiersCount, booleanType);
                 var boolArray = ArrayTypeSymbol.CreateSZArray(booleanType.ContainingAssembly, TypeWithAnnotations.Create(booleanType));
-                var arguments = ImmutableArray.Create(new TypedConstant(boolArray, transformFlags));
+                var arguments = ImmutableArray.Create(new(boolArray, transformFlags));
                 return TrySynthesizeAttribute(WellKnownMember.System_Runtime_CompilerServices_DynamicAttribute__ctorTransformFlags, arguments);
             }
         }
@@ -730,7 +730,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(!names.IsDefault, "should not need the attribute when no tuple names");
 
             var stringArray = ArrayTypeSymbol.CreateSZArray(stringType.ContainingAssembly, TypeWithAnnotations.Create(stringType));
-            var args = ImmutableArray.Create(new TypedConstant(stringArray, names));
+            var args = ImmutableArray.Create(new(stringArray, names));
             return TrySynthesizeAttribute(WellKnownMember.System_Runtime_CompilerServices_TupleElementNamesAttribute__ctorTransformNames, args);
         }
 
@@ -739,10 +739,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             var attributeTargetsType = GetWellKnownType(WellKnownType.System_AttributeTargets);
             var boolType = GetSpecialType(SpecialType.System_Boolean);
             var arguments = ImmutableArray.Create(
-                new TypedConstant(attributeTargetsType, TypedConstantKind.Enum, targets));
+                new(attributeTargetsType, TypedConstantKind.Enum, targets));
             var namedArguments = ImmutableArray.Create(
-                new KeyValuePair<WellKnownMember, TypedConstant>(WellKnownMember.System_AttributeUsageAttribute__AllowMultiple, new TypedConstant(boolType, TypedConstantKind.Primitive, allowMultiple)),
-                new KeyValuePair<WellKnownMember, TypedConstant>(WellKnownMember.System_AttributeUsageAttribute__Inherited, new TypedConstant(boolType, TypedConstantKind.Primitive, inherited)));
+                new KeyValuePair<WellKnownMember, TypedConstant>(WellKnownMember.System_AttributeUsageAttribute__AllowMultiple, new(boolType, TypedConstantKind.Primitive, allowMultiple)),
+                new KeyValuePair<WellKnownMember, TypedConstant>(WellKnownMember.System_AttributeUsageAttribute__Inherited, new(boolType, TypedConstantKind.Primitive, inherited)));
             return TrySynthesizeAttribute(WellKnownMember.System_AttributeUsageAttribute__ctor, arguments, namedArguments);
         }
 
@@ -772,7 +772,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
 
                 var names = namesBuilder.SelectAsArray((name, constantType) =>
-                    new TypedConstant(constantType, TypedConstantKind.Primitive, name), stringType);
+                    new(constantType, TypedConstantKind.Primitive, name), stringType);
                 namesBuilder.Free();
                 return names;
             }
@@ -819,7 +819,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 Debug.Assert(flagsBuilder.Any());
                 Debug.Assert(flagsBuilder.Contains(true));
 
-                var result = flagsBuilder.SelectAsArray((flag, constantType) => new TypedConstant(constantType, TypedConstantKind.Primitive, flag), booleanType);
+                var result = flagsBuilder.SelectAsArray((flag, constantType) => new(constantType, TypedConstantKind.Primitive, flag), booleanType);
                 flagsBuilder.Free();
                 return result;
             }
@@ -924,7 +924,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 Debug.Assert(builder.Any());
                 Debug.Assert(builder.Contains(true));
 
-                var result = builder.SelectAsArray((flag, constantType) => new TypedConstant(constantType, TypedConstantKind.Primitive, flag), booleanType);
+                var result = builder.SelectAsArray((flag, constantType) => new(constantType, TypedConstantKind.Primitive, flag), booleanType);
                 builder.Free();
                 return result;
             }

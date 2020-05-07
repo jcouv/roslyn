@@ -96,12 +96,12 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override Diagnostic CreateDiagnostic(int code, Location location, params object[] args)
         {
             var info = new((ErrorCode)code, args, ImmutableArray<Symbol>.Empty, ImmutableArray<Location>.Empty);
-            return new CSDiagnostic(info, location);
+            return new(info, location);
         }
 
         public override Diagnostic CreateDiagnostic(DiagnosticInfo info)
         {
-            return new CSDiagnostic(info, Location.None);
+            return new(info, Location.None);
         }
 
         public override string GetErrorDisplayString(ISymbol symbol)

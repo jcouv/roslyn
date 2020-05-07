@@ -67,14 +67,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
         {
             if ((object)_methodContextOpt == null)
             {
-                return new UnsupportedMetadataTypeSymbol(); // type parameter not associated with a method
+                return new(); // type parameter not associated with a method
             }
 
             var typeParameters = _methodContextOpt.TypeParameters;
 
             if (typeParameters.Length <= position)
             {
-                return new UnsupportedMetadataTypeSymbol(); // type parameter position too large
+                return new(); // type parameter position too large
             }
 
             return typeParameters[position];
@@ -91,7 +91,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             if ((object)type == null || type.MetadataArity <= position)
             {
-                return new UnsupportedMetadataTypeSymbol(); // position of type parameter too large
+                return new(); // position of type parameter too large
             }
 
             position -= type.MetadataArity - type.Arity;
@@ -130,7 +130,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             var assembly = moduleSymbol.GetReferencedAssemblySymbol(referencedAssemblyIndex);
             if ((object)assembly == null)
             {
-                return new UnsupportedMetadataTypeSymbol();
+                return new();
             }
 
             try
@@ -165,7 +165,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             }
 
             isNoPiaLocalType = false;
-            return new MissingMetadataTypeSymbol.TopLevel(new MissingModuleSymbolWithName(moduleSymbol.ContainingAssembly, moduleName), ref emittedName, SpecialType.None);
+            return new MissingMetadataTypeSymbol.TopLevel(new(moduleSymbol.ContainingAssembly, moduleName), ref emittedName, SpecialType.None);
         }
 
         /// <summary>

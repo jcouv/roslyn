@@ -133,7 +133,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             LexicalSortKey sortKey = new(Declarations[0].NameLocation, compilation);
             for (var i = 1; i < Declarations.Length; i++)
             {
-                sortKey = LexicalSortKey.First(sortKey, new LexicalSortKey(Declarations[i].NameLocation, compilation));
+                sortKey = LexicalSortKey.First(sortKey, new(Declarations[i].NameLocation, compilation));
             }
 
             return sortKey;
@@ -190,7 +190,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 foreach (var typeGroup in typesGrouped.Values)
                 {
-                    children.Add(new MergedTypeDeclaration(typeGroup));
+                    children.Add(new(typeGroup));
                 }
             }
 

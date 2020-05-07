@@ -37,7 +37,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 binder = new(binder);
             }
-            var inProgressBinder = new(new ConstantFieldsInProgress(symbol, dependencies), binder);
+            var inProgressBinder = new(new(symbol, dependencies), binder);
             BoundFieldEqualsValue boundValue = BindFieldOrEnumInitializer(inProgressBinder, symbol, equalsValueNode, diagnostics);
             var initValueNodeLocation = equalsValueNode.Value.Location;
 

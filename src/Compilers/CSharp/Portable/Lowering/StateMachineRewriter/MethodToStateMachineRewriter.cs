@@ -367,7 +367,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </remarks>
         internal BoundBlock MakeStateMachineScope(ImmutableArray<StateMachineFieldSymbol> hoistedLocals, BoundStatement statement)
         {
-            return F.Block(new BoundStateMachineScope(F.Syntax, hoistedLocals, statement));
+            return F.Block(new(F.Syntax, hoistedLocals, statement));
         }
 
         /// <remarks>
@@ -487,7 +487,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             var replacement = HoistExpression(right, awaitSyntaxOpt, syntaxOffset, local.RefKind, sideEffects, hoistedFields, ref needsSacrificialEvaluation);
 
-            proxies.Add(local, new CapturedToExpressionSymbolReplacement(replacement, hoistedFields.ToImmutableAndFree(), isReusable: true));
+            proxies.Add(local, new(replacement, hoistedFields.ToImmutableAndFree(), isReusable: true));
 
             if (needsSacrificialEvaluation)
             {
@@ -637,7 +637,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         }
 
                         string fieldName = GeneratedNames.MakeHoistedLocalFieldName(kind, slotIndex);
-                        hoistedField = F.StateMachineField(expr.Type, fieldName, new LocalSlotDebugInfo(kind, id), slotIndex);
+                        hoistedField = F.StateMachineField(expr.Type, fieldName, new(kind, id), slotIndex);
                     }
                     else
                     {

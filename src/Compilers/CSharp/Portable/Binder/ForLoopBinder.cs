@@ -116,7 +116,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var body = originalBinder.BindPossibleEmbeddedStatement(node.Statement, diagnostics);
 
             Debug.Assert(this.Locals == this.GetDeclaredLocalsForScope(node));
-            return new BoundForStatement(node,
+            return new(node,
                                          this.Locals,
                                          initializer,
                                          innerLocals,

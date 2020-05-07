@@ -261,7 +261,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (!temps.IsDefaultOrEmpty)
             {
-                return new BoundSequence(
+                return new(
                     syntax,
                     locals: temps,
                     sideEffects: ImmutableArray<BoundExpression>.Empty,
@@ -923,7 +923,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     // return an invocation of "Array.Empty<T>()"
                     arrayEmpty = arrayEmpty.Construct(ImmutableArray.Create(ats.ElementType));
-                    return new BoundCall(
+                    return new(
                         syntax,
                         null,
                         arrayEmpty,
@@ -954,10 +954,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             TypeSymbol int32Type = (localRewriter != null ? localRewriter._compilation : binder!.Compilation).GetSpecialType(SpecialType.System_Int32);
             BoundExpression arraySize = MakeLiteral(syntax, ConstantValue.Create(arrayArgs.Length), int32Type, localRewriter);
 
-            return new BoundArrayCreation(
+            return new(
                 syntax,
                 ImmutableArray.Create(arraySize),
-                new BoundArrayInitialization(syntax, arrayArgs) { WasCompilerGenerated = true },
+                new(syntax, arrayArgs) { WasCompilerGenerated = true },
                 paramArrayType)
             { WasCompilerGenerated = true };
         }
@@ -973,7 +973,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                return new BoundLiteral(syntax, constantValue, type, constantValue.IsBad) { WasCompilerGenerated = true };
+                return new(syntax, constantValue, type, constantValue.IsBad) { WasCompilerGenerated = true };
             }
         }
 
@@ -1183,7 +1183,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ThreeState.False:
                     return null;
                 case ThreeState.True:
-                    return new SourceLocation(syntax.GetFirstToken());
+                    return new(syntax.GetFirstToken());
             }
 
             Debug.Assert(enableCallerInfo == ThreeState.Unknown);
@@ -1191,14 +1191,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             switch (syntax.Kind())
             {
                 case SyntaxKind.InvocationExpression:
-                    return new SourceLocation(((InvocationExpressionSyntax)syntax).ArgumentList.OpenParenToken);
+                    return new(((InvocationExpressionSyntax)syntax).ArgumentList.OpenParenToken);
                 case SyntaxKind.ObjectCreationExpression:
-                    return new SourceLocation(((ObjectCreationExpressionSyntax)syntax).NewKeyword);
+                    return new(((ObjectCreationExpressionSyntax)syntax).NewKeyword);
                 case SyntaxKind.BaseConstructorInitializer:
                 case SyntaxKind.ThisConstructorInitializer:
-                    return new SourceLocation(((ConstructorInitializerSyntax)syntax).ArgumentList.OpenParenToken);
+                    return new(((ConstructorInitializerSyntax)syntax).ArgumentList.OpenParenToken);
                 case SyntaxKind.ElementAccessExpression:
-                    return new SourceLocation(((ElementAccessExpressionSyntax)syntax).ArgumentList.OpenBracketToken);
+                    return new(((ElementAccessExpressionSyntax)syntax).ArgumentList.OpenBracketToken);
                 case SyntaxKind.FromClause:
                 case SyntaxKind.GroupClause:
                 case SyntaxKind.JoinClause:
@@ -1207,7 +1207,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case SyntaxKind.OrderByClause:
                 case SyntaxKind.SelectClause:
                 case SyntaxKind.WhereClause:
-                    return new SourceLocation(syntax.GetFirstToken());
+                    return new(syntax.GetFirstToken());
                 default:
                     return null;
             }
@@ -1487,9 +1487,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             // * If the parameter is marked as [MarshalAs(Interface)], [MarshalAs(IUnknown)] or [MarshalAs(IDispatch)]
             //   then the argument is null.
             // * Otherwise, if the parameter is marked as [IUnknownConstant] then the argument is
-            //   new UnknownWrapper(null)
+            //   new(null)
             // * Otherwise, if the parameter is marked as [IDispatchConstant] then the argument is
-            //    new DispatchWrapper(null)
+            //    new(null)
             // * Otherwise, the argument is Type.Missing.
 
             BoundExpression defaultValue;
@@ -1501,7 +1501,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else if (parameter.IsIUnknownConstant)
             {
-                // new UnknownWrapper(default(object))
+                // new(default(object))
                 var methodSymbol = (MethodSymbol?)compilation.GetWellKnownTypeMember(WellKnownMember.System_Runtime_InteropServices_UnknownWrapper__ctor);
                 Debug.Assert(methodSymbol is { });
                 var argument = new(syntax, parameter.Type) { WasCompilerGenerated = true };
@@ -1509,7 +1509,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else if (parameter.IsIDispatchConstant)
             {
-                // new DispatchWrapper(default(object))
+                // new(default(object))
                 var methodSymbol = (MethodSymbol?)compilation.GetWellKnownTypeMember(WellKnownMember.System_Runtime_InteropServices_DispatchWrapper__ctor);
                 Debug.Assert(methodSymbol is { });
                 var argument = new(syntax, parameter.Type) { WasCompilerGenerated = true };

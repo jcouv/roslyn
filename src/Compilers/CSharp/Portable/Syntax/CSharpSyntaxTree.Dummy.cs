@@ -64,7 +64,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             public override SyntaxReference GetReference(SyntaxNode node)
             {
-                return new SimpleSyntaxReference(node);
+                return new(node);
             }
 
             public override CSharpSyntaxNode GetRoot(CancellationToken cancellationToken)

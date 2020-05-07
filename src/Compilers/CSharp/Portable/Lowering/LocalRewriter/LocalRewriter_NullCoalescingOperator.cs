@@ -50,7 +50,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return BadExpression(syntax, rewrittenResultType, rewrittenLeft, rewrittenRight);
                 }
 
-                return new BoundNullCoalescingOperator(syntax, rewrittenLeft, rewrittenRight, rewrittenConversion, resultKind, rewrittenResultType);
+                return new(syntax, rewrittenLeft, rewrittenRight, rewrittenConversion, resultKind, rewrittenResultType);
             }
 
             var isUnconstrainedTypeParameter = rewrittenLeft.Type is { IsReferenceType: false, IsValueType: false };
@@ -93,7 +93,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     rewrittenLeft = MakeConversionNode(rewrittenLeft.Syntax, rewrittenLeft, leftConversion, rewrittenResultType, @checked: false);
                 }
-                return new BoundNullCoalescingOperator(syntax, rewrittenLeft, rewrittenRight, Conversion.Identity, resultKind, rewrittenResultType);
+                return new(syntax, rewrittenLeft, rewrittenRight, Conversion.Identity, resultKind, rewrittenResultType);
             }
 
             if (leftConversion.IsIdentity || leftConversion.Kind == ConversionKind.ExplicitNullable)
@@ -167,7 +167,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(conditionalExpression.ConstantValue == null); // we shouldn't have hit this else case otherwise
             Debug.Assert(conditionalExpression.Type!.Equals(rewrittenResultType, TypeCompareKind.IgnoreDynamicAndTupleNames | TypeCompareKind.IgnoreNullableModifiersForReferenceTypes));
 
-            return new BoundSequence(
+            return new(
                 syntax: syntax,
                 locals: ImmutableArray.Create(boundTemp.LocalSymbol),
                 sideEffects: ImmutableArray.Create<BoundExpression>(tempAssignment),

@@ -112,12 +112,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override bool Equals(object obj)
         {
-            throw new NotSupportedException();
+            throw new();
         }
 
         public override int GetHashCode()
         {
-            throw new NotSupportedException();
+            throw new();
         }
     }
 }

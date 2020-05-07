@@ -229,7 +229,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return t;
             }
 
-            return new PointerTypeSymbol(pointedAtType);
+            return new(pointedAtType);
         }
 
         internal ImmutableArray<TypeSymbol> SubstituteTypesWithoutModifiers(ImmutableArray<TypeSymbol> original)

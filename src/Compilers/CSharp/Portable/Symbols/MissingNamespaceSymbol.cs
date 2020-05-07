@@ -68,7 +68,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 if (_containingSymbol.Kind == SymbolKind.NetModule)
                 {
-                    return new NamespaceExtent((ModuleSymbol)_containingSymbol);
+                    return new((ModuleSymbol)_containingSymbol);
                 }
 
                 return ((NamespaceSymbol)_containingSymbol).Extent;
