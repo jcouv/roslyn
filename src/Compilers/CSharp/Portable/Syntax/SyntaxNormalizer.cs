@@ -45,7 +45,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
         internal static TNode Normalize<TNode>(TNode node, string indentWhitespace, string eolWhitespace, bool useElasticTrivia = false)
             where TNode : SyntaxNode
         {
-            var normalizer = new SyntaxNormalizer(node.FullSpan, GetDeclarationDepth(node), indentWhitespace, eolWhitespace, useElasticTrivia);
+            var normalizer = new(node.FullSpan, GetDeclarationDepth(node), indentWhitespace, eolWhitespace, useElasticTrivia);
             var result = (TNode)normalizer.Visit(node);
             normalizer.Free();
             return result;
@@ -53,7 +53,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
 
         internal static SyntaxToken Normalize(SyntaxToken token, string indentWhitespace, string eolWhitespace, bool useElasticTrivia = false)
         {
-            var normalizer = new SyntaxNormalizer(token.FullSpan, GetDeclarationDepth(token), indentWhitespace, eolWhitespace, useElasticTrivia);
+            var normalizer = new(token.FullSpan, GetDeclarationDepth(token), indentWhitespace, eolWhitespace, useElasticTrivia);
             var result = normalizer.VisitToken(token);
             normalizer.Free();
             return result;
@@ -61,7 +61,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
 
         internal static SyntaxTriviaList Normalize(SyntaxTriviaList trivia, string indentWhitespace, string eolWhitespace, bool useElasticTrivia = false)
         {
-            var normalizer = new SyntaxNormalizer(trivia.FullSpan, GetDeclarationDepth(trivia.Token), indentWhitespace, eolWhitespace, useElasticTrivia);
+            var normalizer = new(trivia.FullSpan, GetDeclarationDepth(trivia.Token), indentWhitespace, eolWhitespace, useElasticTrivia);
             var result = normalizer.RewriteTrivia(
                 trivia,
                 GetDeclarationDepth((SyntaxToken)trivia.ElementAt(0).Token),

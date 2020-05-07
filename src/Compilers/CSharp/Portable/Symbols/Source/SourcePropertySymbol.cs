@@ -194,7 +194,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     }
 
                     string fieldName = GeneratedNames.MakeBackingFieldName(_sourceName);
-                    _backingField = new SynthesizedBackingFieldSymbol(this,
+                    _backingField = new(this,
                                                                           fieldName,
                                                                           isGetterOnly,
                                                                           this.IsStatic,
@@ -1554,7 +1554,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                 if (parameters.Length > 0)
                                 {
                                     var diagnostics = DiagnosticBag.GetInstance();
-                                    var conversions = new TypeConversions(this.ContainingAssembly.CorLibrary);
+                                    var conversions = new(this.ContainingAssembly.CorLibrary);
                                     foreach (var parameter in this.Parameters)
                                     {
                                         parameter.ForceComplete(locationOpt, cancellationToken);
@@ -1583,7 +1583,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                             if (_state.NotePartComplete(CompletionPart.StartPropertyType))
                             {
                                 var diagnostics = DiagnosticBag.GetInstance();
-                                var conversions = new TypeConversions(this.ContainingAssembly.CorLibrary);
+                                var conversions = new(this.ContainingAssembly.CorLibrary);
                                 this.Type.CheckAllConstraints(DeclaringCompilation, conversions, _location, diagnostics);
 
                                 var type = this.Type;

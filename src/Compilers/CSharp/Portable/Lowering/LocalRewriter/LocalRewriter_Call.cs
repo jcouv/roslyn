@@ -50,13 +50,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                         NamedTypeSymbol firstContainer = node.ApplicableMethods.First().ContainingType;
                         Debug.Assert(node.ApplicableMethods.All(m => !m.RequiresInstanceReceiver && TypeSymbol.Equals(m.ContainingType, firstContainer, TypeCompareKind.ConsiderEverything2)));
 
-                        loweredReceiver = new BoundTypeExpression(node.Syntax, null, firstContainer);
+                        loweredReceiver = new(node.Syntax, null, firstContainer);
                     }
                     else if (hasImplicitReceiver && _factory.TopLevelMethod is { RequiresInstanceReceiver: false })
                     {
                         // Calling a static method defined on the current class via its simple name.
                         Debug.Assert(_factory.CurrentType is { });
-                        loweredReceiver = new BoundTypeExpression(node.Syntax, null, _factory.CurrentType);
+                        loweredReceiver = new(node.Syntax, null, _factory.CurrentType);
                     }
                     else
                     {
@@ -215,7 +215,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // I.8.2.5.1 Identity
                 //           ...
                 //           Identity is implemented on System.Object via the ReferenceEquals method.
-                rewrittenBoundCall = new BoundBinaryOperator(
+                rewrittenBoundCall = new(
                     syntax,
                     BinaryOperatorKind.ObjectEqual,
                     null,
@@ -227,7 +227,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else if (node == null)
             {
-                rewrittenBoundCall = new BoundCall(
+                rewrittenBoundCall = new(
                     syntax,
                     rewrittenReceiver,
                     method,
@@ -1077,7 +1077,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 sideeffects[s] = tempStores[firstUnclaimedStore + s];
                             }
 
-                            arguments[a] = new BoundSequence(
+                            arguments[a] = new(
                                         value.Syntax,
                                         // this sequence does not own locals. Note that temps that
                                         // we use for the rewrite are stored in one arg and loaded
@@ -1302,7 +1302,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     defaultValue = MakeConversionNode(lineLiteral, nullableType, @checked: false);
 
                     // wrap it in a nullable ctor.
-                    defaultValue = new BoundObjectCreationExpression(
+                    defaultValue = new(
                         syntax,
                         UnsafeGetNullableMethod(syntax, parameterType, SpecialMember.System_Nullable_T__ctor, compilation, diagnostics),
                         null,
@@ -1401,7 +1401,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 else
                 {
                     // The argument to M([Optional] int x) becomes default(int)
-                    defaultValue = new BoundDefaultExpression(syntax, parameterType) { WasCompilerGenerated = true };
+                    defaultValue = new(syntax, parameterType) { WasCompilerGenerated = true };
                 }
             }
             else if (defaultConstantValue.IsNull)
@@ -1410,7 +1410,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     // We have something like M(int? x = null) or M(S x = default(S)),
                     // so replace the argument with default(int?).
-                    defaultValue = new BoundDefaultExpression(syntax, parameterType) { WasCompilerGenerated = true };
+                    defaultValue = new(syntax, parameterType) { WasCompilerGenerated = true };
                 }
                 else
                 {
@@ -1419,7 +1419,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else if (defaultConstantValue.IsBad)
             {
-                defaultValue = new BoundBadExpression(syntax, LookupResultKind.Empty, ImmutableArray<Symbol?>.Empty, ImmutableArray<BoundExpression>.Empty, parameterType, hasErrors: true) { WasCompilerGenerated = true };
+                defaultValue = new(syntax, LookupResultKind.Empty, ImmutableArray<Symbol?>.Empty, ImmutableArray<BoundExpression>.Empty, parameterType, hasErrors: true) { WasCompilerGenerated = true };
             }
             else if (parameterType.IsNullableType())
             {
@@ -1435,7 +1435,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 defaultValue = MakeConversionNode(defaultValue, parameterType.GetNullableUnderlyingType(), @checked: false, acceptFailingConversion: true);
 
                 // Finally, wrap it in a nullable ctor.
-                defaultValue = new BoundObjectCreationExpression(
+                defaultValue = new(
                     syntax,
                     UnsafeGetNullableMethod(syntax, parameterType, SpecialMember.System_Nullable_T__ctor, compilation, diagnostics),
                     null,
@@ -1497,30 +1497,30 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (parameter.IsMarshalAsObject)
             {
                 // default(object)
-                defaultValue = new BoundDefaultExpression(syntax, parameter.Type) { WasCompilerGenerated = true };
+                defaultValue = new(syntax, parameter.Type) { WasCompilerGenerated = true };
             }
             else if (parameter.IsIUnknownConstant)
             {
                 // new UnknownWrapper(default(object))
                 var methodSymbol = (MethodSymbol?)compilation.GetWellKnownTypeMember(WellKnownMember.System_Runtime_InteropServices_UnknownWrapper__ctor);
                 Debug.Assert(methodSymbol is { });
-                var argument = new BoundDefaultExpression(syntax, parameter.Type) { WasCompilerGenerated = true };
-                defaultValue = new BoundObjectCreationExpression(syntax, methodSymbol, null, argument) { WasCompilerGenerated = true };
+                var argument = new(syntax, parameter.Type) { WasCompilerGenerated = true };
+                defaultValue = new(syntax, methodSymbol, null, argument) { WasCompilerGenerated = true };
             }
             else if (parameter.IsIDispatchConstant)
             {
                 // new DispatchWrapper(default(object))
                 var methodSymbol = (MethodSymbol?)compilation.GetWellKnownTypeMember(WellKnownMember.System_Runtime_InteropServices_DispatchWrapper__ctor);
                 Debug.Assert(methodSymbol is { });
-                var argument = new BoundDefaultExpression(syntax, parameter.Type) { WasCompilerGenerated = true };
-                defaultValue = new BoundObjectCreationExpression(syntax, methodSymbol, null, argument) { WasCompilerGenerated = true };
+                var argument = new(syntax, parameter.Type) { WasCompilerGenerated = true };
+                defaultValue = new(syntax, methodSymbol, null, argument) { WasCompilerGenerated = true };
             }
             else
             {
                 // Type.Missing
                 var fieldSymbol = (FieldSymbol?)compilation.GetWellKnownTypeMember(WellKnownMember.System_Type__Missing);
                 Debug.Assert(fieldSymbol is { });
-                defaultValue = new BoundFieldAccess(syntax, null, fieldSymbol, ConstantValue.NotAvailable) { WasCompilerGenerated = true };
+                defaultValue = new(syntax, null, fieldSymbol, ConstantValue.NotAvailable) { WasCompilerGenerated = true };
             }
 
             return defaultValue;
@@ -1574,7 +1574,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 BoundAssignmentOperator boundAssignmentToTemp;
                 BoundLocal boundTemp = _factory.StoreToTemp(argument, out boundAssignmentToTemp);
 
-                actualArguments[argIndex] = new BoundSequence(
+                actualArguments[argIndex] = new(
                     argument.Syntax,
                     locals: ImmutableArray<LocalSymbol>.Empty,
                     sideEffects: ImmutableArray.Create<BoundExpression>(boundAssignmentToTemp),

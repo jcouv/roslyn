@@ -49,10 +49,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             this.method = method;
             this.stateMachineType = stateMachineType;
             this.slotAllocatorOpt = slotAllocatorOpt;
-            this.synthesizedLocalOrdinals = new SynthesizedLocalOrdinalsDispenser();
+            this.synthesizedLocalOrdinals = new();
             this.diagnostics = diagnostics;
 
-            this.F = new SyntheticBoundNodeFactory(method, body.Syntax, compilationState, diagnostics);
+            this.F = new(method, body.Syntax, compilationState, diagnostics);
             Debug.Assert(TypeSymbol.Equals(F.CurrentType, method.ContainingType, TypeCompareKind.ConsiderEverything2));
             Debug.Assert(F.Syntax == body.Syntax);
         }
@@ -185,7 +185,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             SyntaxNode declaratorSyntax = local.GetDeclaratorSyntax();
                             int syntaxOffset = method.CalculateLocalSyntaxOffset(LambdaUtilities.GetDeclaratorPosition(declaratorSyntax), declaratorSyntax.SyntaxTree);
                             int ordinal = synthesizedLocalOrdinals.AssignLocalOrdinal(synthesizedKind, syntaxOffset);
-                            id = new LocalDebugId(syntaxOffset, ordinal);
+                            id = new(syntaxOffset, ordinal);
 
                             // map local id to the previous id, if available:
                             int previousSlotIndex;
@@ -316,7 +316,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             string methodName = null,
             bool hasMethodBodyDependency = false)
         {
-            var result = new SynthesizedStateMachineDebuggerHiddenMethod(methodName, methodToImplement, (StateMachineTypeSymbol)F.CurrentType, null, hasMethodBodyDependency);
+            var result = new(methodName, methodToImplement, (StateMachineTypeSymbol)F.CurrentType, null, hasMethodBodyDependency);
             F.ModuleBuilderOpt.AddSynthesizedDefinition(F.CurrentType, result);
             F.CurrentFunction = result;
             return result;
@@ -324,7 +324,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         protected MethodSymbol OpenPropertyImplementation(MethodSymbol getterToImplement)
         {
-            var prop = new SynthesizedStateMachineProperty(getterToImplement, (StateMachineTypeSymbol)F.CurrentType);
+            var prop = new(getterToImplement, (StateMachineTypeSymbol)F.CurrentType);
             F.ModuleBuilderOpt.AddSynthesizedDefinition(F.CurrentType, prop);
 
             var getter = prop.GetMethod;
@@ -336,7 +336,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         protected SynthesizedImplementationMethod OpenMoveNextMethodImplementation(MethodSymbol methodToImplement)
         {
-            var result = new SynthesizedStateMachineMoveNextMethod(methodToImplement, (StateMachineTypeSymbol)F.CurrentType);
+            var result = new(methodToImplement, (StateMachineTypeSymbol)F.CurrentType);
             F.ModuleBuilderOpt.AddSynthesizedDefinition(F.CurrentType, result);
             F.CurrentFunction = result;
             return result;

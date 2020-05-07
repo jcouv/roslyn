@@ -134,7 +134,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 entryPoint = GetEntryPoint(compilation, moduleBeingBuiltOpt, hasDeclarationErrors, diagnostics, cancellationToken);
             }
 
-            var methodCompiler = new MethodCompiler(
+            var methodCompiler = new(
                 compilation,
                 moduleBeingBuiltOpt,
                 emittingPdb,
@@ -409,7 +409,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private void CompileNamedType(NamedTypeSymbol containingType)
         {
-            var compilationState = new TypeCompilationState(containingType, _compilation, _moduleBeingBuiltOpt);
+            var compilationState = new(containingType, _compilation, _moduleBeingBuiltOpt);
 
             _cancellationToken.ThrowIfCancellationRequested();
 
@@ -584,7 +584,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 Debug.Assert(processedStaticInitializers.BoundInitializers.All((init) =>
                     (init.Kind == BoundKind.FieldEqualsValue) && !((BoundFieldEqualsValue)init).Field.IsMetadataConstant));
 
-                MethodSymbol method = new SynthesizedStaticConstructor(sourceTypeSymbol);
+                MethodSymbol method = new(sourceTypeSymbol);
                 if (PassesFilter(_filterOpt, method))
                 {
                     CompileMethod(method, -1, ref processedStaticInitializers, synthesizedSubmissionFields, compilationState);
@@ -645,7 +645,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert(_moduleBeingBuiltOpt != null);
 
-            var compilationState = new TypeCompilationState(null, _compilation, _moduleBeingBuiltOpt);
+            var compilationState = new(null, _compilation, _moduleBeingBuiltOpt);
             foreach (MethodSymbol method in privateImplClass.GetMethods(new EmitContext(_moduleBeingBuiltOpt, null, diagnostics, metadataOnly: false, includePrivateMembers: true)))
             {
                 Debug.Assert(method.SynthesizesLoweredBoundBody);
@@ -660,7 +660,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             foreach (var additionalType in additionalTypes)
             {
-                var compilationState = new TypeCompilationState(additionalType, _compilation, _moduleBeingBuiltOpt);
+                var compilationState = new(additionalType, _compilation, _moduleBeingBuiltOpt);
                 foreach (var method in additionalType.GetMethodsToEmit())
                 {
                     method.GenerateMethodBody(compilationState, diagnostics);
@@ -959,7 +959,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (methodSymbol.IsScriptConstructor)
                 {
                     Debug.Assert(methodSymbol.IsImplicitlyDeclared);
-                    body = new BoundBlock(methodSymbol.GetNonNullSyntaxNode(), ImmutableArray<LocalSymbol>.Empty, ImmutableArray<BoundStatement>.Empty) { WasCompilerGenerated = true };
+                    body = new(methodSymbol.GetNonNullSyntaxNode(), ImmutableArray<LocalSymbol>.Empty, ImmutableArray<BoundStatement>.Empty) { WasCompilerGenerated = true };
                 }
                 else if (methodSymbol.IsScriptInitializer)
                 {
@@ -1411,10 +1411,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(!diagnostics.HasAnyErrors(), "Running code generator when errors exist might be dangerous; code generator not expecting errors");
 
             var compilation = moduleBuilder.Compilation;
-            var localSlotManager = new LocalSlotManager(variableSlotAllocatorOpt);
+            var localSlotManager = new(variableSlotAllocatorOpt);
             var optimizations = compilation.Options.OptimizationLevel;
 
-            ILBuilder builder = new ILBuilder(moduleBuilder, localSlotManager, optimizations, method.AreLocalsZeroed);
+            ILBuilder builder = new(moduleBuilder, localSlotManager, optimizations, method.AreLocalsZeroed);
             bool hasStackalloc;
             DiagnosticBag diagnosticsForThisMethod = DiagnosticBag.GetInstance();
             try
@@ -1465,7 +1465,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     bool isAsyncMainMoveNext = entryPointOpt?.UserMain.Equals(kickoffMethod) == true;
 
-                    moveNextBodyDebugInfoOpt = new AsyncMoveNextBodyDebugInfo(
+                    moveNextBodyDebugInfoOpt = new(
                         kickoffMethod,
                         catchHandlerOffset: (kickoffMethod.ReturnsVoid || isAsyncMainMoveNext) ? asyncCatchHandlerOffset : -1,
                         asyncYieldPoints,
@@ -1477,7 +1477,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     if ((object)kickoffMethod != null)
                     {
-                        moveNextBodyDebugInfoOpt = new IteratorMoveNextBodyDebugInfo(kickoffMethod);
+                        moveNextBodyDebugInfoOpt = new(kickoffMethod);
                     }
                 }
 
@@ -1523,7 +1523,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (emitTestCoverageData)
                 {
                     Debug.Assert(debugDocumentProvider != null);
-                    dynamicAnalysisDataOpt = new DynamicAnalysisMethodBodyData(dynamicAnalysisSpans);
+                    dynamicAnalysisDataOpt = new(dynamicAnalysisSpans);
                 }
 
                 return new MethodBody(
@@ -1597,7 +1597,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         hoistedVariables.Add(new EncHoistedLocalInfo(true));
                     }
 
-                    hoistedVariables[index] = new EncHoistedLocalInfo(field.SlotDebugInfo, moduleBuilder.EncTranslateLocalVariableType(field.Type, diagnostics));
+                    hoistedVariables[index] = new(field.SlotDebugInfo, moduleBuilder.EncTranslateLocalVariableType(field.Type, diagnostics));
                 }
             }
 
@@ -1691,11 +1691,11 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                                 if (body == null)
                                 {
-                                    body = new BoundBlock(constructor.Syntax, constructor.Locals, ImmutableArray.Create<BoundStatement>(constructor.Initializer));
+                                    body = new(constructor.Syntax, constructor.Locals, ImmutableArray.Create<BoundStatement>(constructor.Initializer));
                                 }
                                 else
                                 {
-                                    body = new BoundBlock(constructor.Syntax, constructor.Locals, ImmutableArray.Create<BoundStatement>(constructor.Initializer, body));
+                                    body = new(constructor.Syntax, constructor.Locals, ImmutableArray.Create<BoundStatement>(constructor.Initializer, body));
                                     originalBodyNested = true;
                                 }
 
@@ -1781,7 +1781,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     ReportCtorInitializerCycles(method, initializerInvocation, compilationState, diagnostics);
 
                     //  Base WasCompilerGenerated state off of whether constructor is implicitly declared, this will ensure proper instrumentation.
-                    var constructorInitializer = new BoundExpressionStatement(initializerInvocation.Syntax, initializerInvocation) { WasCompilerGenerated = method.IsImplicitlyDeclared };
+                    var constructorInitializer = new(initializerInvocation.Syntax, initializerInvocation) { WasCompilerGenerated = method.IsImplicitlyDeclared };
                     Debug.Assert(initializerInvocation.HasAnyErrors || constructorInitializer.IsConstructorInitializer(), "Please keep this bound node in sync with BoundNodeExtensions.IsConstructorInitializer.");
                     return constructorInitializer;
                 }
@@ -1926,7 +1926,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             CSharpSyntaxNode syntax = constructor.GetNonNullSyntaxNode();
 
-            BoundExpression receiver = new BoundThisReference(syntax, constructor.ContainingType) { WasCompilerGenerated = true };
+            BoundExpression receiver = new(syntax, constructor.ContainingType) { WasCompilerGenerated = true };
             return new BoundCall(
                 syntax: syntax,
                 receiverOpt: receiver,

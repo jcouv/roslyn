@@ -212,7 +212,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 ? MakeSpecialType()
                 : SpecialType.None;
 
-            _flags = new Flags(specialType, modifiers, typeKind);
+            _flags = new(specialType, modifiers, typeKind);
 
             var containingType = this.ContainingType;
             if ((object)containingType != null && containingType.IsSealed && this.DeclaredAccessibility.HasProtected())
@@ -1141,7 +1141,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 foreach (var childDeclaration in declaration.Children)
                 {
-                    var t = new SourceNamedTypeSymbol(this, childDeclaration, diagnostics);
+                    var t = new(this, childDeclaration, diagnostics);
                     this.CheckMemberNameDistinctFromType(t, diagnostics);
 
                     var key = (t.Name, t.Arity);
@@ -1823,7 +1823,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private void CheckSpecialMemberErrors(DiagnosticBag diagnostics)
         {
-            var conversions = new TypeConversions(this.ContainingAssembly.CorLibrary);
+            var conversions = new(this.ContainingAssembly.CorLibrary);
             foreach (var member in this.GetMembersUnordered())
             {
                 member.AfterAddingTypeMembersChecks(conversions, diagnostics);
@@ -2400,7 +2400,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private MembersAndInitializers BuildMembersAndInitializers(DiagnosticBag diagnostics)
         {
-            var builder = new MembersAndInitializersBuilder();
+            var builder = new();
             AddDeclaredNontypeMembers(builder, diagnostics);
 
             switch (TypeKind)
@@ -2987,7 +2987,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (this.IsScriptClass)
             {
-                var scriptInitializer = new SynthesizedInteractiveInitializerMethod(this, diagnostics);
+                var scriptInitializer = new(this, diagnostics);
                 members.Add(scriptInitializer);
                 var scriptEntryPoint = SynthesizedEntryPointSymbol.Create(scriptInitializer, diagnostics);
                 members.Add(scriptEntryPoint);
@@ -3109,7 +3109,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                             // runtime won't consider it a finalizer and it will not be marked as a destructor
                             // when it is loaded from metadata.  Perhaps we should just treat it as an Ordinary
                             // method in such cases?
-                            var destructor = new SourceDestructorSymbol(this, destructorSyntax, diagnostics);
+                            var destructor = new(this, destructorSyntax, diagnostics);
                             builder.NonTypeNonIndexerMembers.Add(destructor);
                         }
                         break;
@@ -3176,7 +3176,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                             foreach (VariableDeclaratorSyntax declarator in eventFieldSyntax.Declaration.Variables)
                             {
-                                SourceFieldLikeEventSymbol @event = new SourceFieldLikeEventSymbol(this, bodyBinder, eventFieldSyntax.Modifiers, declarator, diagnostics);
+                                SourceFieldLikeEventSymbol @event = new(this, bodyBinder, eventFieldSyntax.Modifiers, declarator, diagnostics);
                                 builder.NonTypeNonIndexerMembers.Add(@event);
 
                                 FieldSymbol associatedField = @event.AssociatedField;
@@ -3225,7 +3225,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                     new SourceLocation(eventSyntax.Identifier));
                             }
 
-                            var @event = new SourceCustomEventSymbol(this, bodyBinder, eventSyntax, diagnostics);
+                            var @event = new(this, bodyBinder, eventSyntax, diagnostics);
 
                             builder.NonTypeNonIndexerMembers.Add(@event);
 
@@ -3384,7 +3384,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return null;
             }
 
-            var builder = new MostCommonNullableValueBuilder();
+            var builder = new();
             var baseType = BaseTypeNoUseSiteDiagnostics;
             if (baseType is object)
             {

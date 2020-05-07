@@ -78,7 +78,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Retargeting
 
             _retargetingAssembly = retargetingAssembly;
             _underlyingModule = underlyingModule;
-            this.RetargetingTranslator = new RetargetingSymbolTranslator(this);
+            this.RetargetingTranslator = new(this);
 
             _createRetargetingMethod = CreateRetargetingMethod;
             _createRetargetingNamespace = CreateRetargetingNamespace;

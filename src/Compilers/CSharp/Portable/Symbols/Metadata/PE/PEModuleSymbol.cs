@@ -127,7 +127,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             _ordinal = ordinal;
             _module = module;
             this.ImportOptions = importOptions;
-            _globalNamespace = new PEGlobalNamespaceSymbol(this);
+            _globalNamespace = new(this);
 
             this.MetadataLocation = ImmutableArray.Create<MetadataLocation>(new MetadataLocation(this));
         }

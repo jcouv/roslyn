@@ -427,7 +427,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(whenClause != null);
 
             // Instrument the statement using a factory with the same syntax as the clause, so that the instrumentation appears to be part of the clause.
-            SyntheticBoundNodeFactory statementFactory = new SyntheticBoundNodeFactory(_method, whenClause, _methodBodyFactory.CompilationState, _diagnostics);
+            SyntheticBoundNodeFactory statementFactory = new(_method, whenClause, _methodBodyFactory.CompilationState, _diagnostics);
 
             // Instrument using the span of the expression
             return statementFactory.StatementList(AddAnalysisPoint(whenClause, statementFactory), ifConditionGotoBody);
@@ -455,7 +455,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private BoundStatement CollectDynamicAnalysis(BoundStatement original, BoundStatement rewritten)
         {
             // Instrument the statement using a factory with the same syntax as the statement, so that the instrumentation appears to be part of the statement.
-            SyntheticBoundNodeFactory statementFactory = new SyntheticBoundNodeFactory(_method, original.Syntax, _methodBodyFactory.CompilationState, _diagnostics);
+            SyntheticBoundNodeFactory statementFactory = new(_method, original.Syntax, _methodBodyFactory.CompilationState, _diagnostics);
             return statementFactory.StatementList(AddAnalysisPoint(SyntaxForSpan(original), statementFactory), rewritten);
         }
 

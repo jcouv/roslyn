@@ -86,7 +86,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             StreamWriter writer = null;
             if (xmlDocStream != null && xmlDocStream.CanWrite)
             {
-                writer = new StreamWriter(
+                writer = new(
                     stream: xmlDocStream,
                     encoding: new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: false),
                     bufferSize: 0x400, // Default.
@@ -97,7 +97,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 using (writer)
                 {
-                    var compiler = new DocumentationCommentCompiler(assemblyName ?? compilation.SourceAssembly.Name, compilation, writer, filterTree, filterSpanWithinTree,
+                    var compiler = new(assemblyName ?? compilation.SourceAssembly.Name, compilation, writer, filterTree, filterSpanWithinTree,
                         processIncludes: true, isForSingleSymbol: false, diagnostics: diagnostics, cancellationToken: cancellationToken);
                     compiler.Visit(compilation.SourceAssembly.GlobalNamespace);
                     Debug.Assert(compiler._indentDepth == 0);
@@ -143,10 +143,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(compilation != null);
 
             PooledStringBuilder pooled = PooledStringBuilder.GetInstance();
-            StringWriter writer = new StringWriter(pooled.Builder);
+            StringWriter writer = new(pooled.Builder);
             DiagnosticBag discardedDiagnostics = DiagnosticBag.GetInstance();
 
-            var compiler = new DocumentationCommentCompiler(
+            var compiler = new(
                 assemblyName: null,
                 compilation: compilation,
                 writer: writer,
@@ -451,7 +451,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     haveParseError = true;
                     if (reportDiagnosticsForCurrentTrivia)
                     {
-                        Location location = new SourceLocation(trivia.SyntaxTree, new TextSpan(trivia.SpanStart, 0));
+                        Location location = new(trivia.SyntaxTree, new TextSpan(trivia.SpanStart, 0));
                         _diagnostics.Add(ErrorCode.WRN_XMLParseError, location, GetDescription(e));
                     }
                 }
@@ -974,7 +974,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         private static string ToBadCrefString(CrefSyntax cref)
         {
-            using (StringWriter tmp = new StringWriter(CultureInfo.InvariantCulture))
+            using (StringWriter tmp = new(CultureInfo.InvariantCulture))
             {
                 cref.WriteTo(tmp);
                 return "!:" + tmp.ToString().Replace("{", "&lt;").Replace("}", "&gt;");
@@ -1084,7 +1084,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 if (_lazyComparer == null)
                 {
-                    _lazyComparer = new SyntaxNodeLocationComparer(_compilation);
+                    _lazyComparer = new(_compilation);
                 }
                 return _lazyComparer;
             }
@@ -1215,7 +1215,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             string message = e.Message;
             try
             {
-                ResourceManager manager = new ResourceManager("System.Xml", typeof(XmlException).GetTypeInfo().Assembly);
+                ResourceManager manager = new("System.Xml", typeof(XmlException).GetTypeInfo().Assembly);
                 string locationTemplate = manager.GetString("Xml_MessageWithErrorPosition");
                 string locationString = string.Format(locationTemplate, "", e.LineNumber, e.LinePosition); // first arg is where the problem description goes
                 int position = message.IndexOf(locationString, StringComparison.Ordinal); // Expect exact match

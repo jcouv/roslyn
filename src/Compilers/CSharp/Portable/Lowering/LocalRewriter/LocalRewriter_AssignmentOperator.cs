@@ -333,9 +333,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 LocalSymbol rhsTemp = _factory.SynthesizedLocal(exprType);
 
-                BoundExpression boundRhs = new BoundLocal(syntax, rhsTemp, null, exprType);
+                BoundExpression boundRhs = new(syntax, rhsTemp, null, exprType);
 
-                BoundExpression rhsAssignment = new BoundAssignmentOperator(
+                BoundExpression rhsAssignment = new(
                     syntax,
                     boundRhs,
                     rewrittenRight,

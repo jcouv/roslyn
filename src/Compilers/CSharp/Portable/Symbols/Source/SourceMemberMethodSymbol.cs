@@ -257,7 +257,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             bool isExtensionMethod,
             bool isMetadataVirtualIgnoringModifiers = false)
         {
-            this.flags = new Flags(methodKind, declarationModifiers, returnsVoid, isExtensionMethod, isMetadataVirtualIgnoringModifiers);
+            this.flags = new(methodKind, declarationModifiers, returnsVoid, isExtensionMethod, isMetadataVirtualIgnoringModifiers);
         }
 
         protected void SetReturnsVoid(bool returnsVoid)
@@ -831,7 +831,7 @@ done:
                 return null;
             }
 
-            var builder = new MostCommonNullableValueBuilder();
+            var builder = new();
             foreach (var typeParameter in TypeParameters)
             {
                 typeParameter.GetCommonNullableValues(compilation, ref builder);
@@ -874,7 +874,7 @@ done:
             // type will not have been created. In this case, omit the attribute.
             if (moduleBuilder.CompilationState.TryGetStateMachineType(this, out NamedTypeSymbol stateMachineType))
             {
-                var arg = new TypedConstant(compilation.GetWellKnownType(WellKnownType.System_Type),
+                var arg = new(compilation.GetWellKnownType(WellKnownType.System_Type),
                     TypedConstantKind.Type, stateMachineType.GetUnboundGenericTypeOrSelf());
 
                 if (isAsync && isIterator)

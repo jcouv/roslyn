@@ -80,7 +80,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
         // a separate class with a noUncommonProperties singleton used for cases when type is "common".
         // this is done purely to save memory with expectation that "uncommon" cases are indeed uncommon. 
         #region "Uncommon properties"
-        private static readonly UncommonProperties s_noUncommonProperties = new UncommonProperties();
+        private static readonly UncommonProperties s_noUncommonProperties = new();
         private UncommonProperties _lazyUncommonProperties;
 
         private UncommonProperties GetUncommonProperties()
@@ -96,7 +96,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             if (this.IsUncommon())
             {
-                result = new UncommonProperties();
+                result = new();
                 return Interlocked.CompareExchange(ref _lazyUncommonProperties, result, null) ?? result;
             }
 
@@ -176,11 +176,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             if (arity == 0)
             {
-                result = new PENamedTypeSymbolNonGeneric(moduleSymbol, containingNamespace, handle, emittedNamespaceName, out mangleName);
+                result = new(moduleSymbol, containingNamespace, handle, emittedNamespaceName, out mangleName);
             }
             else
             {
-                result = new PENamedTypeSymbolGeneric(
+                result = new(
                     moduleSymbol,
                     containingNamespace,
                     handle,
@@ -192,7 +192,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             if (mrEx != null)
             {
-                result._lazyUseSiteDiagnostic = new CSDiagnosticInfo(ErrorCode.ERR_BogusType, result);
+                result._lazyUseSiteDiagnostic = new(ErrorCode.ERR_BogusType, result);
             }
 
             return result;
@@ -238,11 +238,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             if (metadataArity == 0)
             {
-                result = new PENamedTypeSymbolNonGeneric(moduleSymbol, containingType, handle, null, out mangleName);
+                result = new(moduleSymbol, containingType, handle, null, out mangleName);
             }
             else
             {
-                result = new PENamedTypeSymbolGeneric(
+                result = new(
                     moduleSymbol,
                     containingType,
                     handle,
@@ -254,7 +254,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             if (mrEx != null || metadataArity < containerMetadataArity)
             {
-                result._lazyUseSiteDiagnostic = new CSDiagnosticInfo(ErrorCode.ERR_BogusType, result);
+                result._lazyUseSiteDiagnostic = new(ErrorCode.ERR_BogusType, result);
             }
 
             return result;
@@ -324,7 +324,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             if (makeBad)
             {
-                _lazyUseSiteDiagnostic = new CSDiagnosticInfo(ErrorCode.ERR_BogusType, this);
+                _lazyUseSiteDiagnostic = new(ErrorCode.ERR_BogusType, this);
             }
         }
 
@@ -504,7 +504,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 if (interfaceImpls.Count > 0)
                 {
                     var symbols = ArrayBuilder<NamedTypeSymbol>.GetInstance(interfaceImpls.Count);
-                    var tokenDecoder = new MetadataDecoder(moduleSymbol, this);
+                    var tokenDecoder = new(moduleSymbol, this);
 
                     foreach (var interfaceImpl in interfaceImpls)
                     {
@@ -1063,7 +1063,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
         private class DeclarationOrderTypeSymbolComparer : IComparer<Symbol>
         {
-            public static readonly DeclarationOrderTypeSymbolComparer Instance = new DeclarationOrderTypeSymbolComparer();
+            public static readonly DeclarationOrderTypeSymbolComparer Instance = new();
 
             private DeclarationOrderTypeSymbolComparer() { }
 
@@ -1091,7 +1091,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
                 var moduleSymbol = this.ContainingPEModule;
                 var module = moduleSymbol.Module;
-                var decoder = new MetadataDecoder(moduleSymbol, this);
+                var decoder = new(moduleSymbol, this);
                 NamedTypeSymbol underlyingType = null;
 
                 try
@@ -1124,7 +1124,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                                 }
                                 else
                                 {
-                                    underlyingType = new UnsupportedMetadataTypeSymbol(); // ambiguous underlying type
+                                    underlyingType = new(); // ambiguous underlying type
                                 }
                             }
                         }
@@ -1132,14 +1132,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
                     if ((object)underlyingType == null)
                     {
-                        underlyingType = new UnsupportedMetadataTypeSymbol(); // undefined underlying type
+                        underlyingType = new(); // undefined underlying type
                     }
                 }
                 catch (BadImageFormatException mrEx)
                 {
                     if ((object)underlyingType == null)
                     {
-                        underlyingType = new UnsupportedMetadataTypeSymbol(mrEx);
+                        underlyingType = new(mrEx);
                     }
                 }
 
@@ -1198,7 +1198,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
                             if (ModuleExtensions.ShouldImportField(fieldFlags, moduleSymbol.ImportOptions))
                             {
-                                var field = new PEFieldSymbol(moduleSymbol, this, fieldDef);
+                                var field = new(moduleSymbol, this, fieldDef);
                                 members.Add(field);
                             }
                         }
@@ -1206,7 +1206,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                     catch (BadImageFormatException)
                     { }
 
-                    var syntheticCtor = new SynthesizedInstanceConstructor(this);
+                    var syntheticCtor = new(this);
                     members.Add(syntheticCtor);
                 }
                 else
@@ -1697,7 +1697,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
         private static ExtendedErrorTypeSymbol CyclicInheritanceError(PENamedTypeSymbol type, TypeSymbol declaredBase)
         {
-            var info = new CSDiagnosticInfo(ErrorCode.ERR_ImportedCircularBase, declaredBase, type);
+            var info = new(ErrorCode.ERR_ImportedCircularBase, declaredBase, type);
             return new ExtendedErrorTypeSymbol(declaredBase, LookupResultKind.NotReferencable, info, true);
         }
 
@@ -1804,7 +1804,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                     catch (BadImageFormatException)
                     { }
 
-                    var symbol = new PEFieldSymbol(moduleSymbol, this, fieldRid);
+                    var symbol = new(moduleSymbol, this, fieldRid);
                     fieldMembers.Add(symbol);
 
                     // Only private fields are potentially backing fields for field-like events.
@@ -1839,7 +1839,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 {
                     if (isOrdinaryEmbeddableStruct || module.ShouldImportMethod(methodHandle, moduleSymbol.ImportOptions))
                     {
-                        var method = new PEMethodSymbol(moduleSymbol, this, methodHandle);
+                        var method = new(moduleSymbol, this, methodHandle);
                         members.Add(method);
                         map.Add(methodHandle, method);
                     }
@@ -1964,7 +1964,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 // If so mark the type as bad, because it relies upon semantics that are not understood by the C# compiler.
                 if (this.ContainingPEModule.Module.HasRequiredAttributeAttribute(_handle))
                 {
-                    diagnostic = new CSDiagnosticInfo(ErrorCode.ERR_BogusType, this);
+                    diagnostic = new(ErrorCode.ERR_BogusType, this);
                 }
                 else if (TypeKind == TypeKind.Class && SpecialType != SpecialType.System_Enum)
                 {
@@ -2221,7 +2221,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             if (!handle.IsNil)
             {
-                var decoder = new MetadataDecoder(ContainingPEModule);
+                var decoder = new(ContainingPEModule);
                 TypedConstant[] positionalArgs;
                 KeyValuePair<string, TypedConstant>[] namedArgs;
                 if (decoder.GetCustomAttribute(handle, out positionalArgs, out namedArgs))
@@ -2436,7 +2436,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                     TypeParameterSymbol[] ownedParams = new TypeParameterSymbol[_arity];
                     for (int i = 0; i < ownedParams.Length; i++)
                     {
-                        ownedParams[i] = new PETypeParameterSymbol(moduleSymbol, this, (ushort)i, _genericParameterHandles[firstIndex + i]);
+                        ownedParams[i] = new(moduleSymbol, this, (ushort)i, _genericParameterHandles[firstIndex + i]);
                     }
 
                     ImmutableInterlocked.InterlockedInitialize(ref _lazyTypeParameters,
@@ -2454,7 +2454,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                     // match those on the containing types.
                     if (!MatchesContainingTypeParameters())
                     {
-                        diagnostic = new CSDiagnosticInfo(ErrorCode.ERR_BogusType, this);
+                        diagnostic = new(ErrorCode.ERR_BogusType, this);
                     }
                 }
 
@@ -2489,8 +2489,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 // containing symbol for the temporary type is the namespace directly.
                 var nestedType = Create(this.ContainingPEModule, (PENamespaceSymbol)this.ContainingNamespace, _handle, null);
                 var nestedTypeParameters = nestedType.TypeParameters;
-                var containingTypeMap = new TypeMap(containingTypeParameters, IndexedTypeParameterSymbol.Take(n), allowAlpha: false);
-                var nestedTypeMap = new TypeMap(nestedTypeParameters, IndexedTypeParameterSymbol.Take(nestedTypeParameters.Length), allowAlpha: false);
+                var containingTypeMap = new(containingTypeParameters, IndexedTypeParameterSymbol.Take(n), allowAlpha: false);
+                var nestedTypeMap = new(nestedTypeParameters, IndexedTypeParameterSymbol.Take(nestedTypeParameters.Length), allowAlpha: false);
 
                 for (int i = 0; i < n; i++)
                 {

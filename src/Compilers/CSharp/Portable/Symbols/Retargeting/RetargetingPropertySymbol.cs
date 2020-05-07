@@ -111,7 +111,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Retargeting
 
                 for (int i = 0; i < count; i++)
                 {
-                    parameters[i] = new RetargetingPropertyParameterSymbol(this, list[i]);
+                    parameters[i] = new(this, list[i]);
                 }
 
                 return parameters.AsImmutableOrNull();

@@ -36,7 +36,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     {
         internal static string ToDisplayString(this AttributeLocation locations)
         {
-            StringBuilder result = new StringBuilder();
+            StringBuilder result = new();
             for (int i = 1; i < (int)AttributeLocation.Unknown; i <<= 1)
             {
                 if ((locations & (AttributeLocation)i) != 0)

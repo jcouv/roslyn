@@ -324,7 +324,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 if (location == null)
                 {
-                    location = new SourceLocation(node);
+                    location = new(node);
                 }
 
                 bool reported = false;
@@ -382,7 +382,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert(diagnostics != null);
 
-            var walker = new DefiniteAssignmentPass(
+            var walker = new(
                 compilation,
                 member,
                 node,
@@ -1348,7 +1348,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         protected override LocalState ReachableBottomState()
         {
-            var result = new LocalState(BitVector.AllSet(nextVariableSlot));
+            var result = new(BitVector.AllSet(nextVariableSlot));
             result.Assigned[0] = false; // make the state reachable
             return result;
         }
@@ -2090,7 +2090,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         protected override string Dump(LocalState state)
         {
-            var builder = new StringBuilder();
+            var builder = new();
             builder.Append("[assigned ");
             AppendBitNames(state.Assigned, builder);
             builder.Append("]");

@@ -26,7 +26,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         internal override void GenerateMethodBody(TypeCompilationState compilationState, DiagnosticBag diagnostics)
         {
             CSharpSyntaxNode syntax = this.GetNonNullSyntaxNode();
-            SyntheticBoundNodeFactory factory = new SyntheticBoundNodeFactory(this, syntax, compilationState, diagnostics);
+            SyntheticBoundNodeFactory factory = new(this, syntax, compilationState, diagnostics);
             factory.CurrentFunction = this;
             ArrayBuilder<BoundStatement> body = ArrayBuilder<BoundStatement>.GetInstance();
 
@@ -55,7 +55,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 }
 
                 // Initialize the module version ID (MVID) field. Dynamic instrumentation requires the MVID of the executing module, and this field makes that accessible.
-                // MVID = new Guid(ModuleVersionIdString);
+                // MVID = new(ModuleVersionIdString);
                 body.Add(
                     factory.Assignment(
                        factory.ModuleVersionId(),

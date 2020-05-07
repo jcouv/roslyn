@@ -54,9 +54,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             // static lambdas technically have the class scope so the scope syntax is null 
             if (scopeSyntaxOpt == null)
             {
-                StaticConstructor = new SynthesizedStaticConstructor(this);
+                StaticConstructor = new(this);
                 var cacheVariableName = GeneratedNames.MakeCachedFrameInstanceFieldName();
-                SingletonCache = new SynthesizedLambdaCacheFieldSymbol(this, this, cacheVariableName, topLevelMethod, isReadOnly: true, isStatic: true);
+                SingletonCache = new(this, this, cacheVariableName, topLevelMethod, isReadOnly: true, isStatic: true);
             }
 
             AssertIsClosureScopeSyntax(scopeSyntaxOpt);

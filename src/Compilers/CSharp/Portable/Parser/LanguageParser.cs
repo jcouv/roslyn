@@ -20,7 +20,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
         // can be reused (hence pooled) since the syntax factory methods don't keep references to
         // them
 
-        private readonly SyntaxListPool _pool = new SyntaxListPool(); // Don't need to reset this.
+        private readonly SyntaxListPool _pool = new(); // Don't need to reset this.
 
         private readonly SyntaxFactoryContext _syntaxFactoryContext; // Fields are resettable.
         private readonly ContextAwareSyntax _syntaxFactory; // Has context, the fields of which are resettable.
@@ -40,8 +40,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             : base(lexer, lexerMode, oldTree, changes, allowModeReset: false,
                 preLexIfNotIncremental: true, cancellationToken: cancellationToken)
         {
-            _syntaxFactoryContext = new SyntaxFactoryContext();
-            _syntaxFactory = new ContextAwareSyntax(_syntaxFactoryContext);
+            _syntaxFactoryContext = new();
+            _syntaxFactory = new(_syntaxFactoryContext);
         }
 
         private static bool IsSomeWord(SyntaxKind kind)
@@ -169,7 +169,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
         {
             SyntaxToken tmp = null;
             SyntaxListBuilder initialBadNodes = null;
-            var body = new NamespaceBodyBuilder(_pool);
+            var body = new(_pool);
             try
             {
                 this.ParseNamespaceBody(ref tmp, ref body, ref initialBadNodes, SyntaxKind.CompilationUnit);
@@ -213,7 +213,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             // Turn the complete input into a single skipped token. This avoids running the lexer, and therefore
             // the preprocessor directive parser, which may itself run into the same problem that caused the
             // original failure.
-            var builder = new SyntaxListBuilder(1);
+            var builder = new(1);
             builder.Add(SyntaxFactory.BadToken(null, lexer.TextWindow.Text.ToString(), null));
             var fileAsTrivia = _syntaxFactory.SkippedTokensTrivia(builder.ToList<SyntaxToken>());
             node = AddLeadingSkippedSyntax(node, fileAsTrivia);
@@ -261,7 +261,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                 openBrace = this.ConvertToMissingWithTrailingTrivia(openBrace, SyntaxKind.OpenBraceToken);
             }
 
-            var body = new NamespaceBodyBuilder(_pool);
+            var body = new(_pool);
             SyntaxListBuilder initialBadNodes = null;
             try
             {

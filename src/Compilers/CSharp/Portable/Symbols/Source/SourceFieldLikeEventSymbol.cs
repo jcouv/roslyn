@@ -107,8 +107,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
 
             // Accessors will assume that Type is available.
-            _addMethod = new SynthesizedEventAccessorSymbol(this, isAdder: true);
-            _removeMethod = new SynthesizedEventAccessorSymbol(this, isAdder: false);
+            _addMethod = new(this, isAdder: true);
+            _removeMethod = new(this, isAdder: false);
 
             if (declarationSyntax.Variables[0] == declaratorSyntax)
             {
@@ -170,7 +170,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         private SourceEventFieldSymbol MakeAssociatedField(VariableDeclaratorSyntax declaratorSyntax)
         {
             DiagnosticBag discardedDiagnostics = DiagnosticBag.GetInstance();
-            var field = new SourceEventFieldSymbol(this, declaratorSyntax, discardedDiagnostics);
+            var field = new(this, declaratorSyntax, discardedDiagnostics);
             discardedDiagnostics.Free();
 
             Debug.Assert(field.Name == _name);

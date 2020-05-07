@@ -274,7 +274,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                var builder = new SyntaxTokenListBuilder(list.Count + items.Length);
+                var builder = new(list.Count + items.Length);
                 if (index > 0)
                 {
                     builder.Add(list, 0, index);

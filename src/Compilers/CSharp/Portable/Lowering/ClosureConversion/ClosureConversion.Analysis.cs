@@ -79,7 +79,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     diagnostics);
                 Debug.Assert(scopeTree != null);
 
-                var analysis = new Analysis(
+                var analysis = new(
                     scopeTree,
                     methodsConvertedToDelegates,
                     method,
@@ -334,7 +334,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     } while (addedItem == true);
 
                     // Next create the environment and add it to the declaration scope
-                    var env = new ClosureEnvironment(variablesInEnvironment, isStruct);
+                    var env = new(variablesInEnvironment, isStruct);
                     Debug.Assert(scope.DeclaredEnvironment is null);
                     scope.DeclaredEnvironment = env;
 
@@ -533,7 +533,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
                 else
                 {
-                    closureId = new DebugId(closureDebugInfo.Count, _compilationState.ModuleBuilderOpt.CurrentGenerationOrdinal);
+                    closureId = new(closureDebugInfo.Count, _compilationState.ModuleBuilderOpt.CurrentGenerationOrdinal);
                 }
 
                 int syntaxOffset = _topLevelMethod.CalculateLocalSyntaxOffset(LambdaUtilities.GetDeclaratorPosition(syntax), syntax.SyntaxTree);

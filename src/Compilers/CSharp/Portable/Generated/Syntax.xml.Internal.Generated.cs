@@ -32124,7 +32124,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.IdentifierName, identifier, this.context, out hash);
             if (cached != null) return (IdentifierNameSyntax)cached;
 
-            var result = new IdentifierNameSyntax(SyntaxKind.IdentifierName, identifier, this.context);
+            var result = new(SyntaxKind.IdentifierName, identifier, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32146,7 +32146,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.QualifiedName, left, dotToken, right, this.context, out hash);
             if (cached != null) return (QualifiedNameSyntax)cached;
 
-            var result = new QualifiedNameSyntax(SyntaxKind.QualifiedName, left, dotToken, right, this.context);
+            var result = new(SyntaxKind.QualifiedName, left, dotToken, right, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32167,7 +32167,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.GenericName, identifier, typeArgumentList, this.context, out hash);
             if (cached != null) return (GenericNameSyntax)cached;
 
-            var result = new GenericNameSyntax(SyntaxKind.GenericName, identifier, typeArgumentList, this.context);
+            var result = new(SyntaxKind.GenericName, identifier, typeArgumentList, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32189,7 +32189,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.TypeArgumentList, lessThanToken, arguments.Node, greaterThanToken, this.context, out hash);
             if (cached != null) return (TypeArgumentListSyntax)cached;
 
-            var result = new TypeArgumentListSyntax(SyntaxKind.TypeArgumentList, lessThanToken, arguments.Node, greaterThanToken, this.context);
+            var result = new(SyntaxKind.TypeArgumentList, lessThanToken, arguments.Node, greaterThanToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32211,7 +32211,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.AliasQualifiedName, alias, colonColonToken, name, this.context, out hash);
             if (cached != null) return (AliasQualifiedNameSyntax)cached;
 
-            var result = new AliasQualifiedNameSyntax(SyntaxKind.AliasQualifiedName, alias, colonColonToken, name, this.context);
+            var result = new(SyntaxKind.AliasQualifiedName, alias, colonColonToken, name, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32250,7 +32250,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.PredefinedType, keyword, this.context, out hash);
             if (cached != null) return (PredefinedTypeSyntax)cached;
 
-            var result = new PredefinedTypeSyntax(SyntaxKind.PredefinedType, keyword, this.context);
+            var result = new(SyntaxKind.PredefinedType, keyword, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32269,7 +32269,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ArrayType, elementType, rankSpecifiers.Node, this.context, out hash);
             if (cached != null) return (ArrayTypeSyntax)cached;
 
-            var result = new ArrayTypeSyntax(SyntaxKind.ArrayType, elementType, rankSpecifiers.Node, this.context);
+            var result = new(SyntaxKind.ArrayType, elementType, rankSpecifiers.Node, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32291,7 +32291,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ArrayRankSpecifier, openBracketToken, sizes.Node, closeBracketToken, this.context, out hash);
             if (cached != null) return (ArrayRankSpecifierSyntax)cached;
 
-            var result = new ArrayRankSpecifierSyntax(SyntaxKind.ArrayRankSpecifier, openBracketToken, sizes.Node, closeBracketToken, this.context);
+            var result = new(SyntaxKind.ArrayRankSpecifier, openBracketToken, sizes.Node, closeBracketToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32312,7 +32312,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.PointerType, elementType, asteriskToken, this.context, out hash);
             if (cached != null) return (PointerTypeSyntax)cached;
 
-            var result = new PointerTypeSyntax(SyntaxKind.PointerType, elementType, asteriskToken, this.context);
+            var result = new(SyntaxKind.PointerType, elementType, asteriskToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32333,7 +32333,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.NullableType, elementType, questionToken, this.context, out hash);
             if (cached != null) return (NullableTypeSyntax)cached;
 
-            var result = new NullableTypeSyntax(SyntaxKind.NullableType, elementType, questionToken, this.context);
+            var result = new(SyntaxKind.NullableType, elementType, questionToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32355,7 +32355,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.TupleType, openParenToken, elements.Node, closeParenToken, this.context, out hash);
             if (cached != null) return (TupleTypeSyntax)cached;
 
-            var result = new TupleTypeSyntax(SyntaxKind.TupleType, openParenToken, elements.Node, closeParenToken, this.context);
+            var result = new(SyntaxKind.TupleType, openParenToken, elements.Node, closeParenToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32383,7 +32383,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.TupleElement, type, identifier, this.context, out hash);
             if (cached != null) return (TupleElementSyntax)cached;
 
-            var result = new TupleElementSyntax(SyntaxKind.TupleElement, type, identifier, this.context);
+            var result = new(SyntaxKind.TupleElement, type, identifier, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32403,7 +32403,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.OmittedTypeArgument, omittedTypeArgumentToken, this.context, out hash);
             if (cached != null) return (OmittedTypeArgumentSyntax)cached;
 
-            var result = new OmittedTypeArgumentSyntax(SyntaxKind.OmittedTypeArgument, omittedTypeArgumentToken, this.context);
+            var result = new(SyntaxKind.OmittedTypeArgument, omittedTypeArgumentToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32433,7 +32433,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.RefType, refKeyword, readOnlyKeyword, type, this.context, out hash);
             if (cached != null) return (RefTypeSyntax)cached;
 
-            var result = new RefTypeSyntax(SyntaxKind.RefType, refKeyword, readOnlyKeyword, type, this.context);
+            var result = new(SyntaxKind.RefType, refKeyword, readOnlyKeyword, type, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32456,7 +32456,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ParenthesizedExpression, openParenToken, expression, closeParenToken, this.context, out hash);
             if (cached != null) return (ParenthesizedExpressionSyntax)cached;
 
-            var result = new ParenthesizedExpressionSyntax(SyntaxKind.ParenthesizedExpression, openParenToken, expression, closeParenToken, this.context);
+            var result = new(SyntaxKind.ParenthesizedExpression, openParenToken, expression, closeParenToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32478,7 +32478,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.TupleExpression, openParenToken, arguments.Node, closeParenToken, this.context, out hash);
             if (cached != null) return (TupleExpressionSyntax)cached;
 
-            var result = new TupleExpressionSyntax(SyntaxKind.TupleExpression, openParenToken, arguments.Node, closeParenToken, this.context);
+            var result = new(SyntaxKind.TupleExpression, openParenToken, arguments.Node, closeParenToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32524,7 +32524,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)kind, operatorToken, operand, this.context, out hash);
             if (cached != null) return (PrefixUnaryExpressionSyntax)cached;
 
-            var result = new PrefixUnaryExpressionSyntax(kind, operatorToken, operand, this.context);
+            var result = new(kind, operatorToken, operand, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32545,7 +32545,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.AwaitExpression, awaitKeyword, expression, this.context, out hash);
             if (cached != null) return (AwaitExpressionSyntax)cached;
 
-            var result = new AwaitExpressionSyntax(SyntaxKind.AwaitExpression, awaitKeyword, expression, this.context);
+            var result = new(SyntaxKind.AwaitExpression, awaitKeyword, expression, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32579,7 +32579,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)kind, operand, operatorToken, this.context, out hash);
             if (cached != null) return (PostfixUnaryExpressionSyntax)cached;
 
-            var result = new PostfixUnaryExpressionSyntax(kind, operand, operatorToken, this.context);
+            var result = new(kind, operand, operatorToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32612,7 +32612,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)kind, expression, operatorToken, name, this.context, out hash);
             if (cached != null) return (MemberAccessExpressionSyntax)cached;
 
-            var result = new MemberAccessExpressionSyntax(kind, expression, operatorToken, name, this.context);
+            var result = new(kind, expression, operatorToken, name, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32634,7 +32634,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ConditionalAccessExpression, expression, operatorToken, whenNotNull, this.context, out hash);
             if (cached != null) return (ConditionalAccessExpressionSyntax)cached;
 
-            var result = new ConditionalAccessExpressionSyntax(SyntaxKind.ConditionalAccessExpression, expression, operatorToken, whenNotNull, this.context);
+            var result = new(SyntaxKind.ConditionalAccessExpression, expression, operatorToken, whenNotNull, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32655,7 +32655,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.MemberBindingExpression, operatorToken, name, this.context, out hash);
             if (cached != null) return (MemberBindingExpressionSyntax)cached;
 
-            var result = new MemberBindingExpressionSyntax(SyntaxKind.MemberBindingExpression, operatorToken, name, this.context);
+            var result = new(SyntaxKind.MemberBindingExpression, operatorToken, name, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32674,7 +32674,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ElementBindingExpression, argumentList, this.context, out hash);
             if (cached != null) return (ElementBindingExpressionSyntax)cached;
 
-            var result = new ElementBindingExpressionSyntax(SyntaxKind.ElementBindingExpression, argumentList, this.context);
+            var result = new(SyntaxKind.ElementBindingExpression, argumentList, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32694,7 +32694,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.RangeExpression, leftOperand, operatorToken, rightOperand, this.context, out hash);
             if (cached != null) return (RangeExpressionSyntax)cached;
 
-            var result = new RangeExpressionSyntax(SyntaxKind.RangeExpression, leftOperand, operatorToken, rightOperand, this.context);
+            var result = new(SyntaxKind.RangeExpression, leftOperand, operatorToken, rightOperand, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32713,7 +32713,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ImplicitElementAccess, argumentList, this.context, out hash);
             if (cached != null) return (ImplicitElementAccessSyntax)cached;
 
-            var result = new ImplicitElementAccessSyntax(SyntaxKind.ImplicitElementAccess, argumentList, this.context);
+            var result = new(SyntaxKind.ImplicitElementAccess, argumentList, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32784,7 +32784,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)kind, left, operatorToken, right, this.context, out hash);
             if (cached != null) return (BinaryExpressionSyntax)cached;
 
-            var result = new BinaryExpressionSyntax(kind, left, operatorToken, right, this.context);
+            var result = new(kind, left, operatorToken, right, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32837,7 +32837,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)kind, left, operatorToken, right, this.context, out hash);
             if (cached != null) return (AssignmentExpressionSyntax)cached;
 
-            var result = new AssignmentExpressionSyntax(kind, left, operatorToken, right, this.context);
+            var result = new(kind, left, operatorToken, right, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32872,7 +32872,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ThisExpression, token, this.context, out hash);
             if (cached != null) return (ThisExpressionSyntax)cached;
 
-            var result = new ThisExpressionSyntax(SyntaxKind.ThisExpression, token, this.context);
+            var result = new(SyntaxKind.ThisExpression, token, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32892,7 +32892,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.BaseExpression, token, this.context, out hash);
             if (cached != null) return (BaseExpressionSyntax)cached;
 
-            var result = new BaseExpressionSyntax(SyntaxKind.BaseExpression, token, this.context);
+            var result = new(SyntaxKind.BaseExpression, token, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -32935,7 +32935,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)kind, token, this.context, out hash);
             if (cached != null) return (LiteralExpressionSyntax)cached;
 
-            var result = new LiteralExpressionSyntax(kind, token, this.context);
+            var result = new(kind, token, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33074,7 +33074,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.InvocationExpression, expression, argumentList, this.context, out hash);
             if (cached != null) return (InvocationExpressionSyntax)cached;
 
-            var result = new InvocationExpressionSyntax(SyntaxKind.InvocationExpression, expression, argumentList, this.context);
+            var result = new(SyntaxKind.InvocationExpression, expression, argumentList, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33094,7 +33094,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ElementAccessExpression, expression, argumentList, this.context, out hash);
             if (cached != null) return (ElementAccessExpressionSyntax)cached;
 
-            var result = new ElementAccessExpressionSyntax(SyntaxKind.ElementAccessExpression, expression, argumentList, this.context);
+            var result = new(SyntaxKind.ElementAccessExpression, expression, argumentList, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33116,7 +33116,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ArgumentList, openParenToken, arguments.Node, closeParenToken, this.context, out hash);
             if (cached != null) return (ArgumentListSyntax)cached;
 
-            var result = new ArgumentListSyntax(SyntaxKind.ArgumentList, openParenToken, arguments.Node, closeParenToken, this.context);
+            var result = new(SyntaxKind.ArgumentList, openParenToken, arguments.Node, closeParenToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33138,7 +33138,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.BracketedArgumentList, openBracketToken, arguments.Node, closeBracketToken, this.context, out hash);
             if (cached != null) return (BracketedArgumentListSyntax)cached;
 
-            var result = new BracketedArgumentListSyntax(SyntaxKind.BracketedArgumentList, openBracketToken, arguments.Node, closeBracketToken, this.context);
+            var result = new(SyntaxKind.BracketedArgumentList, openBracketToken, arguments.Node, closeBracketToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33168,7 +33168,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.Argument, nameColon, refKindKeyword, expression, this.context, out hash);
             if (cached != null) return (ArgumentSyntax)cached;
 
-            var result = new ArgumentSyntax(SyntaxKind.Argument, nameColon, refKindKeyword, expression, this.context);
+            var result = new(SyntaxKind.Argument, nameColon, refKindKeyword, expression, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33189,7 +33189,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.NameColon, name, colonToken, this.context, out hash);
             if (cached != null) return (NameColonSyntax)cached;
 
-            var result = new NameColonSyntax(SyntaxKind.NameColon, name, colonToken, this.context);
+            var result = new(SyntaxKind.NameColon, name, colonToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33209,7 +33209,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.DeclarationExpression, type, designation, this.context, out hash);
             if (cached != null) return (DeclarationExpressionSyntax)cached;
 
-            var result = new DeclarationExpressionSyntax(SyntaxKind.DeclarationExpression, type, designation, this.context);
+            var result = new(SyntaxKind.DeclarationExpression, type, designation, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33284,7 +33284,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.RefExpression, refKeyword, expression, this.context, out hash);
             if (cached != null) return (RefExpressionSyntax)cached;
 
-            var result = new RefExpressionSyntax(SyntaxKind.RefExpression, refKeyword, expression, this.context);
+            var result = new(SyntaxKind.RefExpression, refKeyword, expression, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33334,7 +33334,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)kind, openBraceToken, expressions.Node, closeBraceToken, this.context, out hash);
             if (cached != null) return (InitializerExpressionSyntax)cached;
 
-            var result = new InitializerExpressionSyntax(kind, openBraceToken, expressions.Node, closeBraceToken, this.context);
+            var result = new(kind, openBraceToken, expressions.Node, closeBraceToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33355,7 +33355,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ImplicitObjectCreationExpression, newKeyword, argumentList, initializer, this.context, out hash);
             if (cached != null) return (ImplicitObjectCreationExpressionSyntax)cached;
 
-            var result = new ImplicitObjectCreationExpressionSyntax(SyntaxKind.ImplicitObjectCreationExpression, newKeyword, argumentList, initializer, this.context);
+            var result = new(SyntaxKind.ImplicitObjectCreationExpression, newKeyword, argumentList, initializer, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33385,7 +33385,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.AnonymousObjectMemberDeclarator, nameEquals, expression, this.context, out hash);
             if (cached != null) return (AnonymousObjectMemberDeclaratorSyntax)cached;
 
-            var result = new AnonymousObjectMemberDeclaratorSyntax(SyntaxKind.AnonymousObjectMemberDeclarator, nameEquals, expression, this.context);
+            var result = new(SyntaxKind.AnonymousObjectMemberDeclarator, nameEquals, expression, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33420,7 +33420,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ArrayCreationExpression, newKeyword, type, initializer, this.context, out hash);
             if (cached != null) return (ArrayCreationExpressionSyntax)cached;
 
-            var result = new ArrayCreationExpressionSyntax(SyntaxKind.ArrayCreationExpression, newKeyword, type, initializer, this.context);
+            var result = new(SyntaxKind.ArrayCreationExpression, newKeyword, type, initializer, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33456,7 +33456,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.StackAllocArrayCreationExpression, stackAllocKeyword, type, initializer, this.context, out hash);
             if (cached != null) return (StackAllocArrayCreationExpressionSyntax)cached;
 
-            var result = new StackAllocArrayCreationExpressionSyntax(SyntaxKind.StackAllocArrayCreationExpression, stackAllocKeyword, type, initializer, this.context);
+            var result = new(SyntaxKind.StackAllocArrayCreationExpression, stackAllocKeyword, type, initializer, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33491,7 +33491,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.QueryExpression, fromClause, body, this.context, out hash);
             if (cached != null) return (QueryExpressionSyntax)cached;
 
-            var result = new QueryExpressionSyntax(SyntaxKind.QueryExpression, fromClause, body, this.context);
+            var result = new(SyntaxKind.QueryExpression, fromClause, body, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33510,7 +33510,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.QueryBody, clauses.Node, selectOrGroup, continuation, this.context, out hash);
             if (cached != null) return (QueryBodySyntax)cached;
 
-            var result = new QueryBodySyntax(SyntaxKind.QueryBody, clauses.Node, selectOrGroup, continuation, this.context);
+            var result = new(SyntaxKind.QueryBody, clauses.Node, selectOrGroup, continuation, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33583,7 +33583,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.JoinIntoClause, intoKeyword, identifier, this.context, out hash);
             if (cached != null) return (JoinIntoClauseSyntax)cached;
 
-            var result = new JoinIntoClauseSyntax(SyntaxKind.JoinIntoClause, intoKeyword, identifier, this.context);
+            var result = new(SyntaxKind.JoinIntoClause, intoKeyword, identifier, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33604,7 +33604,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.WhereClause, whereKeyword, condition, this.context, out hash);
             if (cached != null) return (WhereClauseSyntax)cached;
 
-            var result = new WhereClauseSyntax(SyntaxKind.WhereClause, whereKeyword, condition, this.context);
+            var result = new(SyntaxKind.WhereClause, whereKeyword, condition, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33624,7 +33624,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.OrderByClause, orderByKeyword, orderings.Node, this.context, out hash);
             if (cached != null) return (OrderByClauseSyntax)cached;
 
-            var result = new OrderByClauseSyntax(SyntaxKind.OrderByClause, orderByKeyword, orderings.Node, this.context);
+            var result = new(SyntaxKind.OrderByClause, orderByKeyword, orderings.Node, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33659,7 +33659,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)kind, expression, ascendingOrDescendingKeyword, this.context, out hash);
             if (cached != null) return (OrderingSyntax)cached;
 
-            var result = new OrderingSyntax(kind, expression, ascendingOrDescendingKeyword, this.context);
+            var result = new(kind, expression, ascendingOrDescendingKeyword, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33680,7 +33680,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.SelectClause, selectKeyword, expression, this.context, out hash);
             if (cached != null) return (SelectClauseSyntax)cached;
 
-            var result = new SelectClauseSyntax(SyntaxKind.SelectClause, selectKeyword, expression, this.context);
+            var result = new(SyntaxKind.SelectClause, selectKeyword, expression, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33717,7 +33717,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.QueryContinuation, intoKeyword, identifier, body, this.context, out hash);
             if (cached != null) return (QueryContinuationSyntax)cached;
 
-            var result = new QueryContinuationSyntax(SyntaxKind.QueryContinuation, intoKeyword, identifier, body, this.context);
+            var result = new(SyntaxKind.QueryContinuation, intoKeyword, identifier, body, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33737,7 +33737,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.OmittedArraySizeExpression, omittedArraySizeExpressionToken, this.context, out hash);
             if (cached != null) return (OmittedArraySizeExpressionSyntax)cached;
 
-            var result = new OmittedArraySizeExpressionSyntax(SyntaxKind.OmittedArraySizeExpression, omittedArraySizeExpressionToken, this.context);
+            var result = new(SyntaxKind.OmittedArraySizeExpression, omittedArraySizeExpressionToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33764,7 +33764,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.InterpolatedStringExpression, stringStartToken, contents.Node, stringEndToken, this.context, out hash);
             if (cached != null) return (InterpolatedStringExpressionSyntax)cached;
 
-            var result = new InterpolatedStringExpressionSyntax(SyntaxKind.InterpolatedStringExpression, stringStartToken, contents.Node, stringEndToken, this.context);
+            var result = new(SyntaxKind.InterpolatedStringExpression, stringStartToken, contents.Node, stringEndToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33786,7 +33786,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.IsPatternExpression, expression, isKeyword, pattern, this.context, out hash);
             if (cached != null) return (IsPatternExpressionSyntax)cached;
 
-            var result = new IsPatternExpressionSyntax(SyntaxKind.IsPatternExpression, expression, isKeyword, pattern, this.context);
+            var result = new(SyntaxKind.IsPatternExpression, expression, isKeyword, pattern, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33807,7 +33807,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ThrowExpression, throwKeyword, expression, this.context, out hash);
             if (cached != null) return (ThrowExpressionSyntax)cached;
 
-            var result = new ThrowExpressionSyntax(SyntaxKind.ThrowExpression, throwKeyword, expression, this.context);
+            var result = new(SyntaxKind.ThrowExpression, throwKeyword, expression, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33828,7 +33828,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.WhenClause, whenKeyword, condition, this.context, out hash);
             if (cached != null) return (WhenClauseSyntax)cached;
 
-            var result = new WhenClauseSyntax(SyntaxKind.WhenClause, whenKeyword, condition, this.context);
+            var result = new(SyntaxKind.WhenClause, whenKeyword, condition, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33848,7 +33848,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.DiscardPattern, underscoreToken, this.context, out hash);
             if (cached != null) return (DiscardPatternSyntax)cached;
 
-            var result = new DiscardPatternSyntax(SyntaxKind.DiscardPattern, underscoreToken, this.context);
+            var result = new(SyntaxKind.DiscardPattern, underscoreToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33868,7 +33868,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.DeclarationPattern, type, designation, this.context, out hash);
             if (cached != null) return (DeclarationPatternSyntax)cached;
 
-            var result = new DeclarationPatternSyntax(SyntaxKind.DeclarationPattern, type, designation, this.context);
+            var result = new(SyntaxKind.DeclarationPattern, type, designation, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33889,7 +33889,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.VarPattern, varKeyword, designation, this.context, out hash);
             if (cached != null) return (VarPatternSyntax)cached;
 
-            var result = new VarPatternSyntax(SyntaxKind.VarPattern, varKeyword, designation, this.context);
+            var result = new(SyntaxKind.VarPattern, varKeyword, designation, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33919,7 +33919,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.PositionalPatternClause, openParenToken, subpatterns.Node, closeParenToken, this.context, out hash);
             if (cached != null) return (PositionalPatternClauseSyntax)cached;
 
-            var result = new PositionalPatternClauseSyntax(SyntaxKind.PositionalPatternClause, openParenToken, subpatterns.Node, closeParenToken, this.context);
+            var result = new(SyntaxKind.PositionalPatternClause, openParenToken, subpatterns.Node, closeParenToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33941,7 +33941,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.PropertyPatternClause, openBraceToken, subpatterns.Node, closeBraceToken, this.context, out hash);
             if (cached != null) return (PropertyPatternClauseSyntax)cached;
 
-            var result = new PropertyPatternClauseSyntax(SyntaxKind.PropertyPatternClause, openBraceToken, subpatterns.Node, closeBraceToken, this.context);
+            var result = new(SyntaxKind.PropertyPatternClause, openBraceToken, subpatterns.Node, closeBraceToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33960,7 +33960,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.Subpattern, nameColon, pattern, this.context, out hash);
             if (cached != null) return (SubpatternSyntax)cached;
 
-            var result = new SubpatternSyntax(SyntaxKind.Subpattern, nameColon, pattern, this.context);
+            var result = new(SyntaxKind.Subpattern, nameColon, pattern, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33979,7 +33979,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ConstantPattern, expression, this.context, out hash);
             if (cached != null) return (ConstantPatternSyntax)cached;
 
-            var result = new ConstantPatternSyntax(SyntaxKind.ConstantPattern, expression, this.context);
+            var result = new(SyntaxKind.ConstantPattern, expression, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -33999,7 +33999,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.InterpolatedStringText, textToken, this.context, out hash);
             if (cached != null) return (InterpolatedStringTextSyntax)cached;
 
-            var result = new InterpolatedStringTextSyntax(SyntaxKind.InterpolatedStringText, textToken, this.context);
+            var result = new(SyntaxKind.InterpolatedStringText, textToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34032,7 +34032,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.InterpolationAlignmentClause, commaToken, value, this.context, out hash);
             if (cached != null) return (InterpolationAlignmentClauseSyntax)cached;
 
-            var result = new InterpolationAlignmentClauseSyntax(SyntaxKind.InterpolationAlignmentClause, commaToken, value, this.context);
+            var result = new(SyntaxKind.InterpolationAlignmentClause, commaToken, value, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34053,7 +34053,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.InterpolationFormatClause, colonToken, formatStringToken, this.context, out hash);
             if (cached != null) return (InterpolationFormatClauseSyntax)cached;
 
-            var result = new InterpolationFormatClauseSyntax(SyntaxKind.InterpolationFormatClause, colonToken, formatStringToken, this.context);
+            var result = new(SyntaxKind.InterpolationFormatClause, colonToken, formatStringToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34072,7 +34072,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.GlobalStatement, attributeLists.Node, modifiers.Node, statement, this.context, out hash);
             if (cached != null) return (GlobalStatementSyntax)cached;
 
-            var result = new GlobalStatementSyntax(SyntaxKind.GlobalStatement, attributeLists.Node, modifiers.Node, statement, this.context);
+            var result = new(SyntaxKind.GlobalStatement, attributeLists.Node, modifiers.Node, statement, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34153,7 +34153,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.VariableDeclaration, type, variables.Node, this.context, out hash);
             if (cached != null) return (VariableDeclarationSyntax)cached;
 
-            var result = new VariableDeclarationSyntax(SyntaxKind.VariableDeclaration, type, variables.Node, this.context);
+            var result = new(SyntaxKind.VariableDeclaration, type, variables.Node, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34173,7 +34173,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.VariableDeclarator, identifier, argumentList, initializer, this.context, out hash);
             if (cached != null) return (VariableDeclaratorSyntax)cached;
 
-            var result = new VariableDeclaratorSyntax(SyntaxKind.VariableDeclarator, identifier, argumentList, initializer, this.context);
+            var result = new(SyntaxKind.VariableDeclarator, identifier, argumentList, initializer, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34194,7 +34194,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.EqualsValueClause, equalsToken, value, this.context, out hash);
             if (cached != null) return (EqualsValueClauseSyntax)cached;
 
-            var result = new EqualsValueClauseSyntax(SyntaxKind.EqualsValueClause, equalsToken, value, this.context);
+            var result = new(SyntaxKind.EqualsValueClause, equalsToken, value, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34214,7 +34214,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.SingleVariableDesignation, identifier, this.context, out hash);
             if (cached != null) return (SingleVariableDesignationSyntax)cached;
 
-            var result = new SingleVariableDesignationSyntax(SyntaxKind.SingleVariableDesignation, identifier, this.context);
+            var result = new(SyntaxKind.SingleVariableDesignation, identifier, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34234,7 +34234,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.DiscardDesignation, underscoreToken, this.context, out hash);
             if (cached != null) return (DiscardDesignationSyntax)cached;
 
-            var result = new DiscardDesignationSyntax(SyntaxKind.DiscardDesignation, underscoreToken, this.context);
+            var result = new(SyntaxKind.DiscardDesignation, underscoreToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34256,7 +34256,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ParenthesizedVariableDesignation, openParenToken, variables.Node, closeParenToken, this.context, out hash);
             if (cached != null) return (ParenthesizedVariableDesignationSyntax)cached;
 
-            var result = new ParenthesizedVariableDesignationSyntax(SyntaxKind.ParenthesizedVariableDesignation, openParenToken, variables.Node, closeParenToken, this.context);
+            var result = new(SyntaxKind.ParenthesizedVariableDesignation, openParenToken, variables.Node, closeParenToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34277,7 +34277,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ExpressionStatement, attributeLists.Node, expression, semicolonToken, this.context, out hash);
             if (cached != null) return (ExpressionStatementSyntax)cached;
 
-            var result = new ExpressionStatementSyntax(SyntaxKind.ExpressionStatement, attributeLists.Node, expression, semicolonToken, this.context);
+            var result = new(SyntaxKind.ExpressionStatement, attributeLists.Node, expression, semicolonToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34297,7 +34297,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.EmptyStatement, attributeLists.Node, semicolonToken, this.context, out hash);
             if (cached != null) return (EmptyStatementSyntax)cached;
 
-            var result = new EmptyStatementSyntax(SyntaxKind.EmptyStatement, attributeLists.Node, semicolonToken, this.context);
+            var result = new(SyntaxKind.EmptyStatement, attributeLists.Node, semicolonToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34361,7 +34361,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.BreakStatement, attributeLists.Node, breakKeyword, semicolonToken, this.context, out hash);
             if (cached != null) return (BreakStatementSyntax)cached;
 
-            var result = new BreakStatementSyntax(SyntaxKind.BreakStatement, attributeLists.Node, breakKeyword, semicolonToken, this.context);
+            var result = new(SyntaxKind.BreakStatement, attributeLists.Node, breakKeyword, semicolonToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34383,7 +34383,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ContinueStatement, attributeLists.Node, continueKeyword, semicolonToken, this.context, out hash);
             if (cached != null) return (ContinueStatementSyntax)cached;
 
-            var result = new ContinueStatementSyntax(SyntaxKind.ContinueStatement, attributeLists.Node, continueKeyword, semicolonToken, this.context);
+            var result = new(SyntaxKind.ContinueStatement, attributeLists.Node, continueKeyword, semicolonToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34617,7 +34617,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)kind, attributeLists.Node, keyword, block, this.context, out hash);
             if (cached != null) return (CheckedStatementSyntax)cached;
 
-            var result = new CheckedStatementSyntax(kind, attributeLists.Node, keyword, block, this.context);
+            var result = new(kind, attributeLists.Node, keyword, block, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34638,7 +34638,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.UnsafeStatement, attributeLists.Node, unsafeKeyword, block, this.context, out hash);
             if (cached != null) return (UnsafeStatementSyntax)cached;
 
-            var result = new UnsafeStatementSyntax(SyntaxKind.UnsafeStatement, attributeLists.Node, unsafeKeyword, block, this.context);
+            var result = new(SyntaxKind.UnsafeStatement, attributeLists.Node, unsafeKeyword, block, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34691,7 +34691,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ElseClause, elseKeyword, statement, this.context, out hash);
             if (cached != null) return (ElseClauseSyntax)cached;
 
-            var result = new ElseClauseSyntax(SyntaxKind.ElseClause, elseKeyword, statement, this.context);
+            var result = new(SyntaxKind.ElseClause, elseKeyword, statement, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34742,7 +34742,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.SwitchSection, labels.Node, statements.Node, this.context, out hash);
             if (cached != null) return (SwitchSectionSyntax)cached;
 
-            var result = new SwitchSectionSyntax(SyntaxKind.SwitchSection, labels.Node, statements.Node, this.context);
+            var result = new(SyntaxKind.SwitchSection, labels.Node, statements.Node, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34776,7 +34776,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.CaseSwitchLabel, keyword, value, colonToken, this.context, out hash);
             if (cached != null) return (CaseSwitchLabelSyntax)cached;
 
-            var result = new CaseSwitchLabelSyntax(SyntaxKind.CaseSwitchLabel, keyword, value, colonToken, this.context);
+            var result = new(SyntaxKind.CaseSwitchLabel, keyword, value, colonToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34797,7 +34797,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.DefaultSwitchLabel, keyword, colonToken, this.context, out hash);
             if (cached != null) return (DefaultSwitchLabelSyntax)cached;
 
-            var result = new DefaultSwitchLabelSyntax(SyntaxKind.DefaultSwitchLabel, keyword, colonToken, this.context);
+            var result = new(SyntaxKind.DefaultSwitchLabel, keyword, colonToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -34904,7 +34904,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.FinallyClause, finallyKeyword, block, this.context, out hash);
             if (cached != null) return (FinallyClauseSyntax)cached;
 
-            var result = new FinallyClauseSyntax(SyntaxKind.FinallyClause, finallyKeyword, block, this.context);
+            var result = new(SyntaxKind.FinallyClause, finallyKeyword, block, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35000,7 +35000,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.AttributeTargetSpecifier, identifier, colonToken, this.context, out hash);
             if (cached != null) return (AttributeTargetSpecifierSyntax)cached;
 
-            var result = new AttributeTargetSpecifierSyntax(SyntaxKind.AttributeTargetSpecifier, identifier, colonToken, this.context);
+            var result = new(SyntaxKind.AttributeTargetSpecifier, identifier, colonToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35019,7 +35019,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.Attribute, name, argumentList, this.context, out hash);
             if (cached != null) return (AttributeSyntax)cached;
 
-            var result = new AttributeSyntax(SyntaxKind.Attribute, name, argumentList, this.context);
+            var result = new(SyntaxKind.Attribute, name, argumentList, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35041,7 +35041,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.AttributeArgumentList, openParenToken, arguments.Node, closeParenToken, this.context, out hash);
             if (cached != null) return (AttributeArgumentListSyntax)cached;
 
-            var result = new AttributeArgumentListSyntax(SyntaxKind.AttributeArgumentList, openParenToken, arguments.Node, closeParenToken, this.context);
+            var result = new(SyntaxKind.AttributeArgumentList, openParenToken, arguments.Node, closeParenToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35060,7 +35060,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.AttributeArgument, nameEquals, nameColon, expression, this.context, out hash);
             if (cached != null) return (AttributeArgumentSyntax)cached;
 
-            var result = new AttributeArgumentSyntax(SyntaxKind.AttributeArgument, nameEquals, nameColon, expression, this.context);
+            var result = new(SyntaxKind.AttributeArgument, nameEquals, nameColon, expression, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35081,7 +35081,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.NameEquals, name, equalsToken, this.context, out hash);
             if (cached != null) return (NameEqualsSyntax)cached;
 
-            var result = new NameEqualsSyntax(SyntaxKind.NameEquals, name, equalsToken, this.context);
+            var result = new(SyntaxKind.NameEquals, name, equalsToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35103,7 +35103,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.TypeParameterList, lessThanToken, parameters.Node, greaterThanToken, this.context, out hash);
             if (cached != null) return (TypeParameterListSyntax)cached;
 
-            var result = new TypeParameterListSyntax(SyntaxKind.TypeParameterList, lessThanToken, parameters.Node, greaterThanToken, this.context);
+            var result = new(SyntaxKind.TypeParameterList, lessThanToken, parameters.Node, greaterThanToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35133,7 +35133,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.TypeParameter, attributeLists.Node, varianceKeyword, identifier, this.context, out hash);
             if (cached != null) return (TypeParameterSyntax)cached;
 
-            var result = new TypeParameterSyntax(SyntaxKind.TypeParameter, attributeLists.Node, varianceKeyword, identifier, this.context);
+            var result = new(SyntaxKind.TypeParameter, attributeLists.Node, varianceKeyword, identifier, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35279,7 +35279,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.BaseList, colonToken, types.Node, this.context, out hash);
             if (cached != null) return (BaseListSyntax)cached;
 
-            var result = new BaseListSyntax(SyntaxKind.BaseList, colonToken, types.Node, this.context);
+            var result = new(SyntaxKind.BaseList, colonToken, types.Node, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35298,7 +35298,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.SimpleBaseType, type, this.context, out hash);
             if (cached != null) return (SimpleBaseTypeSyntax)cached;
 
-            var result = new SimpleBaseTypeSyntax(SyntaxKind.SimpleBaseType, type, this.context);
+            var result = new(SyntaxKind.SimpleBaseType, type, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35335,7 +35335,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ConstructorConstraint, newKeyword, openParenToken, closeParenToken, this.context, out hash);
             if (cached != null) return (ConstructorConstraintSyntax)cached;
 
-            var result = new ConstructorConstraintSyntax(SyntaxKind.ConstructorConstraint, newKeyword, openParenToken, closeParenToken, this.context);
+            var result = new(SyntaxKind.ConstructorConstraint, newKeyword, openParenToken, closeParenToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35375,7 +35375,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)kind, classOrStructKeyword, questionToken, this.context, out hash);
             if (cached != null) return (ClassOrStructConstraintSyntax)cached;
 
-            var result = new ClassOrStructConstraintSyntax(kind, classOrStructKeyword, questionToken, this.context);
+            var result = new(kind, classOrStructKeyword, questionToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35394,7 +35394,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.TypeConstraint, type, this.context, out hash);
             if (cached != null) return (TypeConstraintSyntax)cached;
 
-            var result = new TypeConstraintSyntax(SyntaxKind.TypeConstraint, type, this.context);
+            var result = new(SyntaxKind.TypeConstraint, type, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35439,7 +35439,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ExplicitInterfaceSpecifier, name, dotToken, this.context, out hash);
             if (cached != null) return (ExplicitInterfaceSpecifierSyntax)cached;
 
-            var result = new ExplicitInterfaceSpecifierSyntax(SyntaxKind.ExplicitInterfaceSpecifier, name, dotToken, this.context);
+            var result = new(SyntaxKind.ExplicitInterfaceSpecifier, name, dotToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35591,7 +35591,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)kind, colonToken, thisOrBaseKeyword, argumentList, this.context, out hash);
             if (cached != null) return (ConstructorInitializerSyntax)cached;
 
-            var result = new ConstructorInitializerSyntax(kind, colonToken, thisOrBaseKeyword, argumentList, this.context);
+            var result = new(kind, colonToken, thisOrBaseKeyword, argumentList, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35654,7 +35654,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ArrowExpressionClause, arrowToken, expression, this.context, out hash);
             if (cached != null) return (ArrowExpressionClauseSyntax)cached;
 
-            var result = new ArrowExpressionClauseSyntax(SyntaxKind.ArrowExpressionClause, arrowToken, expression, this.context);
+            var result = new(SyntaxKind.ArrowExpressionClause, arrowToken, expression, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35719,7 +35719,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.AccessorList, openBraceToken, accessors.Node, closeBraceToken, this.context, out hash);
             if (cached != null) return (AccessorListSyntax)cached;
 
-            var result = new AccessorListSyntax(SyntaxKind.AccessorList, openBraceToken, accessors.Node, closeBraceToken, this.context);
+            var result = new(SyntaxKind.AccessorList, openBraceToken, accessors.Node, closeBraceToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35777,7 +35777,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.ParameterList, openParenToken, parameters.Node, closeParenToken, this.context, out hash);
             if (cached != null) return (ParameterListSyntax)cached;
 
-            var result = new ParameterListSyntax(SyntaxKind.ParameterList, openParenToken, parameters.Node, closeParenToken, this.context);
+            var result = new(SyntaxKind.ParameterList, openParenToken, parameters.Node, closeParenToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35799,7 +35799,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.BracketedParameterList, openBracketToken, parameters.Node, closeBracketToken, this.context, out hash);
             if (cached != null) return (BracketedParameterListSyntax)cached;
 
-            var result = new BracketedParameterListSyntax(SyntaxKind.BracketedParameterList, openBracketToken, parameters.Node, closeBracketToken, this.context);
+            var result = new(SyntaxKind.BracketedParameterList, openBracketToken, parameters.Node, closeBracketToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35865,7 +35865,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.TypeCref, type, this.context, out hash);
             if (cached != null) return (TypeCrefSyntax)cached;
 
-            var result = new TypeCrefSyntax(SyntaxKind.TypeCref, type, this.context);
+            var result = new(SyntaxKind.TypeCref, type, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35887,7 +35887,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.QualifiedCref, container, dotToken, member, this.context, out hash);
             if (cached != null) return (QualifiedCrefSyntax)cached;
 
-            var result = new QualifiedCrefSyntax(SyntaxKind.QualifiedCref, container, dotToken, member, this.context);
+            var result = new(SyntaxKind.QualifiedCref, container, dotToken, member, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35906,7 +35906,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.NameMemberCref, name, parameters, this.context, out hash);
             if (cached != null) return (NameMemberCrefSyntax)cached;
 
-            var result = new NameMemberCrefSyntax(SyntaxKind.NameMemberCref, name, parameters, this.context);
+            var result = new(SyntaxKind.NameMemberCref, name, parameters, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35926,7 +35926,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.IndexerMemberCref, thisKeyword, parameters, this.context, out hash);
             if (cached != null) return (IndexerMemberCrefSyntax)cached;
 
-            var result = new IndexerMemberCrefSyntax(SyntaxKind.IndexerMemberCref, thisKeyword, parameters, this.context);
+            var result = new(SyntaxKind.IndexerMemberCref, thisKeyword, parameters, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -35973,7 +35973,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.OperatorMemberCref, operatorKeyword, operatorToken, parameters, this.context, out hash);
             if (cached != null) return (OperatorMemberCrefSyntax)cached;
 
-            var result = new OperatorMemberCrefSyntax(SyntaxKind.OperatorMemberCref, operatorKeyword, operatorToken, parameters, this.context);
+            var result = new(SyntaxKind.OperatorMemberCref, operatorKeyword, operatorToken, parameters, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36013,7 +36013,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.CrefParameterList, openParenToken, parameters.Node, closeParenToken, this.context, out hash);
             if (cached != null) return (CrefParameterListSyntax)cached;
 
-            var result = new CrefParameterListSyntax(SyntaxKind.CrefParameterList, openParenToken, parameters.Node, closeParenToken, this.context);
+            var result = new(SyntaxKind.CrefParameterList, openParenToken, parameters.Node, closeParenToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36035,7 +36035,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.CrefBracketedParameterList, openBracketToken, parameters.Node, closeBracketToken, this.context, out hash);
             if (cached != null) return (CrefBracketedParameterListSyntax)cached;
 
-            var result = new CrefBracketedParameterListSyntax(SyntaxKind.CrefBracketedParameterList, openBracketToken, parameters.Node, closeBracketToken, this.context);
+            var result = new(SyntaxKind.CrefBracketedParameterList, openBracketToken, parameters.Node, closeBracketToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36065,7 +36065,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.CrefParameter, refKindKeyword, type, this.context, out hash);
             if (cached != null) return (CrefParameterSyntax)cached;
 
-            var result = new CrefParameterSyntax(SyntaxKind.CrefParameter, refKindKeyword, type, this.context);
+            var result = new(SyntaxKind.CrefParameter, refKindKeyword, type, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36085,7 +36085,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.XmlElement, startTag, content.Node, endTag, this.context, out hash);
             if (cached != null) return (XmlElementSyntax)cached;
 
-            var result = new XmlElementSyntax(SyntaxKind.XmlElement, startTag, content.Node, endTag, this.context);
+            var result = new(SyntaxKind.XmlElement, startTag, content.Node, endTag, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36121,7 +36121,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.XmlElementEndTag, lessThanSlashToken, name, greaterThanToken, this.context, out hash);
             if (cached != null) return (XmlElementEndTagSyntax)cached;
 
-            var result = new XmlElementEndTagSyntax(SyntaxKind.XmlElementEndTag, lessThanSlashToken, name, greaterThanToken, this.context);
+            var result = new(SyntaxKind.XmlElementEndTag, lessThanSlashToken, name, greaterThanToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36154,7 +36154,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.XmlName, prefix, localName, this.context, out hash);
             if (cached != null) return (XmlNameSyntax)cached;
 
-            var result = new XmlNameSyntax(SyntaxKind.XmlName, prefix, localName, this.context);
+            var result = new(SyntaxKind.XmlName, prefix, localName, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36176,7 +36176,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.XmlPrefix, prefix, colonToken, this.context, out hash);
             if (cached != null) return (XmlPrefixSyntax)cached;
 
-            var result = new XmlPrefixSyntax(SyntaxKind.XmlPrefix, prefix, colonToken, this.context);
+            var result = new(SyntaxKind.XmlPrefix, prefix, colonToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36271,7 +36271,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.XmlText, textTokens.Node, this.context, out hash);
             if (cached != null) return (XmlTextSyntax)cached;
 
-            var result = new XmlTextSyntax(SyntaxKind.XmlText, textTokens.Node, this.context);
+            var result = new(SyntaxKind.XmlText, textTokens.Node, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36293,7 +36293,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.XmlCDataSection, startCDataToken, textTokens.Node, endCDataToken, this.context, out hash);
             if (cached != null) return (XmlCDataSectionSyntax)cached;
 
-            var result = new XmlCDataSectionSyntax(SyntaxKind.XmlCDataSection, startCDataToken, textTokens.Node, endCDataToken, this.context);
+            var result = new(SyntaxKind.XmlCDataSection, startCDataToken, textTokens.Node, endCDataToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36328,7 +36328,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = CSharpSyntaxNodeCache.TryGetNode((int)SyntaxKind.XmlComment, lessThanExclamationMinusMinusToken, textTokens.Node, minusMinusGreaterThanToken, this.context, out hash);
             if (cached != null) return (XmlCommentSyntax)cached;
 
-            var result = new XmlCommentSyntax(SyntaxKind.XmlComment, lessThanExclamationMinusMinusToken, textTokens.Node, minusMinusGreaterThanToken, this.context);
+            var result = new(SyntaxKind.XmlComment, lessThanExclamationMinusMinusToken, textTokens.Node, minusMinusGreaterThanToken, this.context);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36669,7 +36669,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.IdentifierName, identifier, out hash);
             if (cached != null) return (IdentifierNameSyntax)cached;
 
-            var result = new IdentifierNameSyntax(SyntaxKind.IdentifierName, identifier);
+            var result = new(SyntaxKind.IdentifierName, identifier);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36691,7 +36691,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.QualifiedName, left, dotToken, right, out hash);
             if (cached != null) return (QualifiedNameSyntax)cached;
 
-            var result = new QualifiedNameSyntax(SyntaxKind.QualifiedName, left, dotToken, right);
+            var result = new(SyntaxKind.QualifiedName, left, dotToken, right);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36712,7 +36712,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.GenericName, identifier, typeArgumentList, out hash);
             if (cached != null) return (GenericNameSyntax)cached;
 
-            var result = new GenericNameSyntax(SyntaxKind.GenericName, identifier, typeArgumentList);
+            var result = new(SyntaxKind.GenericName, identifier, typeArgumentList);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36734,7 +36734,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.TypeArgumentList, lessThanToken, arguments.Node, greaterThanToken, out hash);
             if (cached != null) return (TypeArgumentListSyntax)cached;
 
-            var result = new TypeArgumentListSyntax(SyntaxKind.TypeArgumentList, lessThanToken, arguments.Node, greaterThanToken);
+            var result = new(SyntaxKind.TypeArgumentList, lessThanToken, arguments.Node, greaterThanToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36756,7 +36756,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.AliasQualifiedName, alias, colonColonToken, name, out hash);
             if (cached != null) return (AliasQualifiedNameSyntax)cached;
 
-            var result = new AliasQualifiedNameSyntax(SyntaxKind.AliasQualifiedName, alias, colonColonToken, name);
+            var result = new(SyntaxKind.AliasQualifiedName, alias, colonColonToken, name);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36795,7 +36795,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.PredefinedType, keyword, out hash);
             if (cached != null) return (PredefinedTypeSyntax)cached;
 
-            var result = new PredefinedTypeSyntax(SyntaxKind.PredefinedType, keyword);
+            var result = new(SyntaxKind.PredefinedType, keyword);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36814,7 +36814,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ArrayType, elementType, rankSpecifiers.Node, out hash);
             if (cached != null) return (ArrayTypeSyntax)cached;
 
-            var result = new ArrayTypeSyntax(SyntaxKind.ArrayType, elementType, rankSpecifiers.Node);
+            var result = new(SyntaxKind.ArrayType, elementType, rankSpecifiers.Node);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36836,7 +36836,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ArrayRankSpecifier, openBracketToken, sizes.Node, closeBracketToken, out hash);
             if (cached != null) return (ArrayRankSpecifierSyntax)cached;
 
-            var result = new ArrayRankSpecifierSyntax(SyntaxKind.ArrayRankSpecifier, openBracketToken, sizes.Node, closeBracketToken);
+            var result = new(SyntaxKind.ArrayRankSpecifier, openBracketToken, sizes.Node, closeBracketToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36857,7 +36857,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.PointerType, elementType, asteriskToken, out hash);
             if (cached != null) return (PointerTypeSyntax)cached;
 
-            var result = new PointerTypeSyntax(SyntaxKind.PointerType, elementType, asteriskToken);
+            var result = new(SyntaxKind.PointerType, elementType, asteriskToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36878,7 +36878,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.NullableType, elementType, questionToken, out hash);
             if (cached != null) return (NullableTypeSyntax)cached;
 
-            var result = new NullableTypeSyntax(SyntaxKind.NullableType, elementType, questionToken);
+            var result = new(SyntaxKind.NullableType, elementType, questionToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36900,7 +36900,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.TupleType, openParenToken, elements.Node, closeParenToken, out hash);
             if (cached != null) return (TupleTypeSyntax)cached;
 
-            var result = new TupleTypeSyntax(SyntaxKind.TupleType, openParenToken, elements.Node, closeParenToken);
+            var result = new(SyntaxKind.TupleType, openParenToken, elements.Node, closeParenToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36928,7 +36928,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.TupleElement, type, identifier, out hash);
             if (cached != null) return (TupleElementSyntax)cached;
 
-            var result = new TupleElementSyntax(SyntaxKind.TupleElement, type, identifier);
+            var result = new(SyntaxKind.TupleElement, type, identifier);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36948,7 +36948,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.OmittedTypeArgument, omittedTypeArgumentToken, out hash);
             if (cached != null) return (OmittedTypeArgumentSyntax)cached;
 
-            var result = new OmittedTypeArgumentSyntax(SyntaxKind.OmittedTypeArgument, omittedTypeArgumentToken);
+            var result = new(SyntaxKind.OmittedTypeArgument, omittedTypeArgumentToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -36978,7 +36978,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.RefType, refKeyword, readOnlyKeyword, type, out hash);
             if (cached != null) return (RefTypeSyntax)cached;
 
-            var result = new RefTypeSyntax(SyntaxKind.RefType, refKeyword, readOnlyKeyword, type);
+            var result = new(SyntaxKind.RefType, refKeyword, readOnlyKeyword, type);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37001,7 +37001,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ParenthesizedExpression, openParenToken, expression, closeParenToken, out hash);
             if (cached != null) return (ParenthesizedExpressionSyntax)cached;
 
-            var result = new ParenthesizedExpressionSyntax(SyntaxKind.ParenthesizedExpression, openParenToken, expression, closeParenToken);
+            var result = new(SyntaxKind.ParenthesizedExpression, openParenToken, expression, closeParenToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37023,7 +37023,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.TupleExpression, openParenToken, arguments.Node, closeParenToken, out hash);
             if (cached != null) return (TupleExpressionSyntax)cached;
 
-            var result = new TupleExpressionSyntax(SyntaxKind.TupleExpression, openParenToken, arguments.Node, closeParenToken);
+            var result = new(SyntaxKind.TupleExpression, openParenToken, arguments.Node, closeParenToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37069,7 +37069,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)kind, operatorToken, operand, out hash);
             if (cached != null) return (PrefixUnaryExpressionSyntax)cached;
 
-            var result = new PrefixUnaryExpressionSyntax(kind, operatorToken, operand);
+            var result = new(kind, operatorToken, operand);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37090,7 +37090,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.AwaitExpression, awaitKeyword, expression, out hash);
             if (cached != null) return (AwaitExpressionSyntax)cached;
 
-            var result = new AwaitExpressionSyntax(SyntaxKind.AwaitExpression, awaitKeyword, expression);
+            var result = new(SyntaxKind.AwaitExpression, awaitKeyword, expression);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37124,7 +37124,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)kind, operand, operatorToken, out hash);
             if (cached != null) return (PostfixUnaryExpressionSyntax)cached;
 
-            var result = new PostfixUnaryExpressionSyntax(kind, operand, operatorToken);
+            var result = new(kind, operand, operatorToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37157,7 +37157,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)kind, expression, operatorToken, name, out hash);
             if (cached != null) return (MemberAccessExpressionSyntax)cached;
 
-            var result = new MemberAccessExpressionSyntax(kind, expression, operatorToken, name);
+            var result = new(kind, expression, operatorToken, name);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37179,7 +37179,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ConditionalAccessExpression, expression, operatorToken, whenNotNull, out hash);
             if (cached != null) return (ConditionalAccessExpressionSyntax)cached;
 
-            var result = new ConditionalAccessExpressionSyntax(SyntaxKind.ConditionalAccessExpression, expression, operatorToken, whenNotNull);
+            var result = new(SyntaxKind.ConditionalAccessExpression, expression, operatorToken, whenNotNull);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37200,7 +37200,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.MemberBindingExpression, operatorToken, name, out hash);
             if (cached != null) return (MemberBindingExpressionSyntax)cached;
 
-            var result = new MemberBindingExpressionSyntax(SyntaxKind.MemberBindingExpression, operatorToken, name);
+            var result = new(SyntaxKind.MemberBindingExpression, operatorToken, name);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37219,7 +37219,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ElementBindingExpression, argumentList, out hash);
             if (cached != null) return (ElementBindingExpressionSyntax)cached;
 
-            var result = new ElementBindingExpressionSyntax(SyntaxKind.ElementBindingExpression, argumentList);
+            var result = new(SyntaxKind.ElementBindingExpression, argumentList);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37239,7 +37239,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.RangeExpression, leftOperand, operatorToken, rightOperand, out hash);
             if (cached != null) return (RangeExpressionSyntax)cached;
 
-            var result = new RangeExpressionSyntax(SyntaxKind.RangeExpression, leftOperand, operatorToken, rightOperand);
+            var result = new(SyntaxKind.RangeExpression, leftOperand, operatorToken, rightOperand);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37258,7 +37258,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ImplicitElementAccess, argumentList, out hash);
             if (cached != null) return (ImplicitElementAccessSyntax)cached;
 
-            var result = new ImplicitElementAccessSyntax(SyntaxKind.ImplicitElementAccess, argumentList);
+            var result = new(SyntaxKind.ImplicitElementAccess, argumentList);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37329,7 +37329,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)kind, left, operatorToken, right, out hash);
             if (cached != null) return (BinaryExpressionSyntax)cached;
 
-            var result = new BinaryExpressionSyntax(kind, left, operatorToken, right);
+            var result = new(kind, left, operatorToken, right);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37382,7 +37382,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)kind, left, operatorToken, right, out hash);
             if (cached != null) return (AssignmentExpressionSyntax)cached;
 
-            var result = new AssignmentExpressionSyntax(kind, left, operatorToken, right);
+            var result = new(kind, left, operatorToken, right);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37417,7 +37417,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ThisExpression, token, out hash);
             if (cached != null) return (ThisExpressionSyntax)cached;
 
-            var result = new ThisExpressionSyntax(SyntaxKind.ThisExpression, token);
+            var result = new(SyntaxKind.ThisExpression, token);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37437,7 +37437,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.BaseExpression, token, out hash);
             if (cached != null) return (BaseExpressionSyntax)cached;
 
-            var result = new BaseExpressionSyntax(SyntaxKind.BaseExpression, token);
+            var result = new(SyntaxKind.BaseExpression, token);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37480,7 +37480,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)kind, token, out hash);
             if (cached != null) return (LiteralExpressionSyntax)cached;
 
-            var result = new LiteralExpressionSyntax(kind, token);
+            var result = new(kind, token);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37619,7 +37619,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.InvocationExpression, expression, argumentList, out hash);
             if (cached != null) return (InvocationExpressionSyntax)cached;
 
-            var result = new InvocationExpressionSyntax(SyntaxKind.InvocationExpression, expression, argumentList);
+            var result = new(SyntaxKind.InvocationExpression, expression, argumentList);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37639,7 +37639,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ElementAccessExpression, expression, argumentList, out hash);
             if (cached != null) return (ElementAccessExpressionSyntax)cached;
 
-            var result = new ElementAccessExpressionSyntax(SyntaxKind.ElementAccessExpression, expression, argumentList);
+            var result = new(SyntaxKind.ElementAccessExpression, expression, argumentList);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37661,7 +37661,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ArgumentList, openParenToken, arguments.Node, closeParenToken, out hash);
             if (cached != null) return (ArgumentListSyntax)cached;
 
-            var result = new ArgumentListSyntax(SyntaxKind.ArgumentList, openParenToken, arguments.Node, closeParenToken);
+            var result = new(SyntaxKind.ArgumentList, openParenToken, arguments.Node, closeParenToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37683,7 +37683,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.BracketedArgumentList, openBracketToken, arguments.Node, closeBracketToken, out hash);
             if (cached != null) return (BracketedArgumentListSyntax)cached;
 
-            var result = new BracketedArgumentListSyntax(SyntaxKind.BracketedArgumentList, openBracketToken, arguments.Node, closeBracketToken);
+            var result = new(SyntaxKind.BracketedArgumentList, openBracketToken, arguments.Node, closeBracketToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37713,7 +37713,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.Argument, nameColon, refKindKeyword, expression, out hash);
             if (cached != null) return (ArgumentSyntax)cached;
 
-            var result = new ArgumentSyntax(SyntaxKind.Argument, nameColon, refKindKeyword, expression);
+            var result = new(SyntaxKind.Argument, nameColon, refKindKeyword, expression);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37734,7 +37734,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.NameColon, name, colonToken, out hash);
             if (cached != null) return (NameColonSyntax)cached;
 
-            var result = new NameColonSyntax(SyntaxKind.NameColon, name, colonToken);
+            var result = new(SyntaxKind.NameColon, name, colonToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37754,7 +37754,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.DeclarationExpression, type, designation, out hash);
             if (cached != null) return (DeclarationExpressionSyntax)cached;
 
-            var result = new DeclarationExpressionSyntax(SyntaxKind.DeclarationExpression, type, designation);
+            var result = new(SyntaxKind.DeclarationExpression, type, designation);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37829,7 +37829,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.RefExpression, refKeyword, expression, out hash);
             if (cached != null) return (RefExpressionSyntax)cached;
 
-            var result = new RefExpressionSyntax(SyntaxKind.RefExpression, refKeyword, expression);
+            var result = new(SyntaxKind.RefExpression, refKeyword, expression);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37879,7 +37879,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)kind, openBraceToken, expressions.Node, closeBraceToken, out hash);
             if (cached != null) return (InitializerExpressionSyntax)cached;
 
-            var result = new InitializerExpressionSyntax(kind, openBraceToken, expressions.Node, closeBraceToken);
+            var result = new(kind, openBraceToken, expressions.Node, closeBraceToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37900,7 +37900,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ImplicitObjectCreationExpression, newKeyword, argumentList, initializer, out hash);
             if (cached != null) return (ImplicitObjectCreationExpressionSyntax)cached;
 
-            var result = new ImplicitObjectCreationExpressionSyntax(SyntaxKind.ImplicitObjectCreationExpression, newKeyword, argumentList, initializer);
+            var result = new(SyntaxKind.ImplicitObjectCreationExpression, newKeyword, argumentList, initializer);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37930,7 +37930,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.AnonymousObjectMemberDeclarator, nameEquals, expression, out hash);
             if (cached != null) return (AnonymousObjectMemberDeclaratorSyntax)cached;
 
-            var result = new AnonymousObjectMemberDeclaratorSyntax(SyntaxKind.AnonymousObjectMemberDeclarator, nameEquals, expression);
+            var result = new(SyntaxKind.AnonymousObjectMemberDeclarator, nameEquals, expression);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -37965,7 +37965,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ArrayCreationExpression, newKeyword, type, initializer, out hash);
             if (cached != null) return (ArrayCreationExpressionSyntax)cached;
 
-            var result = new ArrayCreationExpressionSyntax(SyntaxKind.ArrayCreationExpression, newKeyword, type, initializer);
+            var result = new(SyntaxKind.ArrayCreationExpression, newKeyword, type, initializer);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38001,7 +38001,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.StackAllocArrayCreationExpression, stackAllocKeyword, type, initializer, out hash);
             if (cached != null) return (StackAllocArrayCreationExpressionSyntax)cached;
 
-            var result = new StackAllocArrayCreationExpressionSyntax(SyntaxKind.StackAllocArrayCreationExpression, stackAllocKeyword, type, initializer);
+            var result = new(SyntaxKind.StackAllocArrayCreationExpression, stackAllocKeyword, type, initializer);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38036,7 +38036,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.QueryExpression, fromClause, body, out hash);
             if (cached != null) return (QueryExpressionSyntax)cached;
 
-            var result = new QueryExpressionSyntax(SyntaxKind.QueryExpression, fromClause, body);
+            var result = new(SyntaxKind.QueryExpression, fromClause, body);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38055,7 +38055,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.QueryBody, clauses.Node, selectOrGroup, continuation, out hash);
             if (cached != null) return (QueryBodySyntax)cached;
 
-            var result = new QueryBodySyntax(SyntaxKind.QueryBody, clauses.Node, selectOrGroup, continuation);
+            var result = new(SyntaxKind.QueryBody, clauses.Node, selectOrGroup, continuation);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38128,7 +38128,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.JoinIntoClause, intoKeyword, identifier, out hash);
             if (cached != null) return (JoinIntoClauseSyntax)cached;
 
-            var result = new JoinIntoClauseSyntax(SyntaxKind.JoinIntoClause, intoKeyword, identifier);
+            var result = new(SyntaxKind.JoinIntoClause, intoKeyword, identifier);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38149,7 +38149,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.WhereClause, whereKeyword, condition, out hash);
             if (cached != null) return (WhereClauseSyntax)cached;
 
-            var result = new WhereClauseSyntax(SyntaxKind.WhereClause, whereKeyword, condition);
+            var result = new(SyntaxKind.WhereClause, whereKeyword, condition);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38169,7 +38169,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.OrderByClause, orderByKeyword, orderings.Node, out hash);
             if (cached != null) return (OrderByClauseSyntax)cached;
 
-            var result = new OrderByClauseSyntax(SyntaxKind.OrderByClause, orderByKeyword, orderings.Node);
+            var result = new(SyntaxKind.OrderByClause, orderByKeyword, orderings.Node);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38204,7 +38204,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)kind, expression, ascendingOrDescendingKeyword, out hash);
             if (cached != null) return (OrderingSyntax)cached;
 
-            var result = new OrderingSyntax(kind, expression, ascendingOrDescendingKeyword);
+            var result = new(kind, expression, ascendingOrDescendingKeyword);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38225,7 +38225,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.SelectClause, selectKeyword, expression, out hash);
             if (cached != null) return (SelectClauseSyntax)cached;
 
-            var result = new SelectClauseSyntax(SyntaxKind.SelectClause, selectKeyword, expression);
+            var result = new(SyntaxKind.SelectClause, selectKeyword, expression);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38262,7 +38262,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.QueryContinuation, intoKeyword, identifier, body, out hash);
             if (cached != null) return (QueryContinuationSyntax)cached;
 
-            var result = new QueryContinuationSyntax(SyntaxKind.QueryContinuation, intoKeyword, identifier, body);
+            var result = new(SyntaxKind.QueryContinuation, intoKeyword, identifier, body);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38282,7 +38282,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.OmittedArraySizeExpression, omittedArraySizeExpressionToken, out hash);
             if (cached != null) return (OmittedArraySizeExpressionSyntax)cached;
 
-            var result = new OmittedArraySizeExpressionSyntax(SyntaxKind.OmittedArraySizeExpression, omittedArraySizeExpressionToken);
+            var result = new(SyntaxKind.OmittedArraySizeExpression, omittedArraySizeExpressionToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38309,7 +38309,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.InterpolatedStringExpression, stringStartToken, contents.Node, stringEndToken, out hash);
             if (cached != null) return (InterpolatedStringExpressionSyntax)cached;
 
-            var result = new InterpolatedStringExpressionSyntax(SyntaxKind.InterpolatedStringExpression, stringStartToken, contents.Node, stringEndToken);
+            var result = new(SyntaxKind.InterpolatedStringExpression, stringStartToken, contents.Node, stringEndToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38331,7 +38331,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.IsPatternExpression, expression, isKeyword, pattern, out hash);
             if (cached != null) return (IsPatternExpressionSyntax)cached;
 
-            var result = new IsPatternExpressionSyntax(SyntaxKind.IsPatternExpression, expression, isKeyword, pattern);
+            var result = new(SyntaxKind.IsPatternExpression, expression, isKeyword, pattern);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38352,7 +38352,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ThrowExpression, throwKeyword, expression, out hash);
             if (cached != null) return (ThrowExpressionSyntax)cached;
 
-            var result = new ThrowExpressionSyntax(SyntaxKind.ThrowExpression, throwKeyword, expression);
+            var result = new(SyntaxKind.ThrowExpression, throwKeyword, expression);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38373,7 +38373,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.WhenClause, whenKeyword, condition, out hash);
             if (cached != null) return (WhenClauseSyntax)cached;
 
-            var result = new WhenClauseSyntax(SyntaxKind.WhenClause, whenKeyword, condition);
+            var result = new(SyntaxKind.WhenClause, whenKeyword, condition);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38393,7 +38393,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.DiscardPattern, underscoreToken, out hash);
             if (cached != null) return (DiscardPatternSyntax)cached;
 
-            var result = new DiscardPatternSyntax(SyntaxKind.DiscardPattern, underscoreToken);
+            var result = new(SyntaxKind.DiscardPattern, underscoreToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38413,7 +38413,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.DeclarationPattern, type, designation, out hash);
             if (cached != null) return (DeclarationPatternSyntax)cached;
 
-            var result = new DeclarationPatternSyntax(SyntaxKind.DeclarationPattern, type, designation);
+            var result = new(SyntaxKind.DeclarationPattern, type, designation);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38434,7 +38434,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.VarPattern, varKeyword, designation, out hash);
             if (cached != null) return (VarPatternSyntax)cached;
 
-            var result = new VarPatternSyntax(SyntaxKind.VarPattern, varKeyword, designation);
+            var result = new(SyntaxKind.VarPattern, varKeyword, designation);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38464,7 +38464,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.PositionalPatternClause, openParenToken, subpatterns.Node, closeParenToken, out hash);
             if (cached != null) return (PositionalPatternClauseSyntax)cached;
 
-            var result = new PositionalPatternClauseSyntax(SyntaxKind.PositionalPatternClause, openParenToken, subpatterns.Node, closeParenToken);
+            var result = new(SyntaxKind.PositionalPatternClause, openParenToken, subpatterns.Node, closeParenToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38486,7 +38486,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.PropertyPatternClause, openBraceToken, subpatterns.Node, closeBraceToken, out hash);
             if (cached != null) return (PropertyPatternClauseSyntax)cached;
 
-            var result = new PropertyPatternClauseSyntax(SyntaxKind.PropertyPatternClause, openBraceToken, subpatterns.Node, closeBraceToken);
+            var result = new(SyntaxKind.PropertyPatternClause, openBraceToken, subpatterns.Node, closeBraceToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38505,7 +38505,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.Subpattern, nameColon, pattern, out hash);
             if (cached != null) return (SubpatternSyntax)cached;
 
-            var result = new SubpatternSyntax(SyntaxKind.Subpattern, nameColon, pattern);
+            var result = new(SyntaxKind.Subpattern, nameColon, pattern);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38524,7 +38524,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ConstantPattern, expression, out hash);
             if (cached != null) return (ConstantPatternSyntax)cached;
 
-            var result = new ConstantPatternSyntax(SyntaxKind.ConstantPattern, expression);
+            var result = new(SyntaxKind.ConstantPattern, expression);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38544,7 +38544,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.InterpolatedStringText, textToken, out hash);
             if (cached != null) return (InterpolatedStringTextSyntax)cached;
 
-            var result = new InterpolatedStringTextSyntax(SyntaxKind.InterpolatedStringText, textToken);
+            var result = new(SyntaxKind.InterpolatedStringText, textToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38577,7 +38577,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.InterpolationAlignmentClause, commaToken, value, out hash);
             if (cached != null) return (InterpolationAlignmentClauseSyntax)cached;
 
-            var result = new InterpolationAlignmentClauseSyntax(SyntaxKind.InterpolationAlignmentClause, commaToken, value);
+            var result = new(SyntaxKind.InterpolationAlignmentClause, commaToken, value);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38598,7 +38598,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.InterpolationFormatClause, colonToken, formatStringToken, out hash);
             if (cached != null) return (InterpolationFormatClauseSyntax)cached;
 
-            var result = new InterpolationFormatClauseSyntax(SyntaxKind.InterpolationFormatClause, colonToken, formatStringToken);
+            var result = new(SyntaxKind.InterpolationFormatClause, colonToken, formatStringToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38617,7 +38617,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.GlobalStatement, attributeLists.Node, modifiers.Node, statement, out hash);
             if (cached != null) return (GlobalStatementSyntax)cached;
 
-            var result = new GlobalStatementSyntax(SyntaxKind.GlobalStatement, attributeLists.Node, modifiers.Node, statement);
+            var result = new(SyntaxKind.GlobalStatement, attributeLists.Node, modifiers.Node, statement);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38698,7 +38698,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.VariableDeclaration, type, variables.Node, out hash);
             if (cached != null) return (VariableDeclarationSyntax)cached;
 
-            var result = new VariableDeclarationSyntax(SyntaxKind.VariableDeclaration, type, variables.Node);
+            var result = new(SyntaxKind.VariableDeclaration, type, variables.Node);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38718,7 +38718,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.VariableDeclarator, identifier, argumentList, initializer, out hash);
             if (cached != null) return (VariableDeclaratorSyntax)cached;
 
-            var result = new VariableDeclaratorSyntax(SyntaxKind.VariableDeclarator, identifier, argumentList, initializer);
+            var result = new(SyntaxKind.VariableDeclarator, identifier, argumentList, initializer);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38739,7 +38739,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.EqualsValueClause, equalsToken, value, out hash);
             if (cached != null) return (EqualsValueClauseSyntax)cached;
 
-            var result = new EqualsValueClauseSyntax(SyntaxKind.EqualsValueClause, equalsToken, value);
+            var result = new(SyntaxKind.EqualsValueClause, equalsToken, value);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38759,7 +38759,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.SingleVariableDesignation, identifier, out hash);
             if (cached != null) return (SingleVariableDesignationSyntax)cached;
 
-            var result = new SingleVariableDesignationSyntax(SyntaxKind.SingleVariableDesignation, identifier);
+            var result = new(SyntaxKind.SingleVariableDesignation, identifier);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38779,7 +38779,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.DiscardDesignation, underscoreToken, out hash);
             if (cached != null) return (DiscardDesignationSyntax)cached;
 
-            var result = new DiscardDesignationSyntax(SyntaxKind.DiscardDesignation, underscoreToken);
+            var result = new(SyntaxKind.DiscardDesignation, underscoreToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38801,7 +38801,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ParenthesizedVariableDesignation, openParenToken, variables.Node, closeParenToken, out hash);
             if (cached != null) return (ParenthesizedVariableDesignationSyntax)cached;
 
-            var result = new ParenthesizedVariableDesignationSyntax(SyntaxKind.ParenthesizedVariableDesignation, openParenToken, variables.Node, closeParenToken);
+            var result = new(SyntaxKind.ParenthesizedVariableDesignation, openParenToken, variables.Node, closeParenToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38822,7 +38822,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ExpressionStatement, attributeLists.Node, expression, semicolonToken, out hash);
             if (cached != null) return (ExpressionStatementSyntax)cached;
 
-            var result = new ExpressionStatementSyntax(SyntaxKind.ExpressionStatement, attributeLists.Node, expression, semicolonToken);
+            var result = new(SyntaxKind.ExpressionStatement, attributeLists.Node, expression, semicolonToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38842,7 +38842,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.EmptyStatement, attributeLists.Node, semicolonToken, out hash);
             if (cached != null) return (EmptyStatementSyntax)cached;
 
-            var result = new EmptyStatementSyntax(SyntaxKind.EmptyStatement, attributeLists.Node, semicolonToken);
+            var result = new(SyntaxKind.EmptyStatement, attributeLists.Node, semicolonToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38906,7 +38906,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.BreakStatement, attributeLists.Node, breakKeyword, semicolonToken, out hash);
             if (cached != null) return (BreakStatementSyntax)cached;
 
-            var result = new BreakStatementSyntax(SyntaxKind.BreakStatement, attributeLists.Node, breakKeyword, semicolonToken);
+            var result = new(SyntaxKind.BreakStatement, attributeLists.Node, breakKeyword, semicolonToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -38928,7 +38928,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ContinueStatement, attributeLists.Node, continueKeyword, semicolonToken, out hash);
             if (cached != null) return (ContinueStatementSyntax)cached;
 
-            var result = new ContinueStatementSyntax(SyntaxKind.ContinueStatement, attributeLists.Node, continueKeyword, semicolonToken);
+            var result = new(SyntaxKind.ContinueStatement, attributeLists.Node, continueKeyword, semicolonToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39162,7 +39162,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)kind, attributeLists.Node, keyword, block, out hash);
             if (cached != null) return (CheckedStatementSyntax)cached;
 
-            var result = new CheckedStatementSyntax(kind, attributeLists.Node, keyword, block);
+            var result = new(kind, attributeLists.Node, keyword, block);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39183,7 +39183,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.UnsafeStatement, attributeLists.Node, unsafeKeyword, block, out hash);
             if (cached != null) return (UnsafeStatementSyntax)cached;
 
-            var result = new UnsafeStatementSyntax(SyntaxKind.UnsafeStatement, attributeLists.Node, unsafeKeyword, block);
+            var result = new(SyntaxKind.UnsafeStatement, attributeLists.Node, unsafeKeyword, block);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39236,7 +39236,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ElseClause, elseKeyword, statement, out hash);
             if (cached != null) return (ElseClauseSyntax)cached;
 
-            var result = new ElseClauseSyntax(SyntaxKind.ElseClause, elseKeyword, statement);
+            var result = new(SyntaxKind.ElseClause, elseKeyword, statement);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39287,7 +39287,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.SwitchSection, labels.Node, statements.Node, out hash);
             if (cached != null) return (SwitchSectionSyntax)cached;
 
-            var result = new SwitchSectionSyntax(SyntaxKind.SwitchSection, labels.Node, statements.Node);
+            var result = new(SyntaxKind.SwitchSection, labels.Node, statements.Node);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39321,7 +39321,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.CaseSwitchLabel, keyword, value, colonToken, out hash);
             if (cached != null) return (CaseSwitchLabelSyntax)cached;
 
-            var result = new CaseSwitchLabelSyntax(SyntaxKind.CaseSwitchLabel, keyword, value, colonToken);
+            var result = new(SyntaxKind.CaseSwitchLabel, keyword, value, colonToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39342,7 +39342,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.DefaultSwitchLabel, keyword, colonToken, out hash);
             if (cached != null) return (DefaultSwitchLabelSyntax)cached;
 
-            var result = new DefaultSwitchLabelSyntax(SyntaxKind.DefaultSwitchLabel, keyword, colonToken);
+            var result = new(SyntaxKind.DefaultSwitchLabel, keyword, colonToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39449,7 +39449,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.FinallyClause, finallyKeyword, block, out hash);
             if (cached != null) return (FinallyClauseSyntax)cached;
 
-            var result = new FinallyClauseSyntax(SyntaxKind.FinallyClause, finallyKeyword, block);
+            var result = new(SyntaxKind.FinallyClause, finallyKeyword, block);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39545,7 +39545,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.AttributeTargetSpecifier, identifier, colonToken, out hash);
             if (cached != null) return (AttributeTargetSpecifierSyntax)cached;
 
-            var result = new AttributeTargetSpecifierSyntax(SyntaxKind.AttributeTargetSpecifier, identifier, colonToken);
+            var result = new(SyntaxKind.AttributeTargetSpecifier, identifier, colonToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39564,7 +39564,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.Attribute, name, argumentList, out hash);
             if (cached != null) return (AttributeSyntax)cached;
 
-            var result = new AttributeSyntax(SyntaxKind.Attribute, name, argumentList);
+            var result = new(SyntaxKind.Attribute, name, argumentList);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39586,7 +39586,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.AttributeArgumentList, openParenToken, arguments.Node, closeParenToken, out hash);
             if (cached != null) return (AttributeArgumentListSyntax)cached;
 
-            var result = new AttributeArgumentListSyntax(SyntaxKind.AttributeArgumentList, openParenToken, arguments.Node, closeParenToken);
+            var result = new(SyntaxKind.AttributeArgumentList, openParenToken, arguments.Node, closeParenToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39605,7 +39605,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.AttributeArgument, nameEquals, nameColon, expression, out hash);
             if (cached != null) return (AttributeArgumentSyntax)cached;
 
-            var result = new AttributeArgumentSyntax(SyntaxKind.AttributeArgument, nameEquals, nameColon, expression);
+            var result = new(SyntaxKind.AttributeArgument, nameEquals, nameColon, expression);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39626,7 +39626,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.NameEquals, name, equalsToken, out hash);
             if (cached != null) return (NameEqualsSyntax)cached;
 
-            var result = new NameEqualsSyntax(SyntaxKind.NameEquals, name, equalsToken);
+            var result = new(SyntaxKind.NameEquals, name, equalsToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39648,7 +39648,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.TypeParameterList, lessThanToken, parameters.Node, greaterThanToken, out hash);
             if (cached != null) return (TypeParameterListSyntax)cached;
 
-            var result = new TypeParameterListSyntax(SyntaxKind.TypeParameterList, lessThanToken, parameters.Node, greaterThanToken);
+            var result = new(SyntaxKind.TypeParameterList, lessThanToken, parameters.Node, greaterThanToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39678,7 +39678,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.TypeParameter, attributeLists.Node, varianceKeyword, identifier, out hash);
             if (cached != null) return (TypeParameterSyntax)cached;
 
-            var result = new TypeParameterSyntax(SyntaxKind.TypeParameter, attributeLists.Node, varianceKeyword, identifier);
+            var result = new(SyntaxKind.TypeParameter, attributeLists.Node, varianceKeyword, identifier);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39824,7 +39824,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.BaseList, colonToken, types.Node, out hash);
             if (cached != null) return (BaseListSyntax)cached;
 
-            var result = new BaseListSyntax(SyntaxKind.BaseList, colonToken, types.Node);
+            var result = new(SyntaxKind.BaseList, colonToken, types.Node);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39843,7 +39843,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.SimpleBaseType, type, out hash);
             if (cached != null) return (SimpleBaseTypeSyntax)cached;
 
-            var result = new SimpleBaseTypeSyntax(SyntaxKind.SimpleBaseType, type);
+            var result = new(SyntaxKind.SimpleBaseType, type);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39880,7 +39880,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ConstructorConstraint, newKeyword, openParenToken, closeParenToken, out hash);
             if (cached != null) return (ConstructorConstraintSyntax)cached;
 
-            var result = new ConstructorConstraintSyntax(SyntaxKind.ConstructorConstraint, newKeyword, openParenToken, closeParenToken);
+            var result = new(SyntaxKind.ConstructorConstraint, newKeyword, openParenToken, closeParenToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39920,7 +39920,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)kind, classOrStructKeyword, questionToken, out hash);
             if (cached != null) return (ClassOrStructConstraintSyntax)cached;
 
-            var result = new ClassOrStructConstraintSyntax(kind, classOrStructKeyword, questionToken);
+            var result = new(kind, classOrStructKeyword, questionToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39939,7 +39939,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.TypeConstraint, type, out hash);
             if (cached != null) return (TypeConstraintSyntax)cached;
 
-            var result = new TypeConstraintSyntax(SyntaxKind.TypeConstraint, type);
+            var result = new(SyntaxKind.TypeConstraint, type);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -39984,7 +39984,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ExplicitInterfaceSpecifier, name, dotToken, out hash);
             if (cached != null) return (ExplicitInterfaceSpecifierSyntax)cached;
 
-            var result = new ExplicitInterfaceSpecifierSyntax(SyntaxKind.ExplicitInterfaceSpecifier, name, dotToken);
+            var result = new(SyntaxKind.ExplicitInterfaceSpecifier, name, dotToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40136,7 +40136,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)kind, colonToken, thisOrBaseKeyword, argumentList, out hash);
             if (cached != null) return (ConstructorInitializerSyntax)cached;
 
-            var result = new ConstructorInitializerSyntax(kind, colonToken, thisOrBaseKeyword, argumentList);
+            var result = new(kind, colonToken, thisOrBaseKeyword, argumentList);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40199,7 +40199,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ArrowExpressionClause, arrowToken, expression, out hash);
             if (cached != null) return (ArrowExpressionClauseSyntax)cached;
 
-            var result = new ArrowExpressionClauseSyntax(SyntaxKind.ArrowExpressionClause, arrowToken, expression);
+            var result = new(SyntaxKind.ArrowExpressionClause, arrowToken, expression);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40264,7 +40264,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.AccessorList, openBraceToken, accessors.Node, closeBraceToken, out hash);
             if (cached != null) return (AccessorListSyntax)cached;
 
-            var result = new AccessorListSyntax(SyntaxKind.AccessorList, openBraceToken, accessors.Node, closeBraceToken);
+            var result = new(SyntaxKind.AccessorList, openBraceToken, accessors.Node, closeBraceToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40322,7 +40322,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.ParameterList, openParenToken, parameters.Node, closeParenToken, out hash);
             if (cached != null) return (ParameterListSyntax)cached;
 
-            var result = new ParameterListSyntax(SyntaxKind.ParameterList, openParenToken, parameters.Node, closeParenToken);
+            var result = new(SyntaxKind.ParameterList, openParenToken, parameters.Node, closeParenToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40344,7 +40344,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.BracketedParameterList, openBracketToken, parameters.Node, closeBracketToken, out hash);
             if (cached != null) return (BracketedParameterListSyntax)cached;
 
-            var result = new BracketedParameterListSyntax(SyntaxKind.BracketedParameterList, openBracketToken, parameters.Node, closeBracketToken);
+            var result = new(SyntaxKind.BracketedParameterList, openBracketToken, parameters.Node, closeBracketToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40410,7 +40410,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.TypeCref, type, out hash);
             if (cached != null) return (TypeCrefSyntax)cached;
 
-            var result = new TypeCrefSyntax(SyntaxKind.TypeCref, type);
+            var result = new(SyntaxKind.TypeCref, type);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40432,7 +40432,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.QualifiedCref, container, dotToken, member, out hash);
             if (cached != null) return (QualifiedCrefSyntax)cached;
 
-            var result = new QualifiedCrefSyntax(SyntaxKind.QualifiedCref, container, dotToken, member);
+            var result = new(SyntaxKind.QualifiedCref, container, dotToken, member);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40451,7 +40451,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.NameMemberCref, name, parameters, out hash);
             if (cached != null) return (NameMemberCrefSyntax)cached;
 
-            var result = new NameMemberCrefSyntax(SyntaxKind.NameMemberCref, name, parameters);
+            var result = new(SyntaxKind.NameMemberCref, name, parameters);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40471,7 +40471,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.IndexerMemberCref, thisKeyword, parameters, out hash);
             if (cached != null) return (IndexerMemberCrefSyntax)cached;
 
-            var result = new IndexerMemberCrefSyntax(SyntaxKind.IndexerMemberCref, thisKeyword, parameters);
+            var result = new(SyntaxKind.IndexerMemberCref, thisKeyword, parameters);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40518,7 +40518,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.OperatorMemberCref, operatorKeyword, operatorToken, parameters, out hash);
             if (cached != null) return (OperatorMemberCrefSyntax)cached;
 
-            var result = new OperatorMemberCrefSyntax(SyntaxKind.OperatorMemberCref, operatorKeyword, operatorToken, parameters);
+            var result = new(SyntaxKind.OperatorMemberCref, operatorKeyword, operatorToken, parameters);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40558,7 +40558,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.CrefParameterList, openParenToken, parameters.Node, closeParenToken, out hash);
             if (cached != null) return (CrefParameterListSyntax)cached;
 
-            var result = new CrefParameterListSyntax(SyntaxKind.CrefParameterList, openParenToken, parameters.Node, closeParenToken);
+            var result = new(SyntaxKind.CrefParameterList, openParenToken, parameters.Node, closeParenToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40580,7 +40580,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.CrefBracketedParameterList, openBracketToken, parameters.Node, closeBracketToken, out hash);
             if (cached != null) return (CrefBracketedParameterListSyntax)cached;
 
-            var result = new CrefBracketedParameterListSyntax(SyntaxKind.CrefBracketedParameterList, openBracketToken, parameters.Node, closeBracketToken);
+            var result = new(SyntaxKind.CrefBracketedParameterList, openBracketToken, parameters.Node, closeBracketToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40610,7 +40610,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.CrefParameter, refKindKeyword, type, out hash);
             if (cached != null) return (CrefParameterSyntax)cached;
 
-            var result = new CrefParameterSyntax(SyntaxKind.CrefParameter, refKindKeyword, type);
+            var result = new(SyntaxKind.CrefParameter, refKindKeyword, type);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40630,7 +40630,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.XmlElement, startTag, content.Node, endTag, out hash);
             if (cached != null) return (XmlElementSyntax)cached;
 
-            var result = new XmlElementSyntax(SyntaxKind.XmlElement, startTag, content.Node, endTag);
+            var result = new(SyntaxKind.XmlElement, startTag, content.Node, endTag);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40666,7 +40666,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.XmlElementEndTag, lessThanSlashToken, name, greaterThanToken, out hash);
             if (cached != null) return (XmlElementEndTagSyntax)cached;
 
-            var result = new XmlElementEndTagSyntax(SyntaxKind.XmlElementEndTag, lessThanSlashToken, name, greaterThanToken);
+            var result = new(SyntaxKind.XmlElementEndTag, lessThanSlashToken, name, greaterThanToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40699,7 +40699,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.XmlName, prefix, localName, out hash);
             if (cached != null) return (XmlNameSyntax)cached;
 
-            var result = new XmlNameSyntax(SyntaxKind.XmlName, prefix, localName);
+            var result = new(SyntaxKind.XmlName, prefix, localName);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40721,7 +40721,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.XmlPrefix, prefix, colonToken, out hash);
             if (cached != null) return (XmlPrefixSyntax)cached;
 
-            var result = new XmlPrefixSyntax(SyntaxKind.XmlPrefix, prefix, colonToken);
+            var result = new(SyntaxKind.XmlPrefix, prefix, colonToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40816,7 +40816,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.XmlText, textTokens.Node, out hash);
             if (cached != null) return (XmlTextSyntax)cached;
 
-            var result = new XmlTextSyntax(SyntaxKind.XmlText, textTokens.Node);
+            var result = new(SyntaxKind.XmlText, textTokens.Node);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40838,7 +40838,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.XmlCDataSection, startCDataToken, textTokens.Node, endCDataToken, out hash);
             if (cached != null) return (XmlCDataSectionSyntax)cached;
 
-            var result = new XmlCDataSectionSyntax(SyntaxKind.XmlCDataSection, startCDataToken, textTokens.Node, endCDataToken);
+            var result = new(SyntaxKind.XmlCDataSection, startCDataToken, textTokens.Node, endCDataToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);
@@ -40873,7 +40873,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var cached = SyntaxNodeCache.TryGetNode((int)SyntaxKind.XmlComment, lessThanExclamationMinusMinusToken, textTokens.Node, minusMinusGreaterThanToken, out hash);
             if (cached != null) return (XmlCommentSyntax)cached;
 
-            var result = new XmlCommentSyntax(SyntaxKind.XmlComment, lessThanExclamationMinusMinusToken, textTokens.Node, minusMinusGreaterThanToken);
+            var result = new(SyntaxKind.XmlComment, lessThanExclamationMinusMinusToken, textTokens.Node, minusMinusGreaterThanToken);
             if (hash >= 0)
             {
                 SyntaxNodeCache.AddNode(result, hash);

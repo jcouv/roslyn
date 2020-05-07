@@ -29,7 +29,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         protected CSharpCompiler(CSharpCommandLineParser parser, string responseFile, string[] args, BuildPaths buildPaths, string additionalReferenceDirectories, IAnalyzerAssemblyLoader assemblyLoader)
             : base(parser, responseFile, args, buildPaths, additionalReferenceDirectories, assemblyLoader)
         {
-            _diagnosticFormatter = new CommandLineDiagnosticFormatter(buildPaths.WorkingDirectory, Arguments.PrintFullPaths, Arguments.ShouldIncludeErrorEndLocation);
+            _diagnosticFormatter = new(buildPaths.WorkingDirectory, Arguments.PrintFullPaths, Arguments.ShouldIncludeErrorEndLocation);
             _tempDirectory = buildPaths.TempDirectory;
         }
 
@@ -136,7 +136,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 try
                 {
-                    using (var appConfigStream = new FileStream(appConfigPath, FileMode.Open, FileAccess.Read))
+                    using (var appConfigStream = new(appConfigPath, FileMode.Open, FileAccess.Read))
                     {
                         assemblyIdentityComparer = DesktopAssemblyIdentityComparer.LoadFromXml(appConfigStream);
                     }
@@ -152,8 +152,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            var xmlFileResolver = new LoggingXmlFileResolver(Arguments.BaseDirectory, touchedFilesLogger);
-            var sourceFileResolver = new LoggingSourceFileResolver(ImmutableArray<string>.Empty, Arguments.BaseDirectory, Arguments.PathMap, touchedFilesLogger);
+            var xmlFileResolver = new(Arguments.BaseDirectory, touchedFilesLogger);
+            var sourceFileResolver = new(ImmutableArray<string>.Empty, Arguments.BaseDirectory, Arguments.PathMap, touchedFilesLogger);
 
             MetadataReferenceResolver referenceDirectiveResolver;
             var resolvedReferences = ResolveMetadataReferences(diagnostics, touchedFilesLogger, out referenceDirectiveResolver);
@@ -162,7 +162,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return null;
             }
 
-            var loggingFileSystem = new LoggingStrongNameFileSystem(touchedFilesLogger, _tempDirectory);
+            var loggingFileSystem = new(touchedFilesLogger, _tempDirectory);
 
             return CSharpCompilation.Create(
                 Arguments.CompilationName,
@@ -407,7 +407,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return input;
             }
 
-            var driver = new CSharpGeneratorDriver(parseOptions, generators, additionalTexts);
+            var driver = new(parseOptions, generators, additionalTexts);
             driver.RunFullGeneration(input, out var compilationOut, out var generatorDiagnostics);
             diagnostics.AddRange(generatorDiagnostics);
             return compilationOut;

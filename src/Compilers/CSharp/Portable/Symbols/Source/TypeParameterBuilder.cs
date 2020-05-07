@@ -32,7 +32,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         internal TypeParameterSymbol MakeSymbol(int ordinal, IList<TypeParameterBuilder> builders, DiagnosticBag diagnostics)
         {
             var syntaxNode = (TypeParameterSyntax)_syntaxRef.GetSyntax();
-            var result = new SourceTypeParameterSymbol(
+            var result = new(
                 _owner,
                 syntaxNode.Identifier.ValueText,
                 ordinal,

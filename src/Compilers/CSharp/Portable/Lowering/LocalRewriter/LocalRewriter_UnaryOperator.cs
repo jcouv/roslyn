@@ -205,7 +205,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression consequence = GetLiftedUnaryOperatorConsequence(kind, syntax, method, type, call_GetValueOrDefault);
 
             // default(R?)
-            BoundExpression alternative = new BoundDefaultExpression(syntax, type);
+            BoundExpression alternative = new(syntax, type);
 
             // temp.HasValue ? 
             //          new R?(OP(temp.GetValueOrDefault())) : 
@@ -354,7 +354,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 type: type.GetNullableUnderlyingType());
 
             // new R?(OP(temp.GetValueOrDefault()))
-            BoundExpression consequence = new BoundObjectCreationExpression(
+            BoundExpression consequence = new(
                     syntax,
                     ctor,
                     null,
@@ -434,7 +434,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             tempSymbols.Add(tempSymbol);
             // Not adding an entry to tempInitializers because the initial value depends on the case.
 
-            BoundExpression boundTemp = new BoundLocal(
+            BoundExpression boundTemp = new(
                 syntax: syntax,
                 localSymbol: tempSymbol,
                 constantValueOpt: null,
@@ -532,7 +532,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var tempAssignment = MakeAssignmentOperator(syntax, boundTemp, tempValue, operandType, used: false, isChecked: isChecked, isCompoundAssignment: false);
 
             var operandValue = isPrefix ? boundTemp : newValue;
-            var tempAssignedAndOperandValue = new BoundSequence(
+            var tempAssignedAndOperandValue = new(
                     syntax,
                     ImmutableArray<LocalSymbol>.Empty,
                     ImmutableArray.Create<BoundExpression>(tempAssignment),
@@ -645,10 +645,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression userDefinedCall = BoundCall.Synthesized(syntax, null, node.MethodOpt, call_GetValueOrDefault);
 
             // new S?(op_Increment(temp.GetValueOrDefault()))
-            BoundExpression consequence = new BoundObjectCreationExpression(syntax, ctor, null, userDefinedCall);
+            BoundExpression consequence = new(syntax, ctor, null, userDefinedCall);
 
             // default(S?)
-            BoundExpression alternative = new BoundDefaultExpression(syntax, type);
+            BoundExpression alternative = new(syntax, type);
 
             // temp.HasValue ? 
             //          new S?(op_Increment(temp.GetValueOrDefault())) : 
@@ -712,7 +712,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 binaryOperandType = _compilation.GetSpecialType(SpecialType.System_Nullable_T).Construct(binaryOperandType);
                 MethodSymbol ctor = UnsafeGetNullableMethod(node.Syntax, binaryOperandType, SpecialMember.System_Nullable_T__ctor);
-                boundOne = new BoundObjectCreationExpression(node.Syntax, ctor, null, boundOne);
+                boundOne = new(node.Syntax, ctor, null, boundOne);
             }
 
             // Now we construct the other operand to the binary addition. We start with just plain "x".
@@ -812,9 +812,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             // op_Inc(x.GetValueOrDefault())
             BoundExpression methodCall = BoundCall.Synthesized(syntax, null, method, getValueCall);
             // new decimal?(op_Inc(x.GetValueOrDefault()))
-            BoundExpression consequence = new BoundObjectCreationExpression(syntax, ctor, null, methodCall);
+            BoundExpression consequence = new(syntax, ctor, null, methodCall);
             // default(decimal?)
-            BoundExpression alternative = new BoundDefaultExpression(syntax, operand.Type);
+            BoundExpression alternative = new(syntax, operand.Type);
 
             // x.HasValue ? new decimal?(op_Inc(x.GetValueOrDefault())) : default(decimal?)
             return RewriteConditionalOperator(syntax, condition, consequence, alternative, ConstantValue.NotAvailable, operand.Type, isRef: false);

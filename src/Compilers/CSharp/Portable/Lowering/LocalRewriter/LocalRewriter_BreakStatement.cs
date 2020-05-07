@@ -14,7 +14,7 @@ namespace Microsoft.CodeAnalysis.CSharp
     {
         public override BoundNode VisitBreakStatement(BoundBreakStatement node)
         {
-            BoundStatement result = new BoundGotoStatement(node.Syntax, node.Label, node.HasErrors);
+            BoundStatement result = new(node.Syntax, node.Label, node.HasErrors);
             if (this.Instrument && !node.WasCompilerGenerated)
             {
                 result = _instrumenter.InstrumentBreakStatement(node, result);

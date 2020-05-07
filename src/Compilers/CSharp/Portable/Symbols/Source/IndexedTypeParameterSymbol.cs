@@ -63,7 +63,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                 for (int i = initialPool.Length; i < newPool.Length; i++)
                 {
-                    newPool[i] = new IndexedTypeParameterSymbol(i);
+                    newPool[i] = new(i);
                 }
 
                 Interlocked.CompareExchange(ref s_parameterPool, newPool, initialPool);

@@ -18,7 +18,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
 
         protected AbstractLexer(SourceText text)
         {
-            this.TextWindow = new SlidingTextWindow(text);
+            this.TextWindow = new(text);
         }
 
         public virtual void Dispose()

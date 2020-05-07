@@ -23,7 +23,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private BoundStatement MakeLabeledStatement(BoundLabeledStatement node, BoundStatement? rewrittenBody)
         {
-            BoundStatement labelStatement = new BoundLabelStatement(node.Syntax, node.Label);
+            BoundStatement labelStatement = new(node.Syntax, node.Label);
 
             if (this.Instrument)
             {

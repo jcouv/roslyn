@@ -22,8 +22,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 {
     public class CSharpCommandLineParser : CommandLineParser
     {
-        public static CSharpCommandLineParser Default { get; } = new CSharpCommandLineParser();
-        public static CSharpCommandLineParser Script { get; } = new CSharpCommandLineParser(isScriptCommandLineParser: true);
+        public static CSharpCommandLineParser Default { get; } = new();
+        public static CSharpCommandLineParser Script { get; } = new(isScriptCommandLineParser: true);
 
         private readonly static char[] s_quoteOrEquals = new[] { '"', '=' };
 
@@ -474,7 +474,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                             try
                             {
-                                preferredUILang = new CultureInfo(value);
+                                preferredUILang = new(value);
                                 if ((preferredUILang.CultureTypes & CultureTypes.UserCustomCulture) != 0)
                                 {
                                     // Do not use user custom cultures.
@@ -1839,7 +1839,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 var aliases = (alias != null) ? ImmutableArray.Create(alias) : ImmutableArray<string>.Empty;
 
-                var properties = new MetadataReferenceProperties(MetadataImageKind.Assembly, aliases, embedInteropTypes);
+                var properties = new(MetadataImageKind.Assembly, aliases, embedInteropTypes);
                 yield return new CommandLineReference(path, properties);
             }
         }

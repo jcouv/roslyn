@@ -217,7 +217,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// </summary>
         /// <example>
         /// <code>
-        ///     using (var localVariable = new StreamReader("C:\\Temp\\MyFile.txt")) { ... } 
+        ///     using (var localVariable = new("C:\\Temp\\MyFile.txt")) { ... } 
         /// </code>
         /// </example>
         public bool IsUsing

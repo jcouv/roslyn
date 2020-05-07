@@ -168,7 +168,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                                     continue;
                                 }
 
-                                var key = new EncHoistedLocalInfo(localSlotDebugInfo[slotIndex], (Cci.ITypeReference)field.Type);
+                                var key = new(localSlotDebugInfo[slotIndex], (Cci.ITypeReference)field.Type);
 
                                 // correct metadata won't contain duplicate ids, but malformed might, ignore the duplicate:
                                 hoistedLocals[key] = slotIndex;
@@ -237,7 +237,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                         // previous version of the local if it had custom modifiers.
                         if (metadata.CustomModifiers.IsDefaultOrEmpty)
                         {
-                            var local = new EncLocalInfo(slot, (Cci.ITypeReference)metadata.Type, metadata.Constraints, metadata.SignatureOpt);
+                            var local = new(slot, (Cci.ITypeReference)metadata.Type, metadata.Constraints, metadata.SignatureOpt);
                             map.Add(local, slotIndex);
                         }
                     }
@@ -254,7 +254,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             {
                 if (result[i].IsDefault)
                 {
-                    result[i] = new EncLocalInfo(slotMetadata[i].SignatureOpt);
+                    result[i] = new(slotMetadata[i].SignatureOpt);
                 }
             }
 

@@ -117,7 +117,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         ref declTable);
             }
 
-            state = new State(
+            state = new(
                 treesBuilder.ToImmutableAndFree(),
                 ordinalMapBuilder.ToImmutableDictionary(),
                 loadDirectiveMapBuilder.ToImmutableDictionary(),
@@ -329,7 +329,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             removeSet.Free();
 
-            state = new State(
+            state = new(
                 treesBuilder.ToImmutableAndFree(),
                 ordinalMapBuilder.ToImmutableDictionaryAndFree(),
                 loadDirectiveMap,
@@ -548,7 +548,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 ordinalMap = ordinalMap.SetItem(newTree, oldOrdinal);
             }
 
-            state = new State(
+            state = new(
                 newTrees,
                 ordinalMap,
                 loadDirectiveMapBuilder.ToImmutable(),

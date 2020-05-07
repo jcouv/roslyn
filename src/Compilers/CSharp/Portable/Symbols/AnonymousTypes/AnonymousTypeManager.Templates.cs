@@ -166,7 +166,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             // parameterCount doesn't include return type
             Debug.Assert(byRefParameters.IsNull || parameterCount == byRefParameters.Capacity);
 
-            var key = new SynthesizedDelegateKey(parameterCount, byRefParameters, returnsVoid, generation);
+            var key = new(parameterCount, byRefParameters, returnsVoid, generation);
 
             SynthesizedDelegateValue result;
             if (this.SynthesizedDelegates.TryGetValue(key, out result))
@@ -231,7 +231,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         private AnonymousTypeTemplateSymbol CreatePlaceholderTemplate(Microsoft.CodeAnalysis.Emit.AnonymousTypeKey key)
         {
             var fields = key.Fields.SelectAsArray(f => new AnonymousTypeField(f.Name, Location.None, default));
-            var typeDescr = new AnonymousTypeDescriptor(fields, Location.None);
+            var typeDescr = new(fields, Location.None);
             return new AnonymousTypeTemplateSymbol(this, typeDescr);
         }
 
@@ -292,7 +292,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     // normally it should only happen once, but in case there is a race
                     // NameAndIndex.set has an assert which guarantees that the
                     // template name provided is the same as the one already assigned
-                    template.NameAndIndex = new NameAndIndex(name, index);
+                    template.NameAndIndex = new(name, index);
                 }
 
                 this.SealTemplates();
@@ -368,7 +368,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private class SynthesizedDelegateSymbolComparer : IComparer<SynthesizedDelegateSymbol>
         {
-            public static readonly SynthesizedDelegateSymbolComparer Instance = new SynthesizedDelegateSymbolComparer();
+            public static readonly SynthesizedDelegateSymbolComparer Instance = new();
 
             public int Compare(SynthesizedDelegateSymbol x, SynthesizedDelegateSymbol y)
             {

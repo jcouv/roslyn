@@ -247,7 +247,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
 
         internal void ScanInterpolatedStringLiteralTop(ArrayBuilder<Interpolation> interpolations, bool isVerbatim, ref TokenInfo info, ref SyntaxDiagnosticInfo error, out bool closeQuoteMissing)
         {
-            var subScanner = new InterpolatedStringScanner(this, isVerbatim);
+            var subScanner = new(this, isVerbatim);
             subScanner.ScanInterpolatedStringLiteralTop(interpolations, ref info, out closeQuoteMissing);
             error = subScanner.error;
             info.Text = TextWindow.GetText(false);

@@ -37,7 +37,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             public static void Verify(ImmutableDictionary<BoundExpression, (NullabilityInfo Info, TypeSymbol Type)> analyzedNullabilityMap, SnapshotManager? snapshotManagerOpt, BoundNode node)
             {
-                var verifier = new DebugVerifier(analyzedNullabilityMap, snapshotManagerOpt);
+                var verifier = new(analyzedNullabilityMap, snapshotManagerOpt);
                 verifier.Visit(node);
                 snapshotManagerOpt?.VerifyUpdatedSymbols();
 

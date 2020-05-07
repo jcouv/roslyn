@@ -30,7 +30,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal static HashSet<Symbol> Analyze(CSharpCompilation compilation, Symbol member, BoundNode node, BoundNode firstInRegion, BoundNode lastInRegion, HashSet<Symbol> unassignedVariables, ImmutableArray<ISymbol> dataFlowsIn)
         {
-            var walker = new DataFlowsOutWalker(compilation, member, node, firstInRegion, lastInRegion, unassignedVariables, dataFlowsIn);
+            var walker = new(compilation, member, node, firstInRegion, lastInRegion, unassignedVariables, dataFlowsIn);
             try
             {
                 bool badRegion = false;

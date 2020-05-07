@@ -25,10 +25,10 @@ namespace Microsoft.CodeAnalysis.CSharp
         private sealed class PartVisitor : CSharpSymbolVisitor<StringBuilder, object>
         {
             // Everyone outside this type uses this one.
-            internal static readonly PartVisitor Instance = new PartVisitor(inParameterOrReturnType: false);
+            internal static readonly PartVisitor Instance = new(inParameterOrReturnType: false);
 
             // Select callers within this type use this one.
-            private static readonly PartVisitor s_parameterOrReturnTypeInstance = new PartVisitor(inParameterOrReturnType: true);
+            private static readonly PartVisitor s_parameterOrReturnTypeInstance = new(inParameterOrReturnType: true);
 
             private readonly bool _inParameterOrReturnType;
 

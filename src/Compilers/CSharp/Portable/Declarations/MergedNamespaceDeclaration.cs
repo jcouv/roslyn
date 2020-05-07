@@ -42,7 +42,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public LexicalSortKey GetLexicalSortKey(CSharpCompilation compilation)
         {
-            LexicalSortKey sortKey = new LexicalSortKey(_declarations[0].NameLocation, compilation);
+            LexicalSortKey sortKey = new(_declarations[0].NameLocation, compilation);
             for (var i = 1; i < _declarations.Length; i++)
             {
                 sortKey = LexicalSortKey.First(sortKey, new LexicalSortKey(_declarations[i].NameLocation, compilation));

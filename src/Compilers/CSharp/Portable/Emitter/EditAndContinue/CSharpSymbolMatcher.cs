@@ -31,8 +31,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             EmitContext otherContext,
             ImmutableDictionary<ISymbolInternal, ImmutableArray<ISymbolInternal>> otherSynthesizedMembersOpt)
         {
-            _defs = new MatchDefsToSource(sourceContext, otherContext);
-            _symbols = new MatchSymbols(anonymousTypeMap, sourceAssembly, otherAssembly, otherSynthesizedMembersOpt, new DeepTranslator(otherAssembly.GetSpecialType(SpecialType.System_Object)));
+            _defs = new(sourceContext, otherContext);
+            _symbols = new(anonymousTypeMap, sourceAssembly, otherAssembly, otherSynthesizedMembersOpt, new DeepTranslator(otherAssembly.GetSpecialType(SpecialType.System_Object)));
         }
 
         public CSharpSymbolMatcher(
@@ -41,9 +41,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             EmitContext sourceContext,
             PEAssemblySymbol otherAssembly)
         {
-            _defs = new MatchDefsToMetadata(sourceContext, otherAssembly);
+            _defs = new(sourceContext, otherAssembly);
 
-            _symbols = new MatchSymbols(
+            _symbols = new(
                 anonymousTypeMap,
                 sourceAssembly,
                 otherAssembly,
@@ -305,7 +305,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                 _sourceAssembly = sourceAssembly;
                 _otherAssembly = otherAssembly;
                 _otherSynthesizedMembersOpt = otherSynthesizedMembersOpt;
-                _comparer = new SymbolComparer(this, deepTranslatorOpt);
+                _comparer = new(this, deepTranslatorOpt);
                 _matches = new ConcurrentDictionary<Symbol, Symbol>(ReferenceEqualityComparer.Instance);
                 _otherMembers = new ConcurrentDictionary<ISymbolInternal, IReadOnlyDictionary<string, ImmutableArray<ISymbolInternal>>>(ReferenceEqualityComparer.Instance);
             }
@@ -504,7 +504,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                     }
 
                     // TODO: LambdaFrame has alpha renamed type parameters, should we rather fix that?
-                    var typeMap = new TypeMap(otherTypeParameters, otherTypeArguments, allowAlpha: true);
+                    var typeMap = new(otherTypeParameters, otherTypeArguments, allowAlpha: true);
                     return typeMap.SubstituteNamedType(otherDef);
                 }
 
@@ -894,7 +894,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                                                                                                                  this);
 
                     var translatedOriginalDef = (NamedTypeSymbol)this.Visit(originalDef);
-                    var typeMap = new TypeMap(translatedOriginalDef.GetAllTypeParameters(), translatedTypeArguments, allowAlpha: true);
+                    var typeMap = new(translatedOriginalDef.GetAllTypeParameters(), translatedTypeArguments, allowAlpha: true);
                     return typeMap.SubstituteNamedType(translatedOriginalDef);
                 }
 

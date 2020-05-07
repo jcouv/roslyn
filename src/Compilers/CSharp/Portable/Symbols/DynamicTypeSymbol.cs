@@ -16,7 +16,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 {
     internal sealed partial class DynamicTypeSymbol : TypeSymbol
     {
-        internal static readonly DynamicTypeSymbol Instance = new DynamicTypeSymbol();
+        internal static readonly DynamicTypeSymbol Instance = new();
 
         private DynamicTypeSymbol()
         {

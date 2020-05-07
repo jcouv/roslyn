@@ -197,7 +197,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 //we'd like to highlight just the type part of the name
                 var explicitInterfaceSyntax = explicitInterfaceSpecifierSyntax.Name;
-                var location = new SourceLocation(explicitInterfaceSyntax);
+                var location = new(explicitInterfaceSyntax);
 
                 diagnostics.Add(ErrorCode.ERR_ExplicitInterfaceImplementationNotInterface, location, explicitInterfaceType);
                 return null;
@@ -213,7 +213,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 //we'd like to highlight just the type part of the name
                 var explicitInterfaceSyntax = explicitInterfaceSpecifierSyntax.Name;
-                var location = new SourceLocation(explicitInterfaceSyntax);
+                var location = new(explicitInterfaceSyntax);
 
                 if (setCount > 0 && set.Contains(explicitInterfaceNamedType, Symbols.SymbolEqualityComparer.IgnoringNullable))
                 {

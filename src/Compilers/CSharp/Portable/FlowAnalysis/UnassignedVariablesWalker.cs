@@ -24,7 +24,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal static HashSet<Symbol> Analyze(CSharpCompilation compilation, Symbol member, BoundNode node,
                                                 bool convertInsufficientExecutionStackExceptionToCancelledByStackGuardException = false)
         {
-            var walker = new UnassignedVariablesWalker(compilation, member, node);
+            var walker = new(compilation, member, node);
 
             if (convertInsufficientExecutionStackExceptionToCancelledByStackGuardException)
             {

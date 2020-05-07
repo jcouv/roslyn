@@ -79,7 +79,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return "Overload resolution failed because there were no candidate operators.";
             }
 
-            var sb = new StringBuilder();
+            var sb = new();
             if (this.Best.HasValue)
             {
                 sb.AppendLine("Overload resolution succeeded and chose " + this.Best.Signature.ToString());

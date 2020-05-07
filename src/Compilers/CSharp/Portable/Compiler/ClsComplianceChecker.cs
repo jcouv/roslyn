@@ -68,7 +68,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public static void CheckCompliance(CSharpCompilation compilation, DiagnosticBag diagnostics, CancellationToken cancellationToken, SyntaxTree filterTree = null, TextSpan? filterSpanWithinTree = null)
         {
             var queue = new ConcurrentQueue<Diagnostic>();
-            var checker = new ClsComplianceChecker(compilation, filterTree, filterSpanWithinTree, queue, cancellationToken);
+            var checker = new(compilation, filterTree, filterSpanWithinTree, queue, cancellationToken);
             checker.Visit(compilation.Assembly);
             checker.WaitForWorkers();
 
@@ -655,7 +655,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             else if (_filterTree == null || (syntaxRef != null && syntaxRef.SyntaxTree == _filterTree))
             {
                 System.Diagnostics.Debug.Assert(syntaxRef.SyntaxTree.HasCompilationUnitRoot);
-                location = new SourceLocation(syntaxRef);
+                location = new(syntaxRef);
                 return true;
             }
 
@@ -1249,15 +1249,15 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private void AddDiagnostic(ErrorCode code, Location location)
         {
-            var info = new CSDiagnosticInfo(code);
-            var diag = new CSDiagnostic(info, location);
+            var info = new(code);
+            var diag = new(info, location);
             _diagnostics.Enqueue(diag);
         }
 
         private void AddDiagnostic(ErrorCode code, Location location, params object[] args)
         {
-            var info = new CSDiagnosticInfo(code, args);
-            var diag = new CSDiagnostic(info, location);
+            var info = new(code, args);
+            var diag = new(info, location);
             _diagnostics.Enqueue(diag);
         }
 

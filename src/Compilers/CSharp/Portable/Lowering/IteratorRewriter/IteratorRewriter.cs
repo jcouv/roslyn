@@ -75,9 +75,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                     throw ExceptionUtilities.UnexpectedValue(method.ReturnType.OriginalDefinition.SpecialType);
             }
 
-            stateMachineType = new IteratorStateMachine(slotAllocatorOpt, compilationState, method, methodOrdinal, isEnumerable, elementType);
+            stateMachineType = new(slotAllocatorOpt, compilationState, method, methodOrdinal, isEnumerable, elementType);
             compilationState.ModuleBuilderOpt.CompilationState.SetStateMachineType(method, stateMachineType);
-            var rewriter = new IteratorRewriter(body, method, isEnumerable, stateMachineType, slotAllocatorOpt, compilationState, diagnostics);
+            var rewriter = new(body, method, isEnumerable, stateMachineType, slotAllocatorOpt, compilationState, diagnostics);
             if (!rewriter.VerifyPresenceOfRequiredAPIs())
             {
                 return body;
@@ -280,7 +280,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         protected override void InitializeStateMachine(ArrayBuilder<BoundStatement> bodyBuilder, NamedTypeSymbol frameType, LocalSymbol stateMachineLocal)
         {
-            // var stateMachineLocal = new IteratorImplementationClass(N)
+            // var stateMachineLocal = new(N)
             // where N is either 0 (if we're producing an enumerator) or -2 (if we're producing an enumerable)
             int initialState = _isEnumerable ? StateMachineStates.FinishedStateMachine : StateMachineStates.FirstUnusedState;
             bodyBuilder.Add(
@@ -298,7 +298,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             SynthesizedImplementationMethod moveNextMethod,
             SynthesizedImplementationMethod disposeMethod)
         {
-            var rewriter = new IteratorMethodToStateMachineRewriter(
+            var rewriter = new(
                 F,
                 method,
                 stateField,

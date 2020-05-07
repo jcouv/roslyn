@@ -74,13 +74,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             ArrayBuilder<SyntaxNode> methodsWithYields,
             Action<Binder, SyntaxNode> binderUpdatedHandler = null)
         {
-            var builder = new LocalBinderFactory(containingMemberOrLambda, syntax, enclosing, methodsWithYields);
+            var builder = new(containingMemberOrLambda, syntax, enclosing, methodsWithYields);
 
             StatementSyntax statement;
             var expressionSyntax = syntax as ExpressionSyntax;
             if (expressionSyntax != null)
             {
-                enclosing = new ExpressionVariableBinder(syntax, enclosing);
+                enclosing = new(syntax, enclosing);
 
                 if ((object)binderUpdatedHandler != null)
                 {
@@ -156,7 +156,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override void VisitConstructorDeclaration(ConstructorDeclarationSyntax node)
         {
-            Binder enclosing = new ExpressionVariableBinder(node, _enclosing);
+            Binder enclosing = new(node, _enclosing);
             AddToMap(node, enclosing);
 
             Visit(node.Initializer, enclosing);
@@ -208,7 +208,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                var binder = new ExpressionVariableBinder(body, _enclosing);
+                var binder = new(body, _enclosing);
                 AddToMap(body, binder);
                 Visit(body, binder);
             }
@@ -235,7 +235,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     : _enclosing;
 
                 binder = binder.WithUnsafeRegionIfNecessary(node.Modifiers);
-                binder = new InMethodBinder(match, binder);
+                binder = new(match, binder);
             }
 
             BlockSyntax blockBody = node.Body;
@@ -290,21 +290,21 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override void VisitArrowExpressionClause(ArrowExpressionClauseSyntax node)
         {
-            var arrowBinder = new ExpressionVariableBinder(node, _enclosing);
+            var arrowBinder = new(node, _enclosing);
             AddToMap(node, arrowBinder);
             Visit(node.Expression, arrowBinder);
         }
 
         public override void VisitEqualsValueClause(EqualsValueClauseSyntax node)
         {
-            var valueBinder = new ExpressionVariableBinder(node, _enclosing);
+            var valueBinder = new(node, _enclosing);
             AddToMap(node, valueBinder);
             Visit(node.Value, valueBinder);
         }
 
         public override void VisitAttribute(AttributeSyntax node)
         {
-            var attrBinder = new ExpressionVariableBinder(node, _enclosing);
+            var attrBinder = new(node, _enclosing);
             AddToMap(node, attrBinder);
 
             if (node.ArgumentList?.Arguments.Count > 0)
@@ -325,7 +325,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 if (_root == node)
                 {
-                    binder = new ExpressionVariableBinder(node.ArgumentList, binder);
+                    binder = new(node.ArgumentList, binder);
                     AddToMap(node.ArgumentList, binder);
                 }
 
@@ -355,7 +355,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override void VisitBlock(BlockSyntax node)
         {
             Debug.Assert((object)_containingMemberOrLambda == _enclosing.ContainingMemberOrLambda);
-            var blockBinder = new BlockBinder(_enclosing, node);
+            var blockBinder = new(_enclosing, node);
             AddToMap(node, blockBinder);
 
             // Visit all the statements inside this block
@@ -368,7 +368,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override void VisitUsingStatement(UsingStatementSyntax node)
         {
             Debug.Assert((object)_containingMemberOrLambda == _enclosing.ContainingMemberOrLambda);
-            var usingBinder = new UsingStatementBinder(_enclosing, node);
+            var usingBinder = new(_enclosing, node);
             AddToMap(node, usingBinder);
 
             ExpressionSyntax expressionSyntax = node.Expression;
@@ -396,7 +396,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override void VisitWhileStatement(WhileStatementSyntax node)
         {
             Debug.Assert((object)_containingMemberOrLambda == _enclosing.ContainingMemberOrLambda);
-            var whileBinder = new WhileBinder(_enclosing, node);
+            var whileBinder = new(_enclosing, node);
             AddToMap(node, whileBinder);
 
             Visit(node.Condition, whileBinder);
@@ -406,7 +406,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override void VisitDoStatement(DoStatementSyntax node)
         {
             Debug.Assert((object)_containingMemberOrLambda == _enclosing.ContainingMemberOrLambda);
-            var whileBinder = new WhileBinder(_enclosing, node);
+            var whileBinder = new(_enclosing, node);
             AddToMap(node, whileBinder);
 
             Visit(node.Condition, whileBinder);
@@ -416,7 +416,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override void VisitForStatement(ForStatementSyntax node)
         {
             Debug.Assert((object)_containingMemberOrLambda == _enclosing.ContainingMemberOrLambda);
-            Binder binder = new ForLoopBinder(_enclosing, node);
+            Binder binder = new(_enclosing, node);
             AddToMap(node, binder);
 
             VariableDeclarationSyntax declaration = node.Declaration;
@@ -440,7 +440,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ExpressionSyntax condition = node.Condition;
             if (condition != null)
             {
-                binder = new ExpressionVariableBinder(condition, binder);
+                binder = new(condition, binder);
                 AddToMap(condition, binder);
                 Visit(condition, binder);
             }
@@ -448,7 +448,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             SeparatedSyntaxList<ExpressionSyntax> incrementors = node.Incrementors;
             if (incrementors.Count > 0)
             {
-                var incrementorsBinder = new ExpressionListVariableBinder(incrementors, binder);
+                var incrementorsBinder = new(incrementors, binder);
                 AddToMap(incrementors.First(), incrementorsBinder);
                 foreach (ExpressionSyntax incrementor in incrementors)
                 {
@@ -462,12 +462,12 @@ namespace Microsoft.CodeAnalysis.CSharp
         private void VisitCommonForEachStatement(CommonForEachStatementSyntax node)
         {
             Debug.Assert((object)_containingMemberOrLambda == _enclosing.ContainingMemberOrLambda);
-            var patternBinder = new ExpressionVariableBinder(node.Expression, _enclosing);
+            var patternBinder = new(node.Expression, _enclosing);
 
             AddToMap(node.Expression, patternBinder);
             Visit(node.Expression, patternBinder);
 
-            var binder = new ForEachLoopBinder(patternBinder, node);
+            var binder = new(patternBinder, node);
             AddToMap(node, binder);
 
             VisitPossibleEmbeddedStatement(node.Statement, binder);
@@ -502,7 +502,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override void VisitFixedStatement(FixedStatementSyntax node)
         {
             Debug.Assert((object)_containingMemberOrLambda == _enclosing.ContainingMemberOrLambda);
-            var binder = new FixedStatementBinder(_enclosing, node);
+            var binder = new(_enclosing, node);
             AddToMap(node, binder);
 
             if (node.Declaration != null)
@@ -520,7 +520,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override void VisitLockStatement(LockStatementSyntax node)
         {
-            var lockBinder = new LockBinder(_enclosing, node);
+            var lockBinder = new(_enclosing, node);
             AddToMap(node, lockBinder);
 
             Visit(node.Expression, lockBinder);
@@ -552,7 +552,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override void VisitSwitchSection(SwitchSectionSyntax node)
         {
-            var patternBinder = new ExpressionVariableBinder(node, _enclosing);
+            var patternBinder = new(node, _enclosing);
             AddToMap(node, patternBinder);
 
             foreach (SwitchLabelSyntax label in node.Labels)
@@ -586,13 +586,13 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override void VisitSwitchExpression(SwitchExpressionSyntax node)
         {
-            var switchExpressionBinder = new SwitchExpressionBinder(node, _enclosing);
+            var switchExpressionBinder = new(node, _enclosing);
             AddToMap(node, switchExpressionBinder);
             Visit(node.GoverningExpression, switchExpressionBinder);
             foreach (SwitchExpressionArmSyntax arm in node.Arms)
             {
-                var armScopeBinder = new ExpressionVariableBinder(arm, switchExpressionBinder);
-                var armBinder = new SwitchExpressionArmBinder(arm, armScopeBinder, switchExpressionBinder);
+                var armScopeBinder = new(arm, switchExpressionBinder);
+                var armBinder = new(arm, armScopeBinder, switchExpressionBinder);
                 AddToMap(arm, armBinder);
                 Visit(arm.Pattern, armBinder);
                 if (arm.WhenClause != null)
@@ -650,7 +650,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override void VisitCatchClause(CatchClauseSyntax node)
         {
             Debug.Assert((object)_containingMemberOrLambda == _enclosing.ContainingMemberOrLambda);
-            var clauseBinder = new CatchClauseBinder(_enclosing, node);
+            var clauseBinder = new(_enclosing, node);
             AddToMap(node, clauseBinder);
 
             if (node.Filter != null)

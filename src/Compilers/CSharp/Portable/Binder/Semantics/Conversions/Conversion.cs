@@ -104,7 +104,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 ? ConversionKind.NoConversion
                 : isImplicit ? ConversionKind.ImplicitUserDefined : ConversionKind.ExplicitUserDefined;
 
-            _uncommonData = new UncommonData(
+            _uncommonData = new(
                 isExtensionMethod: false,
                 isArrayIndex: false,
                 conversionResult: conversionResult,
@@ -116,7 +116,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal Conversion(ConversionKind kind, MethodSymbol conversionMethod, bool isExtensionMethod)
         {
             this._kind = kind;
-            _uncommonData = new UncommonData(
+            _uncommonData = new(
                 isExtensionMethod: isExtensionMethod,
                 isArrayIndex: false,
                 conversionResult: default,
@@ -127,7 +127,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal Conversion(ConversionKind kind, ImmutableArray<Conversion> nestedConversions)
         {
             this._kind = kind;
-            _uncommonData = new UncommonData(
+            _uncommonData = new(
                 isExtensionMethod: false,
                 isArrayIndex: false,
                 conversionResult: default,
@@ -140,7 +140,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(kind == ConversionKind.Deconstruction);
 
             this._kind = kind;
-            _uncommonData = new DeconstructionUncommonData(deconstructMethodInfo, nestedConversions);
+            _uncommonData = new(deconstructMethodInfo, nestedConversions);
         }
 
         internal Conversion SetConversionMethod(MethodSymbol conversionMethod)

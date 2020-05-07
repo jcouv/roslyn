@@ -21,7 +21,7 @@ namespace Microsoft.CodeAnalysis.CSharp
     /// </summary>
     internal sealed partial class DeclarationTable
     {
-        public static readonly DeclarationTable Empty = new DeclarationTable(
+        public static readonly DeclarationTable Empty = new(
             allOlderRootDeclarations: ImmutableSetWithInsertionOrder<RootSingleNamespaceDeclaration>.Empty,
             latestLazyRootDeclaration: null,
             cache: null);

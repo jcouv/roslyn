@@ -14,7 +14,7 @@ namespace Microsoft.CodeAnalysis.CSharp
     {
         public override BoundNode VisitContinueStatement(BoundContinueStatement node)
         {
-            BoundStatement result = new BoundGotoStatement(node.Syntax, node.Label, node.HasErrors);
+            BoundStatement result = new(node.Syntax, node.Label, node.HasErrors);
             if (this.Instrument && !node.WasCompilerGenerated)
             {
                 result = _instrumenter.InstrumentContinueStatement(node, result);

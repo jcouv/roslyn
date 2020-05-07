@@ -140,13 +140,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                     if (usage != NodeUsage.Normal && methodDecl.TypeParameterList != null)
                     {
                         method = GetMethodSymbol(methodDecl, resultBinder);
-                        resultBinder = new WithMethodTypeParametersBinder(method, resultBinder);
+                        resultBinder = new(method, resultBinder);
                     }
 
                     if (usage == NodeUsage.MethodBody)
                     {
                         method = method ?? GetMethodSymbol(methodDecl, resultBinder);
-                        resultBinder = new InMethodBinder(method, resultBinder);
+                        resultBinder = new(method, resultBinder);
                     }
 
                     resultBinder = resultBinder.WithUnsafeRegionIfNecessary(methodDecl.Modifiers);
@@ -183,7 +183,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             //TODO: the error should be given in a different place, but should we ignore or consider the type args?
                             Debug.Assert(method.Arity == 0, "Generic Ctor, What to do?");
 
-                            resultBinder = new InMethodBinder(method, resultBinder);
+                            resultBinder = new(method, resultBinder);
                         }
                     }
 
@@ -212,7 +212,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     resultBinder = VisitCore(parent.Parent);
 
                     SourceMemberMethodSymbol method = GetMethodSymbol(parent, resultBinder);
-                    resultBinder = new InMethodBinder(method, resultBinder);
+                    resultBinder = new(method, resultBinder);
 
                     resultBinder = resultBinder.WithUnsafeRegionIfNecessary(parent.Modifiers);
 
@@ -275,7 +275,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                         if ((object)accessor != null)
                         {
-                            resultBinder = new InMethodBinder(accessor, resultBinder);
+                            resultBinder = new(accessor, resultBinder);
                         }
                     }
 
@@ -305,7 +305,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     MethodSymbol method = GetMethodSymbol(parent, resultBinder);
                     if ((object)method != null && inBody)
                     {
-                        resultBinder = new InMethodBinder(method, resultBinder);
+                        resultBinder = new(method, resultBinder);
                     }
 
                     resultBinder = resultBinder.WithUnsafeRegionIfNecessary(parent.Modifiers);
@@ -374,7 +374,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     var accessor = propertySymbol.GetMethod;
                     if ((object)accessor != null)
                     {
-                        resultBinder = new InMethodBinder(accessor, resultBinder);
+                        resultBinder = new(accessor, resultBinder);
                     }
 
                     binderCache.TryAdd(key, resultBinder);
@@ -588,11 +588,11 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     // NOTE: Members of the delegate type are in scope in the entire delegate declaration syntax.
                     // NOTE: Hence we can assume that we are in body of the delegate type and explicitly insert the InContainerBinder in the binder chain.
-                    resultBinder = new InContainerBinder(container, outer);
+                    resultBinder = new(container, outer);
 
                     if (parent.TypeParameterList != null)
                     {
-                        resultBinder = new WithClassTypeParametersBinder(container, resultBinder);
+                        resultBinder = new(container, resultBinder);
                     }
 
                     resultBinder = resultBinder.WithUnsafeRegionIfNecessary(parent.Modifiers);
@@ -621,7 +621,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     Binder outer = VisitCore(parent.Parent); // a binder for the body of the type enclosing this type
                     var container = ((NamespaceOrTypeSymbol)outer.ContainingMemberOrLambda).GetSourceTypeMember(parent.Identifier.ValueText, 0, SyntaxKind.EnumDeclaration, parent);
 
-                    resultBinder = new InContainerBinder(container, outer);
+                    resultBinder = new(container, outer);
 
                     resultBinder = resultBinder.WithUnsafeRegionIfNecessary(parent.Modifiers);
 
@@ -685,15 +685,15 @@ namespace Microsoft.CodeAnalysis.CSharp
                         {
                             // even though there could be no type parameter, we need this binder 
                             // for its "IsAccessible"
-                            resultBinder = new WithClassTypeParametersBinder(typeSymbol, resultBinder);
+                            resultBinder = new(typeSymbol, resultBinder);
                         }
                         else
                         {
-                            resultBinder = new InContainerBinder(typeSymbol, resultBinder);
+                            resultBinder = new(typeSymbol, resultBinder);
 
                             if (parent.TypeParameterList != null)
                             {
-                                resultBinder = new WithClassTypeParametersBinder(typeSymbol, resultBinder);
+                                resultBinder = new(typeSymbol, resultBinder);
                             }
                         }
                     }
@@ -849,7 +849,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         }
                         else
                         {
-                            result = new InContainerBinder(container: null, next: result, imports: compilation.GlobalImports);
+                            result = new(container: null, next: result, imports: compilation.GlobalImports);
 
                             // NB: This binder has a full Imports object, but only the non-alias imports are
                             // ever consumed.  Aliases are actually checked in scriptClassBinder (below).
@@ -860,14 +860,14 @@ namespace Microsoft.CodeAnalysis.CSharp
                                     compilation.GetPreviousSubmissionImports().Concat(scriptClassBinder.GetImports(basesBeingResolved)));
                         }
 
-                        result = new InContainerBinder(compilation.GlobalNamespace, result);
+                        result = new(compilation.GlobalNamespace, result);
 
                         if (compilation.HostObjectType != null)
                         {
-                            result = new HostObjectModelBinder(result);
+                            result = new(result);
                         }
 
-                        scriptClassBinder = new InContainerBinder(compilation.ScriptClass, result, compilationUnit, inUsing: inUsing);
+                        scriptClassBinder = new(compilation.ScriptClass, result, compilationUnit, inUsing: inUsing);
                         result = scriptClassBinder;
                     }
                     else
@@ -877,7 +877,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         //
                         // + global namespace with top-level imports
                         // 
-                        result = new InContainerBinder(compilation.GlobalNamespace, result, compilationUnit, inUsing: inUsing);
+                        result = new(compilation.GlobalNamespace, result, compilationUnit, inUsing: inUsing);
                     }
 
                     binderCache.TryAdd(key, result);
@@ -1139,7 +1139,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         if (curr.Arity > 0)
                         {
-                            nextBinder = new WithClassTypeParametersBinder(curr, nextBinder);
+                            nextBinder = new(curr, nextBinder);
                         }
                     }
                 }
@@ -1226,7 +1226,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             binder = binder.WithAdditionalFlags(flags);
-            binder = new WithCrefTypeParametersBinder(crefSyntax, binder);
+            binder = new(crefSyntax, binder);
             return binder;
         }
 

@@ -37,7 +37,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             : base(sourceAssembly, emitOptions, outputKind, serializationProperties, manifestResources, additionalTypes: ImmutableArray<NamedTypeSymbol>.Empty)
         {
             var initialBaseline = previousGeneration.InitialBaseline;
-            var context = new EmitContext(this, null, new DiagnosticBag(), metadataOnly: false, includePrivateMembers: true);
+            var context = new(this, null, new DiagnosticBag(), metadataOnly: false, includePrivateMembers: true);
 
             // Hydrate symbols from initial metadata. Once we do so it is important to reuse these symbols across all generations,
             // in order for the symbol matcher to be able to use reference equality once it maps symbols to initial metadata.
@@ -45,15 +45,15 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             var metadataDecoder = (MetadataDecoder)metadataSymbols.MetadataDecoder;
             var metadataAssembly = (PEAssemblySymbol)metadataDecoder.ModuleSymbol.ContainingAssembly;
 
-            var matchToMetadata = new CSharpSymbolMatcher(metadataSymbols.AnonymousTypes, sourceAssembly, context, metadataAssembly);
+            var matchToMetadata = new(metadataSymbols.AnonymousTypes, sourceAssembly, context, metadataAssembly);
 
             CSharpSymbolMatcher matchToPrevious = null;
             if (previousGeneration.Ordinal > 0)
             {
                 var previousAssembly = ((CSharpCompilation)previousGeneration.Compilation).SourceAssembly;
-                var previousContext = new EmitContext((PEModuleBuilder)previousGeneration.PEModuleBuilder, null, new DiagnosticBag(), metadataOnly: false, includePrivateMembers: true);
+                var previousContext = new((PEModuleBuilder)previousGeneration.PEModuleBuilder, null, new DiagnosticBag(), metadataOnly: false, includePrivateMembers: true);
 
-                matchToPrevious = new CSharpSymbolMatcher(
+                matchToPrevious = new(
                     previousGeneration.AnonymousTypeMap,
                     sourceAssembly: sourceAssembly,
                     sourceContext: context,
@@ -62,9 +62,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                     otherSynthesizedMembersOpt: previousGeneration.SynthesizedMembers);
             }
 
-            _previousDefinitions = new CSharpDefinitionMap(edits, metadataDecoder, matchToMetadata, matchToPrevious);
+            _previousDefinitions = new(edits, metadataDecoder, matchToMetadata, matchToPrevious);
             _previousGeneration = previousGeneration;
-            _changes = new CSharpSymbolChanges(_previousDefinitions, edits, isAddedSymbol);
+            _changes = new(_previousDefinitions, edits, isAddedSymbol);
 
             // Workaround for https://github.com/dotnet/roslyn/issues/3192.
             // When compiling state machine we stash types of awaiters and state-machine hoisted variables,
@@ -108,7 +108,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
 
             ImmutableDictionary<AssemblyIdentity, AssemblyIdentity> assemblyReferenceIdentityMap;
             var metadataAssembly = metadataCompilation.GetBoundReferenceManager().CreatePEAssemblyForAssemblyMetadata(AssemblyMetadata.Create(originalMetadata), MetadataImportOptions.All, out assemblyReferenceIdentityMap);
-            var metadataDecoder = new MetadataDecoder(metadataAssembly.PrimaryModule);
+            var metadataDecoder = new(metadataAssembly.PrimaryModule);
             var metadataAnonymousTypes = GetAnonymousTypeMapFromMetadata(originalMetadata.MetadataReader, metadataDecoder);
             var metadataSymbols = new EmitBaseline.MetadataSymbols(metadataAnonymousTypes, metadataDecoder, assemblyReferenceIdentityMap);
 
@@ -140,8 +140,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                     if (TryGetAnonymousTypeKey(reader, def, builder))
                     {
                         var type = (NamedTypeSymbol)metadataDecoder.GetTypeOfToken(handle);
-                        var key = new AnonymousTypeKey(builder.ToImmutable());
-                        var value = new AnonymousTypeValue(name, index, type);
+                        var key = new(builder.ToImmutable());
+                        var value = new(name, index, type);
                         result.Add(key, value);
                     }
                     builder.Free();

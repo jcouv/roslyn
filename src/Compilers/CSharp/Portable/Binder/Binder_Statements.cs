@@ -141,7 +141,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // NOTE: We could probably throw an exception here, but it's conceivable
                     // that a non-parser syntax tree could reach this point with an unexpected
                     // SyntaxKind and we don't want to throw if that occurs.
-                    result = new BoundBadStatement(node, ImmutableArray<BoundNode>.Empty, hasErrors: true);
+                    result = new(node, ImmutableArray<BoundNode>.Empty, hasErrors: true);
                     break;
             }
 
@@ -202,7 +202,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             Debug.Assert(!declarations.IsEmpty);
 
-            BoundMultipleLocalDeclarations boundMultipleDeclarations = new BoundMultipleLocalDeclarations(declarationSyntax, declarations);
+            BoundMultipleLocalDeclarations boundMultipleDeclarations = new(declarationSyntax, declarations);
 
             BoundStatement boundBody = BindPossibleEmbeddedStatement(node.Statement, diagnostics);
 
@@ -561,7 +561,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 if (node.ExpressionBody != null)
                 {
-                    var expressionBodyDiagnostics = new DiagnosticBag();
+                    var expressionBodyDiagnostics = new();
                     expressionBody = runAnalysis(BindExpressionBodyAsBlock(node.ExpressionBody, expressionBodyDiagnostics), expressionBodyDiagnostics);
                 }
             }
@@ -642,11 +642,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                     Error(diagnostics, ErrorCode.ERR_IllegalStatement, syntax);
                 }
 
-                expressionStatement = new BoundExpressionStatement(node, expression, hasErrors: true);
+                expressionStatement = new(node, expression, hasErrors: true);
             }
             else
             {
-                expressionStatement = new BoundExpressionStatement(node, expression);
+                expressionStatement = new(node, expression);
             }
 
             CheckForUnobservedAwaitable(expression, diagnostics);
@@ -1137,7 +1137,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
                 }, (binder: this, invalidDimensions: invalidDimensions, diagnostics: diagnostics));
 
-                boundDeclType = new BoundTypeExpression(typeSyntax, aliasOpt, dimensionsOpt: invalidDimensions.ToImmutableAndFree(), typeWithAnnotations: declTypeOpt);
+                boundDeclType = new(typeSyntax, aliasOpt, dimensionsOpt: invalidDimensions.ToImmutableAndFree(), typeWithAnnotations: declTypeOpt);
             }
 
             return new BoundLocalDeclaration(
@@ -1341,7 +1341,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             SyntaxNode initializerSyntax = initializer.Syntax;
 
-            TypeSymbol pointerType = new PointerTypeSymbol(TypeWithAnnotations.Create(elementType));
+            TypeSymbol pointerType = new(TypeWithAnnotations.Create(elementType));
             HashSet<DiagnosticInfo> useSiteDiagnostics = null;
             Conversion elementConversion = this.Conversions.ClassifyConversionFromType(pointerType, declType, ref useSiteDiagnostics);
             diagnostics.Add(initializerSyntax, useSiteDiagnostics);
@@ -1764,7 +1764,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (expression.HasAnyErrors && expression.Kind != BoundKind.UnboundLambda)
             {
-                diagnostics = new DiagnosticBag();
+                diagnostics = new();
             }
 
             HashSet<DiagnosticInfo> useSiteDiagnostics = null;
@@ -1794,7 +1794,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
 
                 // Suppress any additional diagnostics
-                diagnostics = new DiagnosticBag();
+                diagnostics = new();
             }
 
             return CreateConversion(expression.Syntax, expression, conversion, isCast: false, conversionGroupOpt: null, targetType, diagnostics);
@@ -1968,7 +1968,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     if (!lambdaParameterType.Equals(delegateParameterType, TypeCompareKind.AllIgnoreOptions))
                     {
-                        SymbolDistinguisher distinguisher = new SymbolDistinguisher(this.Compilation, lambdaParameterType, delegateParameterType);
+                        SymbolDistinguisher distinguisher = new(this.Compilation, lambdaParameterType, delegateParameterType);
 
                         // Parameter {0} is declared as type '{1}{2}' but should be '{3}{4}'
                         Error(diagnostics, ErrorCode.ERR_BadParamType, lambdaParameterLocation,
@@ -2036,7 +2036,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
                     else
                     {
-                        SymbolDistinguisher distinguisher = new SymbolDistinguisher(compilation, sourceType, targetType);
+                        SymbolDistinguisher distinguisher = new(compilation, sourceType, targetType);
                         Error(diagnostics, ErrorCode.ERR_NoImplicitConvCast, syntax, distinguisher.First, distinguisher.Second);
                     }
                 }
@@ -2053,7 +2053,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         Debug.Assert(originalUserDefinedConversions.Length == 0,
                             "How can there be exactly one applicable user-defined conversion if the conversion doesn't exist?");
-                        SymbolDistinguisher distinguisher = new SymbolDistinguisher(compilation, sourceType, targetType);
+                        SymbolDistinguisher distinguisher = new(compilation, sourceType, targetType);
                         Error(diagnostics, ErrorCode.ERR_NoImplicitConv, syntax, distinguisher.First, distinguisher.Second);
                     }
                 }
@@ -2067,7 +2067,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
                 else
                 {
-                    SymbolDistinguisher distinguisher = new SymbolDistinguisher(compilation, sourceType, targetType);
+                    SymbolDistinguisher distinguisher = new(compilation, sourceType, targetType);
                     Error(diagnostics, ErrorCode.ERR_NoImplicitConv, syntax, distinguisher.First, distinguisher.Second);
                 }
             }
@@ -2245,7 +2245,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var consequence = BindPossibleEmbeddedStatement(node.Statement, diagnostics);
             BoundStatement alternative = (node.Else == null) ? null : BindPossibleEmbeddedStatement(node.Else.Statement, diagnostics);
 
-            BoundStatement result = new BoundIfStatement(node, condition, consequence, alternative);
+            BoundStatement result = new(node, condition, consequence, alternative);
             return result;
         }
 
@@ -2638,7 +2638,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var interactiveInitializerMethod = this.ContainingMemberOrLambda as SynthesizedInteractiveInitializerMethod;
                 if (interactiveInitializerMethod != null)
                 {
-                    arg = new BoundDefaultExpression(interactiveInitializerMethod.GetNonNullSyntaxNode(), interactiveInitializerMethod.ResultType);
+                    arg = new(interactiveInitializerMethod.GetNonNullSyntaxNode(), interactiveInitializerMethod.ResultType);
                 }
             }
 
@@ -2967,7 +2967,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // obviously we will find a local of the given name in the current binder.
                 hasError |= this.ValidateDeclarationNameConflictsInScope(local, diagnostics);
 
-                exceptionSource = new BoundLocal(declaration, local, ConstantValue.NotAvailable, local.Type);
+                exceptionSource = new(declaration, local, ConstantValue.NotAvailable, local.Type);
             }
 
             var block = BindEmbeddedBlock(node.Block, diagnostics);
@@ -3080,7 +3080,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // This can happen if we are binding an async anonymous method to a delegate type.
                 Error(diagnostics, ErrorCode.ERR_MustNotHaveRefReturn, syntax);
-                statement = new BoundReturnStatement(syntax, refKind, expression) { WasCompilerGenerated = true };
+                statement = new(syntax, refKind, expression) { WasCompilerGenerated = true };
             }
             else if ((object)returnType != null)
             {
@@ -3091,7 +3091,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         : ErrorCode.ERR_MustHaveRefReturn;
                     Error(diagnostics, errorCode, syntax);
                     expression = BindToTypeForErrorRecovery(expression);
-                    statement = new BoundReturnStatement(syntax, RefKind.None, expression) { WasCompilerGenerated = true };
+                    statement = new(syntax, RefKind.None, expression) { WasCompilerGenerated = true };
                 }
                 else if (returnType.IsVoidType() || IsTaskReturningAsyncMethod())
                 {
@@ -3109,7 +3109,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
 
                     // Don't mark compiler generated so that the rewriter generates sequence points
-                    var expressionStatement = new BoundExpressionStatement(syntax, expression, errors);
+                    var expressionStatement = new(syntax, expression, errors);
 
                     CheckForUnobservedAwaitable(expression, diagnostics);
                     statement = expressionStatement;
@@ -3118,19 +3118,19 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     Error(diagnostics, ErrorCode.ERR_ReturnInIterator, syntax);
                     expression = BindToTypeForErrorRecovery(expression);
-                    statement = new BoundReturnStatement(syntax, returnRefKind, expression) { WasCompilerGenerated = true };
+                    statement = new(syntax, returnRefKind, expression) { WasCompilerGenerated = true };
                 }
                 else
                 {
                     expression = returnType.IsErrorType()
                         ? BindToTypeForErrorRecovery(expression)
                         : CreateReturnConversion(syntax, diagnostics, expression, refKind, returnType);
-                    statement = new BoundReturnStatement(syntax, returnRefKind, expression) { WasCompilerGenerated = true };
+                    statement = new(syntax, returnRefKind, expression) { WasCompilerGenerated = true };
                 }
             }
             else if (expression.Type?.SpecialType == SpecialType.System_Void)
             {
-                statement = new BoundExpressionStatement(syntax, expression) { WasCompilerGenerated = true };
+                statement = new(syntax, expression) { WasCompilerGenerated = true };
             }
             else
             {
@@ -3140,7 +3140,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     expression = BindToNaturalType(expression, diagnostics);
                 }
-                statement = new BoundReturnStatement(syntax, refKind, expression) { WasCompilerGenerated = true };
+                statement = new(syntax, refKind, expression) { WasCompilerGenerated = true };
             }
 
             // Need to attach the tree for when we generate sequence points.
@@ -3265,7 +3265,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression initializerInvocation = GetBinder(initializer).BindConstructorInitializer(initializer.ArgumentList, (MethodSymbol)this.ContainingMember(), diagnostics);
             //  Base WasCompilerGenerated state off of whether constructor is implicitly declared, this will ensure proper instrumentation.
             Debug.Assert(!this.ContainingMember().IsImplicitlyDeclared);
-            var constructorInitializer = new BoundExpressionStatement(initializer, initializerInvocation);
+            var constructorInitializer = new(initializer, initializerInvocation);
             Debug.Assert(initializerInvocation.HasAnyErrors || constructorInitializer.IsConstructorInitializer(), "Please keep this bound node in sync with BoundNodeExtensions.IsConstructorInitializer.");
             return constructorInitializer;
         }

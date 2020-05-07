@@ -110,9 +110,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             Debug.Assert(options != null);
 
             _options = options;
-            _builder = new StringBuilder();
+            _builder = new();
             _identBuffer = new char[32];
-            _cache = new LexerCache();
+            _cache = new();
             _createQuickTokenFunction = this.CreateQuickToken;
             _allowPreprocessorDirectives = allowPreprocessorDirectives;
             _interpolationFollowedByColon = interpolationFollowedByColon;
@@ -278,8 +278,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             }
         }
 
-        private SyntaxListBuilder _leadingTriviaCache = new SyntaxListBuilder(10);
-        private SyntaxListBuilder _trailingTriviaCache = new SyntaxListBuilder(10);
+        private SyntaxListBuilder _leadingTriviaCache = new(10);
+        private SyntaxListBuilder _trailingTriviaCache = new(10);
 
         private static int GetFullWidth(SyntaxListBuilder builder)
         {
@@ -2500,7 +2500,7 @@ LoopExit:
 
             if (list == null)
             {
-                list = new SyntaxListBuilder(TriviaListInitialCapacity);
+                list = new(TriviaListInitialCapacity);
             }
 
             list.Add(trivia);
@@ -2718,7 +2718,7 @@ top:
             CSharpSyntaxNode directive;
             var saveMode = _mode;
 
-            using (var dp = new DirectiveParser(this, _directives))
+            using (var dp = new(this, _directives))
             {
                 directive = dp.ParseDirective(isActive, endIsActive, afterFirstToken, afterNonWhitespaceOnLine);
             }
@@ -3044,7 +3044,7 @@ top:
                     : LexerMode.XmlDocCommentStyleDelimited;
             if (_xmlParser == null)
             {
-                _xmlParser = new DocumentationCommentParser(this, mode);
+                _xmlParser = new(this, mode);
             }
             else
             {

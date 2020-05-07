@@ -238,7 +238,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     // If we don't have System.Object, then we'll get an error type, which will cause overload resolution to fail, 
                     // which will cause some error to be reported.  That's sufficient (i.e. no need to specifically report its absence here).
-                    parameter = new SignatureOnlyParameterSymbol(
+                    parameter = new(
                         TypeWithAnnotations.Create(compilation.GetSpecialType(SpecialType.System_Object), customModifiers: parameter.TypeWithAnnotations.CustomModifiers), parameter.RefCustomModifiers, parameter.IsParams, parameter.RefKind);
                 }
 
@@ -311,7 +311,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 Debug.Assert((object)sourceExpression.Type == null);
                 Debug.Assert((object)sourceExpression.ElementType != null);
 
-                var sourceAsPointer = new PointerTypeSymbol(TypeWithAnnotations.Create(sourceExpression.ElementType));
+                var sourceAsPointer = new(TypeWithAnnotations.Create(sourceExpression.ElementType));
                 var pointerConversion = ClassifyImplicitConversionFromType(sourceAsPointer, destination, ref useSiteDiagnostics);
 
                 if (pointerConversion.IsValid)

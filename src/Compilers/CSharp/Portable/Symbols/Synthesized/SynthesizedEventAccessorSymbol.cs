@@ -22,7 +22,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     internal sealed class SynthesizedEventAccessorSymbol : SourceEventAccessorSymbol
     {
         // Since we don't have a syntax reference, we'll have to use another object for locking.
-        private readonly object _methodChecksLockObject = new object();
+        private readonly object _methodChecksLockObject = new();
 
         internal SynthesizedEventAccessorSymbol(SourceEventSymbol @event, bool isAdder, EventSymbol explicitlyImplementedEventOpt = null, string aliasQualifierOpt = null)
             : base(@event, null, @event.Locations, explicitlyImplementedEventOpt, aliasQualifierOpt, isAdder)

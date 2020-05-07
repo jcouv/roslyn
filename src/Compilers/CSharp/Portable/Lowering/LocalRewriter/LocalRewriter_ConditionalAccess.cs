@@ -84,7 +84,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             switch (loweringKind)
             {
                 case ConditionalAccessLoweringKind.LoweredConditionalAccess:
-                    _currentConditionalAccessTarget = new BoundConditionalReceiver(
+                    _currentConditionalAccessTarget = new(
                         loweredReceiver.Syntax,
                         currentConditionalAccessID,
                         receiverType);
@@ -151,7 +151,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 case ConditionalAccessLoweringKind.LoweredConditionalAccess:
                     Debug.Assert(loweredReceiver.Type is { });
-                    result = new BoundLoweredConditionalAccess(
+                    result = new(
                         node.Syntax,
                         loweredReceiver,
                         receiverType.IsNullableType() ?

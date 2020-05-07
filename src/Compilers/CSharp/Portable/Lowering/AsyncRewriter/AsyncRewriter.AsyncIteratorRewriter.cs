@@ -673,7 +673,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     setExceptionMethod = (MethodSymbol)setExceptionMethod.SymbolAsMember((NamedTypeSymbol)_promiseOfValueOrEndField.Type);
                 }
 
-                var rewriter = new AsyncIteratorMethodToStateMachineRewriter(
+                var rewriter = new(
                     method: method,
                     methodOrdinal: _methodOrdinal,
                     asyncMethodBuilderMemberCollection: _asyncMethodBuilderMemberCollection,

@@ -90,7 +90,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private BoundStatement MakeLocalUsingDeclarationStatement(BoundUsingLocalDeclarations usingDeclarations, ImmutableArray<BoundStatement> statements)
         {
             LocalDeclarationStatementSyntax syntax = (LocalDeclarationStatementSyntax)usingDeclarations.Syntax;
-            BoundBlock body = new BoundBlock(syntax, ImmutableArray<LocalSymbol>.Empty, statements);
+            BoundBlock body = new(syntax, ImmutableArray<LocalSymbol>.Empty, statements);
 
             var usingStatement = MakeDeclarationUsingStatement(syntax,
                                                                body,
@@ -180,7 +180,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 boundTemp = _factory.StoreToTemp(rewrittenExpression, out tempAssignment, syntaxOpt: usingSyntax, kind: SynthesizedLocalKind.Using);
             }
 
-            BoundStatement expressionStatement = new BoundExpressionStatement(expressionSyntax, tempAssignment);
+            BoundStatement expressionStatement = new(expressionSyntax, tempAssignment);
             if (this.Instrument)
             {
                 expressionStatement = _instrumenter.InstrumentUsingTargetCapture(node, expressionStatement);
@@ -218,7 +218,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             TypeSymbol localType = localSymbol.Type;
             Debug.Assert((object)localType != null); //otherwise, there wouldn't be a conversion to IDisposable
 
-            BoundLocal boundLocal = new BoundLocal(declarationSyntax, localSymbol, localDeclaration.InitializerOpt.ConstantValue, localType);
+            BoundLocal boundLocal = new(declarationSyntax, localSymbol, localDeclaration.InitializerOpt.ConstantValue, localType);
 
             BoundStatement? rewrittenDeclaration = VisitStatement(localDeclaration);
             Debug.Assert(rewrittenDeclaration is { });
@@ -364,7 +364,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression disposeCall = GenerateDisposeCall(syntax, disposedExpression, methodOpt, awaitOpt, awaitKeywordOpt);
 
             // local.Dispose(); or await variant
-            BoundStatement disposeStatement = new BoundExpressionStatement(syntax, disposeCall);
+            BoundStatement disposeStatement = new(syntax, disposeCall);
 
             BoundExpression? ifCondition;
 
@@ -408,7 +408,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // try { ... } finally { if (local != null) local.Dispose(); }
             // or
             // nullable or await variants
-            BoundStatement tryFinally = new BoundTryStatement(
+            BoundStatement tryFinally = new(
                 syntax: syntax,
                 tryBlock: tryBlock,
                 catchBlocks: ImmutableArray<BoundCatchBlock>.Empty,
@@ -444,7 +444,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression disposeCall;
             if (methodOpt is null)
             {
-                disposeCall = new BoundBadExpression(syntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, ImmutableArray.Create(disposedExpression), ErrorTypeSymbol.UnknownResultType);
+                disposeCall = new(syntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, ImmutableArray.Create(disposedExpression), ErrorTypeSymbol.UnknownResultType);
             }
             else
             {

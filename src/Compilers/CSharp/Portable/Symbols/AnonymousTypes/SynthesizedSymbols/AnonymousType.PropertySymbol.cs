@@ -53,7 +53,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 _name = field.Name;
                 _index = index;
                 _locations = locations;
-                _getMethod = new AnonymousTypePropertyGetAccessorSymbol(this);
+                _getMethod = new(this);
                 _backingField = includeBackingField ? new AnonymousTypeFieldSymbol(this) : null;
             }
 

@@ -116,7 +116,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 return new UnsupportedMetadataTypeSymbol();
             }
 
-            var decoder = new DynamicTypeDecoder(dynamicTransformFlags, haveCustomModifierFlags, checkLength, containingAssembly);
+            var decoder = new(dynamicTransformFlags, haveCustomModifierFlags, checkLength, containingAssembly);
 
             // Native compiler encodes bools (always false) for custom modifiers and parameter ref-kinds, if ref-kind is ref or out.
             if (decoder.HandleCustomModifiers(targetSymbolCustomModifierCount) && decoder.HandleParameterRefKind(targetSymbolRefKind))

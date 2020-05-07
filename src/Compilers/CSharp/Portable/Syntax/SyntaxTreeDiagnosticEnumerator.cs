@@ -27,12 +27,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (node != null && node.ContainsDiagnostics)
             {
                 _syntaxTree = syntaxTree;
-                _stack = new NodeIterationStack(DefaultStackCapacity);
+                _stack = new(DefaultStackCapacity);
                 _stack.PushNodeOrToken(node);
             }
             else
             {
-                _stack = new NodeIterationStack();
+                _stack = new();
             }
         }
 
@@ -62,7 +62,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     var spanStart = Math.Min(_position - leadingWidthAlreadyCounted + sdi.Offset, length);
                     var spanWidth = Math.Min(spanStart + sdi.Width, length) - spanStart;
 
-                    _current = new CSDiagnostic(sdi, new SourceLocation(_syntaxTree, new TextSpan(spanStart, spanWidth)));
+                    _current = new(sdi, new SourceLocation(_syntaxTree, new TextSpan(spanStart, spanWidth)));
 
                     _stack.UpdateDiagnosticIndexForStackTop(diagIndex);
                     return true;
@@ -174,7 +174,7 @@ tryAgain:
                     _stack = tmp;
                 }
 
-                _stack[_count] = new NodeIteration(node);
+                _stack[_count] = new(node);
                 _count++;
             }
 

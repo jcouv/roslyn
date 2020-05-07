@@ -112,7 +112,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            ParameterMap argsToParameters = new ParameterMap(parametersPositions, argumentCount);
+            ParameterMap argsToParameters = new(parametersPositions, argumentCount);
 
             // We have analyzed every argument and tried to make it correspond to a particular parameter. 
             // We must now answer the following questions:

@@ -87,7 +87,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 ? F.SynthesizedLocal(asyncMethodBuilderMemberCollection.ResultType, syntax: F.Syntax, kind: SynthesizedLocalKind.AsyncMethodReturnValue)
                 : null;
 
-            _dynamicFactory = new LoweredDynamicOperationFactory(F, methodOrdinal);
+            _dynamicFactory = new(F, methodOrdinal);
             _awaiterFields = new Dictionary<TypeSymbol, FieldSymbol>(Symbols.SymbolEqualityComparer.IgnoringDynamicTupleNamesAndNullability);
             _nextAwaiterId = slotAllocatorOpt?.PreviousAwaiterSlotCount ?? 0;
 

@@ -54,7 +54,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public static LoweredDynamicOperation Bad(TypeSymbol resultType, ImmutableArray<BoundExpression> children)
         {
             Debug.Assert(children.Length > 0);
-            var bad = new BoundBadExpression(children[0].Syntax, LookupResultKind.Empty, ImmutableArray<Symbol?>.Empty, children, resultType);
+            var bad = new(children[0].Syntax, LookupResultKind.Empty, ImmutableArray<Symbol?>.Empty, children, resultType);
             return new LoweredDynamicOperation(null, null, bad, resultType, default(ImmutableArray<LocalSymbol>));
         }
 

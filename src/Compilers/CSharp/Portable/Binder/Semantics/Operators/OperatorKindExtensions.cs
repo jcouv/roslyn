@@ -401,7 +401,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 #if DEBUG
         public static string Dump(this BinaryOperatorKind kind)
         {
-            var b = new StringBuilder();
+            var b = new();
             if ((kind & BinaryOperatorKind.Lifted) != 0) b.Append("Lifted");
             if ((kind & BinaryOperatorKind.Logical) != 0) b.Append("Logical");
             if ((kind & BinaryOperatorKind.Checked) != 0) b.Append("Checked");
@@ -414,7 +414,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public static string Dump(this UnaryOperatorKind kind)
         {
-            var b = new StringBuilder();
+            var b = new();
             if ((kind & UnaryOperatorKind.Lifted) != 0) b.Append("Lifted");
             if ((kind & UnaryOperatorKind.Checked) != 0) b.Append("Checked");
             var type = kind & UnaryOperatorKind.TypeMask;

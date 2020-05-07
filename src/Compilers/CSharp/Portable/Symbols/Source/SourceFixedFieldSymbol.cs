@@ -42,8 +42,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             var compilation = this.DeclaringCompilation;
             var systemType = compilation.GetWellKnownType(WellKnownType.System_Type);
             var intType = compilation.GetSpecialType(SpecialType.System_Int32);
-            var item1 = new TypedConstant(systemType, TypedConstantKind.Type, ((PointerTypeSymbol)this.Type).PointedAtType);
-            var item2 = new TypedConstant(intType, TypedConstantKind.Primitive, this.FixedSize);
+            var item1 = new(systemType, TypedConstantKind.Type, ((PointerTypeSymbol)this.Type).PointedAtType);
+            var item2 = new(intType, TypedConstantKind.Primitive, this.FixedSize);
             AddSynthesizedAttribute(ref attributes, compilation.TrySynthesizeAttribute(
                 WellKnownMember.System_Runtime_CompilerServices_FixedBufferAttribute__ctor,
                 ImmutableArray.Create<TypedConstant>(item1, item2)));
@@ -82,7 +82,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                             BinderFactory binderFactory = this.DeclaringCompilation.GetBinderFactory(SyntaxTree);
                             Binder binder = binderFactory.GetBinder(sizeExpression);
-                            binder = new ExecutableCodeBinder(sizeExpression, binder.ContainingMemberOrLambda, binder).GetBinder(sizeExpression);
+                            binder = new(sizeExpression, binder.ContainingMemberOrLambda, binder).GetBinder(sizeExpression);
 
                             TypeSymbol intType = binder.GetSpecialType(SpecialType.System_Int32, diagnostics, sizeExpression);
                             BoundExpression boundSizeExpression = binder.GenerateConversionForAssignment(
@@ -154,8 +154,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             : base(GeneratedNames.MakeFixedFieldImplementationName(field.Name), typeParameters: ImmutableArray<TypeParameterSymbol>.Empty, typeMap: TypeMap.Empty)
         {
             _field = field;
-            _constructor = new SynthesizedInstanceConstructor(this);
-            _internalField = new SynthesizedFieldSymbol(this, ((PointerTypeSymbol)field.Type).PointedAtType, FixedElementFieldName, isPublic: true);
+            _constructor = new(this);
+            _internalField = new(this, ((PointerTypeSymbol)field.Type).PointedAtType, FixedElementFieldName, isPublic: true);
         }
 
         public override Symbol ContainingSymbol

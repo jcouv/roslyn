@@ -22,7 +22,7 @@ namespace Microsoft.CodeAnalysis.CSharp
     [DebuggerDisplay("{GetDebuggerDisplay(),nq}")]
     internal sealed class Imports
     {
-        internal static readonly Imports Empty = new Imports(
+        internal static readonly Imports Empty = new(
             null,
             ImmutableDictionary<string, AliasAndUsingDirective>.Empty,
             ImmutableArray<NamespaceOrTypeAndUsingDirective>.Empty,
@@ -104,7 +104,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // using Goo::Baz;
             // extern alias Goo;
 
-            var diagnostics = new DiagnosticBag();
+            var diagnostics = new();
 
             var compilation = binder.Compilation;
 
@@ -130,7 +130,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             ImmutableArray<NamespaceOrTypeAndUsingDirective>.Empty,
                             externAliases,
                             diagnostics: null);
-                    usingsBinder = new InContainerBinder(binder.Container, binder.Next, imports);
+                    usingsBinder = new(binder.Container, binder.Next, imports);
                 }
 
                 var uniqueUsings = Symbols.SpecializedSymbolCollections.GetPooledSymbolHashSetInstance<NamespaceOrTypeSymbol>();
@@ -265,8 +265,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return Empty;
             }
 
-            var diagnostics = new DiagnosticBag();
-            var usingsBinder = new InContainerBinder(compilation.GlobalNamespace, new BuckStopsHereBinder(compilation));
+            var diagnostics = new();
+            var usingsBinder = new(compilation.GlobalNamespace, new BuckStopsHereBinder(compilation));
             var boundUsings = ArrayBuilder<NamespaceOrTypeAndUsingDirective>.GetInstance();
             var uniqueUsings = PooledHashSet<NamespaceOrTypeSymbol>.GetInstance();
 
@@ -579,7 +579,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             var corLibrary = _compilation.SourceAssembly.CorLibrary;
-            var conversions = new TypeConversions(corLibrary);
+            var conversions = new(corLibrary);
             foreach (var @using in Usings)
             {
                 // Check if `using static` directives meet constraints.
@@ -884,7 +884,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private class UsingTargetComparer : IEqualityComparer<NamespaceOrTypeAndUsingDirective>
         {
-            public static readonly IEqualityComparer<NamespaceOrTypeAndUsingDirective> Instance = new UsingTargetComparer();
+            public static readonly IEqualityComparer<NamespaceOrTypeAndUsingDirective> Instance = new();
 
             private UsingTargetComparer() { }
 

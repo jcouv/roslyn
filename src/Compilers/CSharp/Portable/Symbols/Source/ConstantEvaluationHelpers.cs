@@ -263,7 +263,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             var compilations = PooledDictionary<Compilation, int>.GetInstance();
             OrderCompilations(graph, compilations);
-            var comparer = new SourceLocationComparer(compilations);
+            var comparer = new(compilations);
 
             // Sort the fields by lexical order.
             var fields = ArrayBuilder<SourceFieldSymbolWithSyntaxReference>.GetInstance();

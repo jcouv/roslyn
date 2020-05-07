@@ -343,8 +343,8 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
             var receiverType = expression.Type;
 
-            var whenValueTypeLabel = new object();
-            var doneLabel = new object();
+            var whenValueTypeLabel = new();
+            var doneLabel = new();
 
             EmitInitObj(receiverType, true, expression.Syntax);
             EmitBox(receiverType, expression.Syntax);
@@ -385,8 +385,8 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             }
 
             // labels
-            object whenNotNullLabel = new object();
-            object doneLabel = new object();
+            object whenNotNullLabel = new();
+            object doneLabel = new();
             LocalDefinition cloneTemp = null;
 
             var notConstrained = !receiverType.IsReferenceType && !receiverType.IsValueType;
@@ -2081,7 +2081,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
         //    is used when assigning default value to T that is not a verifier reference.
         //
         // 2) in-place ctor call 
-        //    is used when assigning a freshly created struct. "x = new S(arg)" can be
+        //    is used when assigning a freshly created struct. "x = new(arg)" can be
         //    replaced by x.S(arg) as long as partial assignment cannot be observed -
         //    i.e. target must not be on the heap and we should not be in a try block.
         private bool TryEmitAssignmentInPlace(BoundAssignmentOperator assignmentOperator, bool used)
@@ -3146,8 +3146,8 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
         {
             Debug.Assert(expr.ConstantValue == null, "Constant value should have been emitted directly");
 
-            object consequenceLabel = new object();
-            object doneLabel = new object();
+            object consequenceLabel = new();
+            object doneLabel = new();
 
             EmitCondBranch(expr.Condition, ref consequenceLabel, sense: true);
             EmitExpression(expr.Alternative, used);
@@ -3253,7 +3253,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 EmitBox(expr.Type, expr.LeftOperand.Syntax);
             }
 
-            object ifLeftNotNullLabel = new object();
+            object ifLeftNotNullLabel = new();
             _builder.EmitBranch(ILOpCode.Brtrue, ifLeftNotNullLabel);
 
             if (used)

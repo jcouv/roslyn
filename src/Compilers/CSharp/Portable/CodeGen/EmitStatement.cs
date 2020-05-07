@@ -946,8 +946,8 @@ oneMoreTime:
 
                 // Filtering starts with simulating regular catch through a 
                 // type check. If this is not our type then we are done.
-                var typeCheckPassedLabel = new object();
-                typeCheckFailedLabel = new object();
+                var typeCheckPassedLabel = new();
+                typeCheckFailedLabel = new();
 
                 if ((object)catchBlock.ExceptionTypeOpt != null)
                 {
@@ -1240,7 +1240,7 @@ oneMoreTime:
                         // if (key != null && key.Length == 0)
                         //      goto targetLabel
 
-                        object skipToNext = new object();
+                        object skipToNext = new();
                         _builder.EmitLoad(keyArg);
                         _builder.EmitBranch(ILOpCode.Brfalse, skipToNext, ILOpCode.Brtrue);
 
@@ -1340,7 +1340,7 @@ oneMoreTime:
             {
                 Debug.Assert(local.HasConstantValue);
                 MetadataConstant compileTimeValue = _module.CreateConstant(local.Type, local.ConstantValue, syntaxNode, _diagnostics);
-                LocalConstantDefinition localConstantDef = new LocalConstantDefinition(
+                LocalConstantDefinition localConstantDef = new(
                     local.Name,
                     local.Locations.FirstOrDefault() ?? Location.None,
                     compileTimeValue,
@@ -1444,7 +1444,7 @@ oneMoreTime:
                 // user-defined locals should have 0 ordinal:
                 Debug.Assert(ordinal == 0 || localKind != SynthesizedLocalKind.UserDefined);
 
-                localId = new LocalDebugId(syntaxOffset, ordinal);
+                localId = new(syntaxOffset, ordinal);
             }
 
             return local.Name ?? GeneratedNames.MakeSynthesizedLocalName(localKind, ref _uniqueNameId);
@@ -1513,7 +1513,7 @@ oneMoreTime:
             /// </summary>
             public static BoundBlock MakeFinallyClone(BoundTryStatement node)
             {
-                var cloner = new FinallyCloner();
+                var cloner = new();
                 return (BoundBlock)cloner.Visit(node.FinallyBlockOpt);
             }
 
@@ -1576,7 +1576,7 @@ oneMoreTime:
                 GeneratedLabelSymbol clone;
                 if (!labelClones.TryGetValue(label, out clone))
                 {
-                    clone = new GeneratedLabelSymbol("cloned_" + label.Name);
+                    clone = new("cloned_" + label.Name);
                     labelClones.Add(label, clone);
                 }
 

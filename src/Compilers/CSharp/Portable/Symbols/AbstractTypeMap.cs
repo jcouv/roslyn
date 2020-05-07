@@ -354,7 +354,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 if (dynamicEraser == null)
                 {
-                    dynamicEraser = new DynamicTypeEraser(owner.ContainingAssembly.CorLibrary.GetSpecialType(SpecialType.System_Object));
+                    dynamicEraser = new(owner.ContainingAssembly.CorLibrary.GetSpecialType(SpecialType.System_Object));
                 }
 
                 TypeWithAnnotations substituted = SubstituteType(type);

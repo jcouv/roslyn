@@ -49,7 +49,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         //
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        internal static readonly ParallelOptions DefaultParallelOptions = new ParallelOptions();
+        internal static readonly ParallelOptions DefaultParallelOptions = new();
 
         private readonly CSharpCompilationOptions _options;
         private readonly Lazy<Imports> _globalImports;
@@ -261,8 +261,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         #region Constructors and Factories
 
-        private static readonly CSharpCompilationOptions s_defaultOptions = new CSharpCompilationOptions(OutputKind.ConsoleApplication);
-        private static readonly CSharpCompilationOptions s_defaultSubmissionOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithReferencesSupersedeLowerVersions(true);
+        private static readonly CSharpCompilationOptions s_defaultOptions = new(OutputKind.ConsoleApplication);
+        private static readonly CSharpCompilationOptions s_defaultSubmissionOptions = new(OutputKind.DynamicallyLinkedLibrary).WithReferencesSupersedeLowerVersions(true);
 
         /// <summary>
         /// Creates a new compilation from scratch. Methods such as AddSyntaxTrees or AddReferences
@@ -340,7 +340,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // since most of the binding work is similar.
             // https://github.com/dotnet/roslyn/issues/43397
 
-            var compilation = new CSharpCompilation(
+            var compilation = new(
                 assemblyName,
                 options,
                 validatedReferences,
@@ -398,21 +398,21 @@ namespace Microsoft.CodeAnalysis.CSharp
             AsyncQueue<CompilationEvent>? eventQueue = null)
             : base(assemblyName, references, features, isSubmission, eventQueue)
         {
-            WellKnownMemberSignatureComparer = new WellKnownMembersSignatureComparer(this);
+            WellKnownMemberSignatureComparer = new(this);
             _options = options;
 
-            this.builtInOperators = new BuiltInOperators(this);
+            this.builtInOperators = new(this);
             _scriptClass = new Lazy<ImplicitNamedTypeSymbol?>(BindScriptClass);
             _globalImports = new Lazy<Imports>(BindGlobalImports);
             _previousSubmissionImports = new Lazy<Imports>(ExpandPreviousSubmissionImports);
             _globalNamespaceAlias = new Lazy<AliasSymbol>(CreateGlobalNamespaceAlias);
-            _anonymousTypeManager = new AnonymousTypeManager(this);
+            _anonymousTypeManager = new(this);
             this.LanguageVersion = CommonLanguageVersion(syntaxAndDeclarations.ExternalSyntaxTrees);
 
             if (isSubmission)
             {
                 Debug.Assert(previousSubmission == null || previousSubmission.HostObjectType == hostObjectType);
-                this.ScriptCompilationInfo = new CSharpScriptCompilationInfo(previousSubmission, submissionReturnType, hostObjectType);
+                this.ScriptCompilationInfo = new(previousSubmission, submissionReturnType, hostObjectType);
             }
             else
             {
@@ -431,7 +431,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                _referenceManager = new ReferenceManager(
+                _referenceManager = new(
                     MakeSourceAssemblySimpleName(),
                     this.Options.AssemblyIdentityComparer,
                     observedMetadata: referenceManager?.ObservedMetadata);
@@ -1441,7 +1441,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var result = Assembly.GetTypeByReflectionType(type, includeReferences: true);
             if ((object)result == null)
             {
-                var errorType = new ExtendedErrorTypeSymbol(this, type.Name, 0, CreateReflectionTypeNotFoundError(type));
+                var errorType = new(this, type.Name, 0, CreateReflectionTypeNotFoundError(type));
                 diagnostics.Add(errorType.ErrorInfo, NoLocation.Singleton);
                 result = errorType;
             }
@@ -1733,7 +1733,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 else if (viableEntryPoints.Count > 1)
                 {
                     viableEntryPoints.Sort(LexicalOrderSymbolComparer.Instance);
-                    var info = new CSDiagnosticInfo(
+                    var info = new(
                          ErrorCode.ERR_MultipleEntryPoints,
                          args: Array.Empty<object>(),
                          symbols: viableEntryPoints.OfType<Symbol>().AsImmutable(),
@@ -1792,7 +1792,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             var syntax = method.ExtractReturnTypeSyntax();
-            var dumbInstance = new BoundLiteral(syntax, ConstantValue.Null, namedType);
+            var dumbInstance = new(syntax, ConstantValue.Null, namedType);
             var binder = GetBinder(syntax);
             BoundExpression? result;
             var success = binder.GetAwaitableExpressionInfo(dumbInstance, out result, syntax, diagnostics);
@@ -2068,7 +2068,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private BinderFactory AddNewFactory(SyntaxTree syntaxTree, [NotNull] ref WeakReference<BinderFactory>? slot)
         {
-            var newFactory = new BinderFactory(this, syntaxTree);
+            var newFactory = new(this, syntaxTree);
             var newWeakReference = new WeakReference<BinderFactory>(newFactory);
 
             while (true)
@@ -2244,7 +2244,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 Debug.Assert(!_declarationDiagnosticsFrozen || true);
                 if (_lazyDeclarationDiagnostics == null)
                 {
-                    var diagnostics = new DiagnosticBag();
+                    var diagnostics = new();
                     Interlocked.CompareExchange(ref _lazyDeclarationDiagnostics, diagnostics, null);
                 }
 
@@ -2266,7 +2266,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
-        private readonly DiagnosticBag _additionalCodegenWarnings = new DiagnosticBag();
+        private readonly DiagnosticBag _additionalCodegenWarnings = new();
 
         internal DeclarationTable Declarations
         {
@@ -2696,7 +2696,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             PEModuleBuilder moduleBeingBuilt;
             if (_options.OutputKind.IsNetModule())
             {
-                moduleBeingBuilt = new PENetModuleBuilder(
+                moduleBeingBuilt = new(
                     (SourceModuleSymbol)SourceModule,
                     emitOptions,
                     moduleProps,
@@ -2705,7 +2705,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             else
             {
                 var kind = _options.OutputKind.IsValid() ? _options.OutputKind : OutputKind.DynamicallyLinkedLibrary;
-                moduleBeingBuilt = new PEAssemblyBuilder(
+                moduleBeingBuilt = new(
                     SourceAssembly,
                     emitOptions,
                     kind,
@@ -3256,7 +3256,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 fields.Add(new AnonymousTypeField(name, location, TypeWithAnnotations.Create(type, nullableAnnotation)));
             }
 
-            var descriptor = new AnonymousTypeDescriptor(fields.ToImmutableAndFree(), Location.None);
+            var descriptor = new(fields.ToImmutableAndFree(), Location.None);
 
             return this.AnonymousTypeManager.ConstructAnonymousTypeSymbol(descriptor).GetPublicSymbol();
         }

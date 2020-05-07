@@ -10,7 +10,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 {
     internal sealed class ErrorMethodSymbol : MethodSymbol
     {
-        public static readonly ErrorMethodSymbol UnknownMethod = new ErrorMethodSymbol(ErrorTypeSymbol.UnknownResultType, ErrorTypeSymbol.UnknownResultType, string.Empty);
+        public static readonly ErrorMethodSymbol UnknownMethod = new(ErrorTypeSymbol.UnknownResultType, ErrorTypeSymbol.UnknownResultType, string.Empty);
 
         private readonly TypeSymbol _containingType;
         private readonly TypeSymbol _returnType;

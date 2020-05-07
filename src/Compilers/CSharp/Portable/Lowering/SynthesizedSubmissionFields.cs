@@ -61,7 +61,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var hostObjectTypeSymbol = _compilation.GetHostObjectTypeSymbol();
             if ((object)hostObjectTypeSymbol != null && hostObjectTypeSymbol.Kind != SymbolKind.ErrorType)
             {
-                return _hostObjectField = new SynthesizedFieldSymbol(
+                return _hostObjectField = new(
                     _declaringSubmissionClass, hostObjectTypeSymbol, "<host-object>", isPublic: false, isReadOnly: true, isStatic: false);
             }
 
@@ -79,7 +79,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (!_previousSubmissionFieldMap.TryGetValue(previousSubmissionType, out previousSubmissionField))
             {
                 // TODO: generate better name?
-                previousSubmissionField = new SynthesizedFieldSymbol(
+                previousSubmissionField = new(
                     _declaringSubmissionClass,
                     previousSubmissionType,
                     "<" + previousSubmissionType.Name + ">",

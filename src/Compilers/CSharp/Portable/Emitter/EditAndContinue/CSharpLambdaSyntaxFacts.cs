@@ -8,7 +8,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
 {
     internal class CSharpLambdaSyntaxFacts : LambdaSyntaxFacts
     {
-        public static readonly LambdaSyntaxFacts Instance = new CSharpLambdaSyntaxFacts();
+        public static readonly LambdaSyntaxFacts Instance = new();
 
         private CSharpLambdaSyntaxFacts()
         {

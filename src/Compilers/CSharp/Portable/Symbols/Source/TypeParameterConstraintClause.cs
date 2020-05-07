@@ -60,11 +60,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     /// </summary>
     internal sealed class TypeParameterConstraintClause
     {
-        internal static readonly TypeParameterConstraintClause Empty = new TypeParameterConstraintClause(
+        internal static readonly TypeParameterConstraintClause Empty = new(
             TypeParameterConstraintKind.None,
             ImmutableArray<TypeWithAnnotations>.Empty);
 
-        internal static readonly TypeParameterConstraintClause ObliviousNullabilityIfReferenceType = new TypeParameterConstraintClause(
+        internal static readonly TypeParameterConstraintClause ObliviousNullabilityIfReferenceType = new(
             TypeParameterConstraintKind.ObliviousNullabilityIfReferenceType,
             ImmutableArray<TypeWithAnnotations>.Empty);
 

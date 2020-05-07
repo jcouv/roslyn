@@ -110,7 +110,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 cancellationToken.ThrowIfCancellationRequested();
 
-                IncludeElementExpander expander = new IncludeElementExpander(
+                IncludeElementExpander expander = new(
                     memberSymbol,
                     sourceIncludeElementNodes,
                     compilation,
@@ -242,7 +242,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
                 else
                 {
-                    XComment failureComment = new XComment(commentMessage);
+                    XComment failureComment = new(commentMessage);
                     return new XNode[] { failureComment, container }; // Already copied.
                 }
             }
@@ -327,7 +327,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     if (_includedFileCache == null)
                     {
-                        _includedFileCache = new DocumentationCommentIncludeCache(resolver);
+                        _includedFileCache = new(resolver);
                     }
 
                     try
@@ -545,7 +545,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // member symbol in hand, which makes things much easier.
             private static Binder MakeNameBinder(bool isParameter, bool isTypeParameterRef, Symbol memberSymbol, CSharpCompilation compilation)
             {
-                Binder binder = new BuckStopsHereBinder(compilation);
+                Binder binder = new(compilation);
 
                 // All binders should have a containing symbol.
                 Symbol containingSymbol = memberSymbol.ContainingSymbol;
@@ -576,7 +576,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     if (parameters.Length > 0)
                     {
-                        binder = new WithParametersBinder(parameters, binder);
+                        binder = new(parameters, binder);
                     }
                 }
                 else
@@ -591,14 +591,14 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 NamedTypeSymbol typeSymbol = (NamedTypeSymbol)currentSymbol;
                                 if (typeSymbol.Arity > 0)
                                 {
-                                    binder = new WithClassTypeParametersBinder(typeSymbol, binder);
+                                    binder = new(typeSymbol, binder);
                                 }
                                 break;
                             case SymbolKind.Method:
                                 MethodSymbol methodSymbol = (MethodSymbol)currentSymbol;
                                 if (methodSymbol.Arity > 0)
                                 {
-                                    binder = new WithMethodTypeParametersBinder(methodSymbol, binder);
+                                    binder = new(methodSymbol, binder);
                                 }
                                 break;
                         }

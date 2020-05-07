@@ -15,6 +15,7 @@
     <PackageDescription>
       .NET Compiler Platform ("Roslyn") support for C#, Microsoft.CodeAnalysis.CSharp.dll.
     </PackageDescription>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Portable\Microsoft.CodeAnalysis.csproj" />

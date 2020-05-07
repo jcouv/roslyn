@@ -9,7 +9,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 {
     internal sealed class ConversionSignatureComparer : IEqualityComparer<SourceUserDefinedConversionSymbol>
     {
-        private static readonly ConversionSignatureComparer s_comparer = new ConversionSignatureComparer();
+        private static readonly ConversionSignatureComparer s_comparer = new();
         public static ConversionSignatureComparer Comparer
         {
             get

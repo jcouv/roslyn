@@ -31,8 +31,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             : base(name, parameterCount, returnsVoid: (object)voidReturnTypeOpt != null)
         {
             _containingSymbol = containingSymbol;
-            _constructor = new DelegateConstructor(this, objectType, intPtrType);
-            _invoke = new InvokeMethod(this, byRefParameters, voidReturnTypeOpt);
+            _constructor = new(this, objectType, intPtrType);
+            _invoke = new(this, byRefParameters, voidReturnTypeOpt);
         }
 
         public override Symbol ContainingSymbol

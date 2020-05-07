@@ -358,7 +358,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 TryGetBuilderMember(F, start, builderType, customBuilder, out startMethod) &&
                 TryGetBuilderMember(F, setStateMachine, builderType, customBuilder, out setStateMachineMethod))
             {
-                collection = new AsyncMethodBuilderMemberCollection(
+                collection = new(
                     builderType,
                     resultType,
                     createBuilderMethod,
@@ -418,7 +418,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if ((object)symbol == null)
             {
                 var descriptor = WellKnownMembers.GetDescriptor(memberValue);
-                var diagnostic = new CSDiagnostic(
+                var diagnostic = new(
                     new CSDiagnosticInfo(ErrorCode.ERR_MissingPredefinedMember, (customBuilder ? (object)builderType : descriptor.DeclaringTypeMetadataName), descriptor.Name),
                     F.Syntax.Location);
                 F.Diagnostics.Add(diagnostic);
@@ -475,7 +475,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     if (!property.Type.Equals(returnType, TypeCompareKind.AllIgnoreOptions))
                     {
-                        var badTaskProperty = new CSDiagnostic(
+                        var badTaskProperty = new(
                             new CSDiagnosticInfo(ErrorCode.ERR_BadAsyncMethodBuilderTaskProperty, builderType, returnType, property.Type),
                             F.Syntax.Location);
                         F.Diagnostics.Add(badTaskProperty);
@@ -485,7 +485,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return property;
                 }
             }
-            var diagnostic = new CSDiagnostic(
+            var diagnostic = new(
                 new CSDiagnosticInfo(ErrorCode.ERR_MissingPredefinedMember, builderType, propertyName),
                 F.Syntax.Location);
             F.Diagnostics.Add(diagnostic);

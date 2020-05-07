@@ -151,10 +151,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
 
             for (var kind = FirstTokenWithWellKnownText; kind <= LastTokenWithWellKnownText; kind++)
             {
-                s_tokensWithNoTrivia[(int)kind].Value = new SyntaxToken(kind);
-                s_tokensWithElasticTrivia[(int)kind].Value = new SyntaxTokenWithTrivia(kind, SyntaxFactory.ElasticZeroSpace, SyntaxFactory.ElasticZeroSpace);
-                s_tokensWithSingleTrailingSpace[(int)kind].Value = new SyntaxTokenWithTrivia(kind, null, SyntaxFactory.Space);
-                s_tokensWithSingleTrailingCRLF[(int)kind].Value = new SyntaxTokenWithTrivia(kind, null, SyntaxFactory.CarriageReturnLineFeed);
+                s_tokensWithNoTrivia[(int)kind].Value = new(kind);
+                s_tokensWithElasticTrivia[(int)kind].Value = new(kind, SyntaxFactory.ElasticZeroSpace, SyntaxFactory.ElasticZeroSpace);
+                s_tokensWithSingleTrailingSpace[(int)kind].Value = new(kind, null, SyntaxFactory.Space);
+                s_tokensWithSingleTrailingCRLF[(int)kind].Value = new(kind, null, SyntaxFactory.CarriageReturnLineFeed);
             }
         }
 

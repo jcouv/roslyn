@@ -593,7 +593,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             if (this.CurrentToken.Kind != SyntaxKind.EndOfDirectiveToken &&
                 this.CurrentToken.Kind != SyntaxKind.EndOfFileToken)
             {
-                builder = new StringBuilder(this.CurrentToken.FullWidth);
+                builder = new(this.CurrentToken.FullWidth);
 
                 while (this.CurrentToken.Kind != SyntaxKind.EndOfDirectiveToken &&
                        this.CurrentToken.Kind != SyntaxKind.EndOfFileToken)

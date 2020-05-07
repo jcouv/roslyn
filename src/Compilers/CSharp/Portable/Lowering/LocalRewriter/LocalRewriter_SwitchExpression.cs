@@ -35,7 +35,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             public static BoundExpression Rewrite(LocalRewriter localRewriter, BoundConvertedSwitchExpression node)
             {
-                var rewriter = new SwitchExpressionLocalRewriter(node, localRewriter);
+                var rewriter = new(node, localRewriter);
                 BoundExpression result = rewriter.LowerSwitchExpression(node);
                 rewriter.Free();
                 return result;

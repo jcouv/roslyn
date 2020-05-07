@@ -60,7 +60,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             // A delegate has the following members: (see CLI spec 13.6)
             // (1) a method named Invoke with the specified signature
-            var invoke = new InvokeMethod(delegateType, refKind, returnType, syntax, binder, diagnostics);
+            var invoke = new(delegateType, refKind, returnType, syntax, binder, diagnostics);
             invoke.CheckDelegateVarianceSafety(diagnostics);
             symbols.Add(invoke);
 
@@ -348,7 +348,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 var parameters = ArrayBuilder<ParameterSymbol>.GetInstance();
                 foreach (SourceParameterSymbol p in invoke.Parameters)
                 {
-                    var synthesizedParam = new SourceClonedParameterSymbol(originalParam: p, newOwner: this, newOrdinal: p.Ordinal, suppressOptional: true);
+                    var synthesizedParam = new(originalParam: p, newOwner: this, newOrdinal: p.Ordinal, suppressOptional: true);
                     parameters.Add(synthesizedParam);
                 }
 
@@ -397,7 +397,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 {
                     if (p.RefKind != RefKind.None)
                     {
-                        var synthesizedParam = new SourceClonedParameterSymbol(originalParam: p, newOwner: this, newOrdinal: ordinal++, suppressOptional: true);
+                        var synthesizedParam = new(originalParam: p, newOwner: this, newOrdinal: ordinal++, suppressOptional: true);
                         parameters.Add(synthesizedParam);
                     }
                 }

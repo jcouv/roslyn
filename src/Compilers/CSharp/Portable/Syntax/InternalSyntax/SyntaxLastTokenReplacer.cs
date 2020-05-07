@@ -26,7 +26,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             where TRoot : CSharpSyntaxNode
         {
             var oldToken = root.GetLastToken();
-            var replacer = new SyntaxLastTokenReplacer(oldToken, newToken);
+            var replacer = new(oldToken, newToken);
             var newRoot = (TRoot)replacer.Visit(root);
             Debug.Assert(replacer._found);
             return newRoot;

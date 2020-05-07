@@ -67,7 +67,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             var interpolations = ArrayBuilder<Lexer.Interpolation>.GetInstance();
             SyntaxDiagnosticInfo error = null;
             bool closeQuoteMissing;
-            using (var tempLexer = new Lexer(Text.SourceText.From(originalText), this.Options, allowPreprocessorDirectives: false))
+            using (var tempLexer = new(Text.SourceText.From(originalText), this.Options, allowPreprocessorDirectives: false))
             {
                 // compute the positions of the interpolations in the original string literal, and also compute/preserve
                 // lexical errors
@@ -166,10 +166,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                 : SyntaxFactory.Token(SyntaxKind.CloseBraceToken);
 
             var parsedText = Substring(text, interpolation.OpenBracePosition, interpolation.HasColon ? interpolation.ColonPosition - 1 : interpolation.CloseBracePosition - 1);
-            using (var tempLexer = new Lexer(Text.SourceText.From(parsedText), this.Options, allowPreprocessorDirectives: false, interpolationFollowedByColon: interpolation.HasColon))
+            using (var tempLexer = new(Text.SourceText.From(parsedText), this.Options, allowPreprocessorDirectives: false, interpolationFollowedByColon: interpolation.HasColon))
             {
                 // TODO: some of the trivia in the interpolation maybe should be trailing trivia of the openBraceToken
-                using (var tempParser = new LanguageParser(tempLexer, null, null))
+                using (var tempParser = new(tempLexer, null, null))
                 {
                     SyntaxToken commaToken = null;
                     ExpressionSyntax alignmentExpression = null;
@@ -211,7 +211,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
         {
             var prefix = isVerbatim ? "@\"" : "\"";
             var fakeString = prefix + bodyText + "\"";
-            using (var tempLexer = new Lexer(Text.SourceText.From(fakeString), this.Options, allowPreprocessorDirectives: false))
+            using (var tempLexer = new(Text.SourceText.From(fakeString), this.Options, allowPreprocessorDirectives: false))
             {
                 LexerMode mode = LexerMode.Syntax;
                 SyntaxToken token = tempLexer.Lex(ref mode);

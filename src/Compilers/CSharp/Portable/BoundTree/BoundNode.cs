@@ -398,7 +398,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             public static void CheckLocalsDefined(BoundNode root)
             {
-                var localsScanner = new LocalsScanner();
+                var localsScanner = new();
                 localsScanner.Visit(root);
                 localsScanner.Free();
             }

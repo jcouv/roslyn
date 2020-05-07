@@ -785,7 +785,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 if (ReadIsSideeffecting(nonNull))
                 {
-                    result = new BoundSequence(
+                    result = new(
                                     syntax: syntax,
                                     locals: ImmutableArray<LocalSymbol>.Empty,
                                     sideEffects: ImmutableArray.Create<BoundExpression>(nonNull),
@@ -1322,7 +1322,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression consequence = MakeLiftedBinaryOperatorConsequence(syntax, kind, callX_GetValueOrDefault, callY_GetValueOrDefault, type, method);
 
             // default(R?)
-            BoundExpression alternative = new BoundDefaultExpression(syntax, type);
+            BoundExpression alternative = new(syntax, type);
 
             // tempX.HasValue & tempY.HasValue ? 
             //          new R?(tempX.GetValueOrDefault() OP tempY.GetValueOrDefault()) : 
@@ -1549,7 +1549,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression notAlwaysNull = leftAlwaysNull ? right : left;
             BoundExpression? neverNull = NullableAlwaysHasValue(notAlwaysNull);
             Debug.Assert(alwaysNull.Type is { });
-            BoundExpression nullBool = new BoundDefaultExpression(syntax, alwaysNull.Type);
+            BoundExpression nullBool = new(syntax, alwaysNull.Type);
 
             if (neverNull != null)
             {
@@ -2010,7 +2010,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             else
             {
                 BinaryOperatorKind andOperatorKind = (operatorKind & ~BinaryOperatorKind.OpMask) | BinaryOperatorKind.And;
-                loweredRight = new BoundBinaryOperator(
+                loweredRight = new(
                     rightSyntax,
                     andOperatorKind,
                     null,

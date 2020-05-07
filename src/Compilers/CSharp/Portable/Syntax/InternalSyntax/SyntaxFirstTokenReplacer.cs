@@ -27,7 +27,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
         internal static TRoot Replace<TRoot>(TRoot root, SyntaxToken oldToken, SyntaxToken newToken, int diagnosticOffsetDelta)
             where TRoot : CSharpSyntaxNode
         {
-            var replacer = new SyntaxFirstTokenReplacer(oldToken, newToken, diagnosticOffsetDelta);
+            var replacer = new(oldToken, newToken, diagnosticOffsetDelta);
             var newRoot = (TRoot)replacer.Visit(root);
             Debug.Assert(replacer._foundOldToken);
             return newRoot;

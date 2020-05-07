@@ -48,7 +48,7 @@ start:
 
         internal override void GenerateMethodBody(TypeCompilationState compilationState, DiagnosticBag diagnostics)
         {
-            SyntheticBoundNodeFactory F = new SyntheticBoundNodeFactory(this, this.GetNonNullSyntaxNode(), compilationState, diagnostics);
+            SyntheticBoundNodeFactory F = new(this, this.GetNonNullSyntaxNode(), compilationState, diagnostics);
             F.CurrentFunction = this;
 
             try
@@ -149,7 +149,7 @@ start:
         /// </summary>
         internal override void GenerateMethodBody(TypeCompilationState compilationState, DiagnosticBag diagnostics)
         {
-            SyntheticBoundNodeFactory F = new SyntheticBoundNodeFactory(this, this.GetNonNullSyntaxNode(), compilationState, diagnostics);
+            SyntheticBoundNodeFactory F = new(this, this.GetNonNullSyntaxNode(), compilationState, diagnostics);
             F.CurrentFunction = (MethodSymbol)this.OriginalDefinition;
 
             try
@@ -187,7 +187,7 @@ start:
         /// </summary>
         internal override void GenerateMethodBody(TypeCompilationState compilationState, DiagnosticBag diagnostics)
         {
-            SyntheticBoundNodeFactory F = new SyntheticBoundNodeFactory(this, this.GetNonNullSyntaxNode(), compilationState, diagnostics);
+            SyntheticBoundNodeFactory F = new(this, this.GetNonNullSyntaxNode(), compilationState, diagnostics);
             F.CurrentFunction = (MethodSymbol)this.OriginalDefinition;
 
             try
@@ -222,7 +222,7 @@ start:
             /// </summary>
             internal override void GenerateMethodBody(TypeCompilationState compilationState, DiagnosticBag diagnostics)
             {
-                SyntheticBoundNodeFactory F = new SyntheticBoundNodeFactory(this, this.GetNonNullSyntaxNode(), compilationState, diagnostics);
+                SyntheticBoundNodeFactory F = new(this, this.GetNonNullSyntaxNode(), compilationState, diagnostics);
                 F.CurrentFunction = this.OriginalDefinition;
 
                 try

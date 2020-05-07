@@ -46,7 +46,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return;
             }
 
-            var walker = new UnassignedFieldsWalker(compilation, method, node, diagnostics);
+            var walker = new(compilation, method, node, diagnostics);
             try
             {
                 bool badRegion = false;

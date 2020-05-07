@@ -26,7 +26,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <summary>
         /// The singleton NoOp instrumenter, can be used to terminate the chain of <see cref="CompoundInstrumenter"/>s.
         /// </summary>
-        public static readonly Instrumenter NoOp = new Instrumenter();
+        public static readonly Instrumenter NoOp = new();
 
         public Instrumenter()
         {

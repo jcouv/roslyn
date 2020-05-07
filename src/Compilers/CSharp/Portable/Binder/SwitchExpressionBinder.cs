@@ -65,7 +65,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             out LabelSymbol defaultLabel,
             DiagnosticBag diagnostics)
         {
-            defaultLabel = new GeneratedLabelSymbol("default");
+            defaultLabel = new("default");
             decisionDag = DecisionDagBuilder.CreateDecisionDagForSwitchExpression(this.Compilation, node, boundInputExpression, switchArms, defaultLabel, diagnostics);
             var reachableLabels = decisionDag.ReachableLabels;
             foreach (BoundSwitchExpressionArm arm in switchArms)
@@ -199,7 +199,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (_inputExpression == null)
             {
-                var switchGoverningDiagnostics = new DiagnosticBag();
+                var switchGoverningDiagnostics = new();
                 var boundSwitchGoverningExpression = BindSwitchGoverningExpression(switchGoverningDiagnostics);
                 _inputExpressionDiagnostics = switchGoverningDiagnostics;
                 Interlocked.CompareExchange(ref _inputExpression, boundSwitchGoverningExpression, null);

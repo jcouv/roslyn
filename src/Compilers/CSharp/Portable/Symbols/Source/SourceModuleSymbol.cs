@@ -190,7 +190,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 if ((object)_globalNamespace == null)
                 {
                     var diagnostics = DiagnosticBag.GetInstance();
-                    var globalNS = new SourceNamespaceSymbol(
+                    var globalNS = new(
                         this, this, DeclaringCompilation.MergedRootDeclaration, diagnostics);
                     Debug.Assert(diagnostics.IsEmptyWithoutResolution);
                     diagnostics.Free();

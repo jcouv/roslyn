@@ -456,7 +456,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 if (!callWithoutCopy)
                 {
-                    expr = new BoundPassByCopy(expr.Syntax, expr, expr.Type);
+                    expr = new(expr.Syntax, expr, expr.Type);
                 }
                 return BoundCall.Synthesized(expr.Syntax, expr, objectToStringMethod);
             }

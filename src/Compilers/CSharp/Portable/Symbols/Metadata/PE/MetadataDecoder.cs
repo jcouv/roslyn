@@ -324,9 +324,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
         {
             NamedTypeSymbol result = null;
 
-            Guid interfaceGuidValue = new Guid();
+            Guid interfaceGuidValue = new();
             bool haveInterfaceGuidValue = false;
-            Guid scopeGuidValue = new Guid();
+            Guid scopeGuidValue = new();
             bool haveScopeGuidValue = false;
 
             if (isInterface && interfaceGuid != null)
@@ -374,7 +374,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
                 string candidateGuid;
                 bool haveCandidateGuidValue = false;
-                Guid candidateGuidValue = new Guid();
+                Guid candidateGuidValue = new();
 
                 // The type must be of the same kind (interface, struct, delegate or enum).
                 switch (candidate.TypeKind)
@@ -448,7 +448,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 if ((object)result != null)
                 {
                     // Ambiguity 
-                    result = new NoPiaAmbiguousCanonicalTypeSymbol(referringAssembly, result, candidate);
+                    result = new(referringAssembly, result, candidate);
                     break;
                 }
 
@@ -457,7 +457,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             if ((object)result == null)
             {
-                result = new NoPiaMissingCanonicalTypeSymbol(
+                result = new(
                                 referringAssembly,
                                 name.FullName,
                                 interfaceGuid,
@@ -533,7 +533,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             // We're going to use a special decoder that can generate usable symbols for type parameters without full context.
             // (We're not just using a different type - we're also changing the type context.)
-            var memberRefDecoder = new MemberRefMetadataDecoder(moduleSymbol, targetTypeSymbol);
+            var memberRefDecoder = new(moduleSymbol, targetTypeSymbol);
 
             return memberRefDecoder.FindMember(targetTypeSymbol, memberRef, methodsOnly);
         }

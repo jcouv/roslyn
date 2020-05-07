@@ -20,7 +20,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <summary>
         /// The default parse options.
         /// </summary>
-        public static CSharpParseOptions Default { get; } = new CSharpParseOptions();
+        public static CSharpParseOptions Default { get; } = new();
 
         private ImmutableDictionary<string, string> _features;
 

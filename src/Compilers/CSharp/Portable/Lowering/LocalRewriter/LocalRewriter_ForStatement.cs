@@ -80,7 +80,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 statementBuilder.Add(rewrittenInitializer);
             }
 
-            var startLabel = new GeneratedLabelSymbol("start");
+            var startLabel = new("start");
 
             // for (initializer; condition; increment)
             //   body;
@@ -99,12 +99,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             // break:
             // }
 
-            var endLabel = new GeneratedLabelSymbol("end");
+            var endLabel = new("end");
 
             //  initializer;
             //  goto end;
 
-            BoundStatement gotoEnd = new BoundGotoStatement(syntax, endLabel);
+            BoundStatement gotoEnd = new(syntax, endLabel);
 
             if (this.Instrument)
             {
@@ -137,11 +137,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundStatement? branchBack = null;
             if (rewrittenCondition != null)
             {
-                branchBack = new BoundConditionalGoto(rewrittenCondition.Syntax, rewrittenCondition, true, startLabel);
+                branchBack = new(rewrittenCondition.Syntax, rewrittenCondition, true, startLabel);
             }
             else
             {
-                branchBack = new BoundGotoStatement(syntax, startLabel);
+                branchBack = new(syntax, startLabel);
             }
 
             if (this.Instrument)
@@ -220,10 +220,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                 statementBuilder.Add(rewrittenInitializer);
             }
 
-            var startLabel = new GeneratedLabelSymbol("start");
+            var startLabel = new("start");
 
             // start:
-            BoundStatement startLabelStatement = new BoundLabelStatement(syntax, startLabel);
+            BoundStatement startLabelStatement = new(syntax, startLabel);
 
             if (Instrument)
             {
@@ -237,7 +237,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // GotoIfFalse condition break;
             if (rewrittenCondition != null)
             {
-                BoundStatement ifNotConditionGotoBreak = new BoundConditionalGoto(rewrittenCondition.Syntax, rewrittenCondition, false, node.BreakLabel);
+                BoundStatement ifNotConditionGotoBreak = new(rewrittenCondition.Syntax, rewrittenCondition, false, node.BreakLabel);
 
                 if (this.Instrument)
                 {

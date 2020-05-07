@@ -83,7 +83,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                     _name = string.Empty;
                 }
 
-                _lazyConstraintsUseSiteErrorInfo = new CSDiagnosticInfo(ErrorCode.ERR_BindToBogus, this);
+                _lazyConstraintsUseSiteErrorInfo = new(ErrorCode.ERR_BindToBogus, this);
             }
 
             // Clear the '.ctor' flag if both '.ctor' and 'valuetype' are
@@ -242,11 +242,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             MetadataDecoder tokenDecoder;
             if (_containingSymbol.Kind == SymbolKind.Method)
             {
-                tokenDecoder = new MetadataDecoder(moduleSymbol, (PEMethodSymbol)_containingSymbol);
+                tokenDecoder = new(moduleSymbol, (PEMethodSymbol)_containingSymbol);
             }
             else
             {
-                tokenDecoder = new MetadataDecoder(moduleSymbol, (PENamedTypeSymbol)_containingSymbol);
+                tokenDecoder = new(moduleSymbol, (PENamedTypeSymbol)_containingSymbol);
             }
 
             return tokenDecoder;

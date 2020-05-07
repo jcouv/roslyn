@@ -106,7 +106,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 if (availableVersion < requiredVersion)
                 {
                     DeclarationModifiers errorModifiers = modifiers & defaultInterfaceImplementationModifiers;
-                    var requiredVersionArgument = new CSharpRequiredLanguageVersion(requiredVersion);
+                    var requiredVersionArgument = new(requiredVersion);
                     var availableVersionArgument = availableVersion.ToDisplayString();
                     while (errorModifiers != DeclarationModifiers.None)
                     {

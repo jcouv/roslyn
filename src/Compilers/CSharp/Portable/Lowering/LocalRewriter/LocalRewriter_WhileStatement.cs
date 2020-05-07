@@ -65,9 +65,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             // break:
 
             SyntaxNode syntax = loop.Syntax;
-            var startLabel = new GeneratedLabelSymbol("start");
-            BoundStatement ifConditionGotoStart = new BoundConditionalGoto(rewrittenCondition.Syntax, rewrittenCondition, true, startLabel);
-            BoundStatement gotoContinue = new BoundGotoStatement(syntax, continueLabel);
+            var startLabel = new("start");
+            BoundStatement ifConditionGotoStart = new(rewrittenCondition.Syntax, rewrittenCondition, true, startLabel);
+            BoundStatement gotoContinue = new(syntax, continueLabel);
 
             if (this.Instrument && !loop.WasCompilerGenerated)
             {
@@ -131,8 +131,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             // break:
 
             SyntaxNode syntax = loop.Syntax;
-            BoundStatement continueLabelStatement = new BoundLabelStatement(syntax, continueLabel);
-            BoundStatement ifNotConditionGotoBreak = new BoundConditionalGoto(rewrittenCondition.Syntax, rewrittenCondition, false, breakLabel);
+            BoundStatement continueLabelStatement = new(syntax, continueLabel);
+            BoundStatement ifNotConditionGotoBreak = new(rewrittenCondition.Syntax, rewrittenCondition, false, breakLabel);
 
             if (this.Instrument && !loop.WasCompilerGenerated)
             {

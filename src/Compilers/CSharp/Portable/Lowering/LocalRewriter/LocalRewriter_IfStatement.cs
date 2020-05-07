@@ -49,7 +49,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundStatement? rewrittenAlternativeOpt,
             bool hasErrors)
         {
-            var afterif = new GeneratedLabelSymbol("afterif");
+            var afterif = new("afterif");
             var builder = ArrayBuilder<BoundStatement>.GetInstance();
 
             if (rewrittenAlternativeOpt == null)
@@ -86,7 +86,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // alternative;
                 // afterif:
 
-                var alt = new GeneratedLabelSymbol("alternative");
+                var alt = new("alternative");
 
                 builder.Add(new BoundConditionalGoto(rewrittenCondition.Syntax, rewrittenCondition, false, alt));
                 builder.Add(rewrittenConsequence);

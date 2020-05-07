@@ -20,7 +20,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     /// </summary>
     internal abstract partial class ErrorTypeSymbol : NamedTypeSymbol
     {
-        internal static readonly ErrorTypeSymbol UnknownResultType = new UnsupportedMetadataTypeSymbol();
+        internal static readonly ErrorTypeSymbol UnknownResultType = new();
 
         private ImmutableArray<TypeParameterSymbol> _lazyTypeParameters;
 
@@ -333,7 +333,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 var @params = new TypeParameterSymbol[arity];
                 for (int i = 0; i < arity; i++)
                 {
-                    @params[i] = new ErrorTypeParameterSymbol(this, string.Empty, i);
+                    @params[i] = new(this, string.Empty, i);
                 }
                 return @params.AsImmutableOrNull();
             }
@@ -624,7 +624,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             _constructedFrom = constructedFrom;
             _typeArgumentsWithAnnotations = typeArgumentsWithAnnotations;
-            _map = new TypeMap(constructedFrom.ContainingType, constructedFrom.OriginalDefinition.TypeParameters, typeArgumentsWithAnnotations);
+            _map = new(constructedFrom.ContainingType, constructedFrom.OriginalDefinition.TypeParameters, typeArgumentsWithAnnotations);
         }
 
         protected override NamedTypeSymbol WithTupleDataCore(TupleExtraData newData)

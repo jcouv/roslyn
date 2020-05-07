@@ -45,7 +45,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
 
                 var additionMap = OrderPreservingMultiDictionary<SyntaxNode, BoundNode>.GetInstance();
-                var builder = new NodeMapBuilder(additionMap, node);
+                var builder = new(additionMap, node);
                 builder.Visit(root);
 
                 foreach (CSharpSyntaxNode key in additionMap.Keys)

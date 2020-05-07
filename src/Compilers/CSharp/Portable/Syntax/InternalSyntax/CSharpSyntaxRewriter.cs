@@ -49,7 +49,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                 var visited = this.Visit(item);
                 if (item != visited && alternate == null)
                 {
-                    alternate = new SyntaxListBuilder(n);
+                    alternate = new(n);
                     alternate.AddRange(list, 0, i);
                 }
 

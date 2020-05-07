@@ -43,7 +43,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert(moduleBeingBuilt != null);
 
-            var compiler = new SynthesizedMetadataCompiler(moduleBeingBuilt, cancellationToken);
+            var compiler = new(moduleBeingBuilt, cancellationToken);
             compiler.Visit(compilation.SourceModule.GlobalNamespace);
         }
 

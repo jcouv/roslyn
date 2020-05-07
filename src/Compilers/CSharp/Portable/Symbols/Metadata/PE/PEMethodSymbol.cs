@@ -237,7 +237,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
         private UncommonFields CreateUncommonFields()
         {
-            var retVal = new UncommonFields();
+            var retVal = new();
             if (!_packedFlags.IsObsoleteAttributePopulated)
             {
                 retVal._lazyObsoleteAttributeData = ObsoleteAttributeData.Uninitialized;
@@ -738,7 +738,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             SignatureHeader signatureHeader;
             BadImageFormatException mrEx;
-            ParamInfo<TypeSymbol>[] paramInfo = new MetadataDecoder(moduleSymbol, this).GetSignatureForMethod(_handle, out signatureHeader, out mrEx);
+            ParamInfo<TypeSymbol>[] paramInfo = new(moduleSymbol, this).GetSignatureForMethod(_handle, out signatureHeader, out mrEx);
             bool makeBad = (mrEx != null);
 
             // If method is not generic, let's assign empty list for type parameters
@@ -789,7 +789,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 InitializeUseSiteDiagnostic(new CSDiagnosticInfo(ErrorCode.ERR_BindToBogus, this));
             }
 
-            var signature = new SignatureData(signatureHeader, @params, returnParam);
+            var signature = new(signatureHeader, @params, returnParam);
 
             return InterlockedOperations.Initialize(ref _lazySignature, signature);
         }
@@ -844,7 +844,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             }
             catch (BadImageFormatException)
             {
-                diagnosticInfo = new CSDiagnosticInfo(ErrorCode.ERR_BindToBogus, this);
+                diagnosticInfo = new(ErrorCode.ERR_BindToBogus, this);
                 return ImmutableArray<TypeParameterSymbol>.Empty;
             }
         }
@@ -1172,7 +1172,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 // any generic interfaces that we might be explicitly implementing.  There is no reason to pass in the method
                 // context, however, because any method type parameters will belong to the implemented (i.e. interface) method,
                 // which we do not yet know.
-                var explicitlyOverriddenMethods = new MetadataDecoder(moduleSymbol, _containingType).GetExplicitlyOverriddenMethods(_containingType.Handle, _handle, this.ContainingType);
+                var explicitlyOverriddenMethods = new(moduleSymbol, _containingType).GetExplicitlyOverriddenMethods(_containingType.Handle, _handle, this.ContainingType);
 
                 //avoid allocating a builder in the common case
                 var anyToRemove = false;

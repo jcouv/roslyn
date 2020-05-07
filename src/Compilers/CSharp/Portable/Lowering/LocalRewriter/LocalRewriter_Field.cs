@@ -37,7 +37,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (fieldSymbol.IsFixedSizeBuffer)
             {
                 // a reference to a fixed buffer is translated into its address
-                result = new BoundAddressOfOperator(syntax, result, type, false);
+                result = new(syntax, result, type, false);
             }
 
             return result;

@@ -345,7 +345,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     labels = ArrayBuilder<LabelSymbol>.GetInstance();
                 }
 
-                var labelSymbol = new SourceLabelSymbol(containingMethod, labeledStatement.Identifier);
+                var labelSymbol = new(containingMethod, labeledStatement.Identifier);
                 labels.Add(labelSymbol);
                 statement = labeledStatement.Statement;
             }

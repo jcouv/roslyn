@@ -30,7 +30,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             Debug.Assert(identity != null);
             this.identity = identity;
-            moduleSymbol = new MissingModuleSymbol(this, 0);
+            moduleSymbol = new(this, 0);
         }
 
         internal sealed override bool IsMissing

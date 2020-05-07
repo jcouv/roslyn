@@ -80,7 +80,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             catch (BadImageFormatException mrEx)
             {
                 _name = _name ?? string.Empty;
-                _lazyUseSiteDiagnostic = new CSDiagnosticInfo(ErrorCode.ERR_BindToBogus, this);
+                _lazyUseSiteDiagnostic = new(ErrorCode.ERR_BindToBogus, this);
 
                 if (eventType.IsNil)
                 {
@@ -91,7 +91,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             TypeSymbol originalEventType = _eventTypeWithAnnotations.Type;
             if (!_eventTypeWithAnnotations.HasType)
             {
-                var metadataDecoder = new MetadataDecoder(moduleSymbol, containingType);
+                var metadataDecoder = new(moduleSymbol, containingType);
                 originalEventType = metadataDecoder.GetTypeOfToken(eventType);
 
                 const int targetSymbolCustomModifierCount = 0;
@@ -434,7 +434,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             PEMethodSymbol method)
         {
             // CONSIDER: It would be nice if we could reuse this signature information in the PEMethodSymbol.
-            var metadataDecoder = new MetadataDecoder(moduleSymbol, method);
+            var metadataDecoder = new(moduleSymbol, method);
             SignatureHeader signatureHeader;
             BadImageFormatException? mrEx;
             var methodParams = metadataDecoder.GetSignatureForMethod(method.Handle, out signatureHeader, out mrEx, setParamHandles: false);

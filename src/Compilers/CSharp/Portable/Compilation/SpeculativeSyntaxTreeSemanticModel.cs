@@ -40,7 +40,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(rootBinder != null);
             Debug.Assert(rootBinder.IsSemanticModelBinder);
 
-            var speculativeModel = new SpeculativeSyntaxTreeSemanticModel(parentSemanticModel, root, rootBinder, position, bindingOption);
+            var speculativeModel = new(parentSemanticModel, root, rootBinder, position, bindingOption);
             return speculativeModel;
         }
 

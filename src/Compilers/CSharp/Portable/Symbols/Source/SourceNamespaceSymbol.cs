@@ -293,7 +293,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             // NOTE: a name maps into values collection containing types only instead of allocating another 
             // NOTE: array of NamedTypeSymbol[] we downcast the array to ImmutableArray<NamedTypeSymbol>
 
-            var builder = new NameToSymbolMapBuilder(_mergedDeclaration.Children.Length);
+            var builder = new(_mergedDeclaration.Children.Length);
             foreach (var declaration in _mergedDeclaration.Children)
             {
                 builder.Add(BuildSymbol(declaration, diagnostics));

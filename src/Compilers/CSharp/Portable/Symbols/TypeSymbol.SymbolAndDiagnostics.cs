@@ -14,7 +14,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// </summary>
         protected class SymbolAndDiagnostics
         {
-            public static readonly SymbolAndDiagnostics Empty = new SymbolAndDiagnostics(null, ImmutableArray<Diagnostic>.Empty);
+            public static readonly SymbolAndDiagnostics Empty = new(null, ImmutableArray<Diagnostic>.Empty);
 
             public readonly Symbol Symbol;
             public readonly ImmutableArray<Diagnostic> Diagnostics;

@@ -23,7 +23,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             _name = ExplicitInterfaceHelpers.GetMemberName(interfacePropertyGetter.AssociatedSymbol.Name, interfacePropertyGetter.ContainingType, aliasQualifierOpt: null);
             var getterName = ExplicitInterfaceHelpers.GetMemberName(interfacePropertyGetter.Name, interfacePropertyGetter.ContainingType, aliasQualifierOpt: null);
 
-            _getter = new SynthesizedStateMachineDebuggerHiddenMethod(
+            _getter = new(
                 getterName,
                 interfacePropertyGetter,
                 stateMachineType,

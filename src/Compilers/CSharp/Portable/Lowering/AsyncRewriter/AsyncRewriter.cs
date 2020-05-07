@@ -66,7 +66,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // For async-iterators, we also need to generate a class.
             var typeKind = (compilationState.Compilation.Options.EnableEditAndContinue || method.IsIterator) ? TypeKind.Class : TypeKind.Struct;
 
-            stateMachineType = new AsyncStateMachine(slotAllocatorOpt, compilationState, method, methodOrdinal, typeKind);
+            stateMachineType = new(slotAllocatorOpt, compilationState, method, methodOrdinal, typeKind);
             compilationState.ModuleBuilderOpt.CompilationState.SetStateMachineType(method, stateMachineType);
 
             AsyncRewriter rewriter = isAsyncEnumerableOrEnumerator
@@ -246,7 +246,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         protected virtual void GenerateMoveNext(SynthesizedImplementationMethod moveNextMethod)
         {
-            var rewriter = new AsyncMethodToStateMachineRewriter(
+            var rewriter = new(
                 method: method,
                 methodOrdinal: _methodOrdinal,
                 asyncMethodBuilderMemberCollection: _asyncMethodBuilderMemberCollection,
@@ -272,7 +272,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             public static bool ContainsAwait(BoundNode node)
             {
-                var detector = new AwaitDetector();
+                var detector = new();
                 detector.Visit(node);
                 return detector._sawAwait;
             }

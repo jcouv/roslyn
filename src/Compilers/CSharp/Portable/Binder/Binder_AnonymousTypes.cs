@@ -88,7 +88,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 // build anonymous type field descriptor
                 fieldSyntaxNodes[i] = (nameToken.Kind() == SyntaxKind.IdentifierToken) ? (CSharpSyntaxNode)nameToken.Parent! : fieldInitializer;
-                fields[i] = new AnonymousTypeField(
+                fields[i] = new(
                     fieldName == null ? "$" + i.ToString() : fieldName,
                     fieldSyntaxNodes[i].Location,
                     TypeWithAnnotations.Create(fieldType));
@@ -100,7 +100,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             //  Create anonymous type 
             AnonymousTypeManager manager = this.Compilation.AnonymousTypeManager;
-            AnonymousTypeDescriptor descriptor = new AnonymousTypeDescriptor(fields.AsImmutableOrNull(), node.NewKeyword.GetLocation());
+            AnonymousTypeDescriptor descriptor = new(fields.AsImmutableOrNull(), node.NewKeyword.GetLocation());
             NamedTypeSymbol anonymousType = manager.ConstructAnonymousTypeSymbol(descriptor);
 
             // declarators - bound nodes created for providing semantic info 

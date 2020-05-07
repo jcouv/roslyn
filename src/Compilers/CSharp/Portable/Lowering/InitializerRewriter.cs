@@ -105,7 +105,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (!fieldInit.Locals.IsEmpty)
             {
-                boundStatement = new BoundBlock(syntax, fieldInit.Locals, ImmutableArray.Create(boundStatement)) { WasCompilerGenerated = fieldInit.WasCompilerGenerated };
+                boundStatement = new(syntax, fieldInit.Locals, ImmutableArray.Create(boundStatement)) { WasCompilerGenerated = fieldInit.WasCompilerGenerated };
             }
 
             Debug.Assert(LocalRewriter.IsFieldOrPropertyInitializer(boundStatement));

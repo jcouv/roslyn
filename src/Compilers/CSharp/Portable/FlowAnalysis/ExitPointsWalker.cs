@@ -41,7 +41,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal static IEnumerable<StatementSyntax> Analyze(CSharpCompilation compilation, Symbol member, BoundNode node, BoundNode firstInRegion, BoundNode lastInRegion)
         {
-            var walker = new ExitPointsWalker(compilation, member, node, firstInRegion, lastInRegion);
+            var walker = new(compilation, member, node, firstInRegion, lastInRegion);
             try
             {
                 bool badRegion = false;

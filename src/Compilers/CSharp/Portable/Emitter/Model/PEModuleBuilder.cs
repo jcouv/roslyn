@@ -720,7 +720,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                 return (Cci.IAssemblyReference)reference;
             }
 
-            AssemblyReference asmRef = new AssemblyReference(assembly);
+            AssemblyReference asmRef = new(assembly);
 
             AssemblyReference cachedAsmRef = (AssemblyReference)AssemblyOrModuleSymbolToModuleRefMap.GetOrAdd(assembly, asmRef);
 
@@ -766,7 +766,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
 
             if ((object)container != null && ReferenceEquals(container.Modules[0], module))
             {
-                Cci.IModuleReference moduleRef = new AssemblyReference(container);
+                Cci.IModuleReference moduleRef = new(container);
                 Cci.IModuleReference cachedModuleRef = AssemblyOrModuleSymbolToModuleRefMap.GetOrAdd(container, moduleRef);
 
                 if (cachedModuleRef == moduleRef)
@@ -862,16 +862,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                         if (IsGenericType(container))
                         {
                             // Container is a generic instance too.
-                            typeRef = new SpecializedGenericNestedTypeInstanceReference(namedTypeSymbol);
+                            typeRef = new(namedTypeSymbol);
                         }
                         else
                         {
-                            typeRef = new GenericNestedTypeInstanceReference(namedTypeSymbol);
+                            typeRef = new(namedTypeSymbol);
                         }
                     }
                     else
                     {
-                        typeRef = new GenericNamespaceTypeInstanceReference(namedTypeSymbol);
+                        typeRef = new(namedTypeSymbol);
                     }
 
                     typeRef = (Cci.INamedTypeReference)_genericInstanceMap.GetOrAdd(namedTypeSymbol, typeRef);
@@ -887,7 +887,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                         return (Cci.INamedTypeReference)reference;
                     }
 
-                    typeRef = new SpecializedNestedTypeReference(namedTypeSymbol);
+                    typeRef = new(namedTypeSymbol);
                     typeRef = (Cci.INamedTypeReference)_genericInstanceMap.GetOrAdd(namedTypeSymbol, typeRef);
 
                     return typeRef;
@@ -1021,7 +1021,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                     return (Cci.IFieldReference)reference;
                 }
 
-                fieldRef = new SpecializedFieldReference(fieldSymbol);
+                fieldRef = new(fieldSymbol);
                 fieldRef = (Cci.IFieldReference)_genericInstanceMap.GetOrAdd(fieldSymbol, fieldRef);
 
                 return fieldRef;
@@ -1135,7 +1135,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
 
                 for (int i = 0; i < @params.Length; i++)
                 {
-                    @params[i] = new ArgListParameterTypeInformation(ordinal,
+                    @params[i] = new(ordinal,
                                                                     !optArgList.ArgumentRefKindsOpt.IsDefaultOrEmpty && optArgList.ArgumentRefKindsOpt[i] != RefKind.None,
                                                                     Translate(optArgList.Arguments[i].Type, syntaxNodeOpt, diagnostics));
                     ordinal++;
@@ -1191,17 +1191,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                         if (typeIsGeneric)
                         {
                             // Specialized and generic instance at the same time.
-                            methodRef = new SpecializedGenericMethodInstanceReference(methodSymbol);
+                            methodRef = new(methodSymbol);
                         }
                         else
                         {
-                            methodRef = new GenericMethodInstanceReference(methodSymbol);
+                            methodRef = new(methodSymbol);
                         }
                     }
                     else
                     {
                         Debug.Assert(typeIsGeneric);
-                        methodRef = new SpecializedMethodReference(methodSymbol);
+                        methodRef = new(methodSymbol);
                     }
 
                     methodRef = (Cci.IMethodReference)_genericInstanceMap.GetOrAdd(methodSymbol, methodRef);
@@ -1238,13 +1238,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                     }
                     else
                     {
-                        methodRef = new SpecializedMethodReference(methodSymbol);
+                        methodRef = new(methodSymbol);
                         methodRef = (Cci.IMethodReference)_genericInstanceMap.GetOrAdd(methodSymbol, methodRef);
                     }
                 }
                 else
                 {
-                    methodRef = new SpecializedMethodReference(methodSymbol);
+                    methodRef = new(methodSymbol);
                 }
             }
             else
@@ -1319,7 +1319,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                 return (Cci.IParameterTypeInformation)reference;
             }
 
-            paramRef = new ParameterTypeInformation(param);
+            paramRef = new(param);
             paramRef = (Cci.IParameterTypeInformation)_genericInstanceMap.GetOrAdd(param, paramRef);
 
             return paramRef;
@@ -1370,7 +1370,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                     return result;
                 }
 
-                result = new FixedFieldImplementationType(field);
+                result = new(field);
                 _fixedImplementationTypes.Add(field, result);
                 AddSynthesizedDefinition(result.ContainingType, result);
                 return result;

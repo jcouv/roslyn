@@ -18,8 +18,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <returns></returns>
         internal static CSDiagnosticInfo Add(this DiagnosticBag diagnostics, ErrorCode code, Location location)
         {
-            var info = new CSDiagnosticInfo(code);
-            var diag = new CSDiagnostic(info, location);
+            var info = new(code);
+            var diag = new(info, location);
             diagnostics.Add(diag);
             return info;
         }
@@ -34,23 +34,23 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <returns></returns>
         internal static CSDiagnosticInfo Add(this DiagnosticBag diagnostics, ErrorCode code, Location location, params object[] args)
         {
-            var info = new CSDiagnosticInfo(code, args);
-            var diag = new CSDiagnostic(info, location);
+            var info = new(code, args);
+            var diag = new(info, location);
             diagnostics.Add(diag);
             return info;
         }
 
         internal static CSDiagnosticInfo Add(this DiagnosticBag diagnostics, ErrorCode code, Location location, ImmutableArray<Symbol> symbols, params object[] args)
         {
-            var info = new CSDiagnosticInfo(code, args, symbols, ImmutableArray<Location>.Empty);
-            var diag = new CSDiagnostic(info, location);
+            var info = new(code, args, symbols, ImmutableArray<Location>.Empty);
+            var diag = new(info, location);
             diagnostics.Add(diag);
             return info;
         }
 
         internal static void Add(this DiagnosticBag diagnostics, DiagnosticInfo info, Location location)
         {
-            var diag = new CSDiagnostic(info, location);
+            var diag = new(info, location);
             diagnostics.Add(diag);
         }
 

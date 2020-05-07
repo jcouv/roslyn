@@ -24,8 +24,8 @@ namespace Microsoft.CodeAnalysis.CSharp
     {
         private readonly Symbol _memberSymbol;
         private readonly CSharpSyntaxNode _root;
-        private readonly DiagnosticBag _ignoredDiagnostics = new DiagnosticBag();
-        private readonly ReaderWriterLockSlim _nodeMapLock = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
+        private readonly DiagnosticBag _ignoredDiagnostics = new();
+        private readonly ReaderWriterLockSlim _nodeMapLock = new(LockRecursionPolicy.NoRecursion);
         // The bound nodes associated with a syntax node, from highest in the tree to lowest.
         private readonly Dictionary<SyntaxNode, ImmutableArray<BoundNode>> _guardedNodeMap = new Dictionary<SyntaxNode, ImmutableArray<BoundNode>>();
         private Dictionary<SyntaxNode, BoundStatement> _lazyGuardedSynthesizedStatementsMap;
@@ -170,7 +170,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var binder = this.GetSpeculativeBinder(position, expression, bindingOption);
             if (binder != null)
             {
-                speculativeModel = new SpeculativeMemberSemanticModel(parentModel, _memberSymbol, type, binder, GetSnapshotManager(), GetRemappedSymbols(), position);
+                speculativeModel = new(parentModel, _memberSymbol, type, binder, GetSnapshotManager(), GetRemappedSymbols(), position);
                 return true;
             }
 
@@ -361,7 +361,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (typeOfArgument != null)
             {
-                binder = new TypeofBinder(typeOfArgument, binder);
+                binder = new(typeOfArgument, binder);
             }
 
             return binder;
@@ -1308,7 +1308,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // }
             // public class C {
             //   public void Test() {
-            //     Color Color = new Color();
+            //     Color Color = new();
             //     System.Action<int> d = Color.M;
             //   }
             // }
@@ -1677,7 +1677,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 lambdaRecoveryBinder = GetEnclosingBinderInLambdaOrQuery(GetAdjustedNodePosition(nodeToBind), nodeToBind, enclosingLambdaOrQuery, ref boundEnclosingLambdaOrQuery);
             }
 
-            Binder incrementalBinder = new IncrementalBinder(this, lambdaRecoveryBinder);
+            Binder incrementalBinder = new(this, lambdaRecoveryBinder);
 
             using (_nodeMapLock.DisposableWrite())
             {
@@ -1709,7 +1709,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 lambdaRecoveryBinder = GetEnclosingBinderInLambdaOrQuery(GetAdjustedNodePosition(lambdaOrQuery), lambdaOrQuery, enclosingLambdaOrQuery, ref boundEnclosingLambdaOrQuery);
             }
 
-            incrementalBinder = new IncrementalBinder(this, lambdaRecoveryBinder);
+            incrementalBinder = new(this, lambdaRecoveryBinder);
 
             using (_nodeMapLock.DisposableWrite())
             {
@@ -1717,7 +1717,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 // https://github.com/dotnet/roslyn/issues/35038: We need to do a rewrite here, and create a test that can hit this.
 #if DEBUG
-                var diagnostics = new DiagnosticBag();
+                var diagnostics = new();
                 ImmutableDictionary<Symbol, Symbol> ignored = null;
                 _ = RewriteNullableBoundNodesWithSnapshots(boundOuterExpression, incrementalBinder, diagnostics, takeSnapshots: false, snapshotManager: out _, remappedSymbols: ref ignored);
 #endif
@@ -1911,7 +1911,7 @@ done:
             if (!Compilation.NullableSemanticAnalysisEnabled)
             {
 #if DEBUG
-                diagnostics = new DiagnosticBag();
+                diagnostics = new();
 #else
                 return;
 #endif
@@ -2041,7 +2041,7 @@ done:
             // This will cache bound nodes under the binding root.
             CSharpSyntaxNode nodeToBind = GetBindingRoot(node);
             var statementBinder = GetEnclosingBinder(GetAdjustedNodePosition(nodeToBind));
-            Binder incrementalBinder = new IncrementalBinder(this, statementBinder);
+            Binder incrementalBinder = new(this, statementBinder);
 
             using (_nodeMapLock.DisposableWrite())
             {

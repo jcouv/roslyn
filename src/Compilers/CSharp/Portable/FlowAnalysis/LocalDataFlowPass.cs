@@ -130,7 +130,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return -1;
             }
 
-            VariableIdentifier identifier = new VariableIdentifier(symbol, containingSlot);
+            VariableIdentifier identifier = new(symbol, containingSlot);
             int slot;
 
             // Since analysis may proceed in multiple passes, it is possible the slot is already assigned.

@@ -16,7 +16,7 @@ namespace Microsoft.CodeAnalysis.CSharp
     {
         public override BoundNode VisitIsPatternExpression(BoundIsPatternExpression node)
         {
-            var isPatternRewriter = new IsPatternExpressionLocalRewriter(node.Syntax, this);
+            var isPatternRewriter = new(node.Syntax, this);
             BoundExpression result = isPatternRewriter.LowerIsPattern(node, node.Pattern, this._compilation, this._diagnostics);
             isPatternRewriter.Free();
             return result;

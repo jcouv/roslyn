@@ -38,7 +38,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             interfaces.Add(ContainingAssembly.GetSpecialType(SpecialType.System_Collections_IEnumerator));
             _interfaces = interfaces.ToImmutableAndFree();
 
-            _constructor = new IteratorConstructor(this);
+            _constructor = new(this);
         }
 
         public override TypeKind TypeKind

@@ -39,7 +39,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// By default there is a root finally frame.
         /// Root frame does not have a handler, but may contain nested frames.
         /// </summary>
-        private IteratorFinallyFrame _currentFinallyFrame = new IteratorFinallyFrame();
+        private IteratorFinallyFrame _currentFinallyFrame = new();
 
         /// <summary>
         /// Finally state of the next Finally frame if such created.
@@ -72,7 +72,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal void GenerateMoveNextAndDispose(BoundStatement body, SynthesizedImplementationMethod moveNextMethod, SynthesizedImplementationMethod disposeMethod)
         {
             // scan body for yielding try blocks
-            _yieldsInTryAnalysis = new YieldsInTryAnalysis(body);
+            _yieldsInTryAnalysis = new(body);
             if (_yieldsInTryAnalysis.ContainsYieldsInTrys())
             {
                 // adjust for the method Try/Fault block that we will put around the body.
@@ -454,7 +454,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var state = _nextFinalizeState--;
 
             var finallyMethod = MakeSynthesizedFinally(state);
-            var newFrame = new IteratorFinallyFrame(_currentFinallyFrame, state, finallyMethod, _yieldsInTryAnalysis.Labels(statement));
+            var newFrame = new(_currentFinallyFrame, state, finallyMethod, _yieldsInTryAnalysis.Labels(statement));
             newFrame.AddState(state);
 
             _currentFinallyFrame = newFrame;
@@ -475,7 +475,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private IteratorFinallyMethodSymbol MakeSynthesizedFinally(int state)
         {
             var stateMachineType = (IteratorStateMachine)F.CurrentType;
-            var finallyMethod = new IteratorFinallyMethodSymbol(stateMachineType, GeneratedNames.MakeIteratorFinallyMethodName(state));
+            var finallyMethod = new(stateMachineType, GeneratedNames.MakeIteratorFinallyMethodName(state));
 
             F.ModuleBuilderOpt.AddSynthesizedDefinition(stateMachineType, finallyMethod);
             return finallyMethod;

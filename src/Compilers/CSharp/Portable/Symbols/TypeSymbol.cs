@@ -37,7 +37,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         internal const string ImplicitTypeName = "<invalid-global-code>";
 
         // InterfaceInfo for a common case of a type not implementing anything directly or indirectly.
-        private static readonly InterfaceInfo s_noInterfaces = new InterfaceInfo();
+        private static readonly InterfaceInfo s_noInterfaces = new();
 
         private ImmutableHashSet<Symbol> _lazyAbstractMembers;
         private InterfaceInfo _lazyInterfaceInfo;
@@ -106,7 +106,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 if (!interfaces.IsEmpty)
                 {
                     // it looks like we or one of our bases implements something.
-                    info = new InterfaceInfo();
+                    info = new();
 
                     // NOTE: we are assigning lazyInterfaceInfo via interlocked not for correctness, 
                     // we just do not want to override an existing info that could be partially filled.
@@ -761,7 +761,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             var diagnostics = DiagnosticBag.GetInstance();
             var implementingMember = ComputeImplementationForInterfaceMember(interfaceMember, this, diagnostics, ignoreImplementationInInterfaces, out implementationInInterfacesMightChangeResult);
-            var implementingMemberAndDiagnostics = new SymbolAndDiagnostics(implementingMember, diagnostics.ToReadOnlyAndFree());
+            var implementingMemberAndDiagnostics = new(implementingMember, diagnostics.ToReadOnlyAndFree());
             return implementingMemberAndDiagnostics;
         }
 
@@ -1523,7 +1523,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 // (in SourceMemberContainerTypeSymbol.SynthesizeInterfaceMemberImplementation),
                 // they won't (because of the names) and an explicit implementation method will be synthesized.
 
-                MethodSymbol interfaceAccessorWithImplementationName = new SignatureOnlyMethodSymbol(
+                MethodSymbol interfaceAccessorWithImplementationName = new(
                     correspondingImplementingAccessor.Name,
                     interfaceMethod.ContainingType,
                     interfaceMethod.MethodKind,
@@ -1876,8 +1876,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 var typeParameters2 = implicitImpl.TypeParameters;
                 var indexedTypeParameters = IndexedTypeParameterSymbol.Take(arity);
 
-                var typeMap1 = new TypeMap(typeParameters1, indexedTypeParameters, allowAlpha: true);
-                var typeMap2 = new TypeMap(typeParameters2, indexedTypeParameters, allowAlpha: true);
+                var typeMap1 = new(typeParameters1, indexedTypeParameters, allowAlpha: true);
+                var typeMap2 = new(typeParameters2, indexedTypeParameters, allowAlpha: true);
 
                 // Report any mismatched method constraints.
                 for (int i = 0; i < arity; i++)
@@ -2059,7 +2059,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         protected class ExplicitInterfaceImplementationTargetMemberEqualityComparer : IEqualityComparer<Symbol>
         {
-            public static readonly ExplicitInterfaceImplementationTargetMemberEqualityComparer Instance = new ExplicitInterfaceImplementationTargetMemberEqualityComparer();
+            public static readonly ExplicitInterfaceImplementationTargetMemberEqualityComparer Instance = new();
 
             private ExplicitInterfaceImplementationTargetMemberEqualityComparer() { }
             public bool Equals(Symbol x, Symbol y)

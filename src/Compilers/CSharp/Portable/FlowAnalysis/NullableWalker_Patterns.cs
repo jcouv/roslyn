@@ -262,7 +262,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                         for (int i = 0; i < method.ParameterCount - extensionExtra; i++)
                                         {
                                             var parameterType = method.Parameters[i + extensionExtra].TypeWithAnnotations;
-                                            var output = new BoundDagTemp(e.Syntax, parameterType.Type, e, i);
+                                            var output = new(e.Syntax, parameterType.Type, e, i);
                                             int outputSlot = makeDagTempSlot(parameterType, output);
                                             Debug.Assert(outputSlot > 0);
                                             addToTempMap(output, outputSlot, parameterType.Type);
@@ -271,7 +271,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                     }
                                 case BoundDagTypeEvaluation e:
                                     {
-                                        var output = new BoundDagTemp(e.Syntax, e.Type, e);
+                                        var output = new(e.Syntax, e.Type, e);
                                         HashSet<DiagnosticInfo> discardedDiagnostics = null;
                                         int outputSlot;
                                         switch (_conversions.WithNullability(false).ClassifyConversionFromType(inputType, e.Type, ref discardedDiagnostics).Kind)
@@ -300,7 +300,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                         int outputSlot = GetOrCreateSlot(field, inputSlot, forceSlotEvenIfEmpty: true);
                                         Debug.Assert(outputSlot > 0);
                                         var type = field.Type;
-                                        var output = new BoundDagTemp(e.Syntax, type, e);
+                                        var output = new(e.Syntax, type, e);
                                         addToTempMap(output, outputSlot, type);
                                         break;
                                     }
@@ -309,7 +309,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                         Debug.Assert(inputSlot > 0);
                                         var property = (PropertySymbol)AsMemberOfType(inputType, e.Property);
                                         var type = property.TypeWithAnnotations;
-                                        var output = new BoundDagTemp(e.Syntax, type.Type, e);
+                                        var output = new(e.Syntax, type.Type, e);
                                         int outputSlot = GetOrCreateSlot(property, inputSlot, forceSlotEvenIfEmpty: true);
                                         if (outputSlot <= 0)
                                         {
@@ -323,7 +323,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 case BoundDagIndexEvaluation e:
                                     {
                                         var type = TypeWithAnnotations.Create(e.Property.Type, NullableAnnotation.Annotated);
-                                        var output = new BoundDagTemp(e.Syntax, type.Type, e);
+                                        var output = new(e.Syntax, type.Type, e);
                                         int outputSlot = makeDagTempSlot(type, output);
                                         Debug.Assert(outputSlot > 0);
                                         addToTempMap(output, outputSlot, type.Type);

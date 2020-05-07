@@ -148,7 +148,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 DeclarationModifiers.Unsafe |
                 DeclarationModifiers.Abstract; // filtered out later
 
-            var errorLocation = new SourceLocation(firstIdentifier);
+            var errorLocation = new(firstIdentifier);
             DeclarationModifiers result = ModifierUtils.MakeAndCheckNontypeMemberModifiers(
                 modifiers, defaultAccess, allowedModifiers, errorLocation, diagnostics, out modifierErrors);
 
@@ -485,7 +485,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         {
                             fieldsBeingBound = new ConsList<FieldSymbol>(this, fieldsBeingBound);
 
-                            var initializerBinder = new ImplicitlyTypedFieldBinder(binder, fieldsBeingBound);
+                            var initializerBinder = new(binder, fieldsBeingBound);
                             var initializerOpt = initializerBinder.BindInferredVariableInitializer(diagnostics, RefKind.None, (EqualsValueClauseSyntax)declarator.Initializer, declarator);
 
                             if (initializerOpt != null)

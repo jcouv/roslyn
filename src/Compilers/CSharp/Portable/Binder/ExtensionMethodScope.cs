@@ -51,7 +51,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public ExtensionMethodScopeEnumerator(Binder binder)
         {
             _binder = binder;
-            _current = new ExtensionMethodScope();
+            _current = new();
         }
 
         public ExtensionMethodScope Current
@@ -72,7 +72,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     // Return a scope for the same Binder that was previously exposed
                     // for the namespace, this time exposed for the usings.
-                    _current = new ExtensionMethodScope(binder, searchUsingsNotNamespace: true);
+                    _current = new(binder, searchUsingsNotNamespace: true);
                 }
                 else
                 {

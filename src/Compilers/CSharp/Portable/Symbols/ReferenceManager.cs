@@ -92,7 +92,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     throw new NotSupportedException(string.Format(CSharpResources.CantReferenceCompilationOf, compilationReference.GetType(), "C#"));
                 }
 
-                var result = new AssemblyDataForCompilation(csReference.Compilation, csReference.Properties.EmbedInteropTypes);
+                var result = new(csReference.Compilation, csReference.Properties.EmbedInteropTypes);
                 Debug.Assert(csReference.Compilation._lazyAssemblySymbol is object);
                 return result;
             }
@@ -204,7 +204,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     // NOTE: The CreateSourceAssemblyFullBind is going to replace compilation's reference manager with newManager.
 
-                    var newManager = new ReferenceManager(this.SimpleAssemblyName, this.IdentityComparer, this.ObservedMetadata);
+                    var newManager = new(this.SimpleAssemblyName, this.IdentityComparer, this.ObservedMetadata);
                     var successful = newManager.CreateAndSetSourceAssemblyFullBind(compilation);
 
                     // The new manager isn't shared with any other compilation so there is no other 
@@ -268,7 +268,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 assemblyReferenceIdentityMap = GetAssemblyReferenceIdentityBaselineMap(peReferences, assembly.AssemblyReferences);
 
-                var assemblySymbol = new PEAssemblySymbol(assembly, DocumentationProvider.Default, isLinked: false, importOptions: importOptions);
+                var assemblySymbol = new(assembly, DocumentationProvider.Default, isLinked: false, importOptions: importOptions);
 
                 var unifiedAssemblies = this.UnifiedAssemblies.WhereAsArray(
                     (unified, referencedAssembliesByIdentity) => referencedAssembliesByIdentity.Contains(unified.OriginalReference, allowHigherVersion: false), referencedAssembliesByIdentity);
@@ -308,7 +308,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 Debug.Assert(!HasCircularReference);
 
                 string moduleName = compilation.MakeSourceModuleName();
-                var assemblySymbol = new SourceAssemblySymbol(compilation, this.SimpleAssemblyName, moduleName, this.ReferencedModules);
+                var assemblySymbol = new(compilation, this.SimpleAssemblyName, moduleName, this.ReferencedModules);
 
                 InitializeAssemblyReuseData(assemblySymbol, this.ReferencedAssemblies, this.UnifiedAssemblies);
 
@@ -369,7 +369,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         out modules,
                         resolutionDiagnostics);
 
-                    var assemblyBeingBuiltData = new AssemblyDataForAssemblyBeingBuilt(new AssemblyIdentity(name: SimpleAssemblyName, noThrow: true), referencedAssemblies, modules);
+                    var assemblyBeingBuiltData = new(new AssemblyIdentity(name: SimpleAssemblyName, noThrow: true), referencedAssemblies, modules);
                     var explicitAssemblyData = referencedAssemblies.Insert(0, assemblyBeingBuiltData);
 
                     // Let's bind all the references and resolve missing one (if resolver is available)
@@ -437,7 +437,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         Debug.Assert(allAssemblyData[i].IsLinked == bound.AssemblySymbol.IsLinked);
                     }
 
-                    var assemblySymbol = new SourceAssemblySymbol(compilation, SimpleAssemblyName, compilation.MakeSourceModuleName(), netModules: modules);
+                    var assemblySymbol = new(compilation, SimpleAssemblyName, compilation.MakeSourceModuleName(), netModules: modules);
 
                     AssemblySymbol? corLibrary;
 
@@ -856,7 +856,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return missingAssembly;
                 }
 
-                missingAssembly = new MissingAssemblySymbol(assemblyIdentity);
+                missingAssembly = new(assemblyIdentity);
                 missingAssemblies.Add(assemblyIdentity, missingAssembly);
 
                 return missingAssembly;

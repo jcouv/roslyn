@@ -34,7 +34,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             public static BoundStatement Rewrite(LocalRewriter localRewriter, BoundSwitchStatement node)
             {
-                var rewriter = new SwitchStatementLocalRewriter(node, localRewriter);
+                var rewriter = new(node, localRewriter);
                 BoundStatement result = rewriter.LowerSwitchStatement(node);
                 rewriter.Free();
                 return result;

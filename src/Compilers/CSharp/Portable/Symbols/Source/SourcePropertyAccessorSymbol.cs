@@ -468,7 +468,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                 // struct S {
                 //     int Value { get; set; }
-                //     static readonly S StaticField = new S();
+                //     static readonly S StaticField = new();
                 //     static void M() {
                 //         System.Console.WriteLine(StaticField.Value);
                 //     }

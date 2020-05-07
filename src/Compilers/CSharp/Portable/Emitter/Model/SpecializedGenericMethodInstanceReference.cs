@@ -23,7 +23,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             : base(underlyingMethod)
         {
             Debug.Assert(PEModuleBuilder.IsGenericType(underlyingMethod.ContainingType) && underlyingMethod.ContainingType.IsDefinition);
-            _genericMethod = new SpecializedMethodReference(underlyingMethod);
+            _genericMethod = new(underlyingMethod);
         }
 
         IEnumerable<Cci.ITypeReference> Cci.IGenericMethodInstanceReference.GetGenericArguments(EmitContext context)

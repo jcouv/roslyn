@@ -22,7 +22,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal static HashSet<PrefixUnaryExpressionSyntax> Analyze(CSharpCompilation compilation, Symbol member, BoundNode node)
         {
-            var walker = new UnassignedAddressTakenVariablesWalker(compilation, member, node);
+            var walker = new(compilation, member, node);
             try
             {
                 bool badRegion = false;

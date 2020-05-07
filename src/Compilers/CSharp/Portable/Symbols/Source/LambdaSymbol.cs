@@ -26,12 +26,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// This symbol is used as the return type of a LambdaSymbol when we are interpreting
         /// lambda's body in order to infer its return type.
         /// </summary>
-        internal static readonly TypeSymbol ReturnTypeIsBeingInferred = new UnsupportedMetadataTypeSymbol();
+        internal static readonly TypeSymbol ReturnTypeIsBeingInferred = new();
 
         /// <summary>
         /// This symbol is used as the return type of a LambdaSymbol when we failed to infer its return type.
         /// </summary>
-        internal static readonly TypeSymbol InferenceFailureReturnType = new UnsupportedMetadataTypeSymbol();
+        internal static readonly TypeSymbol InferenceFailureReturnType = new();
 
         private static readonly TypeWithAnnotations UnknownReturnType = TypeWithAnnotations.Create(ErrorTypeSymbol.UnknownResultType);
 
@@ -369,7 +369,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 var location = unboundLambda.ParameterLocation(p);
                 var locations = location == null ? ImmutableArray<Location>.Empty : ImmutableArray.Create<Location>(location);
 
-                var parameter = new SourceSimpleParameterSymbol(owner: this, type, ordinal: p, refKind, name, unboundLambda.ParameterIsDiscard(p), locations);
+                var parameter = new(owner: this, type, ordinal: p, refKind, name, unboundLambda.ParameterIsDiscard(p), locations);
 
                 builder.Add(parameter);
             }

@@ -119,7 +119,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             var expandedGlobalNamespace = compilation.GlobalNamespace;
             var expandedNamespace = Imports.ExpandPreviousSubmissionNamespace((NamespaceSymbol)previousTarget, expandedGlobalNamespace);
-            var binder = new InContainerBinder(expandedGlobalNamespace, new BuckStopsHereBinder(compilation));
+            var binder = new(expandedGlobalNamespace, new BuckStopsHereBinder(compilation));
             return new AliasSymbol(binder, expandedNamespace, _aliasName, _locations);
         }
 
@@ -311,7 +311,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             if ((object?)target != null && _locations.Length > 0)
             {
                 var corLibrary = this.ContainingAssembly.CorLibrary;
-                var conversions = new TypeConversions(corLibrary);
+                var conversions = new(corLibrary);
                 target.CheckAllConstraints(DeclaringCompilation, conversions, _locations[0], diagnostics);
             }
         }

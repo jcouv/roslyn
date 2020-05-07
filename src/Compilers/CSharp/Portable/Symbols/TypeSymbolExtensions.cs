@@ -1604,7 +1604,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     var originalType = type;
                     var originalDefinition = originalType.OriginalDefinition;
                     var typeParameters = originalDefinition.GetAllTypeParameters();
-                    var typeMap = new TypeMap(typeParameters, typeArgumentsBuilder.ToImmutable(), allowAlpha: true);
+                    var typeMap = new(typeParameters, typeArgumentsBuilder.ToImmutable(), allowAlpha: true);
                     type = typeMap.SubstituteNamedType(originalDefinition).WithTupleDataFrom(originalType);
                 }
                 typeArgumentsBuilder.Free();
@@ -1653,7 +1653,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return false;
             }
             // Preserve custom modifiers but without normalizing those types.
-            pointerType = new PointerTypeSymbol(pointedAtType);
+            pointerType = new(pointedAtType);
             return true;
         }
 

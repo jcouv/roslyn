@@ -25,7 +25,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private SpillSequenceSpiller(MethodSymbol method, SyntaxNode syntaxNode, TypeCompilationState compilationState, PooledDictionary<LocalSymbol, LocalSymbol> tempSubstitution, DiagnosticBag diagnostics)
         {
-            _F = new SyntheticBoundNodeFactory(method, syntaxNode, compilationState, diagnostics);
+            _F = new(method, syntaxNode, compilationState, diagnostics);
             _F.CurrentFunction = method;
             _tempSubstitution = tempSubstitution;
         }
@@ -77,7 +77,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             internal BoundSpillSequenceBuilder Update(BoundExpression value)
             {
-                var result = new BoundSpillSequenceBuilder(value);
+                var result = new(value);
                 result._locals = _locals;
                 result._statements = _statements;
                 return result;
@@ -162,7 +162,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 #if DEBUG
             internal override string Dump()
             {
-                var node = new TreeDumperNode("boundSpillSequenceBuilder", null, new TreeDumperNode[]
+                var node = new("boundSpillSequenceBuilder", null, new TreeDumperNode[]
                     {
                         new TreeDumperNode("locals", this.GetLocals(), null),
                         new TreeDumperNode("statements", null, from x in this.GetStatements() select BoundTreeDumperNodeProducer.MakeTree(x)),
@@ -191,7 +191,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return node;
                 }
 
-                var substituter = new LocalSubstituter(tempSubstitution);
+                var substituter = new(tempSubstitution);
                 return substituter.Visit(node);
             }
 
@@ -213,7 +213,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal static BoundStatement Rewrite(BoundStatement body, MethodSymbol method, TypeCompilationState compilationState, DiagnosticBag diagnostics)
         {
             var tempSubstitution = PooledDictionary<LocalSymbol, LocalSymbol>.GetInstance();
-            var spiller = new SpillSequenceSpiller(method, body.Syntax, compilationState, tempSubstitution, diagnostics);
+            var spiller = new(method, body.Syntax, compilationState, tempSubstitution, diagnostics);
             BoundNode result = spiller.Visit(body);
             result = LocalSubstituter.Rewrite(tempSubstitution, result);
             tempSubstitution.Free();
@@ -441,7 +441,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (builder == null)
             {
-                builder = new BoundSpillSequenceBuilder();
+                builder = new();
             }
 
             var result = ArrayBuilder<BoundExpression>.GetInstance(newList.Length);
@@ -545,7 +545,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override BoundNode VisitSpillSequence(BoundSpillSequence node)
         {
-            var builder = new BoundSpillSequenceBuilder();
+            var builder = new();
 
             // Ensure later errors (e.g. in async rewriting) are associated with the correct node.
             _F.Syntax = node.Syntax;
@@ -583,7 +583,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // spill the array if there were await expressions in the indices
                 if (builder == null)
                 {
-                    builder = new BoundSpillSequenceBuilder();
+                    builder = new();
                 }
 
                 expression = Spill(builder, expression);
@@ -611,7 +611,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             else
             {
                 // spill bounds expressions if initializers contain await
-                var boundsBuilder = new BoundSpillSequenceBuilder();
+                var boundsBuilder = new();
                 bounds = VisitExpressionList(ref boundsBuilder, node.Bounds, forceSpill: true);
                 boundsBuilder.Include(builder);
                 builder = boundsBuilder;
@@ -662,7 +662,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             else
             {
                 // if the right-hand-side has await, spill the left
-                var leftBuilder = new BoundSpillSequenceBuilder();
+                var leftBuilder = new();
 
                 switch (left.Kind)
                 {
@@ -779,7 +779,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                var leftBuilder = new BoundSpillSequenceBuilder();
+                var leftBuilder = new();
                 left = VisitExpression(ref leftBuilder, node.Left);
                 left = Spill(leftBuilder, left);
                 if (node.OperatorKind == BinaryOperatorKind.LogicalBoolOr || node.OperatorKind == BinaryOperatorKind.LogicalBoolAnd)
@@ -817,7 +817,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             else if (node.Method.RequiresInstanceReceiver)
             {
                 // spill the receiver if there were await expressions in the arguments
-                var receiverBuilder = new BoundSpillSequenceBuilder();
+                var receiverBuilder = new();
 
                 receiver = node.ReceiverOpt;
                 RefKind refKind = ReceiverSpillRefKind(receiver);
@@ -857,9 +857,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return UpdateExpression(conditionBuilder, node.Update(node.IsRef, condition, consequence, alternative, node.ConstantValueOpt, node.Type));
             }
 
-            if (conditionBuilder == null) conditionBuilder = new BoundSpillSequenceBuilder();
-            if (consequenceBuilder == null) consequenceBuilder = new BoundSpillSequenceBuilder();
-            if (alternativeBuilder == null) alternativeBuilder = new BoundSpillSequenceBuilder();
+            if (conditionBuilder == null) conditionBuilder = new();
+            if (consequenceBuilder == null) consequenceBuilder = new();
+            if (alternativeBuilder == null) alternativeBuilder = new();
 
             if (node.Type.IsVoidType())
             {
@@ -952,7 +952,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                var leftBuilder = new BoundSpillSequenceBuilder();
+                var leftBuilder = new();
                 left = VisitExpression(ref leftBuilder, node.LeftOperand);
                 left = Spill(leftBuilder, left);
 
@@ -987,9 +987,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return UpdateExpression(receiverBuilder, node.Update(receiver, node.HasValueMethodOpt, whenNotNull, whenNullOpt, node.Id, node.Type));
             }
 
-            if (receiverBuilder == null) receiverBuilder = new BoundSpillSequenceBuilder();
-            if (whenNotNullBuilder == null) whenNotNullBuilder = new BoundSpillSequenceBuilder();
-            if (whenNullBuilder == null) whenNullBuilder = new BoundSpillSequenceBuilder();
+            if (receiverBuilder == null) receiverBuilder = new();
+            if (whenNotNullBuilder == null) whenNotNullBuilder = new();
+            if (whenNullBuilder == null) whenNullBuilder = new();
 
 
             BoundExpression condition;
@@ -1084,7 +1084,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             public static BoundStatement Replace(BoundNode node, BoundExpression receiver, int receiverID, int recursionDepth)
             {
-                var replacer = new ConditionalReceiverReplacer(receiver, receiverID, recursionDepth);
+                var replacer = new(receiver, receiverID, recursionDepth);
                 var result = (BoundStatement)replacer.Visit(node);
 #if DEBUG
                 Debug.Assert(replacer._replaced == 1, "should have replaced exactly one node");
@@ -1144,7 +1144,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                var expressionBuilder = new BoundSpillSequenceBuilder();
+                var expressionBuilder = new();
                 expression = VisitExpression(ref expressionBuilder, node.Expression);
                 expression = Spill(expressionBuilder, expression);
                 expressionBuilder.Include(builder);
@@ -1177,7 +1177,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (builder == null)
             {
-                builder = new BoundSpillSequenceBuilder();
+                builder = new();
             }
 
             PromoteAndAddLocals(builder, node.Locals);

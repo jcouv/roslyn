@@ -148,7 +148,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         public static bool Analyze(CSharpCompilation compilation, Symbol member, BoundBlock block, DiagnosticBag diagnostics)
         {
-            var walker = new ControlFlowPass(compilation, member, block);
+            var walker = new(compilation, member, block);
 
             if (diagnostics != null)
             {
@@ -211,7 +211,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     case BoundKind.GotoStatement:
                         {
                             var leave = pending.Branch;
-                            var loc = new SourceLocation(leave.Syntax.GetFirstToken());
+                            var loc = new(leave.Syntax.GetFirstToken());
                             Diagnostics.Add(ErrorCode.ERR_LabelNotFound, loc, ((BoundGotoStatement)pending.Branch).Label.Name);
                             break;
                         }
@@ -219,7 +219,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     case BoundKind.ContinueStatement:
                         {
                             var leave = pending.Branch;
-                            var loc = new SourceLocation(leave.Syntax.GetFirstToken());
+                            var loc = new(leave.Syntax.GetFirstToken());
                             Diagnostics.Add(ErrorCode.ERR_BadDelegateLeave, loc);
                             break;
                         }
@@ -295,7 +295,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             foreach (var branch in PendingBranches)
             {
                 if (branch.Branch == null) continue; // a tracked exception
-                var location = new SourceLocation(branch.Branch.Syntax.GetFirstToken());
+                var location = new(branch.Branch.Syntax.GetFirstToken());
                 switch (branch.Branch.Kind)
                 {
                     case BoundKind.YieldBreakStatement:

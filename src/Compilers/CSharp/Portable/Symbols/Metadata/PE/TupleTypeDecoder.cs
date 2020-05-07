@@ -134,7 +134,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
         {
             RoslynDebug.AssertNotNull(metadataType);
 
-            var decoder = new TupleTypeDecoder(elementNames);
+            var decoder = new(elementNames);
             var decoded = decoder.DecodeType(metadataType);
             if (!decoder._decodingFailed)
             {

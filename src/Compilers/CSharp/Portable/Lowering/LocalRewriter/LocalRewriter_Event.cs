@@ -94,7 +94,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             BoundExpression delegateCreationArgument = boundTemp ?? rewrittenReceiverOpt ?? _factory.Type(eventType);
 
-            BoundDelegateCreationExpression removeDelegate = new BoundDelegateCreationExpression(
+            BoundDelegateCreationExpression removeDelegate = new(
                 syntax: syntax,
                 argument: delegateCreationArgument,
                 methodOpt: eventSymbol.RemoveMethod,
@@ -116,7 +116,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
                 else
                 {
-                    clearCall = new BoundBadExpression(syntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, ImmutableArray.Create<BoundExpression>(removeDelegate), ErrorTypeSymbol.UnknownResultType);
+                    clearCall = new(syntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, ImmutableArray.Create<BoundExpression>(removeDelegate), ErrorTypeSymbol.UnknownResultType);
                 }
             }
 
@@ -131,7 +131,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 NamedTypeSymbol func2Type = _factory.WellKnownType(WellKnownType.System_Func_T2).Construct(eventType, tokenType);
 
-                BoundDelegateCreationExpression addDelegate = new BoundDelegateCreationExpression(
+                BoundDelegateCreationExpression addDelegate = new(
                     syntax: syntax,
                     argument: delegateCreationArgument,
                     methodOpt: eventSymbol.AddMethod,
@@ -158,7 +158,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                marshalCall = new BoundBadExpression(syntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, marshalArguments, ErrorTypeSymbol.UnknownResultType);
+                marshalCall = new(syntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, marshalArguments, ErrorTypeSymbol.UnknownResultType);
             }
 
             // In this case, we don't need a sequence.
@@ -231,7 +231,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(fieldType.Name == "EventRegistrationTokenTable");
 
             // _tokenTable
-            BoundFieldAccess fieldAccess = new BoundFieldAccess(
+            BoundFieldAccess fieldAccess = new(
                 syntax,
                 fieldSymbol.IsStatic ? null : rewrittenReceiver,
                 fieldSymbol,
@@ -254,7 +254,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                getOrCreateCall = new BoundBadExpression(syntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, ImmutableArray.Create<BoundExpression>(fieldAccess), ErrorTypeSymbol.UnknownResultType);
+                getOrCreateCall = new(syntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, ImmutableArray.Create<BoundExpression>(fieldAccess), ErrorTypeSymbol.UnknownResultType);
             }
 
             PropertySymbol invocationListProperty;

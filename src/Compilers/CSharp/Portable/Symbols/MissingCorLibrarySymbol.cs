@@ -18,7 +18,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     /// </summary>
     internal sealed class MissingCorLibrarySymbol : MissingAssemblySymbol
     {
-        internal static readonly MissingCorLibrarySymbol Instance = new MissingCorLibrarySymbol();
+        internal static readonly MissingCorLibrarySymbol Instance = new();
 
         /// <summary>
         /// An array of cached Cor types defined in this assembly.

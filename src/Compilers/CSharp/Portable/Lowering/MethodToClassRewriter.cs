@@ -102,7 +102,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
             else
             {
-                newLocal = new TypeSubstitutedLocalSymbol(local, TypeWithAnnotations.Create(newType), CurrentMethod);
+                newLocal = new(local, TypeWithAnnotations.Create(newType), CurrentMethod);
                 localMap.Add(local, newLocal);
             }
 
@@ -293,7 +293,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             //  create a method symbol
             string methodName = GeneratedNames.MakeBaseMethodWrapperName(this.CompilationState.NextWrapperMethodIndex);
-            wrapper = new BaseMethodWrapperSymbol(containingType, methodBeingWrapped, syntax, methodName);
+            wrapper = new(containingType, methodBeingWrapped, syntax, methodName);
 
             //  add the method to module
             if (this.CompilationState.Emitting)
@@ -433,7 +433,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 // NOTE: Need to check for cast of stackalloc on RHS.
                 // If LHS isLocal, then genAddr is a noop so regular case works fine.
 
-                SyntheticBoundNodeFactory factory = new SyntheticBoundNodeFactory(this.CurrentMethod, rewrittenLeft.Syntax, this.CompilationState, this.Diagnostics);
+                SyntheticBoundNodeFactory factory = new(this.CurrentMethod, rewrittenLeft.Syntax, this.CompilationState, this.Diagnostics);
                 BoundAssignmentOperator tempAssignment;
                 BoundLocal tempLocal = factory.StoreToTemp(rewrittenRight, out tempAssignment);
 

@@ -548,7 +548,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case BinaryOperatorKind.LessThan:
                 case BinaryOperatorKind.GreaterThanOrEqual:
                 case BinaryOperatorKind.LessThanOrEqual:
-                    var voidPointerType = new PointerTypeSymbol(TypeWithAnnotations.Create(Compilation.GetSpecialType(SpecialType.System_Void)));
+                    var voidPointerType = new(TypeWithAnnotations.Create(Compilation.GetSpecialType(SpecialType.System_Void)));
                     operators.Add(new BinaryOperatorSignature(kind | BinaryOperatorKind.Pointer, voidPointerType, voidPointerType, Compilation.GetSpecialType(SpecialType.System_Boolean)));
                     break;
             }

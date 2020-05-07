@@ -366,7 +366,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Retargeting
                 else
                 {
                     // TODO: report better error?
-                    result = new UnsupportedMetadataTypeSymbol();
+                    result = new();
                 }
 
                 cached = map.GetOrAdd(type, result);
@@ -550,7 +550,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Retargeting
 
                     Debug.Assert(newParameters.Count == newArguments.Count);
 
-                    TypeMap substitution = new TypeMap(newParameters.ToImmutableAndFree(), newArguments.ToImmutable());
+                    TypeMap substitution = new(newParameters.ToImmutableAndFree(), newArguments.ToImmutable());
 
                     constructedType = substitution.SubstituteNamedType(newDefinition).WithTupleDataFrom(type);
                 }
@@ -903,7 +903,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Retargeting
 
                     // A generic method needs special handling because its signature is very likely
                     // to refer to method's type parameters.
-                    var finder = new RetargetedTypeMethodFinder(translator._retargetingModule);
+                    var finder = new(translator._retargetingModule);
                     return FindWorker(finder, method, retargetedType, retargetedMethodComparer);
                 }
 
@@ -932,7 +932,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Retargeting
                     // IndexedTypeParameterSymbols should work just fine as the type parameters for the method.
                     // We can't produce "real" TypeParameterSymbols without finding the method first and this
                     // is what we are trying to do right now.
-                    var targetMethod = new SignatureOnlyMethodSymbol(
+                    var targetMethod = new(
                         method.Name,
                         retargetedType,
                         method.MethodKind,
@@ -989,7 +989,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Retargeting
                             param.RefKind));
                 }
 
-                var targetProperty = new SignatureOnlyPropertySymbol(
+                var targetProperty = new(
                     property.Name,
                     retargetedType,
                     targetParamsBuilder.ToImmutableAndFree(),

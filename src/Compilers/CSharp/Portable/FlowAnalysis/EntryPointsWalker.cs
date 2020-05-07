@@ -20,7 +20,7 @@ namespace Microsoft.CodeAnalysis.CSharp
     {
         internal static IEnumerable<LabeledStatementSyntax> Analyze(CSharpCompilation compilation, Symbol member, BoundNode node, BoundNode firstInRegion, BoundNode lastInRegion, out bool? succeeded)
         {
-            var walker = new EntryPointsWalker(compilation, member, node, firstInRegion, lastInRegion);
+            var walker = new(compilation, member, node, firstInRegion, lastInRegion);
             bool badRegion = false;
             try
             {

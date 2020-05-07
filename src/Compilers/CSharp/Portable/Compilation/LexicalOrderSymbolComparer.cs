@@ -14,7 +14,7 @@ namespace Microsoft.CodeAnalysis.CSharp
     /// </summary>        
     internal class LexicalOrderSymbolComparer : IComparer<Symbol>
     {
-        public static readonly LexicalOrderSymbolComparer Instance = new LexicalOrderSymbolComparer();
+        public static readonly LexicalOrderSymbolComparer Instance = new();
 
         private LexicalOrderSymbolComparer()
         {

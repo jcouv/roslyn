@@ -244,7 +244,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     else
                     {
                         // There is an additional spec violation in the native compiler. Suppose
-                        // we have a conversion from X-->Y and are asked to do "Y? y = new X();"  Clearly
+                        // we have a conversion from X-->Y and are asked to do "Y? y = new();"  Clearly
                         // the intention is to convert from X-->Y via the implicit conversion, and then
                         // stick a standard implicit conversion from Y-->Y? on the back end. **In this 
                         // situation, the native compiler treats the conversion as though it were
@@ -362,7 +362,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // operator in its lifted form is Y?. 
             //
             // The native compiler does not do this. Suppose we have a user-defined
-            // conversion X-->Y, and the assignment Y? y = new X(); -- the native 
+            // conversion X-->Y, and the assignment Y? y = new(); -- the native 
             // compiler will consider the converts-to type of X-->Y to be Y?, surprisingly
             // enough. 
             //

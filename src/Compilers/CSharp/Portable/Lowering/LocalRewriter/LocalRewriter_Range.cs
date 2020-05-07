@@ -64,7 +64,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 if (NullableNeverHasValue(operand))
                 {
-                    operand = new BoundDefaultExpression(operand.Syntax, operand.Type.GetNullableUnderlyingType());
+                    operand = new(operand.Syntax, operand.Type.GetNullableUnderlyingType());
                 }
                 else
                 {
@@ -105,10 +105,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             // new Nullable(makeRange(left.GetValueOrDefault(), right.GetValueOrDefault()))
-            BoundExpression consequence = new BoundObjectCreationExpression(node.Syntax, nullableCtor, binderOpt: null, rangeExpr);
+            BoundExpression consequence = new(node.Syntax, nullableCtor, binderOpt: null, rangeExpr);
 
             // default
-            BoundExpression alternative = new BoundDefaultExpression(node.Syntax, node.Type);
+            BoundExpression alternative = new(node.Syntax, node.Type);
 
             // left.HasValue && right.HasValue
             //     ? new Nullable(makeRange(left.GetValueOrDefault(), right.GetValueOrDefault()))

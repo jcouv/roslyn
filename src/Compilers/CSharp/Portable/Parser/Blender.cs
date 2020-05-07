@@ -66,7 +66,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             if (oldTree == null)
             {
                 // start at lexer current position if no nodes specified
-                _oldTreeCursor = new Cursor();
+                _oldTreeCursor = new();
                 _newPosition = lexer.TextWindow.Position;
             }
             else
@@ -186,7 +186,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
 
         private BlendedNode ReadNodeOrToken(LexerMode mode, bool asToken)
         {
-            var reader = new Reader(this);
+            var reader = new(this);
             return reader.ReadNodeOrToken(mode, asToken);
         }
     }

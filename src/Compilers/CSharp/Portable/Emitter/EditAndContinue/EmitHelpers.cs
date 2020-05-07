@@ -38,7 +38,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             PEDeltaAssemblyBuilder moduleBeingBuilt;
             try
             {
-                moduleBeingBuilt = new PEDeltaAssemblyBuilder(
+                moduleBeingBuilt = new(
                     compilation.SourceAssembly,
                     emitOptions: emitOptions,
                     outputKind: compilation.Options.OutputKind,
@@ -126,10 +126,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             // Mapping from previous compilation to the current.
             var anonymousTypeMap = moduleBeingBuilt.GetAnonymousTypeMap();
             var sourceAssembly = ((CSharpCompilation)previousGeneration.Compilation).SourceAssembly;
-            var sourceContext = new EmitContext((PEModuleBuilder)previousGeneration.PEModuleBuilder, null, new DiagnosticBag(), metadataOnly: false, includePrivateMembers: true);
-            var otherContext = new EmitContext(moduleBeingBuilt, null, new DiagnosticBag(), metadataOnly: false, includePrivateMembers: true);
+            var sourceContext = new((PEModuleBuilder)previousGeneration.PEModuleBuilder, null, new DiagnosticBag(), metadataOnly: false, includePrivateMembers: true);
+            var otherContext = new(moduleBeingBuilt, null, new DiagnosticBag(), metadataOnly: false, includePrivateMembers: true);
 
-            var matcher = new CSharpSymbolMatcher(
+            var matcher = new(
                 anonymousTypeMap,
                 sourceAssembly,
                 sourceContext,
@@ -140,7 +140,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             var mappedSynthesizedMembers = matcher.MapSynthesizedMembers(previousGeneration.SynthesizedMembers, currentSynthesizedMembers);
 
             // TODO: can we reuse some data from the previous matcher?
-            var matcherWithAllSynthesizedMembers = new CSharpSymbolMatcher(
+            var matcherWithAllSynthesizedMembers = new(
                 anonymousTypeMap,
                 sourceAssembly,
                 sourceContext,

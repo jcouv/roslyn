@@ -39,17 +39,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             get { return _position; }
         }
 
-        public static readonly LexicalSortKey NotInSource = new LexicalSortKey() { _treeOrdinal = -1, _position = 0 };
+        public static readonly LexicalSortKey NotInSource = new() { _treeOrdinal = -1, _position = 0 };
 
-        public static readonly LexicalSortKey NotInitialized = new LexicalSortKey() { _treeOrdinal = -1, _position = -1 };
+        public static readonly LexicalSortKey NotInitialized = new() { _treeOrdinal = -1, _position = -1 };
 
         // Dev12 compiler adds synthetic constructors to the child list after adding all other members.
         // Methods are emitted in the children order, but synthetic cctors would be deferred 
         // until later when it is known if they can be optimized or not.
         // As a result the last emitted method tokens are synthetic ctor and then synthetic cctor (if not optimized)
         // Since it is not too hard, we will try keeping the same order just to be easy on metadata diffing tools and such.
-        public static readonly LexicalSortKey SynthesizedCtor = new LexicalSortKey() { _treeOrdinal = int.MaxValue, _position = int.MaxValue - 1 };
-        public static readonly LexicalSortKey SynthesizedCCtor = new LexicalSortKey() { _treeOrdinal = int.MaxValue, _position = int.MaxValue };
+        public static readonly LexicalSortKey SynthesizedCtor = new() { _treeOrdinal = int.MaxValue, _position = int.MaxValue - 1 };
+        public static readonly LexicalSortKey SynthesizedCCtor = new() { _treeOrdinal = int.MaxValue, _position = int.MaxValue };
 
         private LexicalSortKey(int treeOrdinal, int position)
         {

@@ -388,7 +388,7 @@ namespace Microsoft.CodeAnalysis.Operations
                 bool isImplicitAssignment;
 
                 // Synthesize an implicit receiver for property reference being assigned.
-                var instance = new InstanceReferenceOperation(
+                var instance = new(
                         referenceKind: InstanceReferenceKind.ImplicitReceiver,
                         semanticModel: _semanticModel,
                         syntax: syntax,
@@ -402,7 +402,7 @@ namespace Microsoft.CodeAnalysis.Operations
                 if (anonymousProperty is null)
                 {
                     // No matching declaration, synthesize a property reference to be assigned.
-                    target = new PropertyReferenceOperation(
+                    target = new(
                         property.GetPublicSymbol(),
                         arguments: ImmutableArray<IArgumentOperation>.Empty,
                         instance,
@@ -415,7 +415,7 @@ namespace Microsoft.CodeAnalysis.Operations
                 }
                 else
                 {
-                    target = new PropertyReferenceOperation(anonymousProperty.Property.GetPublicSymbol(),
+                    target = new(anonymousProperty.Property.GetPublicSymbol(),
                                                             ImmutableArray<IArgumentOperation>.Empty,
                                                             instance,
                                                             _semanticModel,
@@ -430,7 +430,7 @@ namespace Microsoft.CodeAnalysis.Operations
                 ITypeSymbol assignmentType = target.Type;
                 Optional<object> constantValue = value.ConstantValue;
                 bool isRef = false;
-                var assignment = new SimpleAssignmentOperation(isRef, target, value, _semanticModel, assignmentSyntax, assignmentType, constantValue, isImplicitAssignment);
+                var assignment = new(isRef, target, value, _semanticModel, assignmentSyntax, assignmentType, constantValue, isImplicitAssignment);
                 builder.Add(assignment);
             }
 

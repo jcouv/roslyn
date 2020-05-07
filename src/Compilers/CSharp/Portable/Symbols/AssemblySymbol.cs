@@ -372,13 +372,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal ErrorTypeSymbol CreateCycleInTypeForwarderErrorTypeSymbol(ref MetadataTypeName emittedName)
         {
-            DiagnosticInfo diagnosticInfo = new CSDiagnosticInfo(ErrorCode.ERR_CycleInTypeForwarder, emittedName.FullName, this.Name);
+            DiagnosticInfo diagnosticInfo = new(ErrorCode.ERR_CycleInTypeForwarder, emittedName.FullName, this.Name);
             return new MissingMetadataTypeSymbol.TopLevel(this.Modules[0], ref emittedName, diagnosticInfo);
         }
 
         internal ErrorTypeSymbol CreateMultipleForwardingErrorTypeSymbol(ref MetadataTypeName emittedName, ModuleSymbol forwardingModule, AssemblySymbol destination1, AssemblySymbol destination2)
         {
-            var diagnosticInfo = new CSDiagnosticInfo(ErrorCode.ERR_TypeForwardedToMultipleAssemblies, forwardingModule, this, emittedName.FullName, destination1, destination2);
+            var diagnosticInfo = new(ErrorCode.ERR_TypeForwardedToMultipleAssemblies, forwardingModule, this, emittedName.FullName, destination1, destination2);
             return new MissingMetadataTypeSymbol.TopLevel(forwardingModule, ref emittedName, diagnosticInfo);
         }
 

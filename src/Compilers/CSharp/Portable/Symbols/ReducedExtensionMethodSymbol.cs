@@ -49,7 +49,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return null;
             }
 
-            var conversions = new TypeConversions(method.ContainingAssembly.CorLibrary);
+            var conversions = new(method.ContainingAssembly.CorLibrary);
             var conversion = conversions.ConvertExtensionMethodThisArg(method.Parameters[0].Type, receiverType, ref useSiteDiagnostics);
             if (!conversion.Exists)
             {
@@ -76,7 +76,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             // The reduced form is always created from the unconstructed method symbol.
             var constructedFrom = method.ConstructedFrom;
-            var reducedMethod = new ReducedExtensionMethodSymbol(constructedFrom);
+            var reducedMethod = new(constructedFrom);
 
             if (constructedFrom == method)
             {
@@ -128,7 +128,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             var containingAssembly = method.ContainingAssembly;
             var errorNamespace = containingAssembly.GlobalNamespace;
-            var conversions = new TypeConversions(containingAssembly.CorLibrary);
+            var conversions = new(containingAssembly.CorLibrary);
 
             // There is absolutely no plausible syntax/tree that we could use for these
             // synthesized literals.  We could be speculatively binding a call to a PE method.
@@ -137,9 +137,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             // Create an argument value for the "this" argument of specific type,
             // and pass the same bad argument value for all other arguments.
-            var thisArgumentValue = new BoundLiteral(syntax, ConstantValue.Bad, thisType) { WasCompilerGenerated = true };
-            var otherArgumentType = new ExtendedErrorTypeSymbol(errorNamespace, name: string.Empty, arity: 0, errorInfo: null, unreported: false);
-            var otherArgumentValue = new BoundLiteral(syntax, ConstantValue.Bad, otherArgumentType) { WasCompilerGenerated = true };
+            var thisArgumentValue = new(syntax, ConstantValue.Bad, thisType) { WasCompilerGenerated = true };
+            var otherArgumentType = new(errorNamespace, name: string.Empty, arity: 0, errorInfo: null, unreported: false);
+            var otherArgumentValue = new(syntax, ConstantValue.Bad, otherArgumentType) { WasCompilerGenerated = true };
 
             var paramCount = method.ParameterCount;
             var arguments = new BoundExpression[paramCount];
@@ -196,7 +196,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             // Check constraints.
             var diagnosticsBuilder = ArrayBuilder<TypeParameterDiagnosticInfo>.GetInstance();
-            var substitution = new TypeMap(typeParams, typeArgsForConstraintsCheck);
+            var substitution = new(typeParams, typeArgsForConstraintsCheck);
             ArrayBuilder<TypeParameterDiagnosticInfo> useSiteDiagnosticsBuilder = null;
             var success = method.CheckConstraints(conversions, substitution, typeParams, typeArgsForConstraintsCheck, compilation, diagnosticsBuilder, nullabilityDiagnosticsBuilderOpt: null, ref useSiteDiagnosticsBuilder,
                                                   ignoreTypeConstraintsDependentOnTypeParametersOpt: notInferredTypeParameters.Count > 0 ? notInferredTypeParameters : null);
@@ -559,7 +559,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 var parameters = new ParameterSymbol[count - 1];
                 for (int i = 0; i < count - 1; i++)
                 {
-                    parameters[i] = new ReducedExtensionMethodParameterSymbol(this, reducedFromParameters[i + 1]);
+                    parameters[i] = new(this, reducedFromParameters[i + 1]);
                 }
 
                 return parameters.AsImmutableOrNull();

@@ -71,7 +71,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             for (int i = 0; i < assembly.Modules.Length; i++)
             {
-                modules[i] = new PEModuleSymbol(this, assembly.Modules[i], importOptions, i);
+                modules[i] = new(this, assembly.Modules[i], importOptions, i);
             }
 
             _modules = modules.AsImmutableOrNull();

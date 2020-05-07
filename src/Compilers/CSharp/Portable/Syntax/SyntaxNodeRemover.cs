@@ -30,7 +30,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
                 return root;
             }
 
-            var remover = new SyntaxRemover(nodes.ToArray(), options);
+            var remover = new(nodes.ToArray(), options);
             var result = remover.Visit(root);
 
             var residualTrivia = remover.ResidualTrivia;
@@ -233,7 +233,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
                         {
                             if (alternate == null)
                             {
-                                alternate = new SyntaxNodeOrTokenListBuilder(n);
+                                alternate = new(n);
                                 alternate.Add(withSeps, 0, i);
                             }
 
@@ -270,7 +270,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
 
                     if (item != visited && alternate == null)
                     {
-                        alternate = new SyntaxNodeOrTokenListBuilder(n);
+                        alternate = new(n);
                         alternate.Add(withSeps, 0, i);
                     }
 

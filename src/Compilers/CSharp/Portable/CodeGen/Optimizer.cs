@@ -409,7 +409,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
         // fake local that represents the eval stack.
         // when we need to ensure that eval stack is not blocked by stack Locals, we record an access to empty.
-        public static readonly DummyLocal empty = new DummyLocal();
+        public static readonly DummyLocal empty = new();
 
         private int _recursionDepth;
 
@@ -771,7 +771,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                             assignment.Right.Kind == BoundKind.Sequence)
                         {
                             // and no other side-effects should use the variable
-                            var localUsedWalker = new LocalUsedWalker(local, _recursionDepth);
+                            var localUsedWalker = new(local, _recursionDepth);
                             for (int i = 0; i < sideeffects.Length - 1; i++)
                             {
                                 if (localUsedWalker.IsLocalUsedIn(sideeffects[i]))
@@ -1681,7 +1681,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
         private object GetStackStateCookie()
         {
             // create a dummy and start tracing it
-            var dummy = new DummyLocal();
+            var dummy = new();
             _dummyVariables.Add(dummy, dummy);
             _locals.Add(dummy, LocalDefUseInfo.GetInstance(StackDepth()));
             RecordDummyWrite(dummy);
@@ -1705,7 +1705,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             else
             {
                 // create a dummy and start tracing it
-                dummy = new DummyLocal();
+                dummy = new();
                 _dummyVariables.Add(label, dummy);
                 _locals.Add(dummy, LocalDefUseInfo.GetInstance(StackDepth()));
                 RecordDummyWrite(dummy);
@@ -1793,7 +1793,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             var last = defs.Count - 1;
             defs[last] = defs[last].WithEnd(_counter);
 
-            var nextDef = new LocalDefUseSpan(_counter);
+            var nextDef = new(_counter);
             defs.Add(nextDef);
         }
 
@@ -1815,7 +1815,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             // dummy must be accessed on same stack.
             Debug.Assert(local == empty || locInfo.StackAtDeclaration == StackDepth());
 
-            var locDef = new LocalDefUseSpan(_counter);
+            var locDef = new(_counter);
             locInfo.LocalDefs.Add(locDef);
         }
 
@@ -1845,7 +1845,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 return;
             }
 
-            var locDef = new LocalDefUseSpan(_counter);
+            var locDef = new(_counter);
             locInfo.LocalDefs.Add(locDef);
         }
 

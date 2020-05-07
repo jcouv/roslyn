@@ -31,7 +31,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public static HashSet<LabelSymbol> Find(BoundNode node, Dictionary<BoundNode, HashSet<LabelSymbol>> unmatchedLabelsCache, int recursionDepth)
         {
-            UnmatchedGotoFinder finder = new UnmatchedGotoFinder(unmatchedLabelsCache, recursionDepth);
+            UnmatchedGotoFinder finder = new(unmatchedLabelsCache, recursionDepth);
             finder.Visit(node);
             HashSet<LabelSymbol> gotos = finder._gotos;
             HashSet<LabelSymbol> targets = finder._targets;

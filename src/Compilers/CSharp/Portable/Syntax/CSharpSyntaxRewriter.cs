@@ -144,7 +144,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var visited = this.VisitListElement(item);
                 if (item != visited && alternate == null)
                 {
-                    alternate = new SyntaxListBuilder(n);
+                    alternate = new(n);
                     alternate.AddRange(list, 0, i);
                 }
 
@@ -259,7 +259,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var visited = this.VisitToken(item);
                 if (item != visited && alternate == null)
                 {
-                    alternate = new SyntaxTokenListBuilder(count);
+                    alternate = new(count);
                     alternate.Add(list, 0, index);
                 }
 
@@ -293,7 +293,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     //skip the null check since SyntaxTrivia is a value type
                     if (visited != item && alternate == null)
                     {
-                        alternate = new SyntaxTriviaListBuilder(count);
+                        alternate = new(count);
                         alternate.Add(list, 0, index);
                     }
 

@@ -55,12 +55,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         public override string ToString() => Type.ToString();
 
-        private static readonly SymbolDisplayFormat DebuggerDisplayFormat = new SymbolDisplayFormat(
+        private static readonly SymbolDisplayFormat DebuggerDisplayFormat = new(
             typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
             genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
             miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes | SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
-        internal static readonly SymbolDisplayFormat TestDisplayFormat = new SymbolDisplayFormat(
+        internal static readonly SymbolDisplayFormat TestDisplayFormat = new(
             typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
             genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
             miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes | SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier | SymbolDisplayMiscellaneousOptions.IncludeNotNullableReferenceTypeModifier);
@@ -166,12 +166,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private static TypeWithAnnotations CreateNonLazyType(TypeSymbol typeSymbol, NullableAnnotation nullableAnnotation, ImmutableArray<CustomModifier> customModifiers)
         {
-            return new TypeWithAnnotations(typeSymbol, nullableAnnotation, Extensions.Create(customModifiers));
+            return new(typeSymbol, nullableAnnotation, Extensions.Create(customModifiers));
         }
 
         private static TypeWithAnnotations CreateLazyNullableType(CSharpCompilation compilation, TypeWithAnnotations underlying)
         {
-            return new TypeWithAnnotations(defaultType: underlying.DefaultType, nullableAnnotation: NullableAnnotation.Annotated, Extensions.CreateLazy(compilation, underlying));
+            return new(defaultType: underlying.DefaultType, nullableAnnotation: NullableAnnotation.Annotated, Extensions.CreateLazy(compilation, underlying));
         }
 
         /// <summary>
@@ -389,7 +389,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal sealed class EqualsComparer : EqualityComparer<TypeWithAnnotations>
         {
-            internal static readonly EqualsComparer ConsiderEverythingComparer = new EqualsComparer(TypeCompareKind.ConsiderEverything, isValueTypeOverrideOpt: null);
+            internal static readonly EqualsComparer ConsiderEverythingComparer = new(TypeCompareKind.ConsiderEverything, isValueTypeOverrideOpt: null);
 
             private readonly TypeCompareKind _compareKind;
             private readonly IReadOnlyDictionary<TypeParameterSymbol, bool> _isValueTypeOverrideOpt;

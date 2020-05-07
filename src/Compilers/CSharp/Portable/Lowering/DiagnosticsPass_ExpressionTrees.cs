@@ -30,7 +30,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             try
             {
-                var diagnosticPass = new DiagnosticsPass(compilation, diagnostics, containingSymbol);
+                var diagnosticPass = new(compilation, diagnostics, containingSymbol);
                 diagnosticPass.Visit(node);
             }
             catch (CancelledByStackGuardException ex)

@@ -670,7 +670,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     break;
                 case ObsoleteDiagnosticKind.Lazy:
                 case ObsoleteDiagnosticKind.LazyPotentiallySuppressed:
-                    info = new LazyObsoleteDiagnosticInfo(symbol, containingMember, location);
+                    info = new(symbol, containingMember, location);
                     break;
             }
 
@@ -821,7 +821,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         sub.Add(current);
                     }
-                    current = new TreeDumperNode(description, null, sub);
+                    current = new(description, null, sub);
                 }
 
                 RoslynDebug.Assert(current is object);

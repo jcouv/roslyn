@@ -56,7 +56,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var locals = ArrayBuilder<LocalSymbol>.GetInstance();
                 var countTemp = CaptureExpressionInTempIfNeeded(rewrittenCount, sideEffects, locals, SynthesizedLocalKind.Spill);
                 var stackSize = RewriteStackAllocCountToSize(countTemp, elementType);
-                stackAllocNode = new BoundConvertedStackAllocExpression(
+                stackAllocNode = new(
                     stackAllocNode.Syntax, elementType, stackSize, initializerOpt, _compilation.CreatePointerTypeSymbol(elementType));
 
                 BoundExpression constructorCall;
@@ -66,7 +66,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
                 else
                 {
-                    constructorCall = new BoundBadExpression(
+                    constructorCall = new(
                         syntax: stackAllocNode.Syntax,
                         resultKind: LookupResultKind.NotInvocable,
                         symbols: ImmutableArray<Symbol?>.Empty,

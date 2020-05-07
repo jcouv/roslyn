@@ -26,7 +26,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             out IEnumerable<Symbol> capturedInside,
             out IEnumerable<Symbol> capturedOutside)
         {
-            var walker = new ReadWriteWalker(compilation, member, node, firstInRegion, lastInRegion, unassignedVariableAddressOfSyntaxes);
+            var walker = new(compilation, member, node, firstInRegion, lastInRegion, unassignedVariableAddressOfSyntaxes);
             try
             {
                 bool badRegion = false;

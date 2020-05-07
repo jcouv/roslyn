@@ -41,11 +41,11 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
         // not 0 when in a protected region with a handler. 
         private int _tryNestingLevel;
 
-        private readonly SynthesizedLocalOrdinalsDispenser _synthesizedLocalOrdinals = new SynthesizedLocalOrdinalsDispenser();
+        private readonly SynthesizedLocalOrdinalsDispenser _synthesizedLocalOrdinals = new();
         private int _uniqueNameId;
 
         // label used when return is emitted in a form of store/goto
-        private static readonly object s_returnLabel = new object();
+        private static readonly object s_returnLabel = new();
 
         private int _asyncCatchHandlerOffset = -1;
         private ArrayBuilder<int> _asyncYieldPoints;
@@ -167,7 +167,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                     if (_ilEmitStyle == ILEmitStyle.Debug && bodySyntax != null)
                     {
                         int syntaxOffset = _method.CalculateLocalSyntaxOffset(LambdaUtilities.GetDeclaratorPosition(bodySyntax), bodySyntax.SyntaxTree);
-                        var localSymbol = new SynthesizedLocal(_method, _method.ReturnTypeWithAnnotations, SynthesizedLocalKind.FunctionReturnValue, bodySyntax);
+                        var localSymbol = new(_method, _method.ReturnTypeWithAnnotations, SynthesizedLocalKind.FunctionReturnValue, bodySyntax);
 
                         result = _builder.LocalSlotManager.DeclareLocal(
                             type: _module.Translate(localSymbol.Type, bodySyntax, _diagnostics),

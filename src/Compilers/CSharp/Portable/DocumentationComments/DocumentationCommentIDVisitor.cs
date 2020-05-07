@@ -9,7 +9,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 {
     internal sealed partial class DocumentationCommentIDVisitor : CSharpSymbolVisitor<StringBuilder, object>
     {
-        public static readonly DocumentationCommentIDVisitor Instance = new DocumentationCommentIDVisitor();
+        public static readonly DocumentationCommentIDVisitor Instance = new();
 
         private DocumentationCommentIDVisitor()
         {

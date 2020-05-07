@@ -58,7 +58,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             TypeSymbol explicitInterfaceType;
             string discardedAliasQualifier;
             var name = ExplicitInterfaceHelpers.GetMemberNameAndInterfaceSymbol(bodyBinder, interfaceSpecifier, nameToken.ValueText, diagnostics, out explicitInterfaceType, out discardedAliasQualifier);
-            var location = new SourceLocation(nameToken);
+            var location = new(nameToken);
 
             var methodKind = interfaceSpecifier == null
                 ? MethodKind.Ordinary
@@ -843,11 +843,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             OverriddenMethodTypeParameterMapBase typeMap = null;
             if (this.IsOverride)
             {
-                typeMap = new OverriddenMethodTypeParameterMap(this);
+                typeMap = new(this);
             }
             else if (this.IsExplicitInterfaceImplementation)
             {
-                typeMap = new ExplicitInterfaceMethodTypeParameterMap(this);
+                typeMap = new(this);
             }
 
             var typeParameters = syntax.TypeParameterList.Parameters;
@@ -1174,8 +1174,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             var typeParameters2 = implementation.TypeParameters;
             var indexedTypeParameters = IndexedTypeParameterSymbol.Take(arity);
-            var typeMap1 = new TypeMap(typeParameters1, indexedTypeParameters, allowAlpha: true);
-            var typeMap2 = new TypeMap(typeParameters2, indexedTypeParameters, allowAlpha: true);
+            var typeMap1 = new(typeParameters1, indexedTypeParameters, allowAlpha: true);
+            var typeMap2 = new(typeParameters2, indexedTypeParameters, allowAlpha: true);
 
             // Report any mismatched method constraints.
             for (int i = 0; i < arity; i++)

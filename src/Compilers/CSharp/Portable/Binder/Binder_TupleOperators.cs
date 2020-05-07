@@ -150,7 +150,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             LookupResultKind resultKind;
             ImmutableArray<MethodSymbol> originalUserDefinedOperators;
-            BoundExpression comparisonResult = new BoundTupleOperandPlaceholder(node, type);
+            BoundExpression comparisonResult = new(node, type);
             UnaryOperatorAnalysisResult best = this.UnaryOperatorOverloadResolution(boolOpKind, comparisonResult, node, diagnostics, out resultKind, out originalUserDefinedOperators);
             if (best.HasValue)
             {

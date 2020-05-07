@@ -253,7 +253,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Retargeting
 
         private static ExtendedErrorTypeSymbol CyclicInheritanceError(RetargetingNamedTypeSymbol type, TypeSymbol declaredBase)
         {
-            var info = new CSDiagnosticInfo(ErrorCode.ERR_ImportedCircularBase, declaredBase, type);
+            var info = new(ErrorCode.ERR_ImportedCircularBase, declaredBase, type);
             return new ExtendedErrorTypeSymbol(declaredBase, LookupResultKind.NotReferencable, info, true);
         }
 

@@ -32,7 +32,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             string scriptClassName,
             bool isSubmission)
         {
-            var builder = new DeclarationTreeBuilder(syntaxTree, scriptClassName, isSubmission);
+            var builder = new(syntaxTree, scriptClassName, isSubmission);
             return (RootSingleNamespaceDeclaration)builder.Visit(syntaxTree.GetRoot());
         }
 
@@ -174,7 +174,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var fullName = _scriptClassName.Split('.');
 
             // Note: The symbol representing the merged declarations uses parentReference to enumerate non-type members.
-            SingleNamespaceOrTypeDeclaration decl = new SingleTypeDeclaration(
+            SingleNamespaceOrTypeDeclaration decl = new(
                 kind: _isSubmission ? DeclarationKind.Submission : DeclarationKind.Script,
                 name: fullName.Last(),
                 arity: 0,

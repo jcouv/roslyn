@@ -98,7 +98,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private ExpressionLambdaRewriter(TypeCompilationState compilationState, TypeMap typeMap, SyntaxNode node, int recursionDepth, DiagnosticBag diagnostics)
         {
-            _bound = new SyntheticBoundNodeFactory(null, compilationState.Type, node, compilationState, diagnostics);
+            _bound = new(null, compilationState.Type, node, compilationState, diagnostics);
             _ignoreAccessibility = compilationState.ModuleBuilderOpt.IgnoreAccessibility;
             _int32Type = _bound.SpecialType(SpecialType.System_Int32);
             _objectType = _bound.SpecialType(SpecialType.System_Object);
@@ -113,7 +113,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             try
             {
-                var r = new ExpressionLambdaRewriter(compilationState, typeMap, node.Syntax, recursionDepth, diagnostics);
+                var r = new(compilationState, typeMap, node.Syntax, recursionDepth, diagnostics);
                 var result = r.VisitLambdaInternal(node);
                 if (!node.Type.Equals(result.Type, TypeCompareKind.IgnoreNullableModifiersForReferenceTypes))
                 {

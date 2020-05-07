@@ -13,7 +13,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 {
     internal sealed class MessageProvider : CommonMessageProvider, IObjectWritable
     {
-        public static readonly MessageProvider Instance = new MessageProvider();
+        public static readonly MessageProvider Instance = new();
 
         static MessageProvider()
         {
@@ -95,7 +95,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override Diagnostic CreateDiagnostic(int code, Location location, params object[] args)
         {
-            var info = new CSDiagnosticInfo((ErrorCode)code, args, ImmutableArray<Symbol>.Empty, ImmutableArray<Location>.Empty);
+            var info = new((ErrorCode)code, args, ImmutableArray<Symbol>.Empty, ImmutableArray<Location>.Empty);
             return new CSDiagnostic(info, location);
         }
 

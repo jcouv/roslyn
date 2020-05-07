@@ -106,7 +106,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 explicitCastInCode &&
                 IsFloatingPointExpressionOfUnknownPrecision(result))
             {
-                result = new BoundConversion(
+                result = new(
                     syntax,
                     result,
                     Conversion.Identity,
@@ -294,7 +294,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             constantValueOpt,
                             rewrittenType.GetNullableUnderlyingType());
 
-                        var outerConversion = new Conversion(ConversionKind.ImplicitNullable, Conversion.IdentityUnderlying);
+                        var outerConversion = new(ConversionKind.ImplicitNullable, Conversion.IdentityUnderlying);
                         return MakeConversionNode(
                             oldNodeOpt,
                             syntax,
@@ -830,7 +830,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 var method = (MethodSymbol)_compilation.Assembly.GetSpecialTypeMember(DecimalConversionMethod(typeFromUnderlying, typeToUnderlying));
                 var conversionKind = conversion.Kind.IsImplicitConversion() ? ConversionKind.ImplicitUserDefined : ConversionKind.ExplicitUserDefined;
-                var result = new BoundConversion(syntax, rewrittenOperand, new Conversion(conversionKind, method, false), @checked, explicitCastInCode: explicitCastInCode, conversionGroup, constantValueOpt: null, rewrittenType);
+                var result = new(syntax, rewrittenOperand, new Conversion(conversionKind, method, false), @checked, explicitCastInCode: explicitCastInCode, conversionGroup, constantValueOpt: null, rewrittenType);
                 return result;
             }
             else
@@ -873,7 +873,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             BoundExpression condition = MakeNullableHasValue(syntax, boundTemp);
-            BoundExpression consequence = new BoundObjectCreationExpression(
+            BoundExpression consequence = new(
                 syntax,
                 UnsafeGetNullableMethod(syntax, type, SpecialMember.System_Nullable_T__ctor),
                 null,
@@ -883,7 +883,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     conversion.UnderlyingConversions[0],
                     type.GetNullableUnderlyingType(),
                     @checked));
-            BoundExpression alternative = new BoundDefaultExpression(syntax, type);
+            BoundExpression alternative = new(syntax, type);
             BoundExpression conditionalExpression = RewriteConditionalOperator(
                 syntax: syntax,
                 rewrittenCondition: condition,
@@ -1135,7 +1135,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression consequence = MakeLiftedUserDefinedConversionConsequence(userDefinedCall, rewrittenType);
 
             // default(R?)
-            BoundExpression alternative = new BoundDefaultExpression(syntax, rewrittenType);
+            BoundExpression alternative = new(syntax, rewrittenType);
 
             // temp.HasValue ? new R?(op_Whatever(temp.GetValueOrDefault())) : default(R?)
             BoundExpression conditionalExpression = RewriteConditionalOperator(
@@ -1417,7 +1417,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (_inExpressionLambda)
             {
                 ConversionKind conversionKind = isImplicit ? ConversionKind.ImplicitUserDefined : ConversionKind.ExplicitUserDefined;
-                var conversion = new Conversion(conversionKind, method, isExtensionMethod: false);
+                var conversion = new(conversionKind, method, isExtensionMethod: false);
 
                 return new BoundConversion(syntax, operand, conversion, @checked: false, explicitCastInCode: false, conversionGroupOpt: null, constantValueOpt: constantValueOpt, type: toType);
             }

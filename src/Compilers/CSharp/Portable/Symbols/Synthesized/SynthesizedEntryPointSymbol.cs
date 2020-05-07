@@ -338,7 +338,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 var arguments = Parameters.SelectAsArray((p, s) => (BoundExpression)new BoundParameter(s, p, p.Type), _userMainReturnTypeSyntax);
 
                 // Main(args) or Main()
-                BoundCall userMainInvocation = new BoundCall(
+                BoundCall userMainInvocation = new(
                         syntax: _userMainReturnTypeSyntax,
                         receiverOpt: null,
                         method: userMain,
@@ -441,7 +441,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             // private static void <Main>()
             // {
-            //     var script = new Script();
+            //     var script = new();
             //     script.<Initialize>().GetAwaiter().GetResult();
             // }
             internal override BoundBlock CreateBody(DiagnosticBag diagnostics)
@@ -452,11 +452,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 // Creates a new top-level binder that just contains the global imports for the compilation.
                 // The imports are required if a consumer of the scripting API is using a Task implementation 
                 // that uses extension methods.
-                var binder = new InContainerBinder(
+                var binder = new(
                     container: null,
                     next: new BuckStopsHereBinder(compilation),
                     imports: compilation.GlobalImports);
-                binder = new InContainerBinder(compilation.GlobalNamespace, binder);
+                binder = new(compilation.GlobalNamespace, binder);
 
                 var ctor = _containingType.GetScriptConstructor();
                 Debug.Assert(ctor.ParameterCount == 0);
@@ -464,7 +464,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 var initializer = _containingType.GetScriptInitializer();
                 Debug.Assert(initializer.ParameterCount == 0);
 
-                var scriptLocal = new BoundLocal(
+                var scriptLocal = new(
                     syntax,
                     new SynthesizedLocal(this, TypeWithAnnotations.Create(_containingType), SynthesizedLocalKind.LoweringTemp),
                     null,
@@ -486,7 +486,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return new BoundBlock(syntax,
                     ImmutableArray.Create<LocalSymbol>(scriptLocal.LocalSymbol),
                     ImmutableArray.Create<BoundStatement>(
-                        // var script = new Script();
+                        // var script = new();
                         new BoundExpressionStatement(
                             syntax,
                             new BoundAssignmentOperator(
@@ -555,8 +555,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 var initializer = _containingType.GetScriptInitializer();
                 Debug.Assert(initializer.ParameterCount == 0);
 
-                var submissionArrayParameter = new BoundParameter(syntax, _parameters[0]) { WasCompilerGenerated = true };
-                var submissionLocal = new BoundLocal(
+                var submissionArrayParameter = new(syntax, _parameters[0]) { WasCompilerGenerated = true };
+                var submissionLocal = new(
                     syntax,
                     new SynthesizedLocal(this, TypeWithAnnotations.Create(_containingType), SynthesizedLocalKind.LoweringTemp),
                     null,
@@ -564,7 +564,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 { WasCompilerGenerated = true };
 
                 // var submission = new Submission#N(submissionArray);
-                var submissionAssignment = new BoundExpressionStatement(
+                var submissionAssignment = new(
                     syntax,
                     new BoundAssignmentOperator(
                         syntax,
@@ -592,7 +592,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     submissionLocal,
                     initializer);
                 Debug.Assert(TypeSymbol.Equals(initializeResult.Type, _returnType.Type, TypeCompareKind.ConsiderEverything2));
-                var returnStatement = new BoundReturnStatement(
+                var returnStatement = new(
                     syntax,
                     RefKind.None,
                     initializeResult)

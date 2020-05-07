@@ -56,7 +56,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
 
             if (this.IsIncremental || allowModeReset)
             {
-                _firstBlender = new Blender(lexer, oldTree, changes);
+                _firstBlender = new(lexer, oldTree, changes);
                 _blendedTokens = s_blendedNodesPool.Allocate();
             }
             else
@@ -105,7 +105,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             _prevTokenTrailingTrivia = null;
             if (this.IsIncremental || _allowModeReset)
             {
-                _firstBlender = new Blender(this.lexer, null, null);
+                _firstBlender = new(this.lexer, null, null);
             }
         }
 
@@ -869,7 +869,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
         /// </summary>
         internal SyntaxToken AddSkippedSyntax(SyntaxToken target, GreenNode skippedSyntax, bool trailing)
         {
-            var builder = new SyntaxListBuilder(4);
+            var builder = new(4);
 
             // the error in we'll attach to the node
             SyntaxDiagnosticInfo diagnostic = null;
@@ -898,7 +898,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                             for (int i = 0; i < tokenDiagnostics.Length; i++)
                             {
                                 var d = (SyntaxDiagnosticInfo)tokenDiagnostics[i];
-                                tokenDiagnostics[i] = new SyntaxDiagnosticInfo(d.Offset - leadingWidth, d.Width, (ErrorCode)d.Code, d.Arguments);
+                                tokenDiagnostics[i] = new(d.Offset - leadingWidth, d.Width, (ErrorCode)d.Code, d.Arguments);
                             }
                         }
 
@@ -951,7 +951,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                     for (int i = 0; i < targetDiagnostics.Length; i++)
                     {
                         var d = (SyntaxDiagnosticInfo)targetDiagnostics[i];
-                        targetDiagnostics[i] = new SyntaxDiagnosticInfo(d.Offset + triviaWidth, d.Width, (ErrorCode)d.Code, d.Arguments);
+                        targetDiagnostics[i] = new(d.Offset + triviaWidth, d.Width, (ErrorCode)d.Code, d.Arguments);
                     }
                 }
 

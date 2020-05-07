@@ -32,7 +32,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
 
     internal class DocumentationCommentParser : SyntaxParser
     {
-        private readonly SyntaxListPool _pool = new SyntaxListPool();
+        private readonly SyntaxListPool _pool = new();
         private bool _isDelimited;
 
         internal DocumentationCommentParser(Lexer lexer, LexerMode modeflags)
@@ -797,7 +797,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
             if (InCref)
             {
                 SyntaxDiagnosticInfo rawInfo = base.GetExpectedTokenError(expected, actual, offset, length);
-                SyntaxDiagnosticInfo crefInfo = new SyntaxDiagnosticInfo(rawInfo.Offset, rawInfo.Width, ErrorCode.WRN_ErrorOverride, rawInfo, rawInfo.Code);
+                SyntaxDiagnosticInfo crefInfo = new(rawInfo.Offset, rawInfo.Width, ErrorCode.WRN_ErrorOverride, rawInfo, rawInfo.Code);
                 return crefInfo;
             }
 
@@ -1007,8 +1007,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                     operatorToken = AddTrailingSkippedSyntax(operatorToken, EatToken());
                 }
 
-                SyntaxDiagnosticInfo rawInfo = new SyntaxDiagnosticInfo(offset, width, ErrorCode.ERR_OvlOperatorExpected);
-                SyntaxDiagnosticInfo crefInfo = new SyntaxDiagnosticInfo(offset, width, ErrorCode.WRN_ErrorOverride, rawInfo, rawInfo.Code);
+                SyntaxDiagnosticInfo rawInfo = new(offset, width, ErrorCode.ERR_OvlOperatorExpected);
+                SyntaxDiagnosticInfo crefInfo = new(offset, width, ErrorCode.WRN_ErrorOverride, rawInfo, rawInfo.Code);
 
                 operatorToken = WithAdditionalDiagnostics(operatorToken, crefInfo);
             }
@@ -1055,8 +1055,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
                     // Add an appropriate diagnostic.
                     const int offset = 0;
                     int width = nonOverloadableOperator.Width;
-                    SyntaxDiagnosticInfo rawInfo = new SyntaxDiagnosticInfo(offset, width, ErrorCode.ERR_OvlOperatorExpected);
-                    SyntaxDiagnosticInfo crefInfo = new SyntaxDiagnosticInfo(offset, width, ErrorCode.WRN_ErrorOverride, rawInfo, rawInfo.Code);
+                    SyntaxDiagnosticInfo rawInfo = new(offset, width, ErrorCode.ERR_OvlOperatorExpected);
+                    SyntaxDiagnosticInfo crefInfo = new(offset, width, ErrorCode.WRN_ErrorOverride, rawInfo, rawInfo.Code);
                     operatorToken = WithAdditionalDiagnostics(operatorToken, crefInfo);
                 }
             }

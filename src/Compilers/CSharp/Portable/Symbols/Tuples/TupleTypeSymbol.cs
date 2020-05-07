@@ -647,7 +647,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                 {
                                     // This is a matching field, but it is in the extension tuple
                                     // Make it virtual since we are not at the top level
-                                    defaultTupleField = new TupleVirtualElementFieldSymbol(this,
+                                    defaultTupleField = new(this,
                                                                                             fieldSymbol,
                                                                                             defaultName,
                                                                                             tupleFieldIndex,
@@ -661,7 +661,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                     Debug.Assert(fieldSymbol.Name == defaultName, "top level underlying field must match default name");
 
                                     // Add the underlying/real field as an element (wrapping mainly to capture location). It should have the default name.
-                                    defaultTupleField = new TupleElementFieldSymbol(this,
+                                    defaultTupleField = new(this,
                                                                                     fieldSymbol,
                                                                                     tupleFieldIndex,
                                                                                     locations,
@@ -768,7 +768,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     var defaultImplicitlyDeclared = providedName != defaultName;
 
                     // Add a field with default name. It should be present regardless.
-                    TupleErrorFieldSymbol defaultTupleField = new TupleErrorFieldSymbol(this,
+                    TupleErrorFieldSymbol defaultTupleField = new(this,
                                                                                         defaultName,
                                                                                         i,
                                                                                         defaultImplicitlyDeclared ? null : location,

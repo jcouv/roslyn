@@ -156,7 +156,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 var substituted = new ParameterSymbol[count];
                 for (int i = 0; i < count; i++)
                 {
-                    substituted[i] = new SubstitutedParameterSymbol(this, _containingType.TypeSubstitution, unsubstitutedParameters[i]);
+                    substituted[i] = new(this, _containingType.TypeSubstitution, unsubstitutedParameters[i]);
                 }
                 return substituted.AsImmutableOrNull();
             }

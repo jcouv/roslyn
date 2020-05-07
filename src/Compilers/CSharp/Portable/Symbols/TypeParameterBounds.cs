@@ -15,7 +15,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     /// </summary>
     internal sealed class TypeParameterBounds
     {
-        public static readonly TypeParameterBounds Unset = new TypeParameterBounds();
+        public static readonly TypeParameterBounds Unset = new();
 
         /// <summary>
         /// Creates a "late" bound instance with all fields set.

@@ -1102,7 +1102,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private class NameCollisionForAddedModulesTypeComparer : IComparer<NamedTypeSymbol>
         {
-            public static readonly NameCollisionForAddedModulesTypeComparer Singleton = new NameCollisionForAddedModulesTypeComparer();
+            public static readonly NameCollisionForAddedModulesTypeComparer Singleton = new();
 
             private NameCollisionForAddedModulesTypeComparer() { }
 
@@ -1380,7 +1380,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         {
                             if (wellKnownData == null)
                             {
-                                wellKnownData = new CommonAssemblyWellKnownAttributeData();
+                                wellKnownData = new();
                             }
 
                             forwardedTypes = ((CommonAssemblyWellKnownAttributeData)wellKnownData).ForwardedTypes;
@@ -1635,13 +1635,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                         // NOTE: Dev10 handles missing enum value.
                         object constantValue = (object)fieldRequestMinimum == null || fieldRequestMinimum.HasUseSiteError ? 0 : fieldRequestMinimum.ConstantValue;
-                        var typedConstantRequestMinimum = new TypedConstant(securityActionType, TypedConstantKind.Enum, constantValue);
+                        var typedConstantRequestMinimum = new(securityActionType, TypedConstantKind.Enum, constantValue);
 
                         var boolType = _compilation.GetSpecialType(SpecialType.System_Boolean);
                         Debug.Assert(!boolType.HasUseSiteError,
                             "Use site errors should have been checked ahead of time (type bool).");
 
-                        var typedConstantTrue = new TypedConstant(boolType, TypedConstantKind.Primitive, value: true);
+                        var typedConstantTrue = new(boolType, TypedConstantKind.Primitive, value: true);
 
                         var attribute = _compilation.TrySynthesizeAttribute(
                             WellKnownMember.System_Security_Permissions_SecurityPermissionAttribute__ctor,
@@ -1773,7 +1773,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     Debug.Assert(!int32Type.HasUseSiteError,
                         "Use site errors should have been checked ahead of time (type int).");
 
-                    var typedConstantNoStringInterning = new TypedConstant(int32Type, TypedConstantKind.Primitive, Cci.Constants.CompilationRelaxations_NoStringInterning);
+                    var typedConstantNoStringInterning = new(int32Type, TypedConstantKind.Primitive, Cci.Constants.CompilationRelaxations_NoStringInterning);
 
                     AddSynthesizedAttribute(ref attributes, _compilation.TrySynthesizeAttribute(
                         WellKnownMember.System_Runtime_CompilerServices_CompilationRelaxationsAttribute__ctorInt32,
@@ -1792,7 +1792,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     var boolType = _compilation.GetSpecialType(SpecialType.System_Boolean);
                     Debug.Assert(!boolType.HasUseSiteError, "Use site errors should have been checked ahead of time (type bool).");
 
-                    var typedConstantTrue = new TypedConstant(boolType, TypedConstantKind.Primitive, value: true);
+                    var typedConstantTrue = new(boolType, TypedConstantKind.Primitive, value: true);
 
                     AddSynthesizedAttribute(ref attributes, _compilation.TrySynthesizeAttribute(
                         WellKnownMember.System_Runtime_CompilerServices_RuntimeCompatibilityAttribute__ctor,
@@ -1826,7 +1826,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     var stringType = _compilation.GetSpecialType(SpecialType.System_String);
                     Debug.Assert(!stringType.HasUseSiteError, "Use site errors should have been checked ahead of time (type string).");
 
-                    var typedConstant = new TypedConstant(stringType, TypedConstantKind.Primitive, _compilation.Options.CryptoKeyContainer);
+                    var typedConstant = new(stringType, TypedConstantKind.Primitive, _compilation.Options.CryptoKeyContainer);
                     AddSynthesizedAttribute(ref attributes, _compilation.TrySynthesizeAttribute(WellKnownMember.System_Reflection_AssemblyKeyNameAttribute__ctor, ImmutableArray.Create(typedConstant)));
                 }
 
@@ -1836,7 +1836,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     var stringType = _compilation.GetSpecialType(SpecialType.System_String);
                     Debug.Assert(!stringType.HasUseSiteError, "Use site errors should have been checked ahead of time (type string).");
 
-                    var typedConstant = new TypedConstant(stringType, TypedConstantKind.Primitive, _compilation.Options.CryptoKeyFile);
+                    var typedConstant = new(stringType, TypedConstantKind.Primitive, _compilation.Options.CryptoKeyFile);
                     AddSynthesizedAttribute(ref attributes, _compilation.TrySynthesizeAttribute(WellKnownMember.System_Reflection_AssemblyKeyFileAttribute__ctor, ImmutableArray.Create(typedConstant)));
                 }
             }

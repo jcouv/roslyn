@@ -193,7 +193,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 int endLocation = lastInRegion.Syntax.Span.End;
                 int length = endLocation - startLocation;
                 Debug.Assert(length >= 0, "last comes before first");
-                this.RegionSpan = new TextSpan(startLocation, length);
+                this.RegionSpan = new(startLocation, length);
             }
 
             PendingBranches = ArrayBuilder<PendingBranch>.GetInstance();
@@ -223,7 +223,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 #if DEBUG
         protected string DumpLabels()
         {
-            StringBuilder result = new StringBuilder();
+            StringBuilder result = new();
             result.Append("Labels{");
             bool first = true;
             foreach (var key in _labels.Keys)
@@ -863,7 +863,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         protected SavedPending SavePending()
         {
             Debug.Assert(!this.IsConditionalState);
-            var result = new SavedPending(PendingBranches, _labelsSeen);
+            var result = new(PendingBranches, _labelsSeen);
 
             PendingBranches = ArrayBuilder<PendingBranch>.GetInstance();
             _labelsSeen = PooledHashSet<BoundStatement>.GetInstance();

@@ -256,7 +256,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                             // now create symbols we couldn't find.
                             for (; i < namespaces.Length; i++)
                             {
-                                container = new MissingNamespaceSymbol(container, namespaces[i]);
+                                container = new(container, namespaces[i]);
                             }
                         }
 

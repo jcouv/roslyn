@@ -457,7 +457,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                 var subnamespace = (NamespaceSymbol)result.GetMembers(partName).FirstOrDefault(m => m.Kind == SymbolKind.Namespace);
                 if (subnamespace == null)
                 {
-                    subnamespace = new SynthesizedNamespaceSymbol(result, partName);
+                    subnamespace = new(result, partName);
                     AddSynthesizedDefinition(result, subnamespace);
                 }
 

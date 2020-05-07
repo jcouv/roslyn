@@ -110,7 +110,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 LabelSymbol proxy;
                 if (!proxyLabels.TryGetValue(label, out proxy))
                 {
-                    proxy = new GeneratedLabelSymbol("proxy" + label.Name);
+                    proxy = new("proxy" + label.Name);
                     proxyLabels.Add(label, proxy);
                 }
 

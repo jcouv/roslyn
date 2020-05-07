@@ -354,8 +354,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     Debug.Assert(node == FindNodeToAnalyze(node));
                     Debug.Assert(topLevelMethod != null);
 
-                    var rootScope = new Scope(parent: null, boundNode: node, containingFunction: null);
-                    var builder = new ScopeTreeBuilder(
+                    var rootScope = new(parent: null, boundNode: node, containingFunction: null);
+                    var builder = new(
                         rootScope,
                         topLevelMethod,
                         methodsConvertedToDelegates,
@@ -558,7 +558,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     // Nested function is declared (lives) in the parent scope, but its
                     // variables are in a nested scope
-                    var function = new NestedFunction(functionSymbol, body.Syntax.GetReference());
+                    var function = new(functionSymbol, body.Syntax.GetReference());
                     _currentScope.NestedFunctions.Add(function);
 
                     var oldFunction = _currentFunction;
@@ -722,7 +722,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         Debug.Assert(parentScope.BoundNode != node);
 
-                        var newScope = new Scope(parentScope, node, currentFunction);
+                        var newScope = new(parentScope, node, currentFunction);
                         parentScope.NestedScopes.Add(newScope);
                         return newScope;
                     }

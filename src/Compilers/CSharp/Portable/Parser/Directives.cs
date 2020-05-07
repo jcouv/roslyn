@@ -115,8 +115,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
     [DebuggerDisplay("{GetDebuggerDisplay(), nq}")]
     internal struct DirectiveStack
     {
-        public static readonly DirectiveStack Empty = new DirectiveStack(ConsList<Directive>.Empty);
-        public static readonly DirectiveStack Null = new DirectiveStack(null);
+        public static readonly DirectiveStack Empty = new(ConsList<Directive>.Empty);
+        public static readonly DirectiveStack Null = new(null);
 
         private readonly ConsList<Directive> _directives;
 
@@ -352,7 +352,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
 
         private string GetDebuggerDisplay()
         {
-            var sb = new StringBuilder();
+            var sb = new();
             for (var current = _directives; current != null && current.Any(); current = current.Tail)
             {
                 if (sb.Length > 0)

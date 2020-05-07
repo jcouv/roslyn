@@ -26,7 +26,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             : base(next)
         {
             SwitchSyntax = switchSyntax;
-            _breakLabel = new GeneratedLabelSymbol("break");
+            _breakLabel = new("break");
         }
 
         protected bool PatternsEnabled =>
@@ -59,7 +59,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (_switchGoverningExpression == null)
             {
-                var switchGoverningDiagnostics = new DiagnosticBag();
+                var switchGoverningDiagnostics = new();
                 var boundSwitchExpression = BindSwitchGoverningExpression(switchGoverningDiagnostics);
                 _switchGoverningDiagnostics = switchGoverningDiagnostics;
                 Interlocked.CompareExchange(ref _switchGoverningExpression, boundSwitchExpression, null);
@@ -71,7 +71,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         // Default label(s) are indexed on a special DefaultKey object.
         // Invalid case labels with null constant value are indexed on the labelName.
         private Dictionary<object, SourceLabelSymbol> _lazySwitchLabelsMap;
-        private static readonly object s_defaultKey = new object();
+        private static readonly object s_defaultKey = new();
 
         private Dictionary<object, SourceLabelSymbol> LabelsByValue
         {
@@ -264,7 +264,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return ConvertPatternExpression(SwitchGoverningType, node, caseExpression, out constantValueOpt, hasErrors, diagnostics);
         }
 
-        private static readonly object s_nullKey = new object();
+        private static readonly object s_nullKey = new();
         protected static object KeyForConstant(ConstantValue constantValue)
         {
             Debug.Assert((object)constantValue != null);

@@ -144,11 +144,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                             case 0:
                                 continue; // There is no requirement to implement anything in an interface
                             case 1:
-                                implementingMemberAndDiagnostics = new SymbolAndDiagnostics(explicitImpl.Single(), ImmutableArray<Diagnostic>.Empty);
+                                implementingMemberAndDiagnostics = new(explicitImpl.Single(), ImmutableArray<Diagnostic>.Empty);
                                 break;
                             default:
-                                Diagnostic diag = new CSDiagnostic(new CSDiagnosticInfo(ErrorCode.ERR_DuplicateExplicitImpl, interfaceMember), this.Locations[0]);
-                                implementingMemberAndDiagnostics = new SymbolAndDiagnostics(null, ImmutableArray.Create(diag));
+                                Diagnostic diag = new(new CSDiagnosticInfo(ErrorCode.ERR_DuplicateExplicitImpl, interfaceMember), this.Locations[0]);
+                                implementingMemberAndDiagnostics = new(null, ImmutableArray.Create(diag));
                                 break;
                         }
                     }
@@ -202,7 +202,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         {
                             // At this point (and not before), we know that maybeWinRTEvent is definitely a WinRT event and maybeRegularEvent is definitely a regular event.
                             var args = new object[] { implementingEvent, interfaceEvent, maybeWinRTEvent, maybeRegularEvent };
-                            var info = new CSDiagnosticInfo(ErrorCode.ERR_MixingWinRTEventWithRegular, args, ImmutableArray<Symbol>.Empty, ImmutableArray.Create<Location>(this.Locations[0]));
+                            var info = new(ErrorCode.ERR_MixingWinRTEventWithRegular, args, ImmutableArray<Symbol>.Empty, ImmutableArray.Create<Location>(this.Locations[0]));
                             diagnostics.Add(info, implementingEvent.Locations[0]);
                         }
                     }

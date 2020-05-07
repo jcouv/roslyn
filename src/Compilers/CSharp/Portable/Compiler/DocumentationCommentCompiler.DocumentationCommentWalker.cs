@@ -69,9 +69,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 ref HashSet<TypeParameterSymbol> documentedTypeParameters)
             {
                 PooledStringBuilder pooled = PooledStringBuilder.GetInstance();
-                using (StringWriter writer = new StringWriter(pooled.Builder, CultureInfo.InvariantCulture))
+                using (StringWriter writer = new(pooled.Builder, CultureInfo.InvariantCulture))
                 {
-                    DocumentationCommentWalker walker = new DocumentationCommentWalker(compilation, diagnostics, symbol, writer, includeElementNodes, documentedParameters, documentedTypeParameters);
+                    DocumentationCommentWalker walker = new(compilation, diagnostics, symbol, writer, includeElementNodes, documentedParameters, documentedTypeParameters);
                     walker.Visit(trivia);
 
                     // Copy back out in case they have been initialized.

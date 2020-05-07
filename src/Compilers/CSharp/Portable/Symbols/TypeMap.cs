@@ -82,7 +82,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             Debug.Assert(s_emptyDictionary.IsEmpty());
         }
 
-        private static readonly TypeMap s_emptyTypeMap = new TypeMap();
+        private static readonly TypeMap s_emptyTypeMap = new();
         public static TypeMap Empty
         {
             get
@@ -106,7 +106,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             // Debug.Assert(!oldTypeParameters.Any(tp => tp is SubstitutedTypeParameterSymbol));
 
             // warning: we expose result to the SubstitutedTypeParameterSymbol constructor, below, even before it's all filled in.
-            TypeMap result = new TypeMap(this.Mapping);
+            TypeMap result = new(this.Mapping);
             ArrayBuilder<TypeParameterSymbol> newTypeParametersBuilder = ArrayBuilder<TypeParameterSymbol>.GetInstance();
 
             // The case where it is "synthesized" is when we're creating type parameters for a synthesized (generic)

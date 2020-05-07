@@ -837,7 +837,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         internal NamedTypeSymbol WithTypeArguments(ImmutableArray<TypeWithAnnotations> allTypeArguments)
         {
             var definition = this.OriginalDefinition;
-            TypeMap substitution = new TypeMap(definition.GetAllTypeParameters(), allTypeArguments);
+            TypeMap substitution = new(definition.GetAllTypeParameters(), allTypeArguments);
             return substitution.SubstituteNamedType(definition).WithTupleDataFrom(this);
         }
 
@@ -857,7 +857,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             NamedTypeSymbol result;
             if (haveChanges)
             {
-                TypeMap substitution = new TypeMap(allTypeParameters.ToImmutable(), allTypeArguments.ToImmutable());
+                TypeMap substitution = new(allTypeParameters.ToImmutable(), allTypeArguments.ToImmutable());
                 result = substitution.SubstituteNamedType(this.OriginalDefinition);
             }
             else

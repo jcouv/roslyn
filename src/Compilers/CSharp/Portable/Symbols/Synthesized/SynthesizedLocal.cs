@@ -181,7 +181,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal string DumperString()
         {
-            var builder = new StringBuilder();
+            var builder = new();
             builder.Append(_type.ToDisplayString(SymbolDisplayFormat.TestFormat));
             builder.Append(' ');
             builder.Append(_kind.ToString());
@@ -193,7 +193,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         override internal string GetDebuggerDisplay()
         {
-            var builder = new StringBuilder();
+            var builder = new();
             builder.Append('<');
             builder.Append(_kind.ToString());
             builder.Append('>');

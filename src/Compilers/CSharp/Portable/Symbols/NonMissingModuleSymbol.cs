@@ -105,7 +105,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                         ErrorCode.WRN_UnifyReferenceBldRev : ErrorCode.WRN_UnifyReferenceMajMin;
 
                     // warning: Assuming assembly reference '{0}' used by '{1}' matches identity '{2}' of '{3}', you may need to supply runtime policy.
-                    info = new CSDiagnosticInfo(
+                    info = new(
                         warning,
                         new object[]
                         {
@@ -122,7 +122,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     // unified with a definition whose version is lower than the reference
 
                     // error: Assembly '{0}' with identity '{1}' uses '{2}' which has a higher version than referenced assembly '{3}' with identity '{4}'
-                    info = new CSDiagnosticInfo(
+                    info = new(
                         ErrorCode.ERR_AssemblyMatchBadVersion,
                         new object[]
                         {

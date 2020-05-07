@@ -159,11 +159,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                         if (conflicts.Item1 is null)
                         {
                             Debug.Assert(conflicts.Item2 is null);
-                            errorInfo = new CSDiagnosticInfo(ErrorCode.ERR_PredefinedValueTupleTypeNotFound, emittedName.FullName);
+                            errorInfo = new(ErrorCode.ERR_PredefinedValueTupleTypeNotFound, emittedName.FullName);
                         }
                         else
                         {
-                            errorInfo = new CSDiagnosticInfo(ErrorCode.ERR_PredefinedValueTupleTypeAmbiguous3, emittedName.FullName, conflicts.Item1, conflicts.Item2);
+                            errorInfo = new(ErrorCode.ERR_PredefinedValueTupleTypeAmbiguous3, emittedName.FullName, conflicts.Item1, conflicts.Item2);
                         }
 
                         result = new MissingMetadataTypeSymbol.TopLevel(this.Assembly.Modules[0], ref emittedName, type, errorInfo);
@@ -686,7 +686,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 constantVal |= enableEncDebuggingMode.GetConstantValue(ConstantFieldsInProgress.Empty, earlyDecodingWellKnownAttributes: false).Int32Value;
             }
 
-            var typedConstantDebugMode = new TypedConstant(debuggingModesType, TypedConstantKind.Enum, constantVal);
+            var typedConstantDebugMode = new(debuggingModesType, TypedConstantKind.Enum, constantVal);
 
             return TrySynthesizeAttribute(
                 WellKnownMember.System_Diagnostics_DebuggableAttribute__ctorDebuggingModes,
@@ -963,7 +963,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal class SpecialMembersSignatureComparer : SignatureComparer<MethodSymbol, FieldSymbol, PropertySymbol, TypeSymbol, ParameterSymbol>
         {
             // Fields
-            public static readonly SpecialMembersSignatureComparer Instance = new SpecialMembersSignatureComparer();
+            public static readonly SpecialMembersSignatureComparer Instance = new();
 
             // Methods
             protected SpecialMembersSignatureComparer()

@@ -276,7 +276,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         protected void GenerateMethodBodyCore(TypeCompilationState compilationState, DiagnosticBag diagnostics)
         {
-            var factory = new SyntheticBoundNodeFactory(this, this.GetNonNullSyntaxNode(), compilationState, diagnostics);
+            var factory = new(this, this.GetNonNullSyntaxNode(), compilationState, diagnostics);
             factory.CurrentFunction = this;
             if (ContainingType.BaseTypeNoUseSiteDiagnostics is MissingMetadataTypeSymbol)
             {

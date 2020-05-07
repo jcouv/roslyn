@@ -120,7 +120,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         }
 
                         // We mark any subsumed sections as erroneous for the benefit of flow analysis
-                        newLabel = new BoundSwitchLabel(label.Syntax, label.Label, label.Pattern, label.WhenClause, hasErrors: true);
+                        newLabel = new(label.Syntax, label.Label, label.Pattern, label.WhenClause, hasErrors: true);
                     }
 
                     labelBuilder.Add(newLabel);
@@ -254,7 +254,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case SyntaxKind.DefaultSwitchLabel:
                     {
                         var defaultLabelSyntax = (DefaultSwitchLabelSyntax)node;
-                        var pattern = new BoundDiscardPattern(node, SwitchGoverningType);
+                        var pattern = new(node, SwitchGoverningType);
                         bool hasErrors = pattern.HasErrors;
                         if (defaultLabel != null)
                         {
@@ -266,7 +266,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         {
                             // Note that this is semantically last! The caller will place it in the decision dag
                             // in the final position.
-                            return defaultLabel = new BoundSwitchLabel(node, label, pattern, null, hasErrors);
+                            return defaultLabel = new(node, label, pattern, null, hasErrors);
                         }
                     }
 

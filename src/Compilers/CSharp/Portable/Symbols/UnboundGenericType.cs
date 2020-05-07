@@ -59,7 +59,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return result.ToImmutableAndFree();
         }
 
-        public static readonly ErrorTypeSymbol Instance = new UnboundArgumentErrorTypeSymbol(string.Empty, new CSDiagnosticInfo(ErrorCode.ERR_UnexpectedUnboundGenericName));
+        public static readonly ErrorTypeSymbol Instance = new(string.Empty, new CSDiagnosticInfo(ErrorCode.ERR_UnexpectedUnboundGenericName));
 
         private readonly string _name;
         private readonly DiagnosticInfo _errorInfo;

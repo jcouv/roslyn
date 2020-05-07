@@ -49,8 +49,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             DiagnosticBag diagnostics)
         {
             // Note that these labels are for the convenience of the compilation of patterns, and are not actually emitted into the lowered code.
-            LabelSymbol whenTrueLabel = new GeneratedLabelSymbol("isPatternSuccess");
-            LabelSymbol whenFalseLabel = new GeneratedLabelSymbol("isPatternFailure");
+            LabelSymbol whenTrueLabel = new("isPatternSuccess");
+            LabelSymbol whenFalseLabel = new("isPatternFailure");
             BoundDecisionDag decisionDag = DecisionDagBuilder.CreateDecisionDagForIsPattern(
                 this.Compilation, pattern.Syntax, expression, pattern, whenTrueLabel: whenTrueLabel, whenFalseLabel: whenFalseLabel, diagnostics);
             if (!hasErrors && !decisionDag.ReachableLabels.Contains(whenTrueLabel))
@@ -175,7 +175,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (convertedExpression.Type is null && constantValueOpt != ConstantValue.Null)
             {
                 Debug.Assert(hasErrors);
-                convertedExpression = new BoundConversion(
+                convertedExpression = new(
                     convertedExpression.Syntax, convertedExpression, Conversion.NoConversion, isBaseConversion: false, @checked: false,
                     explicitCastInCode: false, constantValueOpt: constantValueOpt, conversionGroupOpt: null, type: CreateErrorType(), hasErrors: true)
                 { WasCompilerGenerated = true };
@@ -403,7 +403,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             TypeWithAnnotations declType = BindType(typeSyntax, diagnostics, out AliasSymbol aliasOpt);
             Debug.Assert(declType.HasType);
             Debug.Assert(typeSyntax.Kind() != SyntaxKind.NullableType); // the syntax does not permit nullable annotations
-            BoundTypeExpression boundDeclType = new BoundTypeExpression(typeSyntax, aliasOpt, typeWithAnnotations: declType);
+            BoundTypeExpression boundDeclType = new(typeSyntax, aliasOpt, typeWithAnnotations: declType);
             hasErrors |= CheckValidPatternType(typeSyntax, inputType, declType.Type, patternTypeWasInSource: true, diagnostics: diagnostics);
             return boundDeclType;
         }
@@ -439,7 +439,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             hasErrors = CheckRestrictedTypeInAsyncMethod(this.ContainingMemberOrLambda, declType.Type, diagnostics, typeSyntax ?? (SyntaxNode)designation);
 
                         variableSymbol = localSymbol;
-                        variableAccess = new BoundLocal(
+                        variableAccess = new(
                             syntax: designation, localSymbol: localSymbol, localSymbol.IsVar ? BoundLocalDeclarationKind.WithInferredType : BoundLocalDeclarationKind.WithExplicitType, constantValueOpt: null, isNullableUnknown: false, type: declType.Type);
                         return;
                     }
@@ -454,7 +454,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         BoundExpression receiver = SynthesizeReceiver(designation, expressionVariableField, diagnostics);
 
                         variableSymbol = expressionVariableField;
-                        variableAccess = new BoundFieldAccess(
+                        variableAccess = new(
                             syntax: designation, receiver: receiver, fieldSymbol: expressionVariableField, constantValueOpt: null, hasErrors: hasErrors);
                         return;
                     }
@@ -544,7 +544,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 else
                 {
                     // It is not a tuple type. Seek an appropriate Deconstruct method.
-                    var inputPlaceholder = new BoundImplicitReceiver(positionalClause, declType); // A fake receiver expression to permit us to reuse binding logic
+                    var inputPlaceholder = new(positionalClause, declType); // A fake receiver expression to permit us to reuse binding logic
                     var deconstructDiagnostics = DiagnosticBag.GetInstance();
                     BoundExpression deconstruct = MakeDeconstructInvocationExpression(
                         positionalClause.Subpatterns.Count, inputPlaceholder, positionalClause,
@@ -629,7 +629,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
                 }
 
-                var boundSubpattern = new BoundSubpattern(
+                var boundSubpattern = new(
                     subPattern,
                     parameter,
                     BindPattern(subPattern.Pattern, elementType, GetValEscape(elementType, inputValEscape), isError, diagnostics)
@@ -656,7 +656,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     diagnostics.Add(ErrorCode.ERR_ArgumentNameInITuplePattern, subpatternSyntax.NameColon.Location);
                 }
 
-                var boundSubpattern = new BoundSubpattern(
+                var boundSubpattern = new(
                     subpatternSyntax,
                     null,
                     BindPattern(subpatternSyntax.Pattern, objectType, valEscape, hasErrors: false, diagnostics));
@@ -675,7 +675,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             foreach (var variable in node.Variables)
             {
                 BoundPattern pattern = BindVarDesignation(variable, objectType, valEscape, hasErrors: false, diagnostics);
-                var boundSubpattern = new BoundSubpattern(
+                var boundSubpattern = new(
                     variable,
                     null,
                     pattern);
@@ -710,7 +710,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     foundField = CheckIsTupleElement(subpatternSyntax.NameColon.Name, (NamedTypeSymbol)declType, name, i, diagnostics);
                 }
 
-                BoundSubpattern boundSubpattern = new BoundSubpattern(
+                BoundSubpattern boundSubpattern = new(
                     subpatternSyntax,
                     foundField,
                     BindPattern(subpatternSyntax.Pattern, elementType, GetValEscape(elementType, inputValEscape), isError, diagnostics));
@@ -878,7 +878,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         BindPatternDesignation(
                             designation: node, declType: declType, inputValEscape: inputValEscape, typeSyntax: null, diagnostics: diagnostics, hasErrors: ref hasErrors,
                             variableSymbol: out Symbol variableSymbol, variableAccess: out BoundExpression variableAccess);
-                        var boundOperandType = new BoundTypeExpression(syntax: node, aliasOpt: null, typeWithAnnotations: declType); // fake a type expression for the variable's type
+                        var boundOperandType = new(syntax: node, aliasOpt: null, typeWithAnnotations: declType); // fake a type expression for the variable's type
                         // We continue to use a BoundDeclarationPattern for the var pattern, as they have more in common.
                         return new BoundDeclarationPattern(
                             node.Parent.Kind() == SyntaxKind.VarPattern ? node.Parent : node, // for `var x` use whole pattern, otherwise use designation for the syntax
@@ -906,7 +906,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         else
                         {
                             // It is not a tuple type. Seek an appropriate Deconstruct method.
-                            var inputPlaceholder = new BoundImplicitReceiver(node, strippedInputType); // A fake receiver expression to permit us to reuse binding logic
+                            var inputPlaceholder = new(node, strippedInputType); // A fake receiver expression to permit us to reuse binding logic
                             var deconstructDiagnostics = DiagnosticBag.GetInstance();
                             BoundExpression deconstruct = MakeDeconstructInvocationExpression(
                                 tupleDesignation.Variables.Count, inputPlaceholder, node, deconstructDiagnostics,
@@ -1024,7 +1024,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             DiagnosticBag diagnostics)
         {
             // TODO: consider refactoring out common code with BindObjectInitializerMember
-            BoundImplicitReceiver implicitReceiver = new BoundImplicitReceiver(memberName, inputType);
+            BoundImplicitReceiver implicitReceiver = new(memberName, inputType);
             string name = memberName.Identifier.ValueText;
 
             BoundExpression boundMember = BindInstanceMemberAccess(

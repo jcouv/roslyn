@@ -1138,7 +1138,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// of the new token.</param>
         public static SyntaxToken XmlTextNewLine(string text, bool continueXmlDocumentationComment)
         {
-            var token = new SyntaxToken(
+            var token = new(
                 InternalSyntax.SyntaxFactory.XmlTextNewLine(
                     ElasticMarker.UnderlyingNode,
                     text,
@@ -1178,7 +1178,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // TODO: [RobinSedlaczek] It is no compiler hot path here I think. But the contribution guide
             //       states to avoid LINQ (https://github.com/dotnet/roslyn/wiki/Contributing-Code). With
             //       XText we have a reference to System.Xml.Linq. Isn't this rule valid here? 
-            string encoded = new XText(value).ToString();
+            string encoded = new(value).ToString();
 
             return XmlTextLiteral(
                 TriviaList(),

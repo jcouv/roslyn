@@ -59,7 +59,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 Snapshot incrementalSnapshot = GetSnapshotForPosition(position);
                 var sharedState = _walkerSharedStates[incrementalSnapshot.SharedStateIndex];
-                var variableState = new VariableState(sharedState.VariableSlot, sharedState.VariableBySlot, sharedState.VariableTypes, incrementalSnapshot.VariableState.Clone());
+                var variableState = new(sharedState.VariableSlot, sharedState.VariableBySlot, sharedState.VariableTypes, incrementalSnapshot.VariableState.Clone());
                 return (new NullableWalker(binder.Compilation,
                                            sharedState.Symbol,
                                            useDelegateInvokeParameterTypes: false,
@@ -233,7 +233,7 @@ Now {updatedSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}");
 
                     // Note that we can't use Add here, as this is potentially not the stable
                     // state of this node and we could get updated states later.
-                    _incrementalSnapshots[node.Syntax.SpanStart] = new Snapshot(currentState.Clone(), _currentWalkerSlot);
+                    _incrementalSnapshots[node.Syntax.SpanStart] = new(currentState.Clone(), _currentWalkerSlot);
                 }
 
                 internal void SetUpdatedSymbol(BoundNode node, Symbol originalSymbol, Symbol updatedSymbol)

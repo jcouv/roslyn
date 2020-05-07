@@ -263,7 +263,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     if (fromConversion.Exists && toConversion.Exists)
                     {
                         // There is an additional spec violation in the native compiler. Suppose
-                        // we have a conversion from X-->Y and are asked to do "Y? y = new X();"  Clearly
+                        // we have a conversion from X-->Y and are asked to do "Y? y = new();"  Clearly
                         // the intention is to convert from X-->Y via the implicit conversion, and then
                         // stick a standard implicit conversion from Y-->Y? on the back end. **In this 
                         // situation, the native compiler treats the conversion as though it were
@@ -346,7 +346,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // operator in its lifted form is Y?. 
             //
             // The native compiler does not do this. Suppose we have a user-defined
-            // conversion X-->Y, and the assignment Y? y = new X(); -- the native 
+            // conversion X-->Y, and the assignment Y? y = new(); -- the native 
             // compiler will consider the converts-to type of X-->Y to be Y?, surprisingly
             // enough. 
             //
@@ -452,7 +452,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // says not to do such a lifting because Y? is not a non-nullable value type, but the native
             // compiler does so and we are being compatible with it.) That would be a half-lifted operator.
             //
-            // For example, suppose we had a conversion from X-->Y, and the assignment Y? y = new X(); --
+            // For example, suppose we had a conversion from X-->Y, and the assignment Y? y = new(); --
             // this would also be a "half lifted" conversion even though there is no "lifting" going on
             // (in the sense that we are not checking the source to see if it is null.)
             // 
@@ -856,7 +856,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // NOTE:        public static implicit operator int (Conv? C2) { return 0; }
             // NOTE:        public static int Main()
             // NOTE:        {
-            // NOTE:            Conv? D = new Conv();
+            // NOTE:            Conv? D = new();
             // NOTE:            switch(D)
             // NOTE:            {   ...
 
@@ -872,7 +872,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // NOTE:        public static implicit operator string (Conv? C2) { return 0; }
             // NOTE:        public static int Main()
             // NOTE:        {
-            // NOTE:            Conv? D = new Conv();
+            // NOTE:            Conv? D = new();
             // NOTE:            switch(D)
             // NOTE:            {   ...
 

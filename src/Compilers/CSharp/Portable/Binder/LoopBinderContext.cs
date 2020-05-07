@@ -16,8 +16,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         protected LoopBinder(Binder enclosing)
             : base(enclosing)
         {
-            _breakLabel = new GeneratedLabelSymbol("break");
-            _continueLabel = new GeneratedLabelSymbol("continue");
+            _breakLabel = new("break");
+            _continueLabel = new("continue");
         }
 
         internal override GeneratedLabelSymbol BreakLabel

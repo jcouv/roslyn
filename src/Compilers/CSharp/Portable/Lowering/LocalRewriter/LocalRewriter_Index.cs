@@ -23,7 +23,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (NullableNeverHasValue(operand))
             {
-                operand = new BoundDefaultExpression(operand.Syntax, operand.Type!.GetNullableUnderlyingType());
+                operand = new(operand.Syntax, operand.Type!.GetNullableUnderlyingType());
             }
 
             operand = NullableAlwaysHasValue(operand) ?? operand;
@@ -42,7 +42,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // new Index(operand, fromEnd: true)
             BoundExpression boundOperandGetValueOrDefault = MakeOptimizedGetValueOrDefault(operand.Syntax, operand);
-            BoundExpression indexCreation = new BoundObjectCreationExpression(node.Syntax, node.MethodOpt, binderOpt: null, boundOperandGetValueOrDefault, fromEnd);
+            BoundExpression indexCreation = new(node.Syntax, node.MethodOpt, binderOpt: null, boundOperandGetValueOrDefault, fromEnd);
 
             if (!TryGetNullableMethod(node.Syntax, node.Type, SpecialMember.System_Nullable_T__ctor, out MethodSymbol nullableCtor))
             {
@@ -50,10 +50,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             // new Nullable(new Index(operand, fromEnd: true))
-            BoundExpression consequence = new BoundObjectCreationExpression(node.Syntax, nullableCtor, binderOpt: null, indexCreation);
+            BoundExpression consequence = new(node.Syntax, nullableCtor, binderOpt: null, indexCreation);
 
             // default
-            BoundExpression alternative = new BoundDefaultExpression(node.Syntax, node.Type);
+            BoundExpression alternative = new(node.Syntax, node.Type);
 
             // operand.HasValue ? new Nullable(new Index(operand, fromEnd: true)) : default
             BoundExpression conditionalExpression = RewriteConditionalOperator(

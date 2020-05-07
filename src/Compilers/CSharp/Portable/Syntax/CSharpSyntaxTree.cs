@@ -26,7 +26,7 @@ namespace Microsoft.CodeAnalysis.CSharp
     /// </summary>
     public abstract partial class CSharpSyntaxTree : SyntaxTree
     {
-        internal static readonly SyntaxTree Dummy = new DummySyntaxTree();
+        internal static readonly SyntaxTree Dummy = new();
 
         /// <summary>
         /// The options used by the parser to produce the syntax tree.
@@ -415,7 +415,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             using var lexer = new InternalSyntax.Lexer(text, options);
             using var parser = new InternalSyntax.LanguageParser(lexer, oldTree: null, changes: null, cancellationToken: cancellationToken);
             var compilationUnit = (CompilationUnitSyntax)parser.ParseCompilationUnit().CreateRed();
-            var tree = new ParsedSyntaxTree(
+            var tree = new(
                 text,
                 text.Encoding,
                 text.ChecksumAlgorithm,
@@ -472,7 +472,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             CSharpSyntaxTree? oldTree = this;
 
             // if changes is entire text do a full reparse
-            if (workingChanges.Count == 1 && workingChanges[0].Span == new TextSpan(0, this.Length) && workingChanges[0].NewLength == newText.Length)
+            if (workingChanges.Count == 1 && workingChanges[0].Span == new(0, this.Length) && workingChanges[0].NewLength == newText.Length)
             {
                 // parser will do a full parse if we give it no changes
                 workingChanges = null;
@@ -483,7 +483,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             using var parser = new InternalSyntax.LanguageParser(lexer, oldTree?.GetRoot(), workingChanges);
 
             var compilationUnit = (CompilationUnitSyntax)parser.ParseCompilationUnit().CreateRed();
-            var tree = new ParsedSyntaxTree(
+            var tree = new(
                 newText,
                 newText.Encoding,
                 newText.ChecksumAlgorithm,
@@ -737,7 +737,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private IEnumerable<Diagnostic> EnumerateDiagnostics(GreenNode node, int position)
         {
-            var enumerator = new SyntaxTreeDiagnosticEnumerator(this, node, position);
+            var enumerator = new(this, node, position);
             while (enumerator.MoveNext())
             {
                 yield return enumerator.Current;

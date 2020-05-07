@@ -1560,7 +1560,7 @@
   <!-- 
   Constructor is optional because value types can be created without calling any constructor -
  
-     int x = new int();        
+     int x = new();        
   -->
   <Node Name="BoundObjectCreationExpression" Base="BoundExpression">
     <!-- Non-null type is required for this node kind -->

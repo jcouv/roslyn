@@ -11,7 +11,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 {
     internal sealed class SymbolFactory : SymbolFactory<PEModuleSymbol, TypeSymbol>
     {
-        internal static readonly SymbolFactory Instance = new SymbolFactory();
+        internal static readonly SymbolFactory Instance = new();
 
         internal override TypeSymbol GetMDArrayTypeSymbol(PEModuleSymbol moduleSymbol, int rank, TypeSymbol elementType, ImmutableArray<ModifierInfo<TypeSymbol>> customModifiers,
                                                           ImmutableArray<int> sizes, ImmutableArray<int> lowerBounds)
@@ -154,13 +154,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 return new UnsupportedMetadataTypeSymbol();
             }
 
-            TypeMap substitution = new TypeMap(typeParameters, arguments.SelectAsArray(arg => CreateType(arg.Key, arg.Value)));
+            TypeMap substitution = new(typeParameters, arguments.SelectAsArray(arg => CreateType(arg.Key, arg.Value)));
 
             NamedTypeSymbol constructedType = substitution.SubstituteNamedType(genericType);
 
             if (noPiaIllegalGenericInstantiation)
             {
-                constructedType = new NoPiaIllegalGenericInstantiationSymbol(moduleSymbol, constructedType);
+                constructedType = new(moduleSymbol, constructedType);
             }
 
             return constructedType;

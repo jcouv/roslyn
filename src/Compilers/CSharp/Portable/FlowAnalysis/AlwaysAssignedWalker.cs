@@ -29,7 +29,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal static IEnumerable<Symbol> Analyze(CSharpCompilation compilation, Symbol member, BoundNode node, BoundNode firstInRegion, BoundNode lastInRegion)
         {
-            var walker = new AlwaysAssignedWalker(compilation, member, node, firstInRegion, lastInRegion);
+            var walker = new(compilation, member, node, firstInRegion, lastInRegion);
             bool badRegion = false;
             try
             {

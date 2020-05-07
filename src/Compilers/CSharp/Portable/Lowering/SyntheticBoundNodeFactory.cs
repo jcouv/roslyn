@@ -107,7 +107,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (_binder is null || _binder.Flags != flags)
             {
-                _binder = new SyntheticBinderImpl(this).WithFlags(flags);
+                _binder = new(this).WithFlags(flags);
             }
 
             return _binder.MakeInvocationExpression(
@@ -215,7 +215,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public StateMachineFieldSymbol StateMachineField(TypeWithAnnotations type, string name, bool isPublic = false, bool isThis = false)
         {
             Debug.Assert(CurrentType is { });
-            var result = new StateMachineFieldSymbol(CurrentType, type, name, isPublic, isThis);
+            var result = new(CurrentType, type, name, isPublic, isThis);
             AddField(CurrentType, result);
             return result;
         }
@@ -223,7 +223,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public StateMachineFieldSymbol StateMachineField(TypeSymbol type, string name, bool isPublic = false, bool isThis = false)
         {
             Debug.Assert(CurrentType is { });
-            var result = new StateMachineFieldSymbol(CurrentType, TypeWithAnnotations.Create(type), name, isPublic, isThis);
+            var result = new(CurrentType, TypeWithAnnotations.Create(type), name, isPublic, isThis);
             AddField(CurrentType, result);
             return result;
         }
@@ -231,7 +231,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public StateMachineFieldSymbol StateMachineField(TypeSymbol type, string name, SynthesizedLocalKind synthesizedKind, int slotIndex)
         {
             Debug.Assert(CurrentType is { });
-            var result = new StateMachineFieldSymbol(CurrentType, type, name, synthesizedKind, slotIndex, isPublic: false);
+            var result = new(CurrentType, type, name, synthesizedKind, slotIndex, isPublic: false);
             AddField(CurrentType, result);
             return result;
         }
@@ -239,7 +239,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public StateMachineFieldSymbol StateMachineField(TypeSymbol type, string name, LocalSlotDebugInfo slotDebugInfo, int slotIndex)
         {
             Debug.Assert(CurrentType is { });
-            var result = new StateMachineFieldSymbol(CurrentType, type, name, slotDebugInfo, slotIndex, isPublic: false);
+            var result = new(CurrentType, type, name, slotDebugInfo, slotIndex, isPublic: false);
             AddField(CurrentType, result);
             return result;
         }
@@ -352,7 +352,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (wellKnownMember is null && !isOptional)
             {
                 RuntimeMembers.MemberDescriptor memberDescriptor = WellKnownMembers.GetDescriptor(wm);
-                var diagnostic = new CSDiagnostic(new CSDiagnosticInfo(ErrorCode.ERR_MissingPredefinedMember, memberDescriptor.DeclaringTypeMetadataName, memberDescriptor.Name), Syntax.Location);
+                var diagnostic = new(new CSDiagnosticInfo(ErrorCode.ERR_MissingPredefinedMember, memberDescriptor.DeclaringTypeMetadataName, memberDescriptor.Name), Syntax.Location);
                 throw new MissingPredefinedMember(diagnostic);
             }
 
@@ -387,7 +387,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (specialMember is null)
             {
                 RuntimeMembers.MemberDescriptor memberDescriptor = SpecialMembers.GetDescriptor(sm);
-                var diagnostic = new CSDiagnostic(new CSDiagnosticInfo(ErrorCode.ERR_MissingPredefinedMember, memberDescriptor.DeclaringTypeMetadataName, memberDescriptor.Name), Syntax.Location);
+                var diagnostic = new(new CSDiagnosticInfo(ErrorCode.ERR_MissingPredefinedMember, memberDescriptor.DeclaringTypeMetadataName, memberDescriptor.Name), Syntax.Location);
                 throw new MissingPredefinedMember(diagnostic);
             }
 
@@ -780,11 +780,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(thenClause != null);
 
             var statements = ArrayBuilder<BoundStatement>.GetInstance();
-            var afterif = new GeneratedLabelSymbol("afterif");
+            var afterif = new("afterif");
 
             if (elseClauseOpt != null)
             {
-                var alt = new GeneratedLabelSymbol("alternative");
+                var alt = new("alternative");
 
                 statements.Add(ConditionalGoto(condition, alt, false));
                 statements.Add(thenClause);
@@ -916,13 +916,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             CheckSwitchSections(sections);
-            GeneratedLabelSymbol breakLabel = new GeneratedLabelSymbol("break");
+            GeneratedLabelSymbol breakLabel = new("break");
             var caseBuilder = ArrayBuilder<(ConstantValue Value, LabelSymbol label)>.GetInstance();
             var statements = ArrayBuilder<BoundStatement>.GetInstance();
             statements.Add(null!); // placeholder at statements[0] for the dispatch
             foreach (var section in sections)
             {
-                LabelSymbol sectionLabel = new GeneratedLabelSymbol("case " + section.Values[0]);
+                LabelSymbol sectionLabel = new("case " + section.Values[0]);
                 statements.Add(Label(sectionLabel));
                 statements.AddRange(section.Statements);
 
@@ -934,7 +934,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             statements.Add(Label(breakLabel));
             Debug.Assert(statements[0] is null);
-            statements[0] = new BoundSwitchDispatch(Syntax, ex, caseBuilder.ToImmutableAndFree(), breakLabel, null) { WasCompilerGenerated = true };
+            statements[0] = new(Syntax, ex, caseBuilder.ToImmutableAndFree(), breakLabel, null) { WasCompilerGenerated = true };
             return Block(statements.ToImmutableAndFree());
         }
 
@@ -1055,7 +1055,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public static BoundExpression Null(TypeSymbol type, SyntaxNode syntax)
         {
             Debug.Assert(type.CanBeAssignedNull());
-            BoundExpression nullLiteral = new BoundLiteral(syntax, ConstantValue.Null, type) { WasCompilerGenerated = true };
+            BoundExpression nullLiteral = new(syntax, ConstantValue.Null, type) { WasCompilerGenerated = true };
             return type.IsPointerType()
                 ? BoundConversion.SynthesizedNonUserDefined(syntax, nullLiteral, Conversion.NullToPointer, type)
                 : nullLiteral;
@@ -1407,7 +1407,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var syntax = argument.Syntax;
             var type = argument.Type;
 
-            var local = new BoundLocal(
+            var local = new(
                 syntax,
                 new SynthesizedLocal(
                     containingMethod,
@@ -1423,7 +1423,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 null,
                 type);
 
-            store = new BoundAssignmentOperator(
+            store = new(
                 syntax,
                 local,
                 argument,
@@ -1449,7 +1449,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal BoundLocal MakeTempForDiscard(BoundDiscardExpression node, out LocalSymbol temp)
         {
             Debug.Assert(node.Type is { });
-            temp = new SynthesizedLocal(this.CurrentFunction, TypeWithAnnotations.Create(node.Type), SynthesizedLocalKind.LoweringTemp);
+            temp = new(this.CurrentFunction, TypeWithAnnotations.Create(node.Type), SynthesizedLocalKind.LoweringTemp);
 
             return new BoundLocal(node.Syntax, temp, constantValueOpt: null, type: node.Type) { WasCompilerGenerated = true };
         }

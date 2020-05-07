@@ -94,7 +94,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // Final conditional
                 var condition = _factory.Conditional(isEvent, invokeEventAccessor.ToExpression(), rewrittenAssignment, rewrittenAssignment.Type);
 
-                rewrittenAssignment = new BoundSequence(node.Syntax, eventTemps.ToImmutableAndFree(), sequence.ToImmutableAndFree(), condition, condition.Type!);
+                rewrittenAssignment = new(node.Syntax, eventTemps.ToImmutableAndFree(), sequence.ToImmutableAndFree(), condition, condition.Type!);
             }
             else
             {

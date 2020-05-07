@@ -29,7 +29,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 _localRewriter = localRewriter;
                 _factory = localRewriter._factory;
-                _tempAllocator = new DagTempAllocator(_factory, node, IsSwitchStatement);
+                _tempAllocator = new(_factory, node, IsSwitchStatement);
             }
 
             /// <summary>
@@ -136,7 +136,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     case BoundDagFieldEvaluation f:
                         {
                             FieldSymbol field = f.Field;
-                            var outputTemp = new BoundDagTemp(f.Syntax, field.Type, f);
+                            var outputTemp = new(f.Syntax, field.Type, f);
                             BoundExpression output = _tempAllocator.GetTemp(outputTemp);
                             BoundExpression access = _localRewriter.MakeFieldAccess(f.Syntax, input, field, null, LookupResultKind.Viable, field.Type);
                             access.WasCompilerGenerated = true;
@@ -146,7 +146,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     case BoundDagPropertyEvaluation p:
                         {
                             PropertySymbol property = p.Property;
-                            var outputTemp = new BoundDagTemp(p.Syntax, property.Type, p);
+                            var outputTemp = new(p.Syntax, property.Type, p);
                             BoundExpression output = _tempAllocator.GetTemp(outputTemp);
                             return _factory.AssignmentExpression(output, _factory.Property(input, property));
                         }
@@ -182,7 +182,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             {
                                 ParameterSymbol parameter = method.Parameters[i];
                                 Debug.Assert(parameter.RefKind == RefKind.Out);
-                                var outputTemp = new BoundDagTemp(d.Syntax, parameter.Type, d, i - extensionExtra);
+                                var outputTemp = new(d.Syntax, parameter.Type, d, i - extensionExtra);
                                 addArg(RefKind.Out, _tempAllocator.GetTemp(outputTemp));
                             }
 
@@ -201,7 +201,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             }
 
                             TypeSymbol type = t.Type;
-                            var outputTemp = new BoundDagTemp(t.Syntax, type, t);
+                            var outputTemp = new(t.Syntax, type, t);
                             BoundExpression output = _tempAllocator.GetTemp(outputTemp);
                             HashSet<DiagnosticInfo> useSiteDiagnostics = null;
                             Conversion conversion = _factory.Compilation.Conversions.ClassifyBuiltInConversion(inputType, output.Type, ref useSiteDiagnostics);
@@ -236,7 +236,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             Debug.Assert(e.Property.GetMethod.ParameterCount == 1);
                             Debug.Assert(e.Property.GetMethod.Parameters[0].Type.SpecialType == SpecialType.System_Int32);
                             TypeSymbol type = e.Property.GetMethod.ReturnType;
-                            var outputTemp = new BoundDagTemp(e.Syntax, type, e);
+                            var outputTemp = new(e.Syntax, type, e);
                             BoundExpression output = _tempAllocator.GetTemp(outputTemp);
                             return _factory.AssignmentExpression(output, _factory.Call(input, e.Property.GetMethod, _factory.Literal(e.Index)));
                         }
@@ -512,8 +512,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     var field = loweredInput.Type.TupleElements[i].CorrespondingTupleField;
                     Debug.Assert(field != null);
                     var expr = loweredInput.Arguments[i];
-                    var fieldFetchEvaluation = new BoundDagFieldEvaluation(expr.Syntax, field, originalInput);
-                    var temp = new BoundDagTemp(expr.Syntax, expr.Type, fieldFetchEvaluation);
+                    var fieldFetchEvaluation = new(expr.Syntax, field, originalInput);
+                    var temp = new(expr.Syntax, expr.Type, fieldFetchEvaluation);
                     storeToTemp(temp, expr);
                     newArguments.Add(_tempAllocator.GetTemp(temp));
                 }

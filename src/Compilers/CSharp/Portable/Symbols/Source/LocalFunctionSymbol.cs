@@ -42,7 +42,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             _containingSymbol = containingSymbol;
 
-            _declarationDiagnostics = new DiagnosticBag();
+            _declarationDiagnostics = new();
 
             _declarationModifiers =
                 DeclarationModifiers.Private |
@@ -56,7 +56,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (syntax.TypeParameterList != null)
             {
-                binder = new WithMethodTypeParametersBinder(this, binder);
+                binder = new(this, binder);
                 _typeParameters = MakeTypeParameters(_declarationDiagnostics);
             }
             else
@@ -430,7 +430,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     diagnostics.Add(typeError, location, name, tpEnclosing.ContainingSymbol);
                 }
 
-                var typeParameter = new SourceMethodTypeParameterSymbol(
+                var typeParameter = new(
                         this,
                         name,
                         ordinal,

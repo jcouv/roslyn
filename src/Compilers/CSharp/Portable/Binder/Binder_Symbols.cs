@@ -670,7 +670,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (!compilation.HasTupleNamesAttributes)
             {
-                var info = new CSDiagnosticInfo(ErrorCode.ERR_TupleElementNamesAttributeMissing,
+                var info = new(ErrorCode.ERR_TupleElementNamesAttributeMissing,
                     AttributeDescription.TupleElementNamesAttribute.FullName);
                 Error(diagnostics, info, location);
             }
@@ -901,7 +901,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     //              We may want to consider adding an "Unreported" flag to the DynamicTypeSymbol to suppress duplicate CS1980.
 
                     // CS1980: Cannot define a class or member that utilizes 'dynamic' because the compiler required type '{0}' cannot be found. Are you missing a reference?
-                    var info = new CSDiagnosticInfo(ErrorCode.ERR_DynamicAttributeMissing, AttributeDescription.DynamicAttribute.FullName);
+                    var info = new(ErrorCode.ERR_DynamicAttributeMissing, AttributeDescription.DynamicAttribute.FullName);
                     Symbol.ReportUseSiteDiagnostic(info, diagnostics, node.Location);
                 }
 
@@ -1101,7 +1101,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // Parser error has already been reported, just wrap the result type with error type symbol.
                 Debug.Assert(unconstructedType.IsErrorType());
                 Debug.Assert(resultType.IsErrorType());
-                resultType = new ExtendedErrorTypeSymbol(GetContainingNamespaceOrType(resultType), resultType,
+                resultType = new(GetContainingNamespaceOrType(resultType), resultType,
                     LookupResultKind.NotAnAttributeType, errorInfo: null);
             }
 
@@ -1156,7 +1156,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // we got back something other than a type, there had better be an error info
                 // for us.
                 Debug.Assert(lookupResult.Error != null);
-                type = new ExtendedErrorTypeSymbol(
+                type = new(
                     GetContainingNamespaceOrType(lookupResultSymbol),
                     ImmutableArray.Create<Symbol>(lookupResultSymbol),
                     lookupResult.Kind,
@@ -1178,7 +1178,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (((object)qualifierOpt != null) && (qualifierOpt.Kind == SymbolKind.TypeParameter))
             {
-                var diagnosticInfo = new CSDiagnosticInfo(ErrorCode.ERR_LookupInTypeVariable, qualifierOpt);
+                var diagnosticInfo = new(ErrorCode.ERR_LookupInTypeVariable, qualifierOpt);
                 diagnostics.Add(diagnosticInfo, node.Location);
                 return new ExtendedErrorTypeSymbol(this.Compilation, name, arity, diagnosticInfo, unreported: false);
             }
@@ -1512,7 +1512,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // member is missing
                 MemberDescriptor memberDescriptor = WellKnownMembers.GetDescriptor(member);
-                diagnosticInfo = new CSDiagnosticInfo(ErrorCode.ERR_MissingPredefinedMember, memberDescriptor.DeclaringTypeMetadataName, memberDescriptor.Name);
+                diagnosticInfo = new(ErrorCode.ERR_MissingPredefinedMember, memberDescriptor.DeclaringTypeMetadataName, memberDescriptor.Name);
             }
             else
             {
@@ -1524,7 +1524,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private class ConsistentSymbolOrder : IComparer<Symbol>
         {
-            public static readonly ConsistentSymbolOrder Instance = new ConsistentSymbolOrder();
+            public static readonly ConsistentSymbolOrder Instance = new();
             public int Compare(Symbol fst, Symbol snd)
             {
                 if (snd == fst) return 0;
@@ -1694,7 +1694,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                     reportError = true;
 
                                     // '{0}' is an ambiguous reference between '{1}' and '{2}'
-                                    info = new CSDiagnosticInfo(ErrorCode.ERR_AmbigContext, originalSymbols,
+                                    info = new(ErrorCode.ERR_AmbigContext, originalSymbols,
                                         new object[] {
                                         (where as NameSyntax)?.ErrorDisplayName() ?? simpleName,
                                         new FormattedSymbol(first, SymbolDisplayFormat.CSharpErrorMessageFormat),
@@ -1705,7 +1705,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                     Debug.Assert(!best.IsFromCorLibrary);
 
                                     // ErrorCode.ERR_SameFullNameAggAgg: The type '{1}' exists in both '{0}' and '{2}'
-                                    info = new CSDiagnosticInfo(ErrorCode.ERR_SameFullNameAggAgg, originalSymbols,
+                                    info = new(ErrorCode.ERR_SameFullNameAggAgg, originalSymbols,
                                         new object[] { first.ContainingAssembly, first, second.ContainingAssembly });
 
                                     // Do not report this error if the first is declared in source and the second is declared in added module,
@@ -1730,7 +1730,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             else if (first.Kind == SymbolKind.Namespace && second.Kind == SymbolKind.NamedType)
                             {
                                 // ErrorCode.ERR_SameFullNameNsAgg: The namespace '{1}' in '{0}' conflicts with the type '{3}' in '{2}'
-                                info = new CSDiagnosticInfo(ErrorCode.ERR_SameFullNameNsAgg, originalSymbols,
+                                info = new(ErrorCode.ERR_SameFullNameNsAgg, originalSymbols,
                                     new object[] { GetContainingAssembly(first), first, second.ContainingAssembly, second });
 
                                 // Do not report this error if namespace is declared in source and the type is declared in added module,
@@ -1745,7 +1745,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 if (!secondBest.IsFromCompilation || secondBest.IsFromSourceModule)
                                 {
                                     // ErrorCode.ERR_SameFullNameNsAgg: The namespace '{1}' in '{0}' conflicts with the type '{3}' in '{2}'
-                                    info = new CSDiagnosticInfo(ErrorCode.ERR_SameFullNameNsAgg, originalSymbols,
+                                    info = new(ErrorCode.ERR_SameFullNameNsAgg, originalSymbols,
                                         new object[] { GetContainingAssembly(second), second, first.ContainingAssembly, first });
                                 }
                                 else
@@ -1787,14 +1787,14 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                                     Debug.Assert(arg2.ContainingAssembly == Compilation.Assembly);
 
-                                    info = new CSDiagnosticInfo(ErrorCode.ERR_SameFullNameThisAggThisNs, originalSymbols,
+                                    info = new(ErrorCode.ERR_SameFullNameThisAggThisNs, originalSymbols,
                                         new object[] { arg0, first, arg2, second });
                                 }
                             }
                             else if (first.Kind == SymbolKind.RangeVariable && second.Kind == SymbolKind.RangeVariable)
                             {
                                 // We will already have reported a conflicting range variable declaration.
-                                info = new CSDiagnosticInfo(ErrorCode.ERR_AmbigMember, originalSymbols,
+                                info = new(ErrorCode.ERR_AmbigMember, originalSymbols,
                                     new object[] { first, second });
                             }
                             else
@@ -1808,7 +1808,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 //    second);
 
                                 // CS0229: Ambiguity between '{0}' and '{1}'
-                                info = new CSDiagnosticInfo(ErrorCode.ERR_AmbigMember, originalSymbols,
+                                info = new(ErrorCode.ERR_AmbigMember, originalSymbols,
                                     new object[] { first, second });
 
                                 reportError = true;
@@ -1834,13 +1834,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                                     //  SPEC:   If an attribute class is found both with and without Attribute suffix, an ambiguity 
                                     //  SPEC:   is present, and a compile-time error results.
 
-                                    info = new CSDiagnosticInfo(ErrorCode.ERR_AmbiguousAttribute, originalSymbols,
+                                    info = new(ErrorCode.ERR_AmbiguousAttribute, originalSymbols,
                                         new object[] { (where as NameSyntax)?.ErrorDisplayName() ?? simpleName, first, second });
                                 }
                                 else
                                 {
                                     // '{0}' is an ambiguous reference between '{1}' and '{2}'
-                                    info = new CSDiagnosticInfo(ErrorCode.ERR_AmbigContext, originalSymbols,
+                                    info = new(ErrorCode.ERR_AmbigContext, originalSymbols,
                                         new object[] {
                                         (where as NameSyntax)?.ErrorDisplayName() ?? simpleName,
                                         new FormattedSymbol(first, SymbolDisplayFormat.CSharpErrorMessageFormat),
@@ -1850,7 +1850,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             else
                             {
                                 // CS0229: Ambiguity between '{0}' and '{1}'
-                                info = new CSDiagnosticInfo(ErrorCode.ERR_AmbigMember, originalSymbols,
+                                info = new(ErrorCode.ERR_AmbigMember, originalSymbols,
                                     new object[] { first, second });
                             }
                         }
@@ -1879,9 +1879,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                         if ((object)singleType != null && singleType.PrimitiveTypeCode == Cci.PrimitiveTypeCode.Void && simpleName == "Void")
                         {
                             wasError = true;
-                            var errorInfo = new CSDiagnosticInfo(ErrorCode.ERR_SystemVoid);
+                            var errorInfo = new(ErrorCode.ERR_SystemVoid);
                             diagnostics.Add(errorInfo, where.Location);
-                            singleResult = new ExtendedErrorTypeSymbol(GetContainingNamespaceOrType(singleResult), singleResult, LookupResultKind.NotReferencable, errorInfo); // UNDONE: Review resultkind.
+                            singleResult = new(GetContainingNamespaceOrType(singleResult), singleResult, LookupResultKind.NotReferencable, errorInfo); // UNDONE: Review resultkind.
                         }
                         // Check for bad symbol.
                         else
@@ -1911,7 +1911,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                     {
                                         wasError = true;
                                         diagnostics.Add(errorInfo, where.Location);
-                                        singleResult = new ExtendedErrorTypeSymbol(GetContainingNamespaceOrType(errorType), errorType.Name, errorType.Arity, errorInfo, unreported: false);
+                                        singleResult = new(GetContainingNamespaceOrType(errorType), errorType.Name, errorType.Arity, errorInfo, unreported: false);
                                     }
                                 }
                             }
@@ -2120,7 +2120,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     location = GetLocation(compilation, symbol);
                 }
 
-                var third = new BestSymbolInfo(location, i);
+                var third = new(location, i);
                 if (BestSymbolInfo.Sort(ref second, ref third))
                 {
                     BestSymbolInfo.Sort(ref first, ref second);

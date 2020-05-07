@@ -39,9 +39,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
     }
     internal sealed class NullableContextStateMap
     {
-        private static readonly NullableContextStateMap EmptyGenerated = new NullableContextStateMap(ImmutableArray<NullableContextState>.Empty, isGeneratedCode: true);
+        private static readonly NullableContextStateMap EmptyGenerated = new(ImmutableArray<NullableContextState>.Empty, isGeneratedCode: true);
 
-        private static readonly NullableContextStateMap EmptyNonGenerated = new NullableContextStateMap(ImmutableArray<NullableContextState>.Empty, isGeneratedCode: false);
+        private static readonly NullableContextStateMap EmptyNonGenerated = new(ImmutableArray<NullableContextState>.Empty, isGeneratedCode: false);
 
         private readonly ImmutableArray<NullableContextState> _contexts;
 
@@ -78,7 +78,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
         internal NullableContextState GetContextState(int position)
         {
             // PositionComparer only checks the position, not the states
-            var searchContext = new NullableContextState(position, warningsState: NullableContextState.State.Unknown, annotationsState: NullableContextState.State.Unknown);
+            var searchContext = new(position, warningsState: NullableContextState.State.Unknown, annotationsState: NullableContextState.State.Unknown);
             int index = _contexts.BinarySearch(searchContext, PositionComparer.Instance);
             if (index < 0)
             {
@@ -159,7 +159,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
 
         private sealed class PositionComparer : IComparer<NullableContextState>
         {
-            internal static readonly PositionComparer Instance = new PositionComparer();
+            internal static readonly PositionComparer Instance = new();
 
             public int Compare(NullableContextState x, NullableContextState y)
             {

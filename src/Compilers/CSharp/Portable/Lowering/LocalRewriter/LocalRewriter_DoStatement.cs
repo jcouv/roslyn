@@ -21,7 +21,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var rewrittenCondition = VisitExpression(node.Condition);
             var rewrittenBody = VisitStatement(node.Body);
             Debug.Assert(rewrittenBody is { });
-            var startLabel = new GeneratedLabelSymbol("start");
+            var startLabel = new("start");
 
             var syntax = node.Syntax;
 
@@ -32,7 +32,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 rewrittenCondition = _instrumenter.InstrumentDoStatementCondition(node, rewrittenCondition, _factory);
             }
 
-            BoundStatement ifConditionGotoStart = new BoundConditionalGoto(syntax, rewrittenCondition, true, startLabel);
+            BoundStatement ifConditionGotoStart = new(syntax, rewrittenCondition, true, startLabel);
 
             if (!node.WasCompilerGenerated && this.Instrument)
             {

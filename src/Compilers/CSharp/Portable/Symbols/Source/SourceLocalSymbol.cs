@@ -564,7 +564,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     var type = this.Type;
                     if (boundInitValue == null)
                     {
-                        var inProgressBinder = new LocalInProgressBinder(this, this._initializerBinder);
+                        var inProgressBinder = new(this, this._initializerBinder);
                         boundInitValue = inProgressBinder.BindVariableOrAutoPropInitializerValue(_initializer, this.RefKind, type, diagnostics);
                     }
 

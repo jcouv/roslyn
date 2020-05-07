@@ -333,7 +333,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // user-defined explicit conversion and produces an error. This means that in
             // C# 5 it is possible to have:
             //
-            // Y y = new Y();
+            // Y y = new();
             // Z z1 = y;
             // 
             // succeed but
@@ -398,7 +398,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // user-defined explicit conversion and produces an error. This means that in
             // C# 5 it is possible to have:
             //
-            // Y y = new Y();
+            // Y y = new();
             // Z z1 = y;
             // 
             // succeed but
@@ -1409,10 +1409,10 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal Conversion GetCallerLineNumberConversion(TypeSymbol destination, ref HashSet<DiagnosticInfo> useSiteDiagnostics)
         {
             var greenNode = new Syntax.InternalSyntax.LiteralExpressionSyntax(SyntaxKind.NumericLiteralExpression, new Syntax.InternalSyntax.SyntaxToken(SyntaxKind.NumericLiteralToken));
-            var syntaxNode = new LiteralExpressionSyntax(greenNode, null, 0);
+            var syntaxNode = new(greenNode, null, 0);
 
             TypeSymbol expectedAttributeType = corLibrary.GetSpecialType(SpecialType.System_Int32);
-            BoundLiteral intMaxValueLiteral = new BoundLiteral(syntaxNode, ConstantValue.Create(int.MaxValue), expectedAttributeType);
+            BoundLiteral intMaxValueLiteral = new(syntaxNode, ConstantValue.Create(int.MaxValue), expectedAttributeType);
             return ClassifyStandardImplicitConversion(intMaxValueLiteral, expectedAttributeType, destination, ref useSiteDiagnostics);
         }
 

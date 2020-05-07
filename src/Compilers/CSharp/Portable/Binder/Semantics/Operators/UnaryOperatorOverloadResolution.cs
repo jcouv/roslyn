@@ -333,7 +333,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case UnaryOperatorKind.PostfixDecrement:
                 case UnaryOperatorKind.PrefixIncrement:
                 case UnaryOperatorKind.PrefixDecrement:
-                    op = new UnaryOperatorSignature(kind | UnaryOperatorKind.Pointer, pointerType, pointerType);
+                    op = new(kind | UnaryOperatorKind.Pointer, pointerType, pointerType);
                     break;
             }
             return op;

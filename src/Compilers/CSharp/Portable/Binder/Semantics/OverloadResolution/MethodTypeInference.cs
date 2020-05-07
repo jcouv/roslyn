@@ -85,7 +85,7 @@ namespace Microsoft.CodeAnalysis.CSharp
     {
         internal abstract class Extensions
         {
-            internal static readonly Extensions Default = new DefaultExtensions();
+            internal static readonly Extensions Default = new();
 
             internal abstract TypeWithAnnotations GetTypeWithAnnotations(BoundExpression expr);
 
@@ -270,7 +270,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // UNDONE: so then we know ahead of time that inference will fail.
             }
 
-            var inferrer = new MethodTypeInferrer(
+            var inferrer = new(
                 conversions,
                 methodTypeParameters,
                 constructedContainingTypeOfMethod,
@@ -516,7 +516,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 fixedArguments.Add(IsUnfixed(iParam) ? TypeWithAnnotations.Create(_methodTypeParameters[iParam]) : _fixedResults[iParam]);
             }
 
-            TypeMap typeMap = new TypeMap(_constructedContainingTypeOfMethod, _methodTypeParameters, fixedArguments.ToImmutableAndFree());
+            TypeMap typeMap = new(_constructedContainingTypeOfMethod, _methodTypeParameters, fixedArguments.ToImmutableAndFree());
             return typeMap.SubstituteNamedType(delegateType);
         }
 
@@ -2676,7 +2676,7 @@ OuterBreak:
 
             var constructedFromMethod = method.ConstructedFrom;
 
-            var inferrer = new MethodTypeInferrer(
+            var inferrer = new(
                 conversions,
                 constructedFromMethod.TypeParameters,
                 constructedFromMethod.ContainingType,
@@ -2884,7 +2884,7 @@ OuterBreak:
         /// </summary>
         private sealed class EqualsIgnoringDynamicTupleNamesAndNullabilityComparer : EqualityComparer<TypeWithAnnotations>
         {
-            internal static readonly EqualsIgnoringDynamicTupleNamesAndNullabilityComparer Instance = new EqualsIgnoringDynamicTupleNamesAndNullabilityComparer();
+            internal static readonly EqualsIgnoringDynamicTupleNamesAndNullabilityComparer Instance = new();
 
             public override int GetHashCode(TypeWithAnnotations obj)
             {

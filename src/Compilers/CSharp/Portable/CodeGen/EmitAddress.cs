@@ -197,8 +197,8 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
         {
             Debug.Assert(expr.ConstantValue == null, "Constant value should have been emitted directly");
 
-            object consequenceLabel = new object();
-            object doneLabel = new object();
+            object consequenceLabel = new();
+            object doneLabel = new();
 
             EmitCondBranch(expr.Condition, ref consequenceLabel, sense: true);
             AddExpressionTemp(EmitAddress(expr.Alternative, addressKind));
@@ -221,8 +221,8 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
             var receiverType = expression.Type;
 
-            var whenValueTypeLabel = new Object();
-            var doneLabel = new Object();
+            var whenValueTypeLabel = new();
+            var doneLabel = new();
 
             EmitInitObj(receiverType, true, expression.Syntax);
             EmitBox(receiverType, expression.Syntax);

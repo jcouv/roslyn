@@ -102,12 +102,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     if (increment.Kind == BoundKind.StatementList)
                     {
-                        increment = new BoundBlock(scopeDesignator, locals, ((BoundStatementList)increment).Statements)
+                        increment = new(scopeDesignator, locals, ((BoundStatementList)increment).Statements)
                         { WasCompilerGenerated = true };
                     }
                     else
                     {
-                        increment = new BoundBlock(increment.Syntax, locals, ImmutableArray.Create(increment))
+                        increment = new(increment.Syntax, locals, ImmutableArray.Create(increment))
                         { WasCompilerGenerated = true };
                     }
                 }

@@ -24,7 +24,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (memberModel == null)
             {
                 // Recover from error cases
-                var node = new BoundBadStatement(expression, ImmutableArray<BoundNode>.Empty, hasErrors: true);
+                var node = new(expression, ImmutableArray<BoundNode>.Empty, hasErrors: true);
                 return new RegionAnalysisContext(Compilation, null, node, node, node);
             }
 
@@ -41,7 +41,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (memberModel == null)
             {
                 // Recover from error cases
-                var node = new BoundBadStatement(firstStatement, ImmutableArray<BoundNode>.Empty, hasErrors: true);
+                var node = new(firstStatement, ImmutableArray<BoundNode>.Empty, hasErrors: true);
                 return new RegionAnalysisContext(Compilation, null, node, node, node);
             }
 

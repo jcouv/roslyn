@@ -106,7 +106,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             if (singleDeclaration != null)
             {
                 var corLibrary = this.ContainingAssembly.CorLibrary;
-                var conversions = new TypeConversions(corLibrary);
+                var conversions = new(corLibrary);
                 var location = singleDeclaration.NameLocation;
 
                 localBase.CheckAllConstraints(DeclaringCompilation, conversions, location, diagnostics);
@@ -132,7 +132,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             if (singleDeclaration != null)
             {
                 var corLibrary = this.ContainingAssembly.CorLibrary;
-                var conversions = new TypeConversions(corLibrary);
+                var conversions = new(corLibrary);
                 var location = singleDeclaration.NameLocation;
 
                 foreach (var pair in interfaces)
@@ -288,7 +288,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     {
                         // the parts do not agree
                         var info = diagnostics.Add(ErrorCode.ERR_PartialMultipleBases, Locations[0], this);
-                        baseType = new ExtendedErrorTypeSymbol(baseType, LookupResultKind.Ambiguous, info);
+                        baseType = new(baseType, LookupResultKind.Ambiguous, info);
                         baseTypeLocation = decl.NameLocation;
                         reportedPartialConflict = true;
                     }
@@ -381,7 +381,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     diagnostics.Add(ErrorCode.ERR_BadBaseType, typeSyntax.GetLocation());
                 }
 
-                var location = new SourceLocation(typeSyntax);
+                var location = new(typeSyntax);
 
                 TypeSymbol baseType;
 
@@ -448,7 +448,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         {
                             // Static class '{0}' cannot derive from type '{1}'. Static classes must derive from object.
                             var info = diagnostics.Add(ErrorCode.ERR_StaticDerivedFromNonObject, location, this, localBase);
-                            localBase = new ExtendedErrorTypeSymbol(localBase, LookupResultKind.NotReferencable, info);
+                            localBase = new(localBase, LookupResultKind.NotReferencable, info);
                         }
                         continue;
                     }

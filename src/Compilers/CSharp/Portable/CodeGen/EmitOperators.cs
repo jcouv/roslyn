@@ -267,7 +267,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 return;
             }
 
-            var labEnd = new object();
+            var labEnd = new();
             _builder.EmitBranch(ILOpCode.Br, labEnd);
 
             // if we get to fallThrough, we should not have Right on stack. Adjust for that.

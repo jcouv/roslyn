@@ -336,7 +336,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit.NoPia
         {
             Debug.Assert(namedType.IsDefinition);
 
-            EmbeddedType embedded = new EmbeddedType(this, namedType);
+            EmbeddedType embedded = new(this, namedType);
             EmbeddedType cached = EmbeddedTypesMap.GetOrAdd(namedType, embedded);
 
             bool isInterface = (namedType.IsInterface);
@@ -401,7 +401,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit.NoPia
         {
             Debug.Assert(field.IsDefinition);
 
-            EmbeddedField embedded = new EmbeddedField(type, field);
+            EmbeddedField embedded = new(type, field);
             EmbeddedField cached = EmbeddedFieldsMap.GetOrAdd(field, embedded);
 
             if (embedded != cached)
@@ -438,7 +438,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit.NoPia
             Debug.Assert(method.IsDefinition);
             Debug.Assert(!method.IsDefaultValueTypeConstructor());
 
-            EmbeddedMethod embedded = new EmbeddedMethod(type, method);
+            EmbeddedMethod embedded = new(type, method);
             EmbeddedMethod cached = EmbeddedMethodsMap.GetOrAdd(method, embedded);
 
             if (embedded != cached)
@@ -505,7 +505,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit.NoPia
             EmbeddedMethod embeddedGet = (object)getMethod != null ? EmbedMethod(type, getMethod, syntaxNodeOpt, diagnostics) : null;
             EmbeddedMethod embeddedSet = (object)setMethod != null ? EmbedMethod(type, setMethod, syntaxNodeOpt, diagnostics) : null;
 
-            EmbeddedProperty embedded = new EmbeddedProperty(property, embeddedGet, embeddedSet);
+            EmbeddedProperty embedded = new(property, embeddedGet, embeddedSet);
             EmbeddedProperty cached = EmbeddedPropertiesMap.GetOrAdd(property, embedded);
 
             if (embedded != cached)
@@ -540,7 +540,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit.NoPia
             EmbeddedMethod embeddedAdd = (object)addMethod != null ? EmbedMethod(type, addMethod, syntaxNodeOpt, diagnostics) : null;
             EmbeddedMethod embeddedRemove = (object)removeMethod != null ? EmbedMethod(type, removeMethod, syntaxNodeOpt, diagnostics) : null;
 
-            EmbeddedEvent embedded = new EmbeddedEvent(@event, embeddedAdd, embeddedRemove);
+            EmbeddedEvent embedded = new(@event, embeddedAdd, embeddedRemove);
             EmbeddedEvent cached = EmbeddedEventsMap.GetOrAdd(@event, embedded);
 
             if (embedded != cached)

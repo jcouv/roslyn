@@ -32,7 +32,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             this.assembly = assembly;
             this.ordinal = ordinal;
-            globalNamespace = new MissingNamespaceSymbol(this);
+            globalNamespace = new(this);
         }
 
         internal override int Ordinal

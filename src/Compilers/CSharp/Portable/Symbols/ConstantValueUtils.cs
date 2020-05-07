@@ -35,9 +35,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             var binder = binderFactory.GetBinder(equalsValueNode);
             if (earlyDecodingWellKnownAttributes)
             {
-                binder = new EarlyWellKnownAttributeBinder(binder);
+                binder = new(binder);
             }
-            var inProgressBinder = new ConstantFieldsInProgressBinder(new ConstantFieldsInProgress(symbol, dependencies), binder);
+            var inProgressBinder = new(new ConstantFieldsInProgress(symbol, dependencies), binder);
             BoundFieldEqualsValue boundValue = BindFieldOrEnumInitializer(inProgressBinder, symbol, equalsValueNode, diagnostics);
             var initValueNodeLocation = equalsValueNode.Value.Location;
 
@@ -54,8 +54,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             DiagnosticBag diagnostics)
         {
             var enumConstant = fieldSymbol as SourceEnumConstantSymbol;
-            Binder collisionDetector = new LocalScopeBinder(binder);
-            collisionDetector = new ExecutableCodeBinder(initializer, fieldSymbol, collisionDetector);
+            Binder collisionDetector = new(binder);
+            collisionDetector = new(initializer, fieldSymbol, collisionDetector);
             BoundFieldEqualsValue result;
 
             if ((object)enumConstant != null)

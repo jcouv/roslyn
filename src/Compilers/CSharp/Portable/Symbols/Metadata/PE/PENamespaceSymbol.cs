@@ -226,7 +226,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
                 foreach (var child in childNamespaces)
                 {
-                    var c = new PENestedNamespaceSymbol(child.Key, this, child.Value);
+                    var c = new(child.Key, this, child.Value);
                     namespaces.Add(c.Name, c);
                 }
 

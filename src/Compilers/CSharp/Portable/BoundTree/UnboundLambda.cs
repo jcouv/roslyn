@@ -154,7 +154,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <summary>
         /// Indicates the type of return statement with no expression. Used in InferReturnType.
         /// </summary>
-        internal static readonly TypeSymbol NoReturnExpression = new UnsupportedMetadataTypeSymbol();
+        internal static readonly TypeSymbol NoReturnExpression = new();
 
         /// <summary>
         /// Behavior of this function should be kept aligned with <see cref="UnboundLambdaState.ReturnInferenceCacheKey"/>.
@@ -338,7 +338,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert(binder != null);
             Debug.Assert(syntax.IsAnonymousFunction());
-            this.Data = new PlainUnboundLambdaState(this, binder, names, discardsOpt, types, refKinds, isAsync, includeCache: true);
+            this.Data = new(this, binder, names, discardsOpt, types, refKinds, isAsync, includeCache: true);
         }
 
         private UnboundLambda(SyntaxNode syntax, UnboundLambdaState state, NullableWalker.VariableState nullableState, bool hasErrors) :
@@ -351,7 +351,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal UnboundLambda WithNullableState(Binder binder, NullableWalker.VariableState nullableState)
         {
             var data = Data.WithCaching(true);
-            var lambda = new UnboundLambda(Syntax, data, nullableState, HasErrors);
+            var lambda = new(Syntax, data, nullableState, HasErrors);
             data.SetUnboundLambda(lambda);
             return lambda;
         }
@@ -364,7 +364,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return this;
             }
 
-            var lambda = new UnboundLambda(Syntax, data, _nullableState, HasErrors);
+            var lambda = new(Syntax, data, _nullableState, HasErrors);
             data.SetUnboundLambda(lambda);
             return lambda;
         }
@@ -584,7 +584,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             else
             {
                 lambdaSymbol = CreateLambdaSymbol(Binder.ContainingMemberOrLambda, returnType, diagnostics, cacheKey.ParameterTypes, cacheKey.ParameterRefKinds, refKind);
-                lambdaBodyBinder = new ExecutableCodeBinder(_unboundLambda.Syntax, lambdaSymbol, ParameterBinder(lambdaSymbol, Binder));
+                lambdaBodyBinder = new(_unboundLambda.Syntax, lambdaSymbol, ParameterBinder(lambdaSymbol, Binder));
                 block = BindLambdaBody(lambdaSymbol, lambdaBodyBinder, diagnostics);
             }
 
@@ -650,7 +650,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 lambdaSymbol.ReportAsyncParameterErrors(diagnostics, lambdaSymbol.DiagnosticLocation);
             }
 
-            var result = new BoundLambda(_unboundLambda.Syntax, _unboundLambda, block, diagnostics.ToReadOnlyAndFree(), lambdaBodyBinder, delegateType, inferredReturnType: default)
+            var result = new(_unboundLambda.Syntax, _unboundLambda, block, diagnostics.ToReadOnlyAndFree(), lambdaBodyBinder, delegateType, inferredReturnType: default)
             { WasCompilerGenerated = _unboundLambda.WasCompilerGenerated };
 
             return result;
@@ -715,7 +715,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var returnTypes = ArrayBuilder<(BoundReturnStatement, TypeWithAnnotations)>.GetInstance();
             BoundLambda.BlockReturns.GetReturnTypes(returnTypes, block);
             var inferredReturnType = BoundLambda.InferReturnType(returnTypes, _unboundLambda, lambdaBodyBinder.Compilation, lambdaBodyBinder.Conversions, delegateType, lambdaSymbol.IsAsync);
-            var result = new BoundLambda(
+            var result = new(
                 _unboundLambda.Syntax,
                 _unboundLambda,
                 block,
@@ -760,7 +760,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                                   parameterTypes,
                                                   parameterRefKinds,
                                                   CodeAnalysis.RefKind.None);
-            var lambdaBodyBinder = new ExecutableCodeBinder(_unboundLambda.Syntax, lambdaSymbol, ParameterBinder(lambdaSymbol, Binder));
+            var lambdaBodyBinder = new(_unboundLambda.Syntax, lambdaSymbol, ParameterBinder(lambdaSymbol, Binder));
             var block = BindLambdaBody(lambdaSymbol, lambdaBodyBinder, diagnostics);
             return (lambdaSymbol, block, lambdaBodyBinder, diagnostics);
         }
@@ -788,7 +788,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             public readonly ImmutableArray<RefKind> ParameterRefKinds;
             public readonly NamedTypeSymbol TaskLikeReturnTypeOpt;
 
-            public static readonly ReturnInferenceCacheKey Empty = new ReturnInferenceCacheKey(ImmutableArray<TypeWithAnnotations>.Empty, ImmutableArray<RefKind>.Empty, null);
+            public static readonly ReturnInferenceCacheKey Empty = new(ImmutableArray<TypeWithAnnotations>.Empty, ImmutableArray<RefKind>.Empty, null);
 
             private ReturnInferenceCacheKey(ImmutableArray<TypeWithAnnotations> parameterTypes, ImmutableArray<RefKind> parameterRefKinds, NamedTypeSymbol taskLikeReturnTypeOpt)
             {

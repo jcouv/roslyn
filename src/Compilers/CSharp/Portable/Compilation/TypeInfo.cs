@@ -10,7 +10,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 {
     internal readonly struct CSharpTypeInfo : IEquatable<CSharpTypeInfo>
     {
-        internal static readonly CSharpTypeInfo None = new CSharpTypeInfo(type: null, convertedType: null, nullability: default, convertedNullability: default, Conversion.Identity);
+        internal static readonly CSharpTypeInfo None = new(type: null, convertedType: null, nullability: default, convertedNullability: default, Conversion.Identity);
 
         // should be best guess if there is one, or error type if none.
         /// <summary>

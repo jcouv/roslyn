@@ -12,8 +12,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 {
     internal sealed class CSDiagnosticInfo : DiagnosticInfoWithSymbols
     {
-        public static readonly DiagnosticInfo EmptyErrorInfo = new CSDiagnosticInfo(0);
-        public static readonly DiagnosticInfo VoidDiagnosticInfo = new CSDiagnosticInfo(ErrorCode.Void);
+        public static readonly DiagnosticInfo EmptyErrorInfo = new(0);
+        public static readonly DiagnosticInfo VoidDiagnosticInfo = new(ErrorCode.Void);
 
         private readonly IReadOnlyList<Location> _additionalLocations;
 

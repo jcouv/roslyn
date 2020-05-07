@@ -976,7 +976,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         case SymbolKind.Method:
                         case SymbolKind.Property:
                         case SymbolKind.Event:
-                            info = new CSDiagnosticInfo(ErrorCode.ERR_BindToBogus, this);
+                            info = new(ErrorCode.ERR_BindToBogus, this);
                             break;
                     }
                 }

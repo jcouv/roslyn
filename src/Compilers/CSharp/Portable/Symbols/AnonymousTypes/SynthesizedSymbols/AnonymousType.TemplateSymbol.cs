@@ -92,7 +92,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     typeParametersBuilder.Add(typeParameter);
 
                     // Add a property
-                    AnonymousTypePropertySymbol property = new AnonymousTypePropertySymbol(this, field, TypeWithAnnotations.Create(typeParameter), fieldIndex);
+                    AnonymousTypePropertySymbol property = new(this, field, TypeWithAnnotations.Create(typeParameter), fieldIndex);
                     propertiesBuilder.Add(property);
 
                     // Property related symbols

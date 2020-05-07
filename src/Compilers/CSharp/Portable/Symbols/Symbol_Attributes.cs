@@ -444,7 +444,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         var syntaxTree = attributeDeclarationSyntaxList.Node.SyntaxTree;
                         var binder = rootBinderOpt ?? compilation.GetBinderFactory(syntaxTree).GetBinder(attributeDeclarationSyntaxList.Node);
 
-                        binder = new ContextualAttributeBinder(binder, this);
+                        binder = new(binder, this);
                         Debug.Assert(!binder.InAttributeArgument, "Possible cycle in attribute binding");
 
                         for (int i = 0; i < attributesToBindCount - prevCount; i++)
@@ -557,7 +557,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(boundAttributesBuilder != null);
             Debug.Assert(!boundAttributesBuilder.Contains((attr) => attr != null));
 
-            var earlyBinder = new EarlyWellKnownAttributeBinder(binders[0]);
+            var earlyBinder = new(binders[0]);
             var arguments = new EarlyDecodeWellKnownAttributeArguments<EarlyWellKnownAttributeBinder, NamedTypeSymbol, AttributeSyntax, AttributeLocation>();
             arguments.SymbolPart = symbolPart;
 
@@ -568,7 +568,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     if (binders[i] != earlyBinder.Next)
                     {
-                        earlyBinder = new EarlyWellKnownAttributeBinder(binders[i]);
+                        earlyBinder = new(binders[i]);
                     }
 
                     arguments.Binder = earlyBinder;

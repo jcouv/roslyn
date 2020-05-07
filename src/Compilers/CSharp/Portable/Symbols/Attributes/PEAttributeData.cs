@@ -27,7 +27,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
         internal PEAttributeData(PEModuleSymbol moduleSymbol, CustomAttributeHandle handle)
         {
-            _decoder = new MetadataDecoder(moduleSymbol);
+            _decoder = new(moduleSymbol);
             _handle = handle;
         }
 

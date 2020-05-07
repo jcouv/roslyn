@@ -43,7 +43,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private static QuickAttributeChecker CreatePredefinedQuickAttributeChecker()
         {
-            var result = new QuickAttributeChecker();
+            var result = new();
             result.AddName(AttributeDescription.TypeIdentifierAttribute.Name, QuickAttributes.TypeIdentifier);
             result.AddName(AttributeDescription.TypeForwardedToAttribute.Name, QuickAttributes.TypeForwardedTo);
 
@@ -96,7 +96,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     if (_nameToAttributeMap.TryGetValue(target, out var foundAttributes))
                     {
                         // copy the QuickAttributes from alias target to alias name
-                        (newChecker ?? (newChecker = new QuickAttributeChecker(this))).AddName(name, foundAttributes);
+                        (newChecker ?? (newChecker = new(this))).AddName(name, foundAttributes);
                     }
                 }
             }

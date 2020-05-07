@@ -63,7 +63,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal static MethodBodySemanticModel Create(SyntaxTreeSemanticModel containingSemanticModel, MethodSymbol owner, InitialState initialState)
         {
             Debug.Assert(containingSemanticModel != null);
-            var result = new MethodBodySemanticModel(owner, initialState.Binder, initialState.Syntax, containingSemanticModel);
+            var result = new(owner, initialState.Binder, initialState.Syntax, containingSemanticModel);
 
             if (initialState.Body != null)
             {
@@ -174,8 +174,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             Debug.Assert(binder != null);
 
-            Binder executablebinder = new WithNullableContextBinder(SyntaxTree, position, binder ?? this.RootBinder);
-            executablebinder = new ExecutableCodeBinder(body, methodSymbol, executablebinder);
+            Binder executablebinder = new(SyntaxTree, position, binder ?? this.RootBinder);
+            executablebinder = new(body, methodSymbol, executablebinder);
             var blockBinder = executablebinder.GetBinder(body).WithAdditionalFlags(GetSemanticModelBinderFlags());
             // We don't pass the snapshot manager along here, because we're speculating about an entirely new body and it should not
             // be influenced by any existing code in the body.
@@ -200,8 +200,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             var methodSymbol = (MethodSymbol)this.MemberSymbol;
-            binder = new WithNullableContextBinder(SyntaxTree, position, binder);
-            binder = new ExecutableCodeBinder(statement, methodSymbol, binder);
+            binder = new(SyntaxTree, position, binder);
+            binder = new(statement, methodSymbol, binder);
             speculativeModel = CreateSpeculative(parentModel, methodSymbol, statement, binder, GetSnapshotManager(), GetRemappedSymbols(), position);
             return true;
         }
@@ -218,8 +218,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             var methodSymbol = (MethodSymbol)this.MemberSymbol;
-            binder = new WithNullableContextBinder(SyntaxTree, position, binder);
-            binder = new ExecutableCodeBinder(expressionBody, methodSymbol, binder);
+            binder = new(SyntaxTree, position, binder);
+            binder = new(expressionBody, methodSymbol, binder);
 
             speculativeModel = CreateSpeculative(parentModel, methodSymbol, expressionBody, binder, position);
             return true;
@@ -233,8 +233,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (binder != null)
                 {
                     var methodSymbol = (MethodSymbol)this.MemberSymbol;
-                    binder = new WithNullableContextBinder(SyntaxTree, position, binder);
-                    binder = new ExecutableCodeBinder(constructorInitializer, methodSymbol, binder);
+                    binder = new(SyntaxTree, position, binder);
+                    binder = new(constructorInitializer, methodSymbol, binder);
                     speculativeModel = CreateSpeculative(parentModel, methodSymbol, constructorInitializer, binder, position);
                     return true;
                 }

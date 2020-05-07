@@ -1535,7 +1535,7 @@ namespace Microsoft.CodeAnalysis.Operations
                 HashSet<DiagnosticInfo> useSiteDiagnostics = null;
                 var compilation = (CSharpCompilation)_semanticModel.Compilation;
 
-                info = new ForEachLoopOperationInfo(enumeratorInfoOpt.ElementType.GetPublicSymbol(),
+                info = new(enumeratorInfoOpt.ElementType.GetPublicSymbol(),
                                                     enumeratorInfoOpt.GetEnumeratorMethod.GetPublicSymbol(),
                                                     ((PropertySymbol)enumeratorInfoOpt.CurrentPropertyGetter.AssociatedSymbol).GetPublicSymbol(),
                                                     enumeratorInfoOpt.MoveNextMethod.GetPublicSymbol(),
@@ -1730,7 +1730,7 @@ namespace Microsoft.CodeAnalysis.Operations
             }
 
             bool multiVariableImplicit = boundLocalDeclaration.WasCompilerGenerated;
-            IVariableDeclarationOperation multiVariableDeclaration = new CSharpLazyVariableDeclarationOperation(this, boundLocalDeclaration, _semanticModel, varDeclaration, null, default, multiVariableImplicit);
+            IVariableDeclarationOperation multiVariableDeclaration = new(this, boundLocalDeclaration, _semanticModel, varDeclaration, null, default, multiVariableImplicit);
             ITypeSymbol type = null;
             Optional<object> constantValue = default(Optional<object>);
             // In the case of a for loop, varStatement and varDeclaration will be the same syntax node.
@@ -1750,7 +1750,7 @@ namespace Microsoft.CodeAnalysis.Operations
                     declarationGroupSyntax;
 
             bool declarationIsImplicit = boundMultipleLocalDeclarations.WasCompilerGenerated;
-            IVariableDeclarationOperation multiVariableDeclaration = new CSharpLazyVariableDeclarationOperation(this, boundMultipleLocalDeclarations, _semanticModel, declarationSyntax, null, default, declarationIsImplicit);
+            IVariableDeclarationOperation multiVariableDeclaration = new(this, boundMultipleLocalDeclarations, _semanticModel, declarationSyntax, null, default, declarationIsImplicit);
 
             ITypeSymbol type = null;
             Optional<object> constantValue = default(Optional<object>);
@@ -1758,7 +1758,7 @@ namespace Microsoft.CodeAnalysis.Operations
             // syntax itself is a VariableDeclaration. We do this for using declarations as well, but since that doesn't have a separate parent bound
             // node, we need to check the current node for that explicitly.
             bool isImplicit = declarationGroupSyntax == declarationSyntax || boundMultipleLocalDeclarations.WasCompilerGenerated || boundMultipleLocalDeclarations is BoundUsingLocalDeclarations;
-            var variableDeclaration = new VariableDeclarationGroupOperation(ImmutableArray.Create(multiVariableDeclaration), _semanticModel, declarationGroupSyntax, type, constantValue, isImplicit);
+            var variableDeclaration = new(ImmutableArray.Create(multiVariableDeclaration), _semanticModel, declarationGroupSyntax, type, constantValue, isImplicit);
 
             if (boundMultipleLocalDeclarations is BoundUsingLocalDeclarations usingDecl)
             {
@@ -2067,14 +2067,14 @@ namespace Microsoft.CodeAnalysis.Operations
                 case FieldSymbol field:
                     {
                         var constantValue = field.ConstantValue is null ? default(Optional<object>) : new Optional<object>(field.ConstantValue);
-                        var receiver = new InstanceReferenceOperation(
+                        var receiver = new(
                             InstanceReferenceKind.PatternInput, _semanticModel, nameSyntax, matchedType, constantValue, isImplicit: true);
                         return new FieldReferenceOperation(
                             field.GetPublicSymbol(), isDeclaration: false, receiver, _semanticModel, nameSyntax, field.Type.GetPublicSymbol(), constantValue, isImplicit: isImplicit);
                     }
                 case PropertySymbol property:
                     {
-                        var receiver = new InstanceReferenceOperation(
+                        var receiver = new(
                             InstanceReferenceKind.PatternInput, _semanticModel, nameSyntax, matchedType, constantValue: default, isImplicit: true);
                         return new PropertyReferenceOperation(
                             property.GetPublicSymbol(), ImmutableArray<IArgumentOperation>.Empty, receiver, _semanticModel, nameSyntax, property.Type.GetPublicSymbol(),

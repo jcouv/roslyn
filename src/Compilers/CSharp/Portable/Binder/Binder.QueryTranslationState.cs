@@ -41,7 +41,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             public static RangeVariableMap RangeVariableMap(params RangeVariableSymbol[] parameters)
             {
-                var result = new RangeVariableMap();
+                var result = new();
                 foreach (var vars in parameters)
                 {
                     result.Add(vars, ImmutableArray<string>.Empty);
@@ -51,7 +51,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             public RangeVariableMap RangeVariableMap()
             {
-                var result = new RangeVariableMap();
+                var result = new();
                 foreach (var vars in allRangeVariables.Keys)
                 {
                     result.Add(vars, allRangeVariables[vars].ToImmutable());
@@ -62,7 +62,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             internal RangeVariableSymbol AddRangeVariable(Binder binder, SyntaxToken identifier, DiagnosticBag diagnostics)
             {
                 string name = identifier.ValueText;
-                var result = new RangeVariableSymbol(name, binder.ContainingMemberOrLambda, identifier.GetLocation());
+                var result = new(name, binder.ContainingMemberOrLambda, identifier.GetLocation());
                 bool error = false;
 
                 foreach (var existingRangeVariable in allRangeVariables.Keys)
@@ -76,7 +76,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 if (!error)
                 {
-                    var collisionDetector = new LocalScopeBinder(binder);
+                    var collisionDetector = new(binder);
                     collisionDetector.ValidateDeclarationNameConflictsInScope(result, diagnostics);
                 }
 

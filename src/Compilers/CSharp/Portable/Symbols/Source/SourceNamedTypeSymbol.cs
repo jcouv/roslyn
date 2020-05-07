@@ -174,7 +174,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     }
 
                     var name = typeParameterNames[i];
-                    var location = new SourceLocation(tp.Identifier);
+                    var location = new(tp.Identifier);
                     var varianceKind = typeParameterVarianceKeywords[i];
                     if (name == null)
                     {
@@ -1352,7 +1352,7 @@ next:;
             if (this.Indexers.Any())
             {
                 string defaultMemberName = this.Indexers.First().MetadataName; // UNDONE: IndexerNameAttribute
-                var defaultMemberNameConstant = new TypedConstant(compilation.GetSpecialType(SpecialType.System_String), TypedConstantKind.Primitive, defaultMemberName);
+                var defaultMemberNameConstant = new(compilation.GetSpecialType(SpecialType.System_String), TypedConstantKind.Primitive, defaultMemberName);
 
                 AddSynthesizedAttribute(ref attributes, compilation.TrySynthesizeAttribute(
                     WellKnownMember.System_Reflection_DefaultMemberAttribute__ctor,

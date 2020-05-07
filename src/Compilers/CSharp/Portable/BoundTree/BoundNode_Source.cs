@@ -19,7 +19,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal string DumpSource()
         {
             int indentSize = 4;
-            var builder = new StringBuilder();
+            var builder = new();
             appendSourceCore(this, indent: 0, tempIdentifiers: new Dictionary<SynthesizedLocal, int>());
             return builder.ToString();
 

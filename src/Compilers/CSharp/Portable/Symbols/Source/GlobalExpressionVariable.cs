@@ -188,7 +188,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                 fieldsBeingBound = new ConsList<FieldSymbol>(this, fieldsBeingBound);
 
-                binder = new ImplicitlyTypedFieldBinder(binder, fieldsBeingBound);
+                binder = new(binder, fieldsBeingBound);
                 var diagnostics = DiagnosticBag.GetInstance();
 
                 switch (nodeToBind.Kind())

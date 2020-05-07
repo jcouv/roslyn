@@ -51,7 +51,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public static OrderedSet<Symbol> Analyze(CSharpCompilation compilation, MethodSymbol method, BoundNode node, DiagnosticBag diagnostics)
         {
             var initiallyAssignedVariables = UnassignedVariablesWalker.Analyze(compilation, method, node, convertInsufficientExecutionStackExceptionToCancelledByStackGuardException: true);
-            var walker = new IteratorAndAsyncCaptureWalker(compilation, method, node, initiallyAssignedVariables);
+            var walker = new(compilation, method, node, initiallyAssignedVariables);
 
             walker._convertInsufficientExecutionStackExceptionToCancelledByStackGuardException = true;
 

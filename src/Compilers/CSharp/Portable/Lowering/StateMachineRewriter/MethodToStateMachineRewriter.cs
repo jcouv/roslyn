@@ -286,7 +286,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 bool reused = false;
                 if (!proxies.TryGetValue(local, out proxy))
                 {
-                    proxy = new CapturedToStateMachineFieldReplacement(GetOrAllocateReusableHoistedField(TypeMap.SubstituteType(local.Type).Type, out reused, local), isReusable: true);
+                    proxy = new(GetOrAllocateReusableHoistedField(TypeMap.SubstituteType(local.Type).Type, out reused, local), isReusable: true);
                     proxies.Add(local, proxy);
                 }
 
@@ -619,7 +619,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         Debug.Assert(awaitSyntaxOpt != null);
 
                         int ordinal = _synthesizedLocalOrdinals.AssignLocalOrdinal(kind, syntaxOffset);
-                        var id = new LocalDebugId(syntaxOffset, ordinal);
+                        var id = new(syntaxOffset, ordinal);
 
                         // Editing await expression is not allowed. Thus all spilled fields will be present in the previous state machine.
                         // However, it may happen that the type changes, in which case we need to allocate a new slot.
@@ -703,7 +703,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (newLocalsBuilder.Count == 0)
                 {
                     newLocalsBuilder.Free();
-                    translated = new BoundStatementList(node.Syntax, statements);
+                    translated = new(node.Syntax, statements);
                 }
                 else
                 {

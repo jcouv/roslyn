@@ -94,7 +94,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             _handle = fieldDef;
             _containingType = containingType;
-            _packedFlags = new PackedFlags();
+            _packedFlags = new();
 
             try
             {
@@ -107,7 +107,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                     _name = String.Empty;
                 }
 
-                _lazyUseSiteDiagnostic = new CSDiagnosticInfo(ErrorCode.ERR_BindToBogus, this);
+                _lazyUseSiteDiagnostic = new(ErrorCode.ERR_BindToBogus, this);
             }
         }
 
@@ -293,7 +293,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             PEModuleSymbol containingPEModule = this.ContainingPEModule;
             if (containingPEModule.Module.HasFixedBufferAttribute(_handle, out elementTypeName, out bufferSize))
             {
-                var decoder = new MetadataDecoder(containingPEModule);
+                var decoder = new(containingPEModule);
                 var elementType = decoder.GetTypeSymbolForSerializedType(elementTypeName);
                 if (elementType.FixedBufferElementSizeInBytes() != 0)
                 {

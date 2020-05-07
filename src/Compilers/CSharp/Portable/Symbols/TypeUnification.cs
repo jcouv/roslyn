@@ -257,7 +257,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             if (substitution == null)
             {
-                substitution = new MutableTypeMap();
+                substitution = new();
             }
 
             // MutableTypeMap.Add will throw if the key has already been added.  However,

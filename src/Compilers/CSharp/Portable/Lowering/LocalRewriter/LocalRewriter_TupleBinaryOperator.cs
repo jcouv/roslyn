@@ -68,7 +68,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             var element = tuple.Arguments[i];
                             var elementConversion = underlyingConversions[i];
                             var elementType = resultTypes[i].Type;
-                            var newArgument = new BoundConversion(
+                            var newArgument = new(
                                 syntax: expr.Syntax,
                                 operand: element,
                                 conversion: elementConversion,
@@ -81,7 +81,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             builder.Add(newArgument);
                         }
                         var newArguments = builder.ToImmutableAndFree();
-                        tuple = new BoundConvertedTupleLiteral(
+                        tuple = new(
                             tuple.Syntax, sourceTuple: null, wasTargetTyped: true, newArguments, ImmutableArray<string?>.Empty,
                             ImmutableArray<bool>.Empty, conversion.Type, conversion.HasErrors);
                         return true;
@@ -117,7 +117,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 for (int i = 0; i < numElements; i++)
                 {
                     var fieldAccess = MakeTupleFieldAccessAndReportUseSiteDiagnostics(savedTuple, syntax, srcElementFields[i]);
-                    var convertedFieldAccess = new BoundConversion(
+                    var convertedFieldAccess = new(
                         syntax, fieldAccess, elementConversions[i], boundConversion.Checked, boundConversion.ExplicitCastInCode, null, null, destElementTypes[i].Type, boundConversion.HasErrors);
                     fieldAccessorsBuilder.Add(convertedFieldAccess);
                 }
@@ -365,7 +365,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 Debug.Assert(expr.Type is { });
                 hasValue = MakeBooleanConstant(expr.Syntax, false);
                 // Since there is no value in this nullable expression, we don't need to construct a `.GetValueOrDefault()`, `default(T)` will suffice
-                value = new BoundDefaultExpression(expr.Syntax, expr.Type.StrippedType());
+                value = new(expr.Syntax, expr.Type.StrippedType());
                 return;
             }
 

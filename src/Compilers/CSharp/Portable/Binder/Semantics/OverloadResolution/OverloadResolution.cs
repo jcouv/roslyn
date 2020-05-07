@@ -2297,7 +2297,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                         default:
                             var returnStatements = ArrayBuilder<BoundReturnStatement>.GetInstance();
-                            var walker = new ReturnStatements(returnStatements);
+                            var walker = new(returnStatements);
 
                             walker.Visit(lambda.Body);
 
@@ -3220,9 +3220,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // using the generic parameters of "method", so we can now substitute these type parameters 
                     // in the constructed effective parameters.
 
-                    var map = new TypeMap(method.TypeParameters, typeArguments, allowAlpha: true);
+                    var map = new(method.TypeParameters, typeArguments, allowAlpha: true);
 
-                    effectiveParameters = new EffectiveParameters(
+                    effectiveParameters = new(
                         map.SubstituteTypes(constructedEffectiveParameters.ParameterTypes),
                         constructedEffectiveParameters.ParameterRefKinds);
 

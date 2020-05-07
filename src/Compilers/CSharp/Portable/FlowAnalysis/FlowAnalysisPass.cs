@@ -59,9 +59,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     Debug.Assert(!submissionResultType.IsVoidType());
 
-                    var trailingExpression = new BoundDefaultExpression(method.GetNonNullSyntaxNode(), submissionResultType);
+                    var trailingExpression = new(method.GetNonNullSyntaxNode(), submissionResultType);
                     var newStatements = block.Statements.Add(new BoundReturnStatement(trailingExpression.Syntax, RefKind.None, trailingExpression));
-                    block = new BoundBlock(block.Syntax, ImmutableArray<LocalSymbol>.Empty, newStatements) { WasCompilerGenerated = true };
+                    block = new(block.Syntax, ImmutableArray<LocalSymbol>.Empty, newStatements) { WasCompilerGenerated = true };
 #if DEBUG
                     // It should not be necessary to repeat analysis after adding this node, because adding a trailing
                     // return in cases where one was missing should never produce different Diagnostics.

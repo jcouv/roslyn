@@ -23,7 +23,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
         private static TypeSymbol TransformType(TypeSymbol type, ImmutableArray<bool> transformFlags)
         {
-            var decoder = new NativeIntegerTypeDecoder(transformFlags);
+            var decoder = new(transformFlags);
             try
             {
                 var result = decoder.TransformType(type);

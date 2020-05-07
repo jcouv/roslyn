@@ -54,7 +54,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 syntax = localDeclaration.Declaration.Variables[0];
             }
 
-            BoundStatement rewrittenLocalDeclaration = new BoundExpressionStatement(
+            BoundStatement rewrittenLocalDeclaration = new(
                 syntax,
                 new BoundAssignmentOperator(
                     syntax,

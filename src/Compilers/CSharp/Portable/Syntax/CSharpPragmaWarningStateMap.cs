@@ -88,7 +88,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
             // Captures the general reporting option, accumulated of all #pragma up to the current directive.
             var accumulatedGeneralWarningState = PragmaWarningState.Default;
 
-            var current = new WarningStateMapEntry(0, PragmaWarningState.Default, accumulatedSpecificWarningState);
+            var current = new(0, PragmaWarningState.Default, accumulatedSpecificWarningState);
             entries[index] = current;
 
             while (index < directiveList.Count)
@@ -140,7 +140,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
                     }
                 }
 
-                current = new WarningStateMapEntry(currentDirective.Location.SourceSpan.End, accumulatedGeneralWarningState, accumulatedSpecificWarningState);
+                current = new(currentDirective.Location.SourceSpan.End, accumulatedGeneralWarningState, accumulatedSpecificWarningState);
                 ++index;
                 entries[index] = current;
             }

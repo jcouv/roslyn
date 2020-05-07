@@ -282,7 +282,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundStatement pinnedTempInit = factory.Assignment(factory.Local(pinnedTemp), initializerExpr, isRef: true);
 
             // &pinnedTemp
-            var addr = new BoundAddressOfOperator(
+            var addr = new(
                 factory.Syntax,
                  factory.Local(pinnedTemp),
                  type: fixedInitializer.ElementPointerType);
@@ -347,7 +347,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (needNullCheck)
             {
                 currentConditionalAccessID = ++_currentConditionalAccessID;
-                callReceiver = new BoundConditionalReceiver(
+                callReceiver = new(
                     initializerSyntax,
                     currentConditionalAccessID,
                     initializerType);
@@ -369,7 +369,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 isRef: true);
 
             // &pinnedTemp
-            var addr = new BoundAddressOfOperator(
+            var addr = new(
                 factory.Syntax,
                 factory.Local(pinnedTemp),
                 type: fixedInitializer.ElementPointerType);
@@ -389,7 +389,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (needNullCheck)
             {
                 // initializer?.{temp =ref .GetPinnable(), (int*)&pinnedTemp} ?? default;
-                pinAndGetPtr = new BoundLoweredConditionalAccess(
+                pinAndGetPtr = new(
                     initializerSyntax,
                     initializerExpr,
                     hasValueMethodOpt: null,
@@ -465,7 +465,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                helperCall = new BoundBadExpression(fixedInitializer.Syntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, ImmutableArray<BoundExpression>.Empty, ErrorTypeSymbol.UnknownResultType);
+                helperCall = new(fixedInitializer.Syntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, ImmutableArray<BoundExpression>.Empty, ErrorTypeSymbol.UnknownResultType);
             }
 
             BoundExpression addition = factory.Binary(BinaryOperatorKind.PointerAndIntAddition, localType, factory.Local(localSymbol), helperCall);
@@ -526,7 +526,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
                 else
                 {
-                    lengthCall = new BoundBadExpression(fixedInitializer.Syntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, ImmutableArray.Create<BoundExpression>(factory.Local(pinnedTemp)), ErrorTypeSymbol.UnknownResultType);
+                    lengthCall = new(fixedInitializer.Syntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, ImmutableArray.Create<BoundExpression>(factory.Local(pinnedTemp)), ErrorTypeSymbol.UnknownResultType);
                 }
             }
 
@@ -542,7 +542,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // NOTE: this is a fixed statement address-of in that it's the initial value of the pointer.
             //&temp[0]
-            BoundExpression firstElementAddress = new BoundAddressOfOperator(factory.Syntax, firstElement, type: new PointerTypeSymbol(arrayElementType));
+            BoundExpression firstElementAddress = new(factory.Syntax, firstElement, type: new PointerTypeSymbol(arrayElementType));
             BoundExpression convertedFirstElementAddress = factory.Convert(
                 localType,
                 firstElementAddress,

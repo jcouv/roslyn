@@ -105,12 +105,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Retargeting
 
             ModuleSymbol[] modules = new ModuleSymbol[underlyingAssembly.Modules.Length];
 
-            modules[0] = new RetargetingModuleSymbol(this, (SourceModuleSymbol)underlyingAssembly.Modules[0]);
+            modules[0] = new(this, (SourceModuleSymbol)underlyingAssembly.Modules[0]);
 
             for (int i = 1; i < underlyingAssembly.Modules.Length; i++)
             {
                 PEModuleSymbol under = (PEModuleSymbol)underlyingAssembly.Modules[i];
-                modules[i] = new PEModuleSymbol(this, under.Module, under.ImportOptions, i);
+                modules[i] = new(this, under.Module, under.ImportOptions, i);
             }
 
             _modules = modules.AsImmutableOrNull();

@@ -57,7 +57,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundAssignmentOperator assignmentToLockTemp;
             BoundLocal boundLockTemp = _factory.StoreToTemp(rewrittenArgument, out assignmentToLockTemp, syntaxOpt: lockSyntax, kind: SynthesizedLocalKind.Lock);
 
-            BoundStatement boundLockTempInit = new BoundExpressionStatement(lockSyntax, assignmentToLockTemp);
+            BoundStatement boundLockTempInit = new(lockSyntax, assignmentToLockTemp);
             BoundExpression exitCallExpr;
 
             MethodSymbol exitMethod;
@@ -71,10 +71,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                exitCallExpr = new BoundBadExpression(lockSyntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, ImmutableArray.Create<BoundExpression>(boundLockTemp), ErrorTypeSymbol.UnknownResultType);
+                exitCallExpr = new(lockSyntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, ImmutableArray.Create<BoundExpression>(boundLockTemp), ErrorTypeSymbol.UnknownResultType);
             }
 
-            BoundStatement exitCall = new BoundExpressionStatement(lockSyntax, exitCallExpr);
+            BoundStatement exitCall = new(lockSyntax, exitCallExpr);
 
             MethodSymbol enterMethod;
 
@@ -104,9 +104,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                     syntaxOpt: lockSyntax,
                     kind: SynthesizedLocalKind.LockTaken);
 
-                BoundStatement boundLockTakenTempInit = new BoundExpressionStatement(lockSyntax, assignmentToLockTakenTemp);
+                BoundStatement boundLockTakenTempInit = new(lockSyntax, assignmentToLockTakenTemp);
 
-                BoundStatement enterCall = new BoundExpressionStatement(
+                BoundStatement enterCall = new(
                     lockSyntax,
                     BoundCall.Synthesized(
                         lockSyntax,
@@ -165,10 +165,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
                 else
                 {
-                    enterCallExpr = new BoundBadExpression(lockSyntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, ImmutableArray.Create<BoundExpression>(boundLockTemp), ErrorTypeSymbol.UnknownResultType);
+                    enterCallExpr = new(lockSyntax, LookupResultKind.NotInvocable, ImmutableArray<Symbol?>.Empty, ImmutableArray.Create<BoundExpression>(boundLockTemp), ErrorTypeSymbol.UnknownResultType);
                 }
 
-                BoundStatement enterCall = new BoundExpressionStatement(
+                BoundStatement enterCall = new(
                     lockSyntax,
                     enterCallExpr);
 

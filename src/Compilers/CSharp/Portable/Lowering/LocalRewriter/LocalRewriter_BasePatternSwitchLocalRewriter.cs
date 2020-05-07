@@ -264,7 +264,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // in a different section via the use of a local function), so we need to analyze all
                 // of the when clauses to see if they are all simple enough to conclude that they do
                 // not mutate pattern variables.
-                var mightAssignWalker = new WhenClauseMightAssignWalker();
+                var mightAssignWalker = new();
                 bool canShareTemps =
                     !decisionDag.TopologicallySortedNodes
                     .Any(node => node is BoundWhenDecisionDagNode w && mightAssignWalker.MightAssignSomething(w.WhenExpression));
@@ -480,7 +480,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
 
                 LabelSymbol defaultLabel = GetDagNodeLabel(previous.WhenFalse);
-                var dispatch = new BoundSwitchDispatch(
+                var dispatch = new(
                     node.Syntax, _tempAllocator.GetTemp(firstTest.Input), cases.ToImmutableAndFree(), defaultLabel, stringEquality);
                 _loweredDecisionDag.Add(dispatch);
                 return true;
@@ -536,7 +536,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 TypeSymbol returnType = _factory.SpecialType(SpecialType.System_UInt32);
                 TypeSymbol paramType = _factory.SpecialType(SpecialType.System_String);
 
-                var method = new SynthesizedStringSwitchHashMethod(module.SourceModule, privateImplClass, returnType, paramType);
+                var method = new(module.SourceModule, privateImplClass, returnType, paramType);
                 privateImplClass.TryAddSynthesizedMethod(method);
             }
 

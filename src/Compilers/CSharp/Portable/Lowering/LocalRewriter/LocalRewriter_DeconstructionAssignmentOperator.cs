@@ -180,7 +180,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ArrayBuilder<LocalSymbol> temps, DeconstructionSideEffects effects, ref bool inInit)
         {
             // Example:
-            // var (x, y) = new Point(1, 2);
+            // var (x, y) = new(1, 2);
             var deconstructionInfo = conversion.DeconstructionInfo;
             if (!deconstructionInfo.IsDefault)
             {
@@ -289,9 +289,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             var outLocals = ArrayBuilder<BoundExpression>.GetInstance(outputPlaceholders.Length);
             foreach (var outputPlaceholder in outputPlaceholders)
             {
-                var localSymbol = new SynthesizedLocal(_factory.CurrentFunction, TypeWithAnnotations.Create(outputPlaceholder.Type), SynthesizedLocalKind.LoweringTemp);
+                var localSymbol = new(_factory.CurrentFunction, TypeWithAnnotations.Create(outputPlaceholder.Type), SynthesizedLocalKind.LoweringTemp);
 
-                var localBound = new BoundLocal(target.Syntax, localSymbol, constantValueOpt: null, type: outputPlaceholder.Type)
+                var localBound = new(target.Syntax, localSymbol, constantValueOpt: null, type: outputPlaceholder.Type)
                 { WasCompilerGenerated = true };
 
                 temps.Add(localSymbol);
@@ -380,7 +380,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             internal static DeconstructionSideEffects GetInstance()
             {
-                var result = new DeconstructionSideEffects();
+                var result = new();
                 result.init = ArrayBuilder<BoundExpression>.GetInstance();
                 result.deconstructions = ArrayBuilder<BoundExpression>.GetInstance();
                 result.conversions = ArrayBuilder<BoundExpression>.GetInstance();

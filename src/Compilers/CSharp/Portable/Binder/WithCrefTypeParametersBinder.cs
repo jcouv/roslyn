@@ -127,7 +127,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     string name = typeParameterSyntax.Identifier.ValueText;
                     if (SyntaxFacts.IsValidIdentifier(name) && !map.ContainsKey(name))
                     {
-                        TypeParameterSymbol typeParameterSymbol = new CrefTypeParameterSymbol(name, i, typeParameterSyntax);
+                        TypeParameterSymbol typeParameterSymbol = new(name, i, typeParameterSyntax);
                         map.Add(name, typeParameterSymbol);
                     }
                 }

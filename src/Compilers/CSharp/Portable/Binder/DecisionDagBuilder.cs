@@ -81,7 +81,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             LabelSymbol defaultLabel,
             DiagnosticBag diagnostics)
         {
-            var builder = new DecisionDagBuilder(compilation, defaultLabel, diagnostics);
+            var builder = new(compilation, defaultLabel, diagnostics);
             return builder.CreateDecisionDagForSwitchStatement(syntax, switchGoverningExpression, switchSections);
         }
 
@@ -96,7 +96,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             LabelSymbol defaultLabel,
             DiagnosticBag diagnostics)
         {
-            var builder = new DecisionDagBuilder(compilation, defaultLabel, diagnostics);
+            var builder = new(compilation, defaultLabel, diagnostics);
             return builder.CreateDecisionDagForSwitchExpression(syntax, switchExpressionInput, switchArms);
         }
 
@@ -112,7 +112,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             LabelSymbol whenFalseLabel,
             DiagnosticBag diagnostics)
         {
-            var builder = new DecisionDagBuilder(compilation, defaultLabel: whenFalseLabel, diagnostics);
+            var builder = new(compilation, defaultLabel: whenFalseLabel, diagnostics);
             return builder.CreateDecisionDagForIsPattern(syntax, inputExpression, pattern, whenTrueLabel);
         }
 
@@ -310,21 +310,21 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(iTupleType.Name == "ITuple");
 
             tests.Add(new BoundDagTypeTest(syntax, iTupleType, input));
-            var valueAsITupleEvaluation = new BoundDagTypeEvaluation(syntax, iTupleType, input);
+            var valueAsITupleEvaluation = new(syntax, iTupleType, input);
             tests.Add(valueAsITupleEvaluation);
-            var valueAsITuple = new BoundDagTemp(syntax, iTupleType, valueAsITupleEvaluation);
+            var valueAsITuple = new(syntax, iTupleType, valueAsITupleEvaluation);
 
-            var lengthEvaluation = new BoundDagPropertyEvaluation(syntax, getLengthProperty, OriginalInput(valueAsITuple, getLengthProperty));
+            var lengthEvaluation = new(syntax, getLengthProperty, OriginalInput(valueAsITuple, getLengthProperty));
             tests.Add(lengthEvaluation);
-            var lengthTemp = new BoundDagTemp(syntax, this._compilation.GetSpecialType(SpecialType.System_Int32), lengthEvaluation);
+            var lengthTemp = new(syntax, this._compilation.GetSpecialType(SpecialType.System_Int32), lengthEvaluation);
             tests.Add(new BoundDagValueTest(syntax, ConstantValue.Create(patternLength), lengthTemp));
 
             var getItemPropertyInput = OriginalInput(valueAsITuple, getItemProperty);
             for (int i = 0; i < patternLength; i++)
             {
-                var indexEvaluation = new BoundDagIndexEvaluation(syntax, getItemProperty, i, getItemPropertyInput);
+                var indexEvaluation = new(syntax, getItemProperty, i, getItemPropertyInput);
                 tests.Add(indexEvaluation);
-                var indexTemp = new BoundDagTemp(syntax, objectType, indexEvaluation);
+                var indexTemp = new(syntax, objectType, indexEvaluation);
                 MakeTestsAndBindings(indexTemp, pattern.Subpatterns[i].Pattern, tests, bindings);
             }
         }
@@ -418,8 +418,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     tests.Add(new BoundDagTypeTest(syntax, type, input));
                 }
 
-                var evaluation = new BoundDagTypeEvaluation(syntax, type, input);
-                input = new BoundDagTemp(syntax, type, evaluation);
+                var evaluation = new(syntax, type, input);
+                input = new(syntax, type, evaluation);
                 tests.Add(evaluation);
             }
 
@@ -474,7 +474,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (recursive.DeconstructMethod != null)
                 {
                     MethodSymbol method = recursive.DeconstructMethod;
-                    var evaluation = new BoundDagDeconstructEvaluation(recursive.Syntax, method, OriginalInput(input, method));
+                    var evaluation = new(recursive.Syntax, method, OriginalInput(input, method));
                     tests.Add(evaluation);
                     int extensionExtra = method.IsStatic ? 1 : 0;
                     int count = Math.Min(method.ParameterCount - extensionExtra, recursive.Deconstruction.Length);
@@ -482,7 +482,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         BoundPattern pattern = recursive.Deconstruction[i].Pattern;
                         SyntaxNode syntax = pattern.Syntax;
-                        var output = new BoundDagTemp(syntax, method.Parameters[i + extensionExtra].Type, evaluation, i);
+                        var output = new(syntax, method.Parameters[i + extensionExtra].Type, evaluation, i);
                         MakeTestsAndBindings(output, pattern, tests, bindings);
                     }
                 }
@@ -504,9 +504,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                         BoundPattern pattern = recursive.Deconstruction[i].Pattern;
                         SyntaxNode syntax = pattern.Syntax;
                         FieldSymbol field = elements[i];
-                        var evaluation = new BoundDagFieldEvaluation(syntax, field, OriginalInput(input, field)); // fetch the ItemN field
+                        var evaluation = new(syntax, field, OriginalInput(input, field)); // fetch the ItemN field
                         tests.Add(evaluation);
-                        var output = new BoundDagTemp(syntax, field.Type, evaluation);
+                        var output = new(syntax, field.Type, evaluation);
                         MakeTestsAndBindings(output, pattern, tests, bindings);
                     }
                 }
@@ -531,10 +531,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                     switch (symbol)
                     {
                         case PropertySymbol property:
-                            evaluation = new BoundDagPropertyEvaluation(pattern.Syntax, property, OriginalInput(input, property));
+                            evaluation = new(pattern.Syntax, property, OriginalInput(input, property));
                             break;
                         case FieldSymbol field:
-                            evaluation = new BoundDagFieldEvaluation(pattern.Syntax, field, OriginalInput(input, field));
+                            evaluation = new(pattern.Syntax, field, OriginalInput(input, field));
                             break;
                         default:
                             Debug.Assert(recursive.HasAnyErrors);
@@ -543,7 +543,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
 
                     tests.Add(evaluation);
-                    var output = new BoundDagTemp(pattern.Syntax, symbol.GetTypeOrReturnType().Type, evaluation);
+                    var output = new(pattern.Syntax, symbol.GetTypeOrReturnType().Type, evaluation);
                     MakeTestsAndBindings(output, pattern, tests, bindings);
                 }
             }
@@ -562,7 +562,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private BoundDecisionDag MakeDecisionDag(SyntaxNode syntax, ImmutableArray<RemainingTestsForCase> cases)
         {
-            var defaultDecision = new BoundLeafDecisionDagNode(syntax, _defaultLabel);
+            var defaultDecision = new(syntax, _defaultLabel);
             return MakeDecisionDag(cases, defaultDecision);
         }
 
@@ -587,7 +587,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // for each one.
             DagState uniqifyState(ImmutableArray<RemainingTestsForCase> cases)
             {
-                var state = new DagState(cases);
+                var state = new(cases);
                 if (uniqueState.TryGetValue(state, out DagState existingState))
                 {
                     return existingState;
@@ -658,7 +658,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             if (foundExplicitNullTest && d is BoundDagNonNullTest t)
                             {
                                 // Turn an "implicit" non-null test into an explicit null test to preserve its explicitness
-                                state.SelectedTest = new BoundDagExplicitNullTest(t.Syntax, t.Input, t.HasErrors);
+                                state.SelectedTest = new(t.Syntax, t.Input, t.HasErrors);
                                 (state.TrueBranch, state.FalseBranch) = (state.FalseBranch, state.TrueBranch);
                             }
                             break;
@@ -668,7 +668,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            var decisionDag = new DecisionDag(initialState);
+            var decisionDag = new(initialState);
             // Note: It is useful for debugging the dag state table construction to view `decisionDag.Dump()` here.
             workList.Free();
 
@@ -681,10 +681,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 if (!finalStates.TryGetValue(label, out BoundDecisionDagNode final))
                 {
-                    final = new BoundLeafDecisionDagNode(syntax, label);
+                    final = new(syntax, label);
                     if (!bindings.IsDefaultOrEmpty)
                     {
-                        final = new BoundWhenDecisionDagNode(syntax, bindings, null, final, null);
+                        final = new(syntax, bindings, null, final, null);
                     }
 
                     finalStates.Add(label, final);
@@ -718,7 +718,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         BoundDecisionDagNode whenTrue = finalState(first.Syntax, first.CaseLabel, default);
                         BoundDecisionDagNode whenFails = state.FalseBranch.Dag;
                         Debug.Assert(whenFails != null);
-                        state.Dag = new BoundWhenDecisionDagNode(first.Syntax, first.Bindings, first.WhenClause, whenTrue, whenFails);
+                        state.Dag = new(first.Syntax, first.Bindings, first.WhenClause, whenTrue, whenFails);
                     }
                 }
                 else
@@ -730,7 +730,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 BoundDecisionDagNode next = state.TrueBranch.Dag;
                                 Debug.Assert(next != null);
                                 Debug.Assert(state.FalseBranch == null);
-                                state.Dag = new BoundEvaluationDecisionDagNode(e.Syntax, e, next);
+                                state.Dag = new(e.Syntax, e, next);
                             }
                             break;
                         case BoundDagTest d:
@@ -739,7 +739,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 BoundDecisionDagNode whenFalse = state.FalseBranch.Dag;
                                 Debug.Assert(whenTrue != null);
                                 Debug.Assert(whenFalse != null);
-                                state.Dag = new BoundTestDecisionDagNode(d.Syntax, d, whenTrue, whenFalse);
+                                state.Dag = new(d.Syntax, d, whenTrue, whenFalse);
                             }
                             break;
                         case var n:
@@ -1319,7 +1319,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         private class DagStateEquivalence : IEqualityComparer<DagState>
         {
-            public static readonly DagStateEquivalence Instance = new DagStateEquivalence();
+            public static readonly DagStateEquivalence Instance = new();
 
             private DagStateEquivalence() { }
 

@@ -57,7 +57,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             _factory = factory;
             _factory.CurrentFunction = containingMethod;
             Debug.Assert(TypeSymbol.Equals(factory.CurrentType, (containingType ?? containingMethod.ContainingType), TypeCompareKind.ConsiderEverything2));
-            _dynamicFactory = new LoweredDynamicOperationFactory(factory, containingMethodOrdinal);
+            _dynamicFactory = new(factory, containingMethodOrdinal);
             _previousSubmissionFields = previousSubmissionFields;
             _allowOmissionOfConditionalCalls = allowOmissionOfConditionalCalls;
             _diagnostics = diagnostics;
@@ -97,12 +97,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             try
             {
-                var factory = new SyntheticBoundNodeFactory(method, statement.Syntax, compilationState, diagnostics);
+                var factory = new(method, statement.Syntax, compilationState, diagnostics);
                 DynamicAnalysisInjector? dynamicInstrumenter = instrumentForDynamicAnalysis ? DynamicAnalysisInjector.TryCreate(method, statement, factory, diagnostics, debugDocumentProvider, Instrumenter.NoOp) : null;
 
                 // We don’t want IL to differ based upon whether we write the PDB to a file/stream or not.
                 // Presence of sequence points in the tree affects final IL, therefore, we always generate them.
-                var localRewriter = new LocalRewriter(compilation, method, methodOrdinal, statement, containingType, factory, previousSubmissionFields, allowOmissionOfConditionalCalls, diagnostics,
+                var localRewriter = new(compilation, method, methodOrdinal, statement, containingType, factory, previousSubmissionFields, allowOmissionOfConditionalCalls, diagnostics,
                                                       dynamicInstrumenter != null ? new DebugInfoInjector(dynamicInstrumenter) : DebugInfoInjector.Singleton);
 
                 statement.CheckLocalsDefined();
@@ -233,7 +233,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private static BoundExpression RefAccessMustMakeCopy(BoundExpression visited)
         {
-            visited = new BoundPassByCopy(
+            visited = new(
                         visited.Syntax,
                         visited,
                         type: visited.Type);
@@ -497,7 +497,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 MemberDescriptor descriptor = SpecialMembers.GetDescriptor(specialMember);
                 SpecialType type = (SpecialType)descriptor.DeclaringTypeId;
                 TypeSymbol container = compilation.Assembly.GetSpecialType(type);
-                TypeSymbol returnType = new ExtendedErrorTypeSymbol(compilation: compilation, name: descriptor.Name, errorInfo: null, arity: descriptor.Arity);
+                TypeSymbol returnType = new(compilation: compilation, name: descriptor.Name, errorInfo: null, arity: descriptor.Arity);
                 return new ErrorMethodSymbol(container, returnType, "Missing");
             }
         }

@@ -168,7 +168,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (CheckOverflowAtRuntime)
             {
-                bestSignature = new BinaryOperatorSignature(
+                bestSignature = new(
                     bestSignature.Kind.WithOverflowChecksIfApplicable(CheckOverflowAtRuntime),
                     bestSignature.LeftType,
                     bestSignature.RightType,
@@ -624,7 +624,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (!best.HasValue)
             {
-                resultSignature = new BinaryOperatorSignature(kind, leftType: null, rightType: null, CreateErrorType());
+                resultSignature = new(kind, leftType: null, rightType: null, CreateErrorType());
                 foundOperator = false;
             }
             else
@@ -646,7 +646,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 if (isNullableEquality)
                 {
-                    resultSignature = new BinaryOperatorSignature(kind | BinaryOperatorKind.NullableNull, leftType: null, rightType: null,
+                    resultSignature = new(kind | BinaryOperatorKind.NullableNull, leftType: null, rightType: null,
                         GetSpecialType(SpecialType.System_Boolean, diagnostics, node));
 
                     foundOperator = true;
@@ -2257,7 +2257,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             TypeSymbol pointedAtType = isManagedType && allowManagedAddressOf
                 ? GetSpecialType(SpecialType.System_IntPtr, diagnostics, node)
                 : operandType ?? CreateErrorType();
-            TypeSymbol pointerType = new PointerTypeSymbol(TypeWithAnnotations.Create(pointedAtType));
+            TypeSymbol pointerType = new(TypeWithAnnotations.Create(pointedAtType));
 
             return new BoundAddressOfOperator(node, operand, pointerType, hasErrors);
         }
@@ -2939,7 +2939,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 operandHasErrors = true;
             }
 
-            var typeExpression = new BoundTypeExpression(node.Right, alias, targetTypeWithAnnotations);
+            var typeExpression = new(node.Right, alias, targetTypeWithAnnotations);
             var targetTypeKind = targetType.TypeKind;
             if (operandHasErrors || IsOperatorErrors(node, operand.Type, typeExpression, diagnostics))
             {
@@ -3308,7 +3308,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             AliasSymbol alias;
             TypeWithAnnotations targetTypeWithAnnotations = BindType(node.Right, diagnostics, out alias);
             TypeSymbol targetType = targetTypeWithAnnotations.Type;
-            var typeExpression = new BoundTypeExpression(node.Right, alias, targetTypeWithAnnotations);
+            var typeExpression = new(node.Right, alias, targetTypeWithAnnotations);
             var targetTypeKind = targetType.TypeKind;
             var resultType = targetType;
 
@@ -3399,7 +3399,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (operand.IsLiteralDefault())
             {
-                operand = new BoundDefaultExpression(operand.Syntax, targetType: null, constantValueOpt: ConstantValue.Null,
+                operand = new(operand.Syntax, targetType: null, constantValueOpt: ConstantValue.Null,
                     type: GetSpecialType(SpecialType.System_Object, diagnostics, node));
             }
 
@@ -3483,7 +3483,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     if (!operandType.ContainsTypeParameter() && !targetType.ContainsTypeParameter() ||
                         operandType.IsVoidType())
                     {
-                        SymbolDistinguisher distinguisher = new SymbolDistinguisher(compilation, operandType, targetType);
+                        SymbolDistinguisher distinguisher = new(compilation, operandType, targetType);
                         Error(diagnostics, ErrorCode.ERR_NoExplicitBuiltinConv, node, distinguisher.First, distinguisher.Second);
                         hasErrors = true;
                     }
@@ -3923,7 +3923,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         Symbol falseSymbol = falseArg as Symbol;
                         if ((object)trueSymbol != null && (object)falseSymbol != null)
                         {
-                            SymbolDistinguisher distinguisher = new SymbolDistinguisher(this.Compilation, trueSymbol, falseSymbol);
+                            SymbolDistinguisher distinguisher = new(this.Compilation, trueSymbol, falseSymbol);
                             trueArg = distinguisher.First;
                             falseArg = distinguisher.Second;
                         }

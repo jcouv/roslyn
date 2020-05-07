@@ -701,7 +701,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             int generation = factory.CompilationState.ModuleBuilderOpt.CurrentGenerationOrdinal;
             var containerName = GeneratedNames.MakeDynamicCallSiteContainerName(methodOrdinal, generation);
 
-            var synthesizedContainer = new DynamicSiteContainer(containerName, factory.TopLevelMethod, factory.CurrentFunction);
+            var synthesizedContainer = new(containerName, factory.TopLevelMethod, factory.CurrentFunction);
             factory.AddNestedType(synthesizedContainer);
 
             if (!synthesizedContainer.TypeParameters.IsEmpty)
@@ -717,7 +717,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var fieldName = GeneratedNames.MakeDynamicCallSiteFieldName(_callSiteIdDispenser++);
             var delegateTypeOverContainerTypeParameters = methodToContainerTypeParametersMap.SubstituteNamedType(delegateTypeOverMethodTypeParameters);
             var callSiteType = _factory.Compilation.GetWellKnownType(WellKnownType.System_Runtime_CompilerServices_CallSite_T).Construct(new[] { delegateTypeOverContainerTypeParameters });
-            var field = new SynthesizedFieldSymbol(containerDefinition, callSiteType, fieldName, isPublic: true, isStatic: true);
+            var field = new(containerDefinition, callSiteType, fieldName, isPublic: true, isStatic: true);
             _factory.AddField(containerDefinition, field);
             Debug.Assert(_currentDynamicCallSiteContainer is { });
             return _currentDynamicCallSiteContainer.IsGenericType ? field.AsMember(_currentDynamicCallSiteContainer) : field;
@@ -849,7 +849,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             //    const C x = null;
             //    class C { public void M(SomeUnrelatedReferenceType x) { } }
             //    ...
-            //    dynamic d = new C(); d.M(x); // This will pass a null constant and the type is gone!
+            //    dynamic d = new(); d.M(x); // This will pass a null constant and the type is gone!
             //
             // as well as the alternative where x is a const null of type object.
 
