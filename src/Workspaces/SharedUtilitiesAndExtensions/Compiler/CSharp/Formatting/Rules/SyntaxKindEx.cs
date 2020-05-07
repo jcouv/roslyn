@@ -13,9 +13,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Formatting
     internal static class SyntaxKindEx
     {
         public const SyntaxKind DataKeyword = (SyntaxKind)8438;
+        public const SyntaxKind WithExpression = (SyntaxKind)9060;
 
 #if !CODE_STYLE
         private const uint DataKeywordValueAssertion = -(DataKeyword - SyntaxKind.DataKeyword);
+        private const uint WithExpressionValueAssertion = -(WithExpression - SyntaxKind.WithExpression);
 #endif
 
         // When the code style layer needs access to some syntax defined in newer versions of Roslyn,

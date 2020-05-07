@@ -208,6 +208,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Extensions
                     return (switchExpression.OpenBraceToken, switchExpression.CloseBraceToken);
                 case PropertyPatternClauseSyntax property:
                     return (property.OpenBraceToken, property.CloseBraceToken);
+#if !CODE_STYLE
+                // PROTOTYPE(records): from https://github.com/dotnet/roslyn/pull/44054
+                case WithExpressionSyntax withExpr:
+                    return (withExpr.OpenBraceToken, withExpr.CloseBraceToken);
+#endif
             }
 
             return default;
