@@ -1805,6 +1805,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         ERR_WithMemberIsNotRecordProperty = 8860,
         ERR_UnexpectedArgumentList = 8861,
         ERR_UnexpectedOrMissingConstructorInitializerInRecord = 8862,
+        ERR_CantDeriveFromNonRecordType = 8863,
 
         #endregion
 

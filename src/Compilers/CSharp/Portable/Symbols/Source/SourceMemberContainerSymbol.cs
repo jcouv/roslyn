@@ -66,7 +66,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             private const int FieldDefinitionsNotedBit = 1 << FieldDefinitionsNotedOffset;
             private const int FlattenedMembersIsSortedBit = 1 << FlattenedMembersIsSortedOffset;
 
-
             public SpecialType SpecialType
             {
                 get { return (SpecialType)((_flags >> SpecialTypeOffset) & SpecialTypeMask); }
@@ -712,6 +711,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         internal bool IsPartial => _declModifiers.HasFlag(DeclarationModifiers.Partial);
 
         internal bool IsNew => _declModifiers.HasFlag(DeclarationModifiers.New);
+
+        public bool IsData => _declModifiers.HasFlag(DeclarationModifiers.Data);
 
         public override Accessibility DeclaredAccessibility
         {

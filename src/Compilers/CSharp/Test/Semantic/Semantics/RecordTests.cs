@@ -548,6 +548,83 @@ class C
         }
 
         [Fact]
+        public void RecordsBaseType_Object()
+        {
+            var src = @"
+data class C(int X) : object
+{
+}";
+            var comp = CreateCompilation(src);
+            comp.VerifyDiagnostics();
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void RecordsBaseType_NominalRecordType(bool useImage)
+        {
+            var lib_cs = @"
+data class Base { }
+";
+            var lib = CreateCompilation(lib_cs);
+
+            var src = @"
+data class C(int X) : Base
+{
+}";
+            var comp = CreateCompilation(src, references: new[] { useImage ? lib.EmitToImageReference() : lib.ToMetadataReference() },
+                parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics();
+            // TODO2
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void RecordsBaseType_PositionalRecordType(bool useImage)
+        {
+            var lib_cs = @"
+public data class Base(int X)
+{
+    public Base() { }
+}
+";
+            var lib = CreateCompilation(lib_cs);
+
+            var src = @"
+public data class C(int Y) : Base
+{
+}";
+            var comp = CreateCompilation(src, references: new[] { useImage ? lib.EmitToImageReference() : lib.ToMetadataReference() },
+                parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics();
+            // TODO2
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void RecordsBaseType_RegularClassType(bool useImage)
+        {
+            var lib_cs = @"
+public class Base { }
+";
+            var lib = CreateCompilation(lib_cs);
+
+            var src = @"
+public data class C(int Y) : Base
+{
+}";
+            var comp = CreateCompilation(src, references: new[] { useImage ? lib.EmitToImageReference() : lib.ToMetadataReference() },
+                parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics(
+                // (2,30): error CS8863: 'C': cannot derive from type 'Base' because it is not a record type
+                // public data class C(int Y) : Base
+                Diagnostic(ErrorCode.ERR_CantDeriveFromNonRecordType, "Base").WithArguments("C", "Base").WithLocation(2, 30)
+                );
+        }
+
+        [Fact]
         public void WithExpr1()
         {
             var src = @"
@@ -616,6 +693,7 @@ data class C(int X)
         [Fact]
         public void WithExpr4()
         {
+            // TODO2
             var src = @"
 class B
 {
@@ -632,7 +710,11 @@ data class C(int X) : B
     public new C Clone() => null;
 }";
             var comp = CreateCompilation(src);
-            comp.VerifyDiagnostics();
+            comp.VerifyDiagnostics(
+                // (6,23): error CS8863: 'C': cannot derive from type 'B' because it is not a record type
+                // data class C(int X) : B
+                Diagnostic(ErrorCode.ERR_CantDeriveFromNonRecordType, "B").WithArguments("C", "B").WithLocation(6, 23)
+                );
         }
 
         [Fact]

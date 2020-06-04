@@ -1490,6 +1490,9 @@ If such a class is used as a base class and if the deriving class defines a dest
   <data name="ERR_CantDeriveFromSealedType" xml:space="preserve">
     <value>'{0}': cannot derive from sealed type '{1}'</value>
   </data>
+  <data name="ERR_CantDeriveFromNonRecordType" xml:space="preserve">
+    <value>'{0}': cannot derive from type '{1}' because it is not a record type</value>
+  </data>
   <data name="ERR_AbstractInConcreteClass" xml:space="preserve">
     <value>'{0}' is abstract but it is contained in non-abstract class '{1}'</value>
   </data>

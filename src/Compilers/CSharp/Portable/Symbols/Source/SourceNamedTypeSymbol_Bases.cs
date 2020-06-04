@@ -365,6 +365,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             NamedTypeSymbol localBase = null;
             var localInterfaces = ArrayBuilder<NamedTypeSymbol>.GetInstance();
             var baseBinder = this.DeclaringCompilation.GetBinder(bases);
+            bool isRecord = this.IsData;
 
             // Wrap base binder in a location-specific binder that will avoid generic constraint checks
             // (to avoid cycles if the constraint types are not bound yet). Instead, constraint checks
@@ -415,6 +416,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     {
                         diagnostics.Add(ErrorCode.ERR_CantDeriveFromSealedType, location, this, baseType);
                         continue;
+                    }
+
+                    if (isRecord && !isAcceptableRecordBaseType(baseType))
+                    {
+                        diagnostics.Add(ErrorCode.ERR_CantDeriveFromNonRecordType, location, this, baseType);
                     }
 
                     bool baseTypeIsErrorWithoutInterfaceGuess = false;
@@ -540,6 +546,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
 
             return new Tuple<NamedTypeSymbol, ImmutableArray<NamedTypeSymbol>>(localBase, localInterfaces.ToImmutableAndFree());
+
+            bool isAcceptableRecordBaseType(TypeSymbol baseType)
+            {
+                if (baseType.SpecialType == SpecialType.System_Object)
+                {
+                    return true;
+                }
+
+                return false;
+            }
         }
 
         /// <summary>
