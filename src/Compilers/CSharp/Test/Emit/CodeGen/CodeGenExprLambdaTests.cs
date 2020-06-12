@@ -129,6 +129,8 @@ class ExpressionPrinter : System.Linq.Expressions.ExpressionVisitor
 
     protected override Expression VisitMemberInit(MemberInitExpression node)
     {
+// TODO2
+
         s.Append(""NewExpression: "");
         Visit(node.NewExpression);
         s.Append("" Bindings:["");
@@ -1630,6 +1632,39 @@ MemberInit(NewExpression: New([Void .ctor()]() Type:Node) Bindings:[MemberAssign
             var compilation = CompileAndVerifyUtil(
                 new[] { source, ExpressionTestLibrary },
                 expectedOutput: expectedOutput);
+        }
+
+        [Fact]
+        public void WithInitialization()
+        {
+            var source =
+@"using System;
+using System.Linq.Expressions;
+
+public record Node(Node A)
+{
+    public Node B { set; get; }
+    public string S;
+}
+
+class Program : TestBase
+{
+    public static void N(Expression<Func<Node, Node>> e) { Console.WriteLine(e.Dump()); }
+    public static void Main(string[] args)
+    {
+        N(x => x with { A = x });
+        N(x => x with { B = x });
+        N(x => x with { S = ""hello"" + x.ToString() });
+    }
+}";
+            var expectedOutput =
+@"MemberInit(NewExpression: New([Void .ctor()]() Type:Node) Bindings:[MemberAssignment(Member=Node A Expression=Parameter(x Type:Node))] Type:Node)
+MemberInit(NewExpression: New([Void .ctor()]() Type:Node) Bindings:[MemberAssignment(Member=Node B Expression=Parameter(x Type:Node))] Type:Node)
+MemberInit(NewExpression: New([Void .ctor()]() Type:Node) Bindings:[MemberAssignment(Member=System.String S Expression=Add(Constant(hello Type:System.String) Call(Parameter(x Type:Node).[System.String ToString()]() Type:System.String) Method:[System.String Concat(System.String, System.String)] Type:System.String))] Type:Node)";
+
+            var comp = CreateCompilation(new[] { source, ExpressionTestLibrary, IsExternalInitTypeDefinition }, parseOptions: TestOptions.RegularPreview);
+            comp.VerifyDiagnostics();
+            CompileAndVerifyUtil(new[] { source, ExpressionTestLibrary, IsExternalInitTypeDefinition }, expectedOutput: expectedOutput, parseOptions: TestOptions.RegularPreview);
         }
 
         [Fact]

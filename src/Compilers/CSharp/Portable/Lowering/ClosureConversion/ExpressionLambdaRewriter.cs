@@ -223,6 +223,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return VisitNullCoalescingOperator((BoundNullCoalescingOperator)node);
                 case BoundKind.ObjectCreationExpression:
                     return VisitObjectCreationExpression((BoundObjectCreationExpression)node);
+                case BoundKind.WithExpression:
+                    return VisitWithExpression((BoundWithExpression)node);
                 case BoundKind.Parameter:
                     return VisitParameter((BoundParameter)node);
                 case BoundKind.PointerIndirectionOperator:
@@ -778,7 +780,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private BoundExpression VisitNewT(BoundNewT node)
         {
-            return VisitObjectCreationContinued(ExprFactory("New", _bound.Typeof(node.Type)), node.InitializerExpressionOpt);
+            return VisitObjectCreationOrWithInitializer(ExprFactory("New", _bound.Typeof(node.Type)), node.InitializerExpressionOpt);
         }
 
         private BoundExpression VisitNullCoalescingOperator(BoundNullCoalescingOperator node)
@@ -923,12 +925,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private BoundExpression VisitObjectCreationExpression(BoundObjectCreationExpression node)
         {
-            return VisitObjectCreationContinued(VisitObjectCreationExpressionInternal(node), node.InitializerExpressionOpt);
+            return VisitObjectCreationOrWithInitializer(VisitObjectCreationExpressionInternal(node), node.InitializerExpressionOpt);
         }
 
-        private BoundExpression VisitObjectCreationContinued(BoundExpression creation, BoundExpression initializerExpressionOpt)
+        private BoundExpression VisitObjectCreationOrWithInitializer(BoundExpression receiver, BoundExpression initializerExpressionOpt)
         {
-            var result = creation;
+            var result = receiver;
             if (initializerExpressionOpt == null) return result;
             InitializerKind initializerKind;
             var init = VisitInitializer(initializerExpressionOpt, out initializerKind);
@@ -975,6 +977,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 return ExprFactory("New", ctor, args);
             }
+        }
+
+        private BoundExpression VisitWithExpression(BoundWithExpression node)
+        {
+            var rewrittenReceiver = ExprFactory("Call", Visit(node.Receiver), _bound.MethodInfo(node.CloneMethod));
+            return VisitObjectCreationOrWithInitializer(rewrittenReceiver, node.InitializerExpression);
         }
 
         private BoundExpression VisitParameter(BoundParameter node)

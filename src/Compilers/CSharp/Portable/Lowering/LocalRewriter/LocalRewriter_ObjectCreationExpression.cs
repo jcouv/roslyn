@@ -110,6 +110,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(withExpr.CloneMethod.ParameterCount == 0);
             Debug.Assert(withExpr.Receiver.Type!.Equals(withExpr.Type, TypeCompareKind.ConsiderEverything));
 
+            if (_inExpressionLambda)
+            {
+                var rewrittenWithExpr = withExpr.Update((BoundExpression)Visit(withExpr.Receiver)!, withExpr.CloneMethod,
+                    MakeObjectCreationInitializerForExpressionTree(withExpr.InitializerExpression), type: withExpr.Type);
+
+                return rewrittenWithExpr;
+            }
+
             // for a with expression of the form
             //
             //      receiver with { P1 = e1, P2 = e2 }
