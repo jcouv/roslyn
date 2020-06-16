@@ -4,10 +4,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Shared.Extensions;
 using Microsoft.CodeAnalysis.Shared.Utilities;
 using Microsoft.CodeAnalysis.Test.Utilities;
@@ -968,6 +971,21 @@ class C
             TestRoundTrip(fields, comp);
         }
 
+        [Fact]
+        public void TestRecordTypeSymbols()
+        {
+            var source = @"
+record R1(int i) { }
+record R2(int i);
+record R3 { }
+";
+
+            var comp = GetCompilation(source, LanguageNames.CSharp);
+            var records = GetDeclaredSymbols(comp).OfType<INamedTypeSymbol>().ToImmutableArray();
+            Assert.Equal(3, records.Length);
+            TestRoundTrip(records, comp);
+        }
+
         private static void TestRoundTrip(IEnumerable<ISymbol> symbols, Compilation compilation, Func<ISymbol, object> fnId = null)
         {
             foreach (var symbol in symbols)
@@ -1005,7 +1023,7 @@ class C
 
             if (language == LanguageNames.CSharp)
             {
-                var tree = CSharp.SyntaxFactory.ParseSyntaxTree(source, path: path);
+                var tree = CSharp.SyntaxFactory.ParseSyntaxTree(source, path: path, options: CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview));
                 return CSharp.CSharpCompilation.Create("Test", syntaxTrees: new[] { tree }, references: references);
             }
             else if (language == LanguageNames.VisualBasic)
