@@ -26,6 +26,31 @@ Namespace Microsoft.CodeAnalysis.Editor.UnitTests.IntelliSense
     <[UseExportProvider]>
     Public Class CSharpCompletionCommandHandlerTests
 
+        <WpfTheory, CombinatorialData>
+        <Trait(Traits.Feature, Traits.Features.Completion)>
+        Public Async Function CompletionOnDataProperty(showCompletionInArgumentLists As Boolean) As Task
+            Using state = TestStateFactory.CreateCSharpTestState(
+                              <Document>
+record Base(int i)
+{
+    $$
+}
+                              </Document>,
+                              showCompletionInArgumentLists:=showCompletionInArgumentLists, languageVersion:=LanguageVersion.Preview)
+
+                state.SendTypeChars("d")
+                Await state.AssertSelectedCompletionItem(displayText:="data", isHardSelected:=True)
+                state.SendTab()
+                Await state.AssertNoCompletionSession()
+                state.SendTypeChars(" B")
+                Await state.AssertSelectedCompletionItem(displayText:="Base", isHardSelected:=False)
+                state.SendTab()
+                Await state.AssertNoCompletionSession()
+                Assert.Contains("data Base", state.GetLineTextFromCaretPosition(), StringComparison.Ordinal)
+                ' TODO2 name completion
+            End Using
+        End Function
+
         <WorkItem(44921, "https://github.com/dotnet/roslyn/issues/44921")>
         <WpfTheory, CombinatorialData>
         <Trait(Traits.Feature, Traits.Features.Completion)>

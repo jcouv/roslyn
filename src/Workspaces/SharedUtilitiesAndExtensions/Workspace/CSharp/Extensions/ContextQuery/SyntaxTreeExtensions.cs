@@ -753,7 +753,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Extensions.ContextQuery
                 syntaxTree.IsAfterKeyword(position, SyntaxKind.CaseKeyword, cancellationToken) ||
                 syntaxTree.IsAfterKeyword(position, SyntaxKind.EventKeyword, cancellationToken) ||
                 syntaxTree.IsAfterKeyword(position, SyntaxKind.StackAllocKeyword, cancellationToken) ||
-                //tokenOnLeftOfPosition.IsDataIdentifierOrKeyword() || // TODO2
+                syntaxTree.IsAfterDataKeywordOrIdentifier(position, cancellationToken) ||
                 syntaxTree.IsAttributeNameContext(position, cancellationToken) ||
                 syntaxTree.IsBaseTypeContext(position, cancellationToken) ||
                 syntaxTree.IsCatchVariableDeclarationContext(position, cancellationToken) ||

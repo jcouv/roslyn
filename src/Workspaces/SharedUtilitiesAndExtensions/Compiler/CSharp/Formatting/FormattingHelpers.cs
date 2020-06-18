@@ -343,8 +343,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Formatting
 
         public static bool IsDataIdentifierOrKeyword(this SyntaxToken token)
         {
-            return token.IsKind(SyntaxKind.DataKeyword)
-                || (token.IsKind(SyntaxKind.IdentifierToken) && token.HasMatchingText(SyntaxKind.DataKeyword));
+            return token.IsKind(SyntaxKindEx.DataKeyword)
+                || (token.IsKind(SyntaxKind.IdentifierToken) && token.HasMatchingText(SyntaxKindEx.DataKeyword));
         }
 
         public static bool IsColonInSwitchLabel(this SyntaxToken token)
