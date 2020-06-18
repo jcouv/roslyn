@@ -753,8 +753,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Extensions.ContextQuery
                 syntaxTree.IsAfterKeyword(position, SyntaxKind.CaseKeyword, cancellationToken) ||
                 syntaxTree.IsAfterKeyword(position, SyntaxKind.EventKeyword, cancellationToken) ||
                 syntaxTree.IsAfterKeyword(position, SyntaxKind.StackAllocKeyword, cancellationToken) ||
+                //tokenOnLeftOfPosition.IsDataIdentifierOrKeyword() || // TODO2
                 syntaxTree.IsAttributeNameContext(position, cancellationToken) ||
-                syntaxTree.IsBaseClassOrInterfaceContext(position, cancellationToken) ||
+                syntaxTree.IsBaseTypeContext(position, cancellationToken) ||
                 syntaxTree.IsCatchVariableDeclarationContext(position, cancellationToken) ||
                 syntaxTree.IsDefiniteCastTypeContext(position, tokenOnLeftOfPosition) ||
                 syntaxTree.IsDelegateReturnTypeContext(position, tokenOnLeftOfPosition) ||
@@ -785,7 +786,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Extensions.ContextQuery
                     cancellationToken: cancellationToken);
         }
 
-        public static bool IsBaseClassOrInterfaceContext(this SyntaxTree syntaxTree, int position, CancellationToken cancellationToken)
+        public static bool IsBaseTypeContext(this SyntaxTree syntaxTree, int position, CancellationToken cancellationToken)
         {
             // class C : |
             // class C : Bar, |

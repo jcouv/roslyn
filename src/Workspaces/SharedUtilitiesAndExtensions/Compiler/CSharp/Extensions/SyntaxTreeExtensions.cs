@@ -170,6 +170,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Extensions
             return token.Kind() == kind;
         }
 
+        public static bool IsAfterDataKeywordOrIdentifier(this SyntaxTree syntaxTree, int position, CancellationToken cancellationToken)
+        {
+            var token = syntaxTree.FindTokenOnLeftOfPosition(position, cancellationToken);
+            token = token.GetPreviousTokenIfTouchingWord(position);
+
+            return FormattingHelpers.IsDataIdentifierOrKeyword(token);
+        }
+
         public static bool IsEntirelyWithinNonUserCodeComment(this SyntaxTree syntaxTree, int position, CancellationToken cancellationToken)
         {
             var inNonUserSingleLineDocComment =

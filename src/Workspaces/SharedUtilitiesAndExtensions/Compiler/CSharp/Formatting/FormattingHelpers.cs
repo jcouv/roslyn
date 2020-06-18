@@ -341,6 +341,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Formatting
                 labeledStatement.Identifier == token;
         }
 
+        public static bool IsDataIdentifierOrKeyword(this SyntaxToken token)
+        {
+            return token.IsKind(SyntaxKind.DataKeyword)
+                || (token.IsKind(SyntaxKind.IdentifierToken) && token.HasMatchingText(SyntaxKind.DataKeyword));
+        }
+
         public static bool IsColonInSwitchLabel(this SyntaxToken token)
             => FormattingRangeHelper.IsColonInSwitchLabel(token);
 

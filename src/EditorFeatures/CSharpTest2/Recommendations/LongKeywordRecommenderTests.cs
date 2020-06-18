@@ -4,6 +4,7 @@
 
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Completion.Providers;
+using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Microsoft.CodeAnalysis.Test.Utilities;
 using Roslyn.Test.Utilities;
 using Xunit;
@@ -250,6 +251,17 @@ $$");
 @"class C {
   void Goo() {}
   $$");
+        }
+
+        [Fact, Trait(Traits.Feature, Traits.Features.KeywordRecommending)]
+        public async Task TestAfterDataInRecord()
+        {
+            // Not testing recommender in record in script yet
+            // Tracked by https://github.com/dotnet/roslyn/issues/44865
+
+            await VerifyWorkerAsync(
+@"record C {
+  data $$", absent: false, options: TestOptions.RegularPreview);
         }
 
         [Fact, Trait(Traits.Feature, Traits.Features.KeywordRecommending)]

@@ -57,6 +57,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
                 new ClassKeywordRecommender(),
                 new ConstKeywordRecommender(),
                 new ContinueKeywordRecommender(),
+                new DataKeywordRecommender(),
                 new DecimalKeywordRecommender(),
                 new DefaultKeywordRecommender(),
                 new DefineKeywordRecommender(),
