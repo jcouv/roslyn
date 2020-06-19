@@ -32,6 +32,21 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.Completion.CompletionSe
             => typeof(DeclarationNameCompletionProvider);
 
         [Fact, Trait(Traits.Feature, Traits.Features.Completion)]
+        [WorkItem(45317, "https://github.com/dotnet/roslyn/issues/45317")]
+        public async Task DataPropertyInRecord()
+        {
+            var markup = @"
+public record MyRecord(int i)
+{
+    data MyRecord $$
+}
+";
+            await VerifyItemExistsAsync(markup, "myRecord", glyph: (int)Glyph.FieldPublic);
+            await VerifyItemExistsAsync(markup, "MyRecord", glyph: (int)Glyph.PropertyPublic);
+            //await VerifyItemExistsAsync(markup, "GetMyClass", glyph: (int)Glyph.MethodPublic); // we probably should not offer this one since this is a property
+        }
+
+        [Fact, Trait(Traits.Feature, Traits.Features.Completion)]
         public async Task NameWithOnlyType1()
         {
             var markup = @"
