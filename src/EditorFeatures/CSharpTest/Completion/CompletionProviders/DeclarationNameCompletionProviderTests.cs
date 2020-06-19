@@ -31,7 +31,7 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.Completion.CompletionSe
         internal override Type GetCompletionProviderType()
             => typeof(DeclarationNameCompletionProvider);
 
-        [Fact, Trait(Traits.Feature, Traits.Features.Completion)]
+        [Fact(Skip = "https://github.com/dotnet/roslyn/issues/45317"), Trait(Traits.Feature, Traits.Features.Completion)]
         [WorkItem(45317, "https://github.com/dotnet/roslyn/issues/45317")]
         public async Task DataPropertyInRecord()
         {
