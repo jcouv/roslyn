@@ -29,16 +29,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         private SymbolCompletionState _state;
         private CustomAttributesBag<CSharpAttributeData> _lazyCustomAttributesBag;
 
-        /// <summary>
-        /// May hold the following values:
-        /// - <see cref="TypeParameterBounds.Unset"/>
-        /// - <see cref="TypeParameterBounds.NullFromLightweightBinding"/>
-        /// - null (indicates that we did full binding, but have no bounds)
-        /// - an actual value, which may be from lightweight or full binding, depending on <see cref="TypeParameterBounds.UsedLightweightTypeConstraintBinding"/>
-        ///
-        /// The distinction between <see cref="TypeParameterBounds.NullFromLightweightBinding"/> and null
-        /// helps us ensure that we do full binding at some point and thus produce diagnostics.
-        /// </summary>
         private TypeParameterBounds _lazyBounds = TypeParameterBounds.Unset;
 
         protected SourceTypeParameterSymbolBase(string name, int ordinal, ImmutableArray<Location> locations, ImmutableArray<SyntaxReference> syntaxRefs)
@@ -99,27 +89,27 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        internal override ImmutableArray<TypeWithAnnotations> GetConstraintTypes(ConsList<TypeParameterSymbol> inProgress, bool canUseLightweightTypeConstraintBinding)
+        internal override ImmutableArray<TypeWithAnnotations> GetConstraintTypes(ConsList<TypeParameterSymbol> inProgress)
         {
-            var bounds = this.GetBounds(inProgress, canUseLightweightTypeConstraintBinding);
+            var bounds = this.GetBounds(inProgress);
             return (bounds != null) ? bounds.ConstraintTypes : ImmutableArray<TypeWithAnnotations>.Empty;
         }
 
         internal override ImmutableArray<NamedTypeSymbol> GetInterfaces(ConsList<TypeParameterSymbol> inProgress)
         {
-            var bounds = this.GetBounds(inProgress, canUseLightweightTypeConstraintBinding: false);
+            var bounds = this.GetBounds(inProgress);
             return (bounds != null) ? bounds.Interfaces : ImmutableArray<NamedTypeSymbol>.Empty;
         }
 
         internal override NamedTypeSymbol GetEffectiveBaseClass(ConsList<TypeParameterSymbol> inProgress)
         {
-            var bounds = this.GetBounds(inProgress, canUseLightweightTypeConstraintBinding: false);
+            var bounds = this.GetBounds(inProgress);
             return (bounds != null) ? bounds.EffectiveBaseClass : this.GetDefaultBaseType();
         }
 
         internal override TypeSymbol GetDeducedBaseType(ConsList<TypeParameterSymbol> inProgress)
         {
-            var bounds = this.GetBounds(inProgress, canUseLightweightTypeConstraintBinding: false);
+            var bounds = this.GetBounds(inProgress);
             return (bounds != null) ? bounds.DeducedBaseType : this.GetDefaultBaseType();
         }
 
@@ -215,11 +205,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return _lazyCustomAttributesBag;
         }
 
-        internal override void EnsureAllConstraintsAreResolved(bool canUseLightweightTypeConstraintBinding)
+        internal override void EnsureAllConstraintsAreResolved()
         {
-            if (!_lazyBounds.HasValue(canUseLightweightTypeConstraintBinding))
+            if (!_lazyBounds.IsSet())
             {
-                EnsureAllConstraintsAreResolved(this.ContainerTypeParameters, canUseLightweightTypeConstraintBinding);
+                EnsureAllConstraintsAreResolved(this.ContainerTypeParameters);
             }
         }
 
@@ -228,17 +218,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             get;
         }
 
-        private TypeParameterBounds GetBounds(ConsList<TypeParameterSymbol> inProgress, bool canUseLightweightTypeConstraintBinding)
+        private TypeParameterBounds GetBounds(ConsList<TypeParameterSymbol> inProgress)
         {
             Debug.Assert(!inProgress.ContainsReference(this));
             Debug.Assert(!inProgress.Any() || ReferenceEquals(inProgress.Head.ContainingSymbol, this.ContainingSymbol));
 
-            if (!_lazyBounds.HasValue(canUseLightweightTypeConstraintBinding))
+            if (!_lazyBounds.IsSet())
             {
                 var diagnostics = DiagnosticBag.GetInstance();
-                var bounds = this.ResolveBounds(inProgress, canUseLightweightTypeConstraintBinding, diagnostics);
-                if (TypeParameterBoundsExtensions.InterlockedUpdate(ref _lazyBounds, bounds) &&
-                    _lazyBounds.HasValue(canUseLightweightTypeConstraintBinding: false))
+                var bounds = this.ResolveBounds(inProgress, canUseLightweightTypeConstraintBinding: false, diagnostics);
+
+                if (ReferenceEquals(Interlocked.CompareExchange(ref _lazyBounds, bounds, TypeParameterBounds.Unset), TypeParameterBounds.Unset))
                 {
                     this.CheckConstraintTypeConstraints(diagnostics);
                     this.CheckUnmanagedConstraint(diagnostics);
@@ -250,12 +240,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 diagnostics.Free();
             }
 
-            var storedValue = _lazyBounds;
-            // Consumers of these bounds don't need to know about the sentinel value for null from lightweight binding
-            return storedValue == TypeParameterBounds.NullFromLightweightBinding ? null : storedValue;
+            return _lazyBounds;
         }
 
         protected abstract TypeParameterBounds ResolveBounds(ConsList<TypeParameterSymbol> inProgress, bool canUseLightweightTypeConstraintBinding, DiagnosticBag diagnostics);
+
+        protected override ImmutableArray<TypeWithAnnotations> GetConstraintTypesFromLightweightBinding()
+        {
+            // TODO2
+            throw new System.Exception("TODO2");
+        }
 
         /// <summary>
         /// Check constraints of generic types referenced in constraint types. For instance,
@@ -570,7 +564,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private TypeParameterConstraintClause GetTypeParameterConstraintClause(bool canUseLightweightTypeConstraintBinding)
         {
-            return _owner.GetTypeParameterConstraintClause(canUseLightweightTypeConstraintBinding, this.Ordinal);
+            return _owner.GetTypeParameterConstraintClause(this.Ordinal);
         }
 
         protected override TypeParameterBounds ResolveBounds(ConsList<TypeParameterSymbol> inProgress, bool canUseLightweightTypeConstraintBinding, DiagnosticBag diagnostics)
@@ -582,7 +576,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
 
             var constraintTypes = constraintClause.ConstraintTypes;
-            return this.ResolveBounds(this.ContainingAssembly.CorLibrary, inProgress.Prepend(this), constraintTypes, inherited: false, canUseLightweightTypeConstraintBinding, this.DeclaringCompilation, diagnostics);
+            return this.ResolveBounds(this.ContainingAssembly.CorLibrary, inProgress.Prepend(this), constraintTypes, inherited: false, canUseLightweightTypeConstraintBinding: false, this.DeclaringCompilation, diagnostics);
         }
 
         private TypeParameterConstraintKind GetDeclaredConstraints(bool canUseLightweightTypeConstraintBinding)
@@ -691,7 +685,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private TypeParameterConstraintClause GetTypeParameterConstraintClause(bool canUseLightweightTypeConstraintBinding)
         {
-            var constraintClauses = _owner.GetTypeParameterConstraintClauses(canUseLightweightTypeConstraintBinding);
+            var constraintClauses = _owner.GetTypeParameterConstraintClauses();
             return constraintClauses.IsEmpty ? TypeParameterConstraintClause.Empty : constraintClauses[Ordinal];
         }
 

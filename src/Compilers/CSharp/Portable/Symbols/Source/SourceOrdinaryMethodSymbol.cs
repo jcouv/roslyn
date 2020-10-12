@@ -29,7 +29,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// constraints for the first type parameter is requested.
         /// Initialized in two steps. Hold a copy if accessing during initialization.
         /// </summary>
-        private TypeParameterConstraintClauses _lazyTypeParameterConstraints;
+        private ImmutableArray<TypeParameterConstraintClause> _lazyTypeParameterConstraints;
 
         /// <summary>
         /// If this symbol represents a partial method definition or implementation part, its other part (if any).
@@ -283,9 +283,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        public override ImmutableArray<TypeParameterConstraintClause> GetTypeParameterConstraintClauses(bool canUseLightweightTypeConstraintBinding)
+        public override ImmutableArray<TypeParameterConstraintClause> GetTypeParameterConstraintClauses()
         {
-            if (!_lazyTypeParameterConstraints.HasValue(canUseLightweightTypeConstraintBinding))
+            if (_lazyTypeParameterConstraints.IsDefault)
             {
                 var diagnostics = DiagnosticBag.GetInstance();
                 var syntax = GetSyntax();
@@ -299,18 +299,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     TypeParameters,
                     syntax.TypeParameterList,
                     syntax.ConstraintClauses,
-                    canUseLightweightTypeConstraintBinding,
+                    canUseLightweightTypeConstraintBinding: false,
                     diagnostics);
 
-                if (TypeParameterConstraintClausesExtensions.InterlockedUpdate(ref _lazyTypeParameterConstraints, constraints) &&
-                    _lazyTypeParameterConstraints.HasValue(usedLightweightTypeConstraintBinding: false))
+                if (ImmutableInterlocked.InterlockedInitialize(ref _lazyTypeParameterConstraints, constraints))
                 {
                     this.AddDeclarationDiagnostics(diagnostics);
                 }
                 diagnostics.Free();
             }
 
-            return _lazyTypeParameterConstraints.TypeParameterConstraints;
+            return _lazyTypeParameterConstraints;
         }
 
         public override bool IsVararg

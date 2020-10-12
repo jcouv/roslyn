@@ -20,7 +20,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     internal sealed class TypeParameterBounds
     {
         public static readonly TypeParameterBounds Unset = new TypeParameterBounds();
-        public static readonly TypeParameterBounds NullFromLightweightBinding = new TypeParameterBounds();
 
         public TypeParameterBounds(
             ImmutableArray<TypeWithAnnotations> constraintTypes,
@@ -38,15 +37,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             this.Interfaces = interfaces;
             this.EffectiveBaseClass = effectiveBaseClass;
             this.DeducedBaseType = deducedBaseType;
-            this.UsedLightweightTypeConstraintBinding = usedLightweightTypeConstraintBinding;
         }
 
         private TypeParameterBounds()
         {
-            this.UsedLightweightTypeConstraintBinding = true;
         }
-
-        public readonly bool UsedLightweightTypeConstraintBinding;
 
         /// <summary>
         /// The type parameters, classes, and interfaces explicitly declared as
@@ -87,41 +82,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
     internal static class TypeParameterBoundsExtensions
     {
-        internal static bool HasValue(this TypeParameterBounds? boundsOpt, bool canUseLightweightTypeConstraintBinding)
+        internal static bool IsSet(this TypeParameterBounds boundsOpt)
         {
-            if (boundsOpt == TypeParameterBounds.Unset)
-            {
-                return false;
-            }
-            if (boundsOpt == null)
-            {
-                return true;
-            }
-            return canUseLightweightTypeConstraintBinding || !boundsOpt.UsedLightweightTypeConstraintBinding;
-        }
-
-        /// <summary>
-        /// Returns true if bounds was updated with value.
-        /// Returns false if bounds already had a value with sufficient 'canUseLightweightTypeConstraintBinding'
-        /// or was updated to a value with sufficient 'canUseLightweightTypeConstraintBinding' on another thread.
-        /// </summary>
-        internal static bool InterlockedUpdate(ref TypeParameterBounds? bounds, TypeParameterBounds? value)
-        {
-            Debug.Assert(value != TypeParameterBounds.Unset);
-            bool valueUsedLightweightTypeConstraintBinding = !value.HasValue(canUseLightweightTypeConstraintBinding: false);
-
-            while (true)
-            {
-                var comparand = bounds;
-                if (comparand != TypeParameterBounds.Unset && comparand.HasValue(valueUsedLightweightTypeConstraintBinding))
-                {
-                    return false;
-                }
-                if (Interlocked.CompareExchange(ref bounds, value, comparand) == comparand)
-                {
-                    return true;
-                }
-            }
+            return boundsOpt != TypeParameterBounds.Unset;
         }
     }
 }

@@ -23,7 +23,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         private ImmutableArray<ParameterSymbol> _lazyParameters;
         private bool _lazyIsVarArg;
         // Initialized in two steps. Hold a copy if accessing during initialization.
-        private TypeParameterConstraintClauses? _lazyTypeParameterConstraints;
+        private ImmutableArray<TypeParameterConstraintClause> _lazyTypeParameterConstraints;
         private TypeWithAnnotations.Boxed? _lazyReturnType;
         private TypeWithAnnotations.Boxed? _lazyIteratorElementType;
 
@@ -459,10 +459,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return result.ToImmutableAndFree();
         }
 
-        public override ImmutableArray<TypeParameterConstraintClause> GetTypeParameterConstraintClauses(bool canUseLightweightTypeConstraintBinding)
+        public override ImmutableArray<TypeParameterConstraintClause> GetTypeParameterConstraintClauses()
         {
-            // We're not using lightweight type constraint binding for local function because the risk of cycles is minimal (no overrides)
-            if (!_lazyTypeParameterConstraints.HasValue(usedLightweightTypeConstraintBinding: false))
+            if (_lazyTypeParameterConstraints.IsDefault)
             {
                 var syntax = Syntax;
                 var diagnostics = DiagnosticBag.GetInstance();
@@ -476,17 +475,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                 lock (_declarationDiagnostics)
                 {
-                    if (!_lazyTypeParameterConstraints.HasValue(usedLightweightTypeConstraintBinding: false))
-                    {
-                        _declarationDiagnostics.AddRange(diagnostics);
-                        _lazyTypeParameterConstraints = constraints;
-                    }
+                    _declarationDiagnostics.AddRange(diagnostics);
+                    _lazyTypeParameterConstraints = constraints;
                 }
                 diagnostics.Free();
             }
 
-            Debug.Assert(_lazyTypeParameterConstraints is not null);
-            return _lazyTypeParameterConstraints.TypeParameterConstraints;
+            return _lazyTypeParameterConstraints;
         }
 
         public override int GetHashCode()

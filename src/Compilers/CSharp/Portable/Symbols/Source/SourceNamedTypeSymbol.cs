@@ -29,7 +29,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// A collection of type parameter constraints, populated when
         /// constraints for the first type parameter are requested.
         /// </summary>
-        private TypeParameterConstraintClauses? _lazyTypeParameterConstraints;
+        private ImmutableArray<TypeParameterConstraintClause> _lazyTypeParameterConstraints;
 #nullable disable
 
         private CustomAttributesBag<CSharpAttributeData> _lazyCustomAttributesBag;
@@ -255,16 +255,14 @@ next:;
         /// <summary>
         /// Returns the constraint clause for the given type parameter.
         /// </summary>
-        internal TypeParameterConstraintClause GetTypeParameterConstraintClause(bool canUseLightweightTypeConstraintBinding, int ordinal)
+        internal TypeParameterConstraintClause GetTypeParameterConstraintClause(int ordinal)
         {
             var clauses = _lazyTypeParameterConstraints;
-            if (!clauses.HasValue(canUseLightweightTypeConstraintBinding))
+            if (clauses.IsDefault)
             {
                 var diagnostics = DiagnosticBag.GetInstance();
-                var typeParameterConstraints = TypeParameterConstraintClauses.Create(MakeTypeParameterConstraints(canUseLightweightTypeConstraintBinding, diagnostics), canUseLightweightTypeConstraintBinding);
 
-                if (TypeParameterConstraintClausesExtensions.InterlockedUpdate(ref _lazyTypeParameterConstraints, typeParameterConstraints) &&
-                   _lazyTypeParameterConstraints.HasValue(usedLightweightTypeConstraintBinding: false))
+                if (ImmutableInterlocked.InterlockedInitialize(ref _lazyTypeParameterConstraints, MakeTypeParameterConstraints(canUseLightweightTypeConstraintBinding: false, diagnostics)))
                 {
                     this.AddDeclarationDiagnostics(diagnostics);
                 }
@@ -272,10 +270,10 @@ next:;
                 clauses = _lazyTypeParameterConstraints;
             }
 
-            return (clauses.TypeParameterConstraints.Length > 0) ? clauses.TypeParameterConstraints[ordinal] : TypeParameterConstraintClause.Empty;
+            return (clauses.Length > 0) ? clauses[ordinal] : TypeParameterConstraintClause.Empty;
         }
 
-        private ImmutableArray<TypeParameterConstraintClause> MakeTypeParameterConstraints(bool canUseLightweightTypeConstraintBinding, DiagnosticBag diagnostics)
+        internal ImmutableArray<TypeParameterConstraintClause> MakeTypeParameterConstraints(bool canUseLightweightTypeConstraintBinding, DiagnosticBag diagnostics)
         {
             var typeParameters = this.TypeParameters;
             var results = ImmutableArray<TypeParameterConstraintClause>.Empty;

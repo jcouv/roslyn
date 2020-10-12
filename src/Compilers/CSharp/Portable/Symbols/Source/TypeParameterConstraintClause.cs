@@ -56,33 +56,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         AllNonNullableKinds = ReferenceType | ValueType | Constructor | Unmanaged,
     }
 
-    internal sealed class TypeParameterConstraintClauses
-    {
-        public readonly ImmutableArray<TypeParameterConstraintClause> TypeParameterConstraints;
-        public readonly bool UsedLightweightTypeConstraintBinding;
-
-        private static readonly TypeParameterConstraintClauses s_emptyFromLightweightBinding =
-            new TypeParameterConstraintClauses(ImmutableArray<TypeParameterConstraintClause>.Empty, usedLightweightTypeConstraintBinding: true);
-        private static readonly TypeParameterConstraintClauses s_empty =
-            new TypeParameterConstraintClauses(ImmutableArray<TypeParameterConstraintClause>.Empty, usedLightweightTypeConstraintBinding: false);
-
-        public static TypeParameterConstraintClauses Create(ImmutableArray<TypeParameterConstraintClause> typeParameterConstraints, bool usedLightweightTypeConstraintBinding)
-        {
-            return (typeParameterConstraints.IsEmpty, usedLightweightTypeConstraintBinding) switch
-            {
-                (true, true) => s_emptyFromLightweightBinding,
-                (true, false) => s_empty,
-                _ => new TypeParameterConstraintClauses(typeParameterConstraints, usedLightweightTypeConstraintBinding)
-            };
-        }
-
-        private TypeParameterConstraintClauses(ImmutableArray<TypeParameterConstraintClause> typeParameterConstraints, bool usedLightweightTypeConstraintBinding)
-        {
-            TypeParameterConstraints = typeParameterConstraints;
-            UsedLightweightTypeConstraintBinding = usedLightweightTypeConstraintBinding;
-        }
-    }
-
     /// <summary>
     /// A simple representation of a type parameter constraint clause
     /// as a set of constraint bits and a set of constraint types.
@@ -242,40 +215,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
     internal static class TypeParameterConstraintClausesExtensions
     {
-#nullable enable
-        internal static bool HasValue(this TypeParameterConstraintClauses? constraintClauses, bool usedLightweightTypeConstraintBinding)
-        {
-            if (constraintClauses is null)
-            {
-                return false;
-            }
-            return usedLightweightTypeConstraintBinding || !constraintClauses.UsedLightweightTypeConstraintBinding;
-        }
-#nullable restore
-
+        // TODO2
         internal static bool ContainsOnlyEmptyConstraintClauses(this ImmutableArray<TypeParameterConstraintClause> constraintClauses)
         {
             return constraintClauses.All(clause => clause.IsEmpty);
-        }
-
-        // Returns true if constraintClauses was updated with value.
-        // Returns false if constraintClauses already had a value with sufficient 'canUseLightweightTypeConstraintBinding'
-        // or was updated to a value with sufficient 'canUseLightweightTypeConstraintBinding' on another thread.
-        internal static bool InterlockedUpdate(ref TypeParameterConstraintClauses constraintClauses, TypeParameterConstraintClauses value)
-        {
-            bool canUseLightweightTypeConstraintBinding = value.UsedLightweightTypeConstraintBinding;
-            while (true)
-            {
-                var comparand = constraintClauses;
-                if (comparand.HasValue(canUseLightweightTypeConstraintBinding))
-                {
-                    return false;
-                }
-                if (Interlocked.CompareExchange(ref constraintClauses, value, comparand) == comparand)
-                {
-                    return true;
-                }
-            }
         }
     }
 }

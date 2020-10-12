@@ -91,13 +91,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             diagnosticsBuilder.Free();
 
-            if (bounds is null && canUseLightweightTypeConstraintBinding)
-            {
-                // We have no bounds, but need to record that we've only done
-                // lightweight binding of type constraints so far.
-                bounds = TypeParameterBounds.NullFromLightweightBinding;
-            }
-
             return bounds;
         }
 
@@ -318,7 +311,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return bounds;
         }
 
-        internal static TypeParameterConstraintClauses MakeTypeParameterConstraints(
+        internal static ImmutableArray<TypeParameterConstraintClause> MakeTypeParameterConstraints(
             this Symbol containingSymbol,
             Binder binder,
             ImmutableArray<TypeParameterSymbol> typeParameters,
@@ -329,16 +322,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             if (typeParameters.Length == 0)
             {
-                return TypeParameterConstraintClauses.Create(ImmutableArray<TypeParameterConstraintClause>.Empty, usedLightweightTypeConstraintBinding: false);
+                return ImmutableArray<TypeParameterConstraintClause>.Empty;
             }
 
             if (constraintClauses.Count == 0)
             {
                 ImmutableArray<TypeParameterConstraintClause> defaultClauses = binder.GetDefaultTypeParameterConstraintClauses(typeParameterList);
 
-                return TypeParameterConstraintClauses.Create(
-                    defaultClauses.ContainsOnlyEmptyConstraintClauses() ? ImmutableArray<TypeParameterConstraintClause>.Empty : defaultClauses,
-                    usedLightweightTypeConstraintBinding: false);
+                return defaultClauses.ContainsOnlyEmptyConstraintClauses() ? ImmutableArray<TypeParameterConstraintClause>.Empty : defaultClauses;
             }
 
             // Wrap binder from factory in a generic constraints specific binder
@@ -347,9 +338,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             binder = binder.WithAdditionalFlags(BinderFlags.GenericConstraintsClause | BinderFlags.SuppressConstraintChecks | (canUseLightweightTypeConstraintBinding ? BinderFlags.LightweightTypeConstraintBinding : 0));
 
             IReadOnlyDictionary<TypeParameterSymbol, bool> isValueTypeOverride = null;
-            return TypeParameterConstraintClauses.Create(
-                binder.BindTypeParameterConstraintClauses(containingSymbol, typeParameters, typeParameterList, constraintClauses, ref isValueTypeOverride, diagnostics),
-                usedLightweightTypeConstraintBinding: canUseLightweightTypeConstraintBinding);
+            return binder.BindTypeParameterConstraintClauses(containingSymbol, typeParameters, typeParameterList, constraintClauses, ref isValueTypeOverride, diagnostics);
         }
 
         // Based on SymbolLoader::SetOverrideConstraints.

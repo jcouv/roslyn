@@ -79,14 +79,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// Duplicates and cycles are removed, although the collection may include
         /// redundant constraints where one constraint is a base type of another.
         /// </summary>
-        internal ImmutableArray<TypeWithAnnotations> GetConstraintTypesNoUseSiteDiagnostics(bool canUseLightweightTypeConstraintBinding)
+        internal ImmutableArray<TypeWithAnnotations> GetConstraintTypesNoUseSiteDiagnostics()
         {
-            this.EnsureAllConstraintsAreResolved(canUseLightweightTypeConstraintBinding);
-            return this.GetConstraintTypes(ConsList<TypeParameterSymbol>.Empty, canUseLightweightTypeConstraintBinding);
+            this.EnsureAllConstraintsAreResolved();
+            return this.GetConstraintTypes(ConsList<TypeParameterSymbol>.Empty);
         }
 
         internal ImmutableArray<TypeWithAnnotations> ConstraintTypesNoUseSiteDiagnostics =>
-            GetConstraintTypesNoUseSiteDiagnostics(canUseLightweightTypeConstraintBinding: false);
+            GetConstraintTypesNoUseSiteDiagnostics();
 
         internal ImmutableArray<TypeWithAnnotations> ConstraintTypesWithDefinitionUseSiteDiagnostics(ref HashSet<DiagnosticInfo> useSiteDiagnostics)
         {
@@ -270,7 +270,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             get
             {
-                this.EnsureAllConstraintsAreResolved(canUseLightweightTypeConstraintBinding: false);
+                this.EnsureAllConstraintsAreResolved();
                 return this.GetEffectiveBaseClass(ConsList<TypeParameterSymbol>.Empty);
             }
         }
@@ -295,7 +295,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             get
             {
-                this.EnsureAllConstraintsAreResolved(canUseLightweightTypeConstraintBinding: false);
+                this.EnsureAllConstraintsAreResolved();
                 return this.GetInterfaces(ConsList<TypeParameterSymbol>.Empty);
             }
         }
@@ -307,7 +307,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             get
             {
-                this.EnsureAllConstraintsAreResolved(canUseLightweightTypeConstraintBinding: false);
+                this.EnsureAllConstraintsAreResolved();
                 return this.GetDeducedBaseType(ConsList<TypeParameterSymbol>.Empty);
             }
         }
@@ -364,21 +364,21 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// type or method are resolved in a consistent order, regardless of the
         /// order the callers query individual type parameters.
         /// </summary>
-        internal abstract void EnsureAllConstraintsAreResolved(bool canUseLightweightTypeConstraintBinding);
+        internal abstract void EnsureAllConstraintsAreResolved();
 
         /// <summary>
         /// Helper method to force type parameter constraints to be resolved.
         /// </summary>
-        protected static void EnsureAllConstraintsAreResolved(ImmutableArray<TypeParameterSymbol> typeParameters, bool canUseLightweightTypeConstraintBinding)
+        protected static void EnsureAllConstraintsAreResolved(ImmutableArray<TypeParameterSymbol> typeParameters)
         {
             foreach (var typeParameter in typeParameters)
             {
                 // Invoke any method that forces constraints to be resolved.
-                var unused = typeParameter.GetConstraintTypes(ConsList<TypeParameterSymbol>.Empty, canUseLightweightTypeConstraintBinding);
+                var unused = typeParameter.GetConstraintTypes(ConsList<TypeParameterSymbol>.Empty);
             }
         }
 
-        internal abstract ImmutableArray<TypeWithAnnotations> GetConstraintTypes(ConsList<TypeParameterSymbol> inProgress, bool canUseLightweightTypeConstraintBinding);
+        internal abstract ImmutableArray<TypeWithAnnotations> GetConstraintTypes(ConsList<TypeParameterSymbol> inProgress);
 
         internal abstract ImmutableArray<NamedTypeSymbol> GetInterfaces(ConsList<TypeParameterSymbol> inProgress);
 
@@ -390,7 +390,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             if (constraint.TypeKind == TypeKind.TypeParameter)
             {
-                return IsReferenceTypeFromConstraintTypes(((TypeParameterSymbol)constraint).GetConstraintTypesNoUseSiteDiagnostics(canUseLightweightTypeConstraintBinding: true));
+                return IsReferenceTypeFromConstraintTypes(((TypeParameterSymbol)constraint).GetConstraintTypesFromLightweightBinding());
             }
             else if (!constraint.IsReferenceType)
             {
@@ -514,8 +514,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     return true;
                 }
 
-                return IsReferenceTypeFromConstraintTypes(this.GetConstraintTypesNoUseSiteDiagnostics(canUseLightweightTypeConstraintBinding: true));
+                return IsReferenceTypeFromConstraintTypes(this.GetConstraintTypesFromLightweightBinding());
             }
+        }
+
+        protected virtual ImmutableArray<TypeWithAnnotations> GetConstraintTypesFromLightweightBinding()
+        {
+            return this.GetConstraintTypesNoUseSiteDiagnostics();
         }
 
         protected bool? CalculateIsNotNullableFromNonTypeConstraints()
@@ -572,7 +577,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     return true;
                 }
 
-                return IsValueTypeFromConstraintTypes(this.GetConstraintTypesNoUseSiteDiagnostics(canUseLightweightTypeConstraintBinding: true));
+                return IsValueTypeFromConstraintTypes(this.GetConstraintTypesFromLightweightBinding());
             }
         }
 

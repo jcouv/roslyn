@@ -146,9 +146,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return _underlyingTypeParameter.GetDocumentationCommentXml(preferredCulture, expandIncludes, cancellationToken);
         }
 
-        internal override void EnsureAllConstraintsAreResolved(bool canUseLightweightTypeConstraintBinding)
+        internal override void EnsureAllConstraintsAreResolved()
         {
-            _underlyingTypeParameter.EnsureAllConstraintsAreResolved(canUseLightweightTypeConstraintBinding);
+            _underlyingTypeParameter.EnsureAllConstraintsAreResolved();
         }
 
         public override ImmutableArray<CSharpAttributeData> GetAttributes()
