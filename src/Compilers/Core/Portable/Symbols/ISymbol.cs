@@ -59,6 +59,7 @@ namespace Microsoft.CodeAnalysis
         string MetadataName { get; }
 
 #nullable disable // Skipped for now https://github.com/dotnet/roslyn/issues/39166
+#pragma warning disable RS0041 // uses oblivious reference types
         /// <summary>
         /// Gets the <see cref="ISymbol"/> for the immediately containing symbol.
         /// </summary>
@@ -87,6 +88,7 @@ namespace Microsoft.CodeAnalysis
         /// symbol isn't contained in a namespace.
         /// </summary>
         INamespaceSymbol ContainingNamespace { get; }
+#pragma warning restore RS0041 // uses oblivious reference types
 #nullable enable
 
         /// <summary>
