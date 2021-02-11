@@ -1262,7 +1262,6 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
             // class immediately within any particular method.
             var displayClassInstances = ArrayBuilder<DisplayClassInstanceAndFields>.GetInstance();
 
-            var userDefinedParameterNames = PooledHashSet<string>.GetInstance();
             foreach (var parameter in method.Parameters)
             {
                 if (GeneratedNames.GetKind(parameter.Name) == GeneratedNameKind.TransparentIdentifier ||
@@ -1270,11 +1269,6 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
                 {
                     var instance = new DisplayClassInstanceFromParameter(parameter);
                     displayClassInstances.Add(new DisplayClassInstanceAndFields(instance));
-                }
-                else
-                {
-                    // Collect parameter names that will hide display class variables from outer scopes
-                    userDefinedParameterNames.Add(parameter.Name);
                 }
             }
 
@@ -1328,18 +1322,14 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
                 var displayClassVariableNamesInOrderBuilder = ArrayBuilder<string>.GetInstance();
                 var displayClassVariablesBuilder = PooledDictionary<string, DisplayClassVariable>.GetInstance();
 
-                for (var i = 0; i < displayClassInstances.Count; i++)
+                foreach (var instance in displayClassInstances)
                 {
-                    var instance = displayClassInstances[i];
                     GetDisplayClassVariables(
                         displayClassVariableNamesInOrderBuilder,
                         displayClassVariablesBuilder,
                         parameterNames,
                         inScopeHoistedLocalSlots,
-                        instance,
-                        // For display class instances from outer scopes, we'll filter out variable names
-                        // that are hidden by parameter names
-                        namesToFilterOut: i < startIndex ? userDefinedParameterNames : null);
+                        instance);
                 }
 
                 displayClassVariableNamesInOrder = displayClassVariableNamesInOrderBuilder.ToImmutableAndFree();
@@ -1354,7 +1344,6 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
             }
 
             displayClassInstances.Free();
-            userDefinedParameterNames.Free();
         }
 
         private static void GetAdditionalDisplayClassInstances(
@@ -1437,20 +1426,13 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
             Dictionary<string, DisplayClassVariable> displayClassVariablesBuilder,
             HashSet<string> parameterNames,
             ImmutableSortedSet<int> inScopeHoistedLocalSlots,
-            DisplayClassInstanceAndFields instance,
-            HashSet<string>? namesToFilterOut)
+            DisplayClassInstanceAndFields instance)
         {
             // Display class instance. The display class fields are variables.
             foreach (var member in instance.Type.GetMembers())
             {
                 if (member.Kind != SymbolKind.Field)
                 {
-                    continue;
-                }
-
-                if (namesToFilterOut?.Contains(member.Name) == true)
-                {
-                    // Parameters of the current method should win over display class variables
                     continue;
                 }
 
