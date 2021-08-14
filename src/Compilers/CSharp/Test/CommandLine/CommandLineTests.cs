@@ -13610,6 +13610,57 @@ public class Generator : ISourceGenerator
                 return generatorPath;
             }
         }
+
+        [Fact, WorkItem(51660, "https://github.com/dotnet/roslyn/issues/51660")]
+        public void RefAssembly_AnalyzerGetsDiagnostics()
+        {
+            var errorLog = Temp.CreateFile();
+            var dir = Temp.CreateDirectory();
+
+            var srcFile = dir.CreateFile("source.cs").WriteAllText(@"
+using System;
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine(42);
+    }
+}
+");
+            var csc = CreateCSharpCompiler(
+                null,
+                workingDirectory: dir.Path,
+                args: new[] { "/errorlog:" + errorLog.Path, "/warnaserror+", "/nologo", "/t:library", "/refonly", "source.cs" },
+                analyzers: ImmutableArray.Create<DiagnosticAnalyzer>(new RefAssembly_AnalyzerGetsDiagnostics_Analyzer()));
+
+            var outWriter = new StringWriter(CultureInfo.InvariantCulture);
+            var exitCode = csc.Run(outWriter);
+
+            // Previously, the compiler would return error code 1 without printing any diagnostics
+            Assert.Empty(outWriter.ToString());
+            Assert.Equal(0, exitCode);
+
+            CleanupAllGeneratedFiles(srcFile.Path);
+            CleanupAllGeneratedFiles(errorLog.Path);
+            CleanupAllGeneratedFiles(dir.Path);
+        }
+
+        private class RefAssembly_AnalyzerGetsDiagnostics_Analyzer : DiagnosticAnalyzer
+        {
+            public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(s_descriptor1, s_descriptor2);
+
+            private static readonly DiagnosticDescriptor s_descriptor1 = new DiagnosticDescriptor(id: "CA9999_NullabilityPrinter", title: "CA9999_NullabilityPrinter", messageFormat: "Nullability of '{0}' is '{1}':'{2}'. Speculative flow state is '{3}'", category: "Test", defaultSeverity: DiagnosticSeverity.Warning, isEnabledByDefault: true);
+            private static readonly DiagnosticDescriptor s_descriptor2 = new DiagnosticDescriptor(id: "CA9998_NullabilityPrinter", title: "CA9998_NullabilityPrinter", messageFormat: "Declared nullability of '{0}' is '{1}'", category: "Test", defaultSeverity: DiagnosticSeverity.Warning, isEnabledByDefault: true);
+
+            public override void Initialize(AnalysisContext context)
+            {
+                context.RegisterSemanticModelAction(context =>
+                {
+                    var diag = context.SemanticModel.GetDiagnostics();
+                });
+            }
+        }
     }
 
     [DiagnosticAnalyzer(LanguageNames.CSharp, LanguageNames.VisualBasic)]
