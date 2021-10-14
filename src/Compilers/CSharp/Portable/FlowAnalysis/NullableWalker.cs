@@ -3911,6 +3911,81 @@ namespace Microsoft.CodeAnalysis.CSharp
                         parameter);
                 }
             }
+            else if (binary.OperatorKind == BinaryOperatorKind.DelegateCombination)
+            {
+                var delegateTypes = ArrayBuilder<TypeWithState>.GetInstance(2);
+                delegateTypes.Add(leftType);
+                delegateTypes.Add(rightType);
+                var resultState = BestTypeInferrer.GetNullableState(delegateTypes);
+                delegateTypes.Free();
+
+                // TODO2
+                //var expressionsNoConversions = ArrayBuilder<BoundExpression>.GetInstance(n);
+                //var conversions = ArrayBuilder<Conversion>.GetInstance(n);
+                //var resultTypes = ArrayBuilder<TypeWithState>.GetInstance(n);
+                //var placeholderBuilder = ArrayBuilder<BoundExpression>.GetInstance(n);
+                //foreach (var expression in expressions)
+                //{
+                //    // collect expressions, conversions and result types
+                //    (BoundExpression expressionNoConversion, Conversion conversion) = RemoveConversion(expression, includeExplicitConversions: false);
+                //    expressionsNoConversions.Add(expressionNoConversion);
+                //    conversions.Add(conversion);
+                //    SnapshotWalkerThroughConversionGroup(expression, expressionNoConversion);
+                //    var resultType = VisitRvalueWithState(expressionNoConversion);
+                //    resultTypes.Add(resultType);
+                //    placeholderBuilder.Add(CreatePlaceholderIfNecessary(expressionNoConversion, resultType.ToTypeWithAnnotations(compilation)));
+                //}
+
+                //var placeholders = placeholderBuilder.ToImmutableAndFree();
+
+                //TypeSymbol? bestType = null;
+                //if (!node.HasErrors)
+                //{
+                //    var discardedUseSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
+                //    bestType = BestTypeInferrer.InferBestType(placeholders, _conversions, ref discardedUseSiteInfo);
+                //}
+
+                //TypeWithAnnotations inferredType = (bestType is null)
+                //    ? elementType.SetUnknownNullabilityForReferenceTypes()
+                //    : TypeWithAnnotations.Create(bestType);
+
+                //if (bestType is object)
+                //{
+                //    // Convert elements to best type to determine element top-level nullability and to report nested nullability warnings
+                //    for (int i = 0; i < n; i++)
+                //    {
+                //        var expressionNoConversion = expressionsNoConversions[i];
+                //        var expression = GetConversionIfApplicable(expressions[i], expressionNoConversion);
+                //        resultTypes[i] = VisitConversion(expression, expressionNoConversion, conversions[i], inferredType, resultTypes[i], checkConversion: true,
+                //            fromExplicitCast: false, useLegacyWarnings: false, AssignmentKind.Assignment, reportRemainingWarnings: true, reportTopLevelWarnings: false);
+                //    }
+
+                //    // Set top-level nullability on inferred element type
+                //    var elementState = BestTypeInferrer.GetNullableState(resultTypes);
+                //    inferredType = TypeWithState.Create(inferredType.Type, elementState).ToTypeWithAnnotations(compilation);
+
+                //    for (int i = 0; i < n; i++)
+                //    {
+                //        // Report top-level warnings
+                //        _ = VisitConversion(conversionOpt: null, conversionOperand: expressionsNoConversions[i], Conversion.Identity, targetTypeWithNullability: inferredType, operandType: resultTypes[i],
+                //            checkConversion: true, fromExplicitCast: false, useLegacyWarnings: false, AssignmentKind.Assignment, reportRemainingWarnings: false);
+                //    }
+                //}
+                //else
+                //{
+                //    // We need to ensure that we're tracking the inferred type with nullability of any conversions that
+                //    // were stripped off.
+                //    for (int i = 0; i < n; i++)
+                //    {
+                //        TrackAnalyzedNullabilityThroughConversionGroup(inferredType.ToTypeWithState(), expressions[i] as BoundConversion, expressionsNoConversions[i]);
+                //    }
+                //}
+
+                //expressionsNoConversions.Free();
+                //conversions.Free();
+                //resultTypes.Free();
+
+            }
             else
             {
                 // Assume this is a built-in operator in which case the parameter types are unannotated.

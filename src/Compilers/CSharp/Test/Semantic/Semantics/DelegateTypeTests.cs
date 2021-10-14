@@ -8985,6 +8985,94 @@ class Program
             comp.VerifyDiagnostics(expectedDiagnostics);
         }
 
+        [Fact, WorkItem(57120, "https://github.com/dotnet/roslyn/issues/57120")]
+        public void DelegateCombination_NestedNullability()
+        {
+            var source = @"
+#nullable enable
+using System;
+
+class D
+{
+    public void Test2(Func<string> f1, Func<string?> f2)
+    {
+        var x1 = f1 + f1;
+        x1().ToString();
+
+        var x2 = f1 + f2;
+        x2().ToString(); //
+
+        var x3 = f2 + f1;
+        x3().ToString(); //
+
+        var x4 = f2 + f2;
+        x4().ToString(); //
+    }
+}";
+
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics(); // TODO2
+        }
+
+        [Fact, WorkItem(57120, "https://github.com/dotnet/roslyn/issues/57120")]
+        public void DelegateCombination_DifferentDelegateTypes()
+        {
+            var source = @"
+#nullable enable
+using System;
+
+class D
+{
+    public void Test2(Func<string> f1, Func<object> f2, Func<int> f3)
+    {
+        var x = f1 + f2;
+        x.ToString();
+        x().ToString();
+
+        var x2 = f1 + f3;
+    }
+}";
+            // Seems we're not following the spec:
+            // https://github.com/dotnet/csharplang/blob/main/spec/expressions.md#addition-operator
+            // SPEC: If the operands have different delegate types, a binding-time error occurs.
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics(
+                // (13,18): error CS0019: Operator '+' cannot be applied to operands of type 'Func<string>' and 'Func<int>'
+                //         var x2 = f1 + f3;
+                Diagnostic(ErrorCode.ERR_BadBinaryOps, "f1 + f3").WithArguments("+", "System.Func<string>", "System.Func<int>").WithLocation(13, 18)
+                );
+        }
+
+        [Fact, WorkItem(57120, "https://github.com/dotnet/roslyn/issues/57120")]
+        public void DelegateCombination_TopLevelNullability()
+        {
+            var source = @"
+#nullable enable
+using System;
+
+class D
+{
+    public void Test2(Func<string> f1, Func<string>? f2)
+    {
+        var x = f1 + f2;
+        x().ToString(); // 1
+
+        var x2 = f1 + f1;
+        x2().ToString();
+
+        var x3 = f2 + f2;
+        x3().ToString(); // 2
+
+        var x4 = f2 + f1;
+        x4().ToString(); // 3
+    }
+}";
+            // https://github.com/dotnet/csharplang/blob/main/spec/expressions.md#addition-operator
+            // If the first operand is null, the result of the operation is the value of the second operand (even if that is also null).
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics(); // TODO2
+        }
+
         [Fact]
         public void TaskRunArgument()
         {
