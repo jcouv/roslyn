@@ -789,6 +789,7 @@ class C
                     __combinedTokens.Dispose();
                     __combinedTokens == null;
                 }
+                __current = default;
                 __promiseOfValueOrEnd.SetException(e);
                 return;
             }
@@ -800,6 +801,7 @@ class C
                 __combinedTokens.Dispose();
                 __combinedTokens == null;
             }
+            __current = default;
             __promiseOfValueOrEnd.SetResult(false);
             return;
 
