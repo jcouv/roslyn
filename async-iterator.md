@@ -790,6 +790,7 @@ class C
                     __combinedTokens == null;
                 }
                 __current = default;
+                __builder.Complete();
                 __promiseOfValueOrEnd.SetException(e);
                 return;
             }
@@ -802,6 +803,7 @@ class C
                 __combinedTokens == null;
             }
             __current = default;
+            __builder.Complete();
             __promiseOfValueOrEnd.SetResult(false);
             return;
 
