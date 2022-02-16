@@ -75,6 +75,12 @@ class C
 ";
             var comp = CreateCompilation(source + HelpersSource, targetFramework: TargetFramework.NetCoreApp, options: TestOptions.DebugExe);
 
+            // ILVerify:
+            // [Test2]: Return type is ByRef, TypedReference, ArgHandle, or ArgIterator. { Offset = 22 }
+            // [Test3]: Cannot change initonly field outside its .ctor. { Offset = 0 }
+            // [Test3]: Field is not visible. { Offset = 0 }
+            // [Test3]: Unexpected type on the stack. { Offset = 6, Found = address of '<PrivateImplementationDetails>+__StaticArrayInitTypeSize=3', Expected = Native Int }
+            // [Test3]: Return type is ByRef, TypedReference, ArgHandle, or ArgIterator. { Offset = 11 }
             var verifier = CompileAndVerify(comp, expectedOutput: @"
 { 0x68 0x65 0x6C 0x6C 0x6F }
 { 0x64 0x6F 0x67 }
@@ -791,6 +797,9 @@ class C
 ";
             var comp = CreateCompilation(source, targetFramework: TargetFramework.NetCoreApp, options: TestOptions.DebugExe);
 
+            // ILVerify:
+            // [Test2]: Return type is ByRef, TypedReference, ArgHandle, or ArgIterator. { Offset = 6 }
+            // [Test3]: Return type is ByRef, TypedReference, ArgHandle, or ArgIterator. { Offset = 6 }
             var verifier = CompileAndVerify(comp, expectedOutput: @"
 -1
 0
