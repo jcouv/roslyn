@@ -7149,6 +7149,33 @@ public class MyAttribute : System.Attribute
                 //     [My(nameof(TParameter))] // 2
                 Diagnostic(ErrorCode.ERR_NameNotInContext, "TParameter").WithArguments("TParameter").WithLocation(12, 16)
                 );
+
+            // TODO2 why does semantic model success on local function?
+            VerifyTParameter(comp, 0, "void local<TParameter>()", null);
+            //VerifyTParameter(comp, 1, null);
+        }
+
+        private void VerifyTParameter(CSharpCompilation comp, int index, string expectedMethod, string expectedType = null)
+        {
+            var tree = comp.SyntaxTrees.Single();
+            var model = comp.GetSemanticModel(tree);
+            var tParameterUsages = tree.GetRoot().DescendantNodes().OfType<IdentifierNameSyntax>()
+                .Where(i => i.Identifier.ValueText == "TParameter")
+                .Where(i => i.Ancestors().Any(a => a.IsKind(SyntaxKind.Attribute)))
+                .ToArray();
+
+            var tParameterUsage = tParameterUsages[index];
+
+            var symbol = model.GetSymbolInfo(tParameterUsage).Symbol;
+            if (expectedMethod is null)
+            {
+                Assert.Null(symbol);
+            }
+            else
+            {
+                Assert.Equal(expectedMethod, symbol.ContainingSymbol.ToTestDisplayString());
+                Assert.Equal(expectedType, model.GetTypeInfo(tParameterUsage).Type.ToTestDisplayString());
+            }
         }
 
         [Fact]
