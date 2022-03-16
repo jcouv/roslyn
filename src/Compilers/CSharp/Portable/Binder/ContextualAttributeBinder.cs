@@ -20,15 +20,10 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <param name="enclosing">Next binder in the chain (enclosing).</param>
         /// <param name="symbol">Symbol to which the attribute was applied (e.g. a parameter).</param>
         public ContextualAttributeBinder(Binder enclosing, Symbol symbol)
-            : this(enclosing, symbol, GetAttributedMember(symbol))
+            : base(enclosing, enclosing.Flags | BinderFlags.InContextualAttributeBinder)
         {
-        }
-
-        public ContextualAttributeBinder(Binder enclosing, Symbol attributeTarget, Symbol attributeMember)
-             : base(enclosing, enclosing.Flags | BinderFlags.InContextualAttributeBinder)
-        {
-            _attributeTarget = attributeTarget;
-            _attributedMember = attributeMember;
+            _attributeTarget = symbol;
+            _attributedMember = GetAttributedMember(symbol);
         }
 
         /// <summary>

@@ -1857,20 +1857,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             CheckFeatureAvailability(node, MessageID.IDS_FeatureNameof, diagnostics);
             var argument = node.ArgumentList.Arguments[0].Expression;
             // We relax the instance-vs-static requirement for top-level member access expressions by creating a NameofBinder binder.
-
-            NameofBinder nameofBinder;
-            if ((this.Flags & BinderFlags.InContextualAttributeBinder) != 0 &&
-                getContextualAttributeBinder().AttributedMember is MethodSymbol attributeMember)
-            {
-                // A nameof inside an attribute gets access to additional scopes containing the member's parameters
-                // Those binders also get the InContextualAttributeBinder flag
-                nameofBinder = new NameofBinder(argument, new InMethodBinder(attributeMember, this));
-            }
-            else
-            {
-                nameofBinder = new NameofBinder(argument, this);
-            }
-
+            var nameofBinder = new NameofBinder(argument, this);
             var boundArgument = nameofBinder.BindExpression(argument, diagnostics);
 
             bool syntaxIsOk = CheckSyntaxForNameofArgument(argument, out string name, boundArgument.HasAnyErrors ? BindingDiagnosticBag.Discarded : diagnostics);
@@ -1895,24 +1882,6 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             boundArgument = BindToNaturalType(boundArgument, diagnostics, reportNoTargetType: false);
             return new BoundNameOfOperator(node, boundArgument, ConstantValue.Create(name), Compilation.GetSpecialType(SpecialType.System_String));
-
-            ContextualAttributeBinder getContextualAttributeBinder()
-            {
-                var current = this;
-
-                do
-                {
-                    if (current is ContextualAttributeBinder contextualAttributeBinder)
-                    {
-                        return contextualAttributeBinder;
-                    }
-
-                    current = current.Next;
-                }
-                while (current != null);
-
-                throw ExceptionUtilities.Unreachable;
-            }
         }
 
         private void EnsureNameofExpressionSymbols(BoundMethodGroup methodGroup, BindingDiagnosticBag diagnostics)
