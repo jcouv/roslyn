@@ -212,10 +212,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
                 return true;
             }
 
-            // Must be in the method, but not in an attribute on the method.
+            // Must be in the method, but not in an attribute on the method (before C# 11).
             if (IsInAttributeSpecification(position, methodDecl.AttributeLists))
             {
-                return false;
+                return methodDecl.IsFeatureEnabled(MessageID.IDS_FeatureExtendedNameofScope);
             }
 
             var explicitInterfaceSpecifier = methodDecl.ExplicitInterfaceSpecifier;
@@ -244,10 +244,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
                 return true;
             }
 
-            // Must be in the local function, but not in an attribute on the method.
+            // Must be in the local function, but not in an attribute on the method (before C# 11).
             if (IsInAttributeSpecification(position, localFunction.AttributeLists))
             {
-                return false;
+                return localFunction.IsFeatureEnabled(MessageID.IDS_FeatureExtendedNameofScope);
             }
 
             var firstNameToken = localFunction.Identifier;

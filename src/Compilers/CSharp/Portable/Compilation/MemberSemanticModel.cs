@@ -312,6 +312,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 else if (kind == SyntaxKind.Attribute)
                 {
                     binder = rootBinder.GetBinder(current);
+                    //// TODO2 set ownerOfTypeParametersInScope for method and lambda cases
+                    //if (current.Parent.Parent is LocalFunctionStatementSyntax localFunc) // TODO2 null-ref?
+                    //{
+                    //    ownerOfTypeParametersInScope = localFunc;
+                    //}
                 }
                 else if (kind == SyntaxKind.ArrowExpressionClause)
                 {

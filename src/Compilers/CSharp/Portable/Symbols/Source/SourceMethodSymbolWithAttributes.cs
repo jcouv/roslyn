@@ -279,11 +279,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 var (declarations, symbolPart) = forReturnType
                     ? (GetReturnTypeAttributeDeclarations(), AttributeLocation.Return)
                     : (GetAttributeDeclarations(), AttributeLocation.None);
+
+                var binder = DeclaringCompilation.IsFeatureEnabled(MessageID.IDS_FeatureExtendedNameofScope)
+                    ? WithTypeParametersBinder
+                    : OuterBinder;
+
                 bagCreatedOnThisThread = LoadAndValidateAttributes(
                     declarations,
                     ref lazyCustomAttributesBag,
                     symbolPart,
-                    binderOpt: OuterBinder);
+                    binderOpt: binder);
             }
 
             if (bagCreatedOnThisThread)

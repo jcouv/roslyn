@@ -7119,9 +7119,9 @@ class Program
         }
 
         [Fact, WorkItem(59775, "https://github.com/dotnet/roslyn/issues/59775")]
-        public void TypeParameterScope_NotInMethodAttributeNameOf()
+        public void TypeParameterScope_NotInMethodAttributeNameOf() // TODO2 rename
         {
-            var comp = CreateCompilation(@"
+            var source = @"
 class C
 {
     void M()
@@ -7140,7 +7140,8 @@ public class MyAttribute : System.Attribute
 {
     public MyAttribute(string name1) { }
 }
-");
+";
+            var comp = CreateCompilation(source, parseOptions: TestOptions.Regular10);
             comp.VerifyDiagnostics(
                 // (8,20): error CS0103: The name 'TParameter' does not exist in the current context
                 //         [My(nameof(TParameter))] // 1
@@ -7152,6 +7153,14 @@ public class MyAttribute : System.Attribute
 
             VerifyTParameter(comp, 0, null);
             VerifyTParameter(comp, 1, null);
+
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularNext);
+            comp.VerifyDiagnostics();
+
+            VerifyTParameter(comp, 0, "void local<TParameter>()");
+            // LookupSymbols fails to find TParameter
+            // Tracked by https://github.com/dotnet/roslyn/issues/60194
+            VerifyTParameter(comp, 1, "void C.M2<TParameter>()", lookupFailsAnyways: true);
         }
 
         /// <summary>
@@ -7198,7 +7207,7 @@ public class MyAttribute : System.Attribute
         [Fact]
         public void TypeParameterScope_NotInMethodAttribute()
         {
-            var comp = CreateCompilation(@"
+            var source = @"
 class C
 {
     void M()
@@ -7217,7 +7226,8 @@ public class MyAttribute : System.Attribute
 {
     public MyAttribute(object o) { }
 }
-");
+";
+            var comp = CreateCompilation(source, parseOptions: TestOptions.Regular10);
             comp.VerifyDiagnostics(
                 // (8,13): error CS0103: The name 'TParameter' does not exist in the current context
                 //         [My(TParameter)] // 1
@@ -7229,12 +7239,27 @@ public class MyAttribute : System.Attribute
 
             VerifyTParameter(comp, 0, null);
             VerifyTParameter(comp, 1, null);
+
+            // TParameter unexpectedly was found in local function case because of IsInMethodBody logic
+            // Tracked by https://github.com/dotnet/roslyn/issues/60110
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularNext);
+            comp.VerifyDiagnostics(
+                // (8,13): error CS0119: 'TParameter' is a type, which is not valid in the given context
+                //         [My(TParameter)] // 1
+                Diagnostic(ErrorCode.ERR_BadSKunknown, "TParameter").WithArguments("TParameter", "type").WithLocation(8, 13),
+                // (12,9): error CS0103: The name 'TParameter' does not exist in the current context
+                //     [My(TParameter)] // 2
+                Diagnostic(ErrorCode.ERR_NameNotInContext, "TParameter").WithArguments("TParameter").WithLocation(12, 9)
+                );
+
+            //VerifyTParameter(comp, 0, null);
+            VerifyTParameter(comp, 1, null);
         }
 
         [Fact]
         public void TypeParameterScope_NotInMethodAttributeTypeArgument()
         {
-            var comp = CreateCompilation(@"
+            var source = @"
 class C
 {
     void M()
@@ -7252,24 +7277,48 @@ class C
 public class MyAttribute<T> : System.Attribute
 {
 }
-");
+";
+            var comp = CreateCompilation(source, parseOptions: TestOptions.Regular10);
             comp.VerifyDiagnostics(
+                // (8,10): error CS8652: The feature 'generic attributes' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //         [My<TParameter>] // 1
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "My<TParameter>").WithArguments("generic attributes").WithLocation(8, 10),
                 // (8,13): error CS0246: The type or namespace name 'TParameter' could not be found (are you missing a using directive or an assembly reference?)
                 //         [My<TParameter>] // 1
                 Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound, "TParameter").WithArguments("TParameter").WithLocation(8, 13),
+                // (12,6): error CS8652: The feature 'generic attributes' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                //     [My<TParameter>] // 2
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "My<TParameter>").WithArguments("generic attributes").WithLocation(12, 6),
                 // (12,9): error CS0246: The type or namespace name 'TParameter' could not be found (are you missing a using directive or an assembly reference?)
                 //     [My<TParameter>] // 2
-                Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound, "TParameter").WithArguments("TParameter").WithLocation(12, 9)
+                Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound, "TParameter").WithArguments("TParameter").WithLocation(12, 9),
+                // (16,31): error CS8652: The feature 'generic attributes' is currently in Preview and *unsupported*. To use Preview features, use the 'preview' language version.
+                // public class MyAttribute<T> : System.Attribute
+                Diagnostic(ErrorCode.ERR_FeatureInPreview, "System.Attribute").WithArguments("generic attributes").WithLocation(16, 31)
                 );
 
             VerifyTParameter(comp, 0, null);
             VerifyTParameter(comp, 1, null);
+
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularNext);
+            comp.VerifyDiagnostics(
+                // (8,10): error CS8968: 'TParameter': an attribute type argument cannot use type parameters
+                //         [My<TParameter>] // 1
+                Diagnostic(ErrorCode.ERR_AttrTypeArgCannotBeTypeVar, "My<TParameter>").WithArguments("TParameter").WithLocation(8, 10),
+                // (12,6): error CS8968: 'TParameter': an attribute type argument cannot use type parameters
+                //     [My<TParameter>] // 2
+                Diagnostic(ErrorCode.ERR_AttrTypeArgCannotBeTypeVar, "My<TParameter>").WithArguments("TParameter").WithLocation(12, 6)
+                );
+
+            VerifyTParameter(comp, 0, "void local<TParameter>()");
+            VerifyTParameter(comp, 1, "void C.M2<TParameter>()");
+
         }
 
         [Fact]
         public void TypeParameterScope_NotAsMethodAttributeType()
         {
-            var comp = CreateCompilation(@"
+            var source = @"
 class C
 {
     void M()
@@ -7283,7 +7332,8 @@ class C
     [TParameter] // 2
     void M2<TParameter>() where TParameter : System.Attribute { }
 }
-");
+";
+            var comp = CreateCompilation(source, parseOptions: TestOptions.Regular10);
             comp.VerifyDiagnostics(
                 // (8,10): error CS0246: The type or namespace name 'TParameterAttribute' could not be found (are you missing a using directive or an assembly reference?)
                 //         [TParameter] // 1
@@ -7301,12 +7351,25 @@ class C
 
             VerifyTParameter(comp, 0, null);
             VerifyTParameter(comp, 1, null);
+
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularNext);
+            comp.VerifyDiagnostics(
+                // (8,10): error CS0616: 'TParameter' is not an attribute class
+                //         [TParameter] // 1
+                Diagnostic(ErrorCode.ERR_NotAnAttributeClass, "TParameter").WithArguments("TParameter").WithLocation(8, 10),
+                // (12,6): error CS0616: 'TParameter' is not an attribute class
+                //     [TParameter] // 2
+                Diagnostic(ErrorCode.ERR_NotAnAttributeClass, "TParameter").WithArguments("TParameter").WithLocation(12, 6)
+                );
+
+            VerifyTParameter(comp, 0, null, findAnyways: true);
+            VerifyTParameter(comp, 1, null, findAnyways: true);
         }
 
         [Fact]
-        public void TypeParameterScope_NotInMethodAttributeDefault()
+        public void TypeParameterScope_NotInMethodAttributeDefault() // TODO2 rename
         {
-            var comp = CreateCompilation(@"
+            var source = @"
 class C
 {
     void M()
@@ -7325,7 +7388,8 @@ public class MyAttribute : System.Attribute
 {
     public MyAttribute(object o) { }
 }
-");
+";
+            var comp = CreateCompilation(source, parseOptions: TestOptions.Regular10);
             comp.VerifyDiagnostics(
                 // (8,21): error CS0246: The type or namespace name 'TParameter' could not be found (are you missing a using directive or an assembly reference?)
                 //         [My(default(TParameter))]
@@ -7337,6 +7401,12 @@ public class MyAttribute : System.Attribute
 
             VerifyTParameter(comp, 0, null);
             VerifyTParameter(comp, 1, null);
+
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularNext);
+            comp.VerifyDiagnostics();
+
+            VerifyTParameter(comp, 0, "void local<TParameter>()");
+            VerifyTParameter(comp, 1, "void C.M2<TParameter>()");
         }
 
         [Fact, WorkItem(60110, "https://github.com/dotnet/roslyn/issues/60110")]
@@ -7600,9 +7670,9 @@ public class MyAttribute : System.Attribute
         }
 
         [Fact]
-        public void TypeParameterScope_NotInMethodAttributeTypeOf()
+        public void TypeParameterScope_NotInMethodAttributeTypeOf() // TODO2 rename
         {
-            var comp = CreateCompilation(@"
+            var source = @"
 class C
 {
     void M()
@@ -7621,7 +7691,8 @@ public class MyAttribute : System.Attribute
 {
     public MyAttribute(string name1) { }
 }
-");
+";
+            var comp = CreateCompilation(source, parseOptions: TestOptions.Regular10);
             comp.VerifyDiagnostics(
                 // (8,20): error CS0246: The type or namespace name 'TParameter' could not be found (are you missing a using directive or an assembly reference?)
                 //         [My(typeof(TParameter))]
@@ -7633,6 +7704,19 @@ public class MyAttribute : System.Attribute
 
             VerifyTParameter(comp, 0, null);
             VerifyTParameter(comp, 1, null);
+
+            comp = CreateCompilation(source, parseOptions: TestOptions.RegularNext);
+            comp.VerifyDiagnostics(
+                // (8,13): error CS1503: Argument 1: cannot convert from 'System.Type' to 'string'
+                //         [My(typeof(TParameter))]
+                Diagnostic(ErrorCode.ERR_BadArgType, "typeof(TParameter)").WithArguments("1", "System.Type", "string").WithLocation(8, 13),
+                // (12,9): error CS1503: Argument 1: cannot convert from 'System.Type' to 'string'
+                //     [My(typeof(TParameter))]
+                Diagnostic(ErrorCode.ERR_BadArgType, "typeof(TParameter)").WithArguments("1", "System.Type", "string").WithLocation(12, 9)
+                );
+
+            VerifyTParameter(comp, 0, "void local<TParameter>()");
+            VerifyTParameter(comp, 1, "void C.M2<TParameter>()");
         }
 
         [Fact]
