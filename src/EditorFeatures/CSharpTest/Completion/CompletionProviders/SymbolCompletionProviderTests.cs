@@ -11932,5 +11932,63 @@ class MyClass
             await VerifyItemIsAbsentAsync(source, "goo");
             await VerifyItemIsAbsentAsync(source, "Bar");
         }
+
+        [Fact]
+        public async Task ParameterAvailableInMethodAttributeNameof()
+        {
+            var source = @"
+class C
+{
+    [Some(nameof(p$$))]
+    void M(int parameter) { }
+}
+";
+            await VerifyItemExistsAsync(MakeMarkup(source), "parameter");
+
+            await VerifyItemIsAbsentAsync(MakeMarkup(source, languageVersion: "10"), "parameter");
+        }
+
+        [Fact]
+        public async Task ParameterAvailableInMethodParameterAttributeNameof()
+        {
+            var source = @"
+class C
+{
+    void M([Some(nameof(p$$))] int parameter) { }
+}
+";
+            await VerifyItemExistsAsync(MakeMarkup(source), "parameter");
+        }
+
+        [Fact]
+        public async Task ParameterAvailableInLocalFunctionAttributeNameof()
+        {
+            var source = @"
+class C
+{
+    void M()
+    {
+        [Some(nameof(p$$))]
+        void local(int parameter) { }
+    }
+}
+";
+            await VerifyItemExistsAsync(MakeMarkup(source), "parameter");
+
+            await VerifyItemIsAbsentAsync(MakeMarkup(source, languageVersion: "10"), "parameter");
+        }
+
+        private static string MakeMarkup(string source, string languageVersion = "Preview")
+        {
+            return $$"""
+<Workspace>
+    <Project Language="C#" AssemblyName="Assembly" CommonReferences="true" LanguageVersion="{{languageVersion}}">
+        <Document FilePath="Test.cs">
+{{source}}
+        </Document>
+    </Project>
+</Workspace>
+""";
+        }
     }
 }
