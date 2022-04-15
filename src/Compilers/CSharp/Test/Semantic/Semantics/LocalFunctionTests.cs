@@ -8725,6 +8725,46 @@ public class MyAttribute : System.Attribute
         }
 
         [Fact]
+        public void ParameterScope_InMethodAttributeNameOf_TODO2()
+        {
+            var source = @"
+class C
+{
+    void M()
+    {
+        [My(nameof(parameter))]
+        void local(int parameter) { }
+    }
+}
+
+public class MyAttribute : System.Attribute
+{
+    public MyAttribute(string name1) { }
+}
+";
+
+            var comp = CreateCompilation(source, parseOptions: TestOptions.RegularNext.WithFeature("run-nullable-analysis", "never"));
+            //comp.VerifyDiagnostics(
+            //    // (7,14): warning CS8321: The local function 'local' is declared but never used
+            //    //         void local(int parameter) { }
+            //    Diagnostic(ErrorCode.WRN_UnreferencedLocalFunction, "local").WithArguments("local").WithLocation(7, 14)
+            //    );
+
+            var tree = comp.SyntaxTrees.Single();
+            var model = comp.GetSemanticModel(tree);
+            //var invocation2 = tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().Single();
+            //var symbolInfo2 = model.GetSymbolInfo(invocation2);
+
+            var tree2 = CSharpSyntaxTree.ParseText(source);
+            var method = tree2.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().First();
+            Assert.True(model.TryGetSpeculativeSemanticModelForMethodBody(method.Body.SpanStart, method, out var speculativeModel));
+
+            var invocation = tree2.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().Single();
+            Assert.Equal("nameof(parameter)", invocation.ToString());
+            var symbolInfo = speculativeModel.GetSymbolInfo(invocation); // needs to make an AttributeSemanticModel and use that to speculate
+        }
+
+        [Fact]
         public void ParameterScope_InMethodAttributeNameOf_ConflictingNames()
         {
             var source = @"

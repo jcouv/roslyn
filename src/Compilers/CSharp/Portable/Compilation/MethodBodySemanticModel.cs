@@ -139,6 +139,16 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(rootBinder != null);
             Debug.Assert(rootBinder.IsSemanticModelBinder);
 
+            // TODO2
+            // Also create the MethodBodySymbol (speculative)
+            // But wrap it in SpeculativeSyntaxTreeSemanticModel, such that:
+            //  - GetMemberModel will return the wrapped MethodBodySymbol when appropriate (for that method syntax),
+            //  - and for attribute it would create a AttributeSemanticModel (possibly not speculative)
+            // To do that, we can override SpeculativeSyntaxTreeSemanticModel.GetMemberModel. Needs to handle attributes and parameters
+            // It will call GetMemberDeclaration, but should remain within syntax root. If we escape the root, then use the MethodBodySemanticModel.
+            // GetOrAddModelForAttribute will do the proper chaining of AttributeSemanticModel to the  MethodBodySemanticModel.
+            //
+            // Link/combine the two in some way
             return new MethodBodySemanticModel(owner, rootBinder, syntax, parentSemanticModelOpt: parentSemanticModel, speculatedPosition: position);
         }
 

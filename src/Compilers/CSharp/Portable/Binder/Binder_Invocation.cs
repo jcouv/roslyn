@@ -1862,6 +1862,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (node.MayBeNameofOperator())
             {
                 var binder = this.GetBinder(node);
+                if (binder is null)
+                {
+                    throw new Exception("TODO2");
+                }
                 if (binder.EnclosingNameofArgument == node.ArgumentList.Arguments[0].Expression)
                 {
                     result = binder.BindNameofOperatorInternal(node, diagnostics);

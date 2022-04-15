@@ -108,6 +108,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             return _bindingOption;
         }
 
+        // TODO2 we want some of base.GetSymbolInfoWorker
+        // TODO2:
+        // GetSymbolInfoWorker should GetMemberModel then have the same logic as base when model is found. Otherwise, do existing logic that's here.
         internal override SymbolInfo GetSymbolInfoWorker(CSharpSyntaxNode node, SymbolInfoOptions options, CancellationToken cancellationToken = default(CancellationToken))
         {
             var cref = node as CrefSyntax;
@@ -127,6 +130,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return _parentSemanticModel.GetSpeculativeSymbolInfo(_position, expression, this.GetSpeculativeBindingOption(expression));
         }
 
+        // TODO2 GetTypeInfoWorker should do that too
         internal override CSharpTypeInfo GetTypeInfoWorker(CSharpSyntaxNode node, CancellationToken cancellationToken = default(CancellationToken))
         {
             var expression = (ExpressionSyntax)node;
