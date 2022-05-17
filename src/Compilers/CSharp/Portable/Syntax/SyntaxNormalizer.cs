@@ -13,7 +13,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
 {
     internal class SyntaxNormalizer : CSharpSyntaxRewriter
     {
-        private readonly TextSpan _consideredSpan;
+        private readonly TextSpan _consideredSpan; // TODO2 can be removed?
         private readonly int _initialDepth;
         private readonly string _indentWhitespace;
         private readonly bool _useElasticTrivia;
@@ -93,8 +93,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
             int lineBreaksBefore;
             bool needsSeparatorBefore;
 
-            // If this starts with skipped tokens, we'll calculate the required seperator/line breaks between the previous token and the skipped tokens instead
-            bool startsWithSkippedTokens = token.LeadingTrivia is { Count: > 0 } leading && leading[0].IsKind(SyntaxKind.SkippedTokensTrivia);
+            // If this starts with skipped tokens, we'll calculate the required separator/line breaks between the previous token and the skipped tokens instead
+            bool startsWithSkippedTokens = token.LeadingTrivia is { Count: > 0 } leading && leading[0].IsSkippedTokensTrivia;
             if (IsRelevant(token)
                 && _previousToken.Kind() != SyntaxKind.None
                 && !startsWithSkippedTokens)
@@ -330,6 +330,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
 
         private static int LineBreaksAfterOpenBrace(SyntaxToken openBraceToken)
         {
+            Debug.Assert(openBraceToken.IsKind(SyntaxKind.OpenBraceToken));
             if (openBraceToken.Parent is InitializerExpressionSyntax or PropertyPatternClauseSyntax ||
                 openBraceToken.Parent.IsKind(SyntaxKind.Interpolation) ||
                 IsAccessorListWithoutAccessorsWithBlockBody(openBraceToken.Parent))
@@ -344,6 +345,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
 
         private static int LineBreaksAfterCloseBrace(SyntaxToken closeBraceToken, SyntaxToken nextToken)
         {
+            Debug.Assert(closeBraceToken.IsKind(SyntaxKind.CloseBraceToken));
             if (closeBraceToken.Parent is InitializerExpressionSyntax or SwitchExpressionSyntax or PropertyPatternClauseSyntax ||
                 closeBraceToken.Parent.IsKind(SyntaxKind.Interpolation) ||
                 closeBraceToken.Parent?.Parent is AnonymousFunctionExpressionSyntax ||
@@ -376,6 +378,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax
 
         private static int LineBreaksAfterSemicolon(SyntaxToken semiColonToken, SyntaxToken nextToken)
         {
+            Debug.Assert(semiColonToken.IsKind(SyntaxKind.SemiColonToken));
             if (semiColonToken.Parent.IsKind(SyntaxKind.ForStatement))
             {
                 return 0;
