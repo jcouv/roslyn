@@ -90,6 +90,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         internal override uint RefEscapeScope => _underlyingLocal.RefEscapeScope;
         internal override uint ValEscapeScope => _underlyingLocal.ValEscapeScope;
         internal override DeclarationScope Scope => _underlyingLocal.Scope;
+        internal override uint ScopeDepth => _underlyingLocal.ScopeDepth; // TODO2 cover
         internal override ConstantValue GetConstantValue(SyntaxNode node, LocalSymbol inProgress, BindingDiagnosticBag? diagnostics = null) =>
             _underlyingLocal.GetConstantValue(node, inProgress, diagnostics);
         internal override ImmutableBindingDiagnostic<AssemblySymbol> GetConstantValueDiagnostics(BoundExpression boundInitValue) =>

@@ -288,6 +288,136 @@ class C
             );
         }
 
+        [Fact]
+        public void RefLikeReturnEscape_TODO2()
+        {
+            var text = @"
+using System;
+
+class C
+{
+    Span<int> ScopedLocalExamples1()
+    {
+        // Error: `span` has a safe-to-escape of *current method*. That is true even though the 
+        // initializer has a safe-to-escape of *calling method*. The annotation overrides the 
+        // initializer
+        scoped Span<int> span = default;
+        return span; // 1
+    }
+
+    Span<int> ScopedLocalExamples2()
+    {
+        // Okay: the initializer has safe-to-escape of *calling method* hence so does `span2` 
+        // and the return is legal.
+        Span<int> span2 = default;
+        return span2;
+    }
+
+    Span<int> ScopedLocalExamples3()
+    {
+        // The declarations of `span3` and `span4` are functionally identical because the 
+        // initializer has a safe-to-escape of *current method* meaning the `scoped` annotation
+        // is effectively implied on `span3`
+        Span<int> span3 = stackalloc int[42];
+        return span3; // 2
+    }
+
+    Span<int> ScopedLocalExamples4()
+    {
+        scoped Span<int> span4 = stackalloc int[42];
+        return span4; // 3
+    }
+
+    void ScopedLocalExamples5()
+    {
+        Span<int> x;
+        {
+            Span<int> span5 = stackalloc int[42];
+            x = span5; // 4 
+        }
+    }
+}
+";
+            // TODO2 run with C# 10
+            //CreateCompilationWithMscorlibAndSpan(text, parseOptions: TestOptions.Regular10).VerifyDiagnostics(
+            //);
+
+            CreateCompilation(text, targetFramework: TargetFramework.NetCoreApp).VerifyDiagnostics(
+                // (12,16): error CS8352: Cannot use variable 'span' in this context because it may expose referenced variables outside of their declaration scope
+                //         return span; // 1
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "span").WithArguments("span").WithLocation(12, 16),
+                // (29,16): error CS8352: Cannot use variable 'span3' in this context because it may expose referenced variables outside of their declaration scope
+                //         return span3; // 2
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "span3").WithArguments("span3").WithLocation(29, 16),
+                // (35,16): error CS8352: Cannot use variable 'span4' in this context because it may expose referenced variables outside of their declaration scope
+                //         return span4; // 3
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "span4").WithArguments("span4").WithLocation(35, 16),
+                // (43,17): error CS8352: Cannot use variable 'span5' in this context because it may expose referenced variables outside of their declaration scope
+                //             x = span5; // 4 
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "span5").WithArguments("span5").WithLocation(43, 17)
+                );
+        }
+
+        [Fact]
+        public void RefLikeReturnEscape_TODO2_2()
+        {
+            var text = @"
+using System;
+
+class C
+{
+    Span<byte> ScopedLocalExamples1(bool b)
+    {
+        scoped Span<byte> span;
+        if (b)
+        {
+            span = stackalloc byte[0];
+        }
+        else
+        {
+            span = new byte[0];
+        }
+
+        return span; // 1
+    }
+}
+";
+            // TODO2 run with C# 10
+            //CreateCompilationWithMscorlibAndSpan(text, parseOptions: TestOptions.Regular10).VerifyDiagnostics(
+            //);
+
+            CreateCompilation(text, targetFramework: TargetFramework.NetCoreApp).VerifyDiagnostics(
+                // (18,16): error CS8352: Cannot use variable 'span' in this context because it may expose referenced variables outside of their declaration scope
+                //         return span; // 1
+                Diagnostic(ErrorCode.ERR_EscapeVariable, "span").WithArguments("span").WithLocation(18, 16)
+                );
+        }
+
+        [Fact]
+        public void RefLikeReturnEscape_TODO2_3()
+        {
+            var text = @"
+using System;
+
+ref struct S
+{ 
+    int Field;
+
+    // Illegal because `this` isn't safe to escape as ref
+    ref int Get() => ref Field;
+
+    // Legal
+    ref int GetParam(ref int p) => ref p;
+}
+";
+            // TODO2 run with C# 10
+            //CreateCompilationWithMscorlibAndSpan(text, parseOptions: TestOptions.Regular10).VerifyDiagnostics(
+            //);
+
+            CreateCompilation(text, targetFramework: TargetFramework.NetCoreApp).VerifyDiagnostics(
+                );
+        }
+
         [Fact()]
         public void RefLikeReturnEscapeWithRefLikes()
         {

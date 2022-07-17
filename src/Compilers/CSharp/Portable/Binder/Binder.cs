@@ -156,6 +156,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
+        // TODO2 remove this property
         // https://github.com/dotnet/roslyn/issues/62131: Enable updated escape rules if
         // System.Runtime.CompilerServices.RuntimeFeature.ByRefFields exists.
         internal bool UseUpdatedEscapeRules => Compilation.IsFeatureEnabled(MessageID.IDS_FeatureRefFields) /*||

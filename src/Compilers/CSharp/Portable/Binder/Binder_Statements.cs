@@ -1538,22 +1538,23 @@ namespace Microsoft.CodeAnalysis.CSharp
                     op2 = BindToNaturalType(op2, diagnostics);
                 }
 
-                if (isRef)
-                {
-                    var leftEscape = GetRefEscape(op1, LocalScopeDepth);
-                    var rightEscape = GetRefEscape(op2, LocalScopeDepth);
-                    if (leftEscape < rightEscape)
-                    {
-                        Error(diagnostics, ErrorCode.ERR_RefAssignNarrower, node, op1.ExpressionSymbol.Name, op2.Syntax);
-                        op2 = ToBadExpression(op2);
-                    }
-                }
+                // TODO2
+                //if (isRef)
+                //{
+                //    var leftEscape = GetRefEscape(op1, LocalScopeDepth);
+                //    var rightEscape = GetRefEscape(op2, LocalScopeDepth);
+                //    if (leftEscape < rightEscape)
+                //    {
+                //        Error(diagnostics, ErrorCode.ERR_RefAssignNarrower, node, op1.ExpressionSymbol.Name, op2.Syntax);
+                //        op2 = ToBadExpression(op2);
+                //    }
+                //}
 
-                if (op1.Type.IsRefLikeType)
-                {
-                    var leftEscape = GetValEscape(op1, LocalScopeDepth);
-                    op2 = ValidateEscape(op2, leftEscape, isByRef: false, diagnostics);
-                }
+                //if (op1.Type.IsRefLikeType)
+                //{
+                //    var leftEscape = GetValEscape(op1, LocalScopeDepth);
+                //    op2 = ValidateEscape(op2, leftEscape, isByRef: false, diagnostics);
+                //}
             }
             else
             {
@@ -2952,7 +2953,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     else
                     {
                         arg = CreateReturnConversion(syntax, diagnostics, arg, sigRefKind, retType);
-                        arg = ValidateEscape(arg, Binder.ExternalScope, refKind != RefKind.None, diagnostics);
+                        //arg = ValidateEscape(arg, Binder.ExternalScope, refKind != RefKind.None, diagnostics); // TODO2
                     }
                 }
             }

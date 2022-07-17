@@ -1735,6 +1735,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             out bool prependedDefaultValueTypeConstructorInitializer,
             out MethodBodySemanticModel.InitialState forSemanticModel)
         {
+            Debug.Assert(diagnostics.DiagnosticBag != null);
             originalBodyNested = false;
             prependedDefaultValueTypeConstructorInitializer = false;
             importChain = null;
@@ -1781,11 +1782,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                     ImmutableDictionary<Symbol, Symbol>? remappedSymbols = null;
                     var compilation = bodyBinder.Compilation;
 
+                    EscapeAnalysis.Analyze(methodBody, bodyBinder.UseUpdatedEscapeRules, diagnostics);
                     nullableInitialState = getInitializerState(methodBody);
 
                     if (reportNullableDiagnostics)
                     {
-                        Debug.Assert(diagnostics.DiagnosticBag != null);
                         if (compilation.IsNullableAnalysisEnabledIn(method))
                         {
                             var isSufficientLangVersion = compilation.LanguageVersion >= MessageID.IDS_FeatureNullableReferenceTypes.RequiredVersion();

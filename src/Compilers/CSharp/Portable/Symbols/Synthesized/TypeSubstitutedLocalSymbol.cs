@@ -116,6 +116,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// </summary>
         internal override DeclarationScope Scope => throw new System.NotImplementedException();
 
+        internal override uint ScopeDepth => throw ExceptionUtilities.Unreachable;
+
         internal override ConstantValue GetConstantValue(SyntaxNode node, LocalSymbol inProgress, BindingDiagnosticBag diagnostics)
         {
             return _originalVariable.GetConstantValue(node, inProgress, diagnostics);

@@ -707,7 +707,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return true;
         }
 
-        private static bool CheckLocalRefEscape(SyntaxNode node, BoundLocal local, uint escapeTo, bool checkingReceiver, BindingDiagnosticBag diagnostics)
+        internal static bool CheckLocalRefEscape(SyntaxNode node, BoundLocal local, uint escapeTo, bool checkingReceiver, BindingDiagnosticBag diagnostics)
         {
             LocalSymbol localSymbol = local.LocalSymbol;
 
@@ -777,7 +777,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return true;
         }
 
-        private uint GetParameterValEscape(ParameterSymbol parameter)
+        internal uint GetParameterValEscape(ParameterSymbol parameter)
         {
             if (UseUpdatedEscapeRules)
             {
@@ -791,7 +791,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
-        private uint GetParameterRefEscape(ParameterSymbol parameter)
+        internal uint GetParameterRefEscape(ParameterSymbol parameter)
         {
             if (UseUpdatedEscapeRules)
             {
@@ -1424,7 +1424,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// returns false if the argument contributes _safe-to-escape_; and
         /// returns null if the argument contributes neither.
         /// </summary>
-        private bool? UseRefEscapeOfInvocationArgument(Symbol symbol, RefKind effectiveRefKind, bool isRefEscape, DeclarationScope scope)
+        internal bool? UseRefEscapeOfInvocationArgument(Symbol symbol, RefKind effectiveRefKind, bool isRefEscape, DeclarationScope scope)
         {
             if (!UseUpdatedEscapeRules)
             {
@@ -1589,7 +1589,7 @@ moreArguments:
         /// NOTE: we need scopeOfTheContainingExpression as some expressions such as optional <c>in</c> parameters or <c>ref dynamic</c> behave as 
         ///       local variables declared at the scope of the invocation.
         /// </summary>
-        private bool CheckInvocationEscape(
+        internal bool CheckInvocationEscape(
             SyntaxNode syntax,
             Symbol symbol,
             BoundExpression? receiver,
@@ -1889,7 +1889,7 @@ moreArguments:
         /// However, 'in' may also be passed as an ordinary val argument so we need to take a look at corresponding parameter, if such exists. 
         /// There are cases like params/vararg, when a corresponding parameter may not exist, then val cannot become 'in'.
         /// </summary>
-        private static RefKind GetEffectiveRefKindAndMarkMatchedInParameter(
+        internal static RefKind GetEffectiveRefKindAndMarkMatchedInParameter(
             int argIndex,
             ImmutableArray<RefKind> argRefKindsOpt,
             ImmutableArray<ParameterSymbol> parameters,
@@ -2190,22 +2190,23 @@ moreArguments:
         /// </summary>
         internal BoundExpression ValidateEscape(BoundExpression expr, uint escapeTo, bool isByRef, BindingDiagnosticBag diagnostics)
         {
-            if (isByRef)
-            {
-                if (CheckRefEscape(expr.Syntax, expr, this.LocalScopeDepth, escapeTo, checkingReceiver: false, diagnostics: diagnostics))
-                {
-                    return expr;
-                }
-            }
-            else
-            {
-                if (CheckValEscape(expr.Syntax, expr, this.LocalScopeDepth, escapeTo, checkingReceiver: false, diagnostics: diagnostics))
-                {
-                    return expr;
-                }
-            }
+            return expr; // TODO2
+            //if (isByRef)
+            //{
+            //    if (CheckRefEscape(expr.Syntax, expr, this.LocalScopeDepth, escapeTo, checkingReceiver: false, diagnostics: diagnostics))
+            //    {
+            //        return expr;
+            //    }
+            //}
+            //else
+            //{
+            //    if (CheckValEscape(expr.Syntax, expr, this.LocalScopeDepth, escapeTo, checkingReceiver: false, diagnostics: diagnostics))
+            //    {
+            //        return expr;
+            //    }
+            //}
 
-            return ToBadExpression(expr);
+            //return ToBadExpression(expr);
         }
 
         /// <summary>

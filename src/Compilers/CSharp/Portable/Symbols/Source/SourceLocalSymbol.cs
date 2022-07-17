@@ -32,6 +32,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         private readonly RefKind _refKind;
         private readonly LocalDeclarationKind _declarationKind;
         private readonly DeclarationScope _scope;
+        private readonly uint _scopeDepth;
 
         private TypeWithAnnotations.Boxed _type;
 
@@ -81,6 +82,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 this._refKind = RefKind.None;
                 this._scope = hasScopedModifier ? DeclarationScope.ValueScoped : DeclarationScope.Unscoped;
             }
+
+            this._scopeDepth = scopeBinder.LocalScopeDepth;
 
             this._declarationKind = declarationKind;
 
@@ -148,6 +151,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         }
 
         internal sealed override DeclarationScope Scope => _scope;
+        internal override uint ScopeDepth => _scopeDepth;
 
         /// <summary>
         /// Binder that should be used to bind type syntax for the local.
