@@ -13302,5 +13302,11 @@ public ref struct R
                 Diagnostic(ErrorCode.ERR_RefReturnLocal, "field = ref x").WithArguments("x").WithLocation(36, 28)
                 );
         }
+
+        // TODO2 parsing for 'scoped' on declaration expression
+        // TODO2 escape analysis
+        // TODO2 symbol display
+        // TODO2 public API
+        // TODO2 same for 'scoped' in other statements
     }
 }
