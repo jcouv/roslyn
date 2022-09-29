@@ -1393,7 +1393,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             TypeWithAnnotations typeWithAnnotations = this.BindType(typeSyntax, diagnostics, out alias);
             TypeSymbol type = typeWithAnnotations.Type;
 
-            bool typeHasErrors = type.IsErrorType() || CheckManagedAddr(Compilation, type, node.Location, diagnostics);
+            bool typeHasErrors = type.IsErrorType() || CheckManagedAddr(Compilation, type, node, diagnostics);
 
             BoundTypeExpression boundType = new BoundTypeExpression(typeSyntax, alias, typeWithAnnotations, typeHasErrors);
             ConstantValue constantValue = GetConstantSizeOf(type);
@@ -1403,31 +1403,39 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
         /// <returns>true if managed type-related errors were found, otherwise false.</returns>
-        internal static bool CheckManagedAddr(CSharpCompilation compilation, TypeSymbol type, Location location, BindingDiagnosticBag diagnostics, bool errorForManaged = false)
+        internal static bool CheckManagedAddr(CSharpCompilation compilation, TypeSymbol type, SyntaxNode node, BindingDiagnosticBag diagnostics, bool errorForManaged = false)
         {
             var useSiteInfo = new CompoundUseSiteInfo<AssemblySymbol>(diagnostics, compilation.Assembly);
             var managedKind = type.GetManagedKind(ref useSiteInfo);
-            diagnostics.Add(location, useSiteInfo);
+            diagnostics.Add(node.Location, useSiteInfo);
 
-            return CheckManagedAddr(compilation, type, managedKind, location, diagnostics, errorForManaged);
+            return CheckManagedAddr(compilation, type, managedKind, node, diagnostics, errorForManaged);
         }
 
         /// <returns>true if managed type-related errors were found, otherwise false.</returns>
-        internal static bool CheckManagedAddr(CSharpCompilation compilation, TypeSymbol type, ManagedKind managedKind, Location location, BindingDiagnosticBag diagnostics, bool errorForManaged = false)
+        internal static bool CheckManagedAddr(CSharpCompilation compilation, TypeSymbol type, ManagedKind managedKind, SyntaxNode node, BindingDiagnosticBag diagnostics, bool errorForManaged = false)
         {
             switch (managedKind)
             {
                 case ManagedKind.Managed:
                     if (errorForManaged)
                     {
-                        diagnostics.Add(ErrorCode.ERR_ManagedAddr, location, type);
+                        diagnostics.Add(ErrorCode.ERR_ManagedAddr, node.Location, type);
                         return true;
                     }
 
-                    diagnostics.Add(ErrorCode.WRN_ManagedAddr, location, type);
-                    return false;
+                    if (!CheckFeatureAvailability(node, MessageID.IDS_ManagedAddr, diagnostics))
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        diagnostics.Add(ErrorCode.WRN_ManagedAddr, node.Location, type);
+                        return false;
+                    }
+
                 case ManagedKind.UnmanagedWithGenerics when MessageID.IDS_FeatureUnmanagedConstructedTypes.GetFeatureAvailabilityDiagnosticInfo(compilation) is CSDiagnosticInfo diagnosticInfo:
-                    diagnostics.Add(diagnosticInfo, location);
+                    diagnostics.Add(diagnosticInfo, node.Location);
                     return true;
                 case ManagedKind.Unknown:
                     throw ExceptionUtilities.UnexpectedValue(managedKind);
@@ -3311,7 +3319,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (!bestType.IsErrorType())
             {
-                CheckManagedAddr(Compilation, bestType, node.Location, diagnostics, errorForManaged: true);
+                CheckManagedAddr(Compilation, bestType, node, diagnostics, errorForManaged: true);
             }
 
             return BindStackAllocWithInitializer(
@@ -3668,7 +3676,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             TypeSymbol type = GetStackAllocType(node, elementType, diagnostics, out bool hasErrors);
             if (!elementType.Type.IsErrorType())
             {
-                hasErrors = hasErrors || CheckManagedAddr(Compilation, elementType.Type, elementTypeSyntax.Location, diagnostics, errorForManaged: true);
+                hasErrors = hasErrors || CheckManagedAddr(Compilation, elementType.Type, elementTypeSyntax, diagnostics, errorForManaged: true);
             }
 
             SyntaxList<ArrayRankSpecifierSyntax> rankSpecifiers = arrayTypeSyntax.RankSpecifiers;
