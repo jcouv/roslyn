@@ -444,15 +444,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// Whether the target runtime supports numeric IntPtr types.
         /// </summary>
         internal bool RuntimeSupportsNumericIntPtr
-        {
-            get
-            {
-                // CorLibrary should never be null, but that invariant is broken in some cases for MissingAssemblySymbol.
-                // Tracked by https://github.com/dotnet/roslyn/issues/61262
-                return CorLibrary is not null &&
-                    RuntimeSupportsFeature(SpecialMember.System_Runtime_CompilerServices_RuntimeFeature__NumericIntPtr);
-            }
-        }
+            => RuntimeSupportsFeature(SpecialMember.System_Runtime_CompilerServices_RuntimeFeature__NumericIntPtr);
 
         protected bool RuntimeSupportsFeature(SpecialMember feature)
         {

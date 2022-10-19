@@ -259,7 +259,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 var assembly = metadata.GetAssembly();
                 Debug.Assert(assembly is object);
-                var peReferences = assembly.AssemblyReferences.SelectAsArray(MapAssemblyIdentityToResolvedSymbol, referencedAssembliesByIdentity);
+                var corLib = this.CorLibraryOpt ?? MissingCorLibrarySymbol.Instance;
+                var peReferences = assembly.AssemblyReferences.SelectAsArray(mapAssemblyIdentityToResolvedSymbol, arg: (referencedAssembliesByIdentity, corLib));
 
                 assemblyReferenceIdentityMap = GetAssemblyReferenceIdentityBaselineMap(peReferences, assembly.AssemblyReferences);
 
@@ -276,23 +277,25 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
 
                 return assemblySymbol;
-            }
 
-            private static AssemblySymbol MapAssemblyIdentityToResolvedSymbol(AssemblyIdentity identity, AssemblyIdentityMap<AssemblySymbol> map)
-            {
-                AssemblySymbol symbol;
-                if (map.TryGetValue(identity, out symbol, CompareVersionPartsSpecifiedInSource))
+                static AssemblySymbol mapAssemblyIdentityToResolvedSymbol(AssemblyIdentity identity, (AssemblyIdentityMap<AssemblySymbol> map, AssemblySymbol corLib) args)
                 {
-                    return symbol;
-                }
+                    AssemblySymbol symbol;
+                    if (args.map.TryGetValue(identity, out symbol, CompareVersionPartsSpecifiedInSource))
+                    {
+                        return symbol;
+                    }
 
-                if (map.TryGetValue(identity, out symbol, (v1, v2, s) => true))
-                {
-                    // TODO: https://github.com/dotnet/roslyn/issues/9004
-                    throw new NotSupportedException(string.Format(CodeAnalysisResources.ChangingVersionOfAssemblyReferenceIsNotAllowedDuringDebugging, identity, symbol.Identity.Version));
-                }
+                    if (args.map.TryGetValue(identity, out symbol, (v1, v2, s) => true))
+                    {
+                        // TODO: https://github.com/dotnet/roslyn/issues/9004
+                        throw new NotSupportedException(string.Format(CodeAnalysisResources.ChangingVersionOfAssemblyReferenceIsNotAllowedDuringDebugging, identity, symbol.Identity.Version));
+                    }
 
-                return new MissingAssemblySymbol(identity);
+                    var missing = new MissingAssemblySymbol(identity);
+                    missing.SetCorLibrary(args.corLib);
+                    return missing;
+                }
             }
 
             private void CreateAndSetSourceAssemblyReuseData(CSharpCompilation compilation)
