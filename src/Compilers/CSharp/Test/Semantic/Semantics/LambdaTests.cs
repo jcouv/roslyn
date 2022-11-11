@@ -6951,7 +6951,7 @@ public class DisplayAttribute : System.Attribute
                 );
         }
 
-        [Fact]
+        [Fact, WorkItem(64985, "https://github.com/dotnet/roslyn/issues/64985")]
         public void DelegateConversions_ImplicitlyTypedParameter_RefParameter()
         {
             var source = """
@@ -6992,12 +6992,44 @@ public class DisplayAttribute : System.Attribute
             Assert.Equal("? r1", lambdaParameter1.ToTestDisplayString());
             Assert.Equal(RefKind.None, lambdaParameter1.RefKind);
 
-            // Implicitly-typed lambda parameters can get a type, but they cannot get a different ref-kind (or scoped-ness) during anonymous function conversion
-            // Tracked by https://github.com/dotnet/roslyn/issues/64985
             Assert.Equal("r2 => r2", lambdas[1].ToString());
             var lambdaParameter2 = model.GetSymbolInfo(lambdas[1]).Symbol.GetParameters()[0];
-            Assert.Equal("ref R r2", lambdaParameter2.ToTestDisplayString());
-            Assert.Equal(RefKind.Ref, lambdaParameter2.RefKind);
+            Assert.Equal("R r2", lambdaParameter2.ToTestDisplayString());
+            Assert.Equal(RefKind.None, lambdaParameter2.RefKind);
+        }
+
+        [Fact, WorkItem(64985, "https://github.com/dotnet/roslyn/issues/64985")]
+        public void DelegateConversions_AnonymousMethodExpression_RefParameter()
+        {
+            var source = """
+                struct R { }
+
+                delegate void D1(ref R r);
+
+                class Program
+                {
+                    static void Main()
+                    {
+                        M(delegate { }); // 1
+                    }
+
+                    static void M(D1 d1) { }
+                }
+                """;
+
+            var comp = CreateCompilation(source);
+            comp.VerifyDiagnostics();
+
+            var syntaxTree = comp.SyntaxTrees[0];
+            var root = syntaxTree.GetRoot();
+            var model = comp.GetSemanticModel(syntaxTree);
+
+            var anonymousMethod = root.DescendantNodes().OfType<AnonymousMethodExpressionSyntax>().Single();
+
+            Assert.Equal("delegate { }", anonymousMethod.ToString());
+            var parameter1 = model.GetSymbolInfo(anonymousMethod).Symbol.GetParameters()[0];
+            Assert.Equal("R <p0>", parameter1.ToTestDisplayString());
+            Assert.Equal(RefKind.None, parameter1.RefKind);
         }
     }
 }
