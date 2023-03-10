@@ -220,7 +220,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 var location = locations[0];
                 var parameter0Type = this.Parameters[0].TypeWithAnnotations;
                 var parameter0RefKind = this.Parameters[0].RefKind;
-                if (!parameter0Type.Type.IsValidExtensionParameterType())
+                if (ContainingType.IsExtension)
+                {
+                    reportBadExtensionAgg(syntax, diagnostics);
+                }
+                else if (!parameter0Type.Type.IsValidExtensionParameterType())
                 {
                     // Duplicate Dev10 behavior by selecting the parameter type.
                     var parameterSyntax = syntax.ParameterList.Parameters[0];
@@ -242,12 +246,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 }
                 else if (!ContainingType.IsScriptClass && !(ContainingType.IsStatic && ContainingType.Arity == 0))
                 {
-                    // Duplicate Dev10 behavior by selecting the containing type identifier. However if there
-                    // is no containing type (in the interactive case for instance), select the method identifier.
-                    var typeDecl = syntax.Parent as TypeDeclarationSyntax;
-                    var identifier = (typeDecl != null) ? typeDecl.Identifier : syntax.Identifier;
-                    var loc = identifier.GetLocation();
-                    diagnostics.Add(ErrorCode.ERR_BadExtensionAgg, loc);
+                    reportBadExtensionAgg(syntax, diagnostics);
                 }
                 else if (!IsStatic)
                 {
@@ -272,6 +271,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         diagnostics.Add(useSiteInfo, thisLocation);
                     }
                 }
+            }
+
+            static void reportBadExtensionAgg(MethodDeclarationSyntax syntax, BindingDiagnosticBag diagnostics)
+            {
+                // Duplicate Dev10 behavior by selecting the containing type identifier. However if there
+                // is no containing type (in the interactive case for instance), select the method identifier.
+                var typeDecl = syntax.Parent as TypeDeclarationSyntax;
+                var identifier = (typeDecl != null) ? typeDecl.Identifier : syntax.Identifier;
+                var loc = identifier.GetLocation();
+                diagnostics.Add(ErrorCode.ERR_BadExtensionAgg, loc);
             }
         }
 

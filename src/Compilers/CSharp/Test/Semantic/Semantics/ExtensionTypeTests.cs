@@ -4937,4 +4937,47 @@ public unsafe explicit extension R2<T> for C : R1<int*> { }
             Diagnostic(ErrorCode.ERR_BadTypeArgument, "R2").WithArguments("int*").WithLocation(5, 34)
             );
     }
+
+    [Theory, CombinatorialData]
+    public void ExtensionMethods_DisallowedInExtensionTypes(bool isStatic, bool isExplicit)
+    {
+        var staticKeyword = isStatic ? "static " : "";
+        var keyword = isExplicit ? "explicit" : "implicit";
+
+        var text = $$"""
+public class C { }
+
+public {{staticKeyword}}{{keyword}} extension R1 for C
+{
+    static void M(this int i) { } // 1
+}
+""";
+        var comp = CreateCompilation(text);
+        comp.VerifyDiagnostics(
+            // error CS1106: Extension method must be defined in a non-generic static class
+            // public static implicit extension R1 for C
+            Diagnostic(ErrorCode.ERR_BadExtensionAgg, "R1")
+            );
+    }
+
+    [Fact]
+    public void ExtensionMethods_DisallowExtensionThisParameter()
+    {
+        var text = $$"""
+public class C { }
+
+public implicit extension R for C { }
+
+public static class E
+{
+    static void M(this R r) { } // 1
+}
+""";
+        var comp = CreateCompilation(text);
+        comp.VerifyDiagnostics(
+            // (7,24): error CS1103: The first parameter of an extension method cannot be of type 'R'
+            //     static void M(this R r) { } // 1
+            Diagnostic(ErrorCode.ERR_BadTypeforThis, "R").WithArguments("R").WithLocation(7, 24)
+            );
+    }
 }
