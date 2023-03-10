@@ -359,6 +359,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     break;
                 case TypeKind.Struct:
                 case TypeKind.Enum:
+                case TypeKind.Extension:
                     mods |= DeclarationModifiers.Sealed;
                     break;
                 case TypeKind.Delegate:
@@ -830,15 +831,15 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return managedKind;
         }
 
-        public override bool IsStatic => HasFlag(DeclarationModifiers.Static);
+        public sealed override bool IsStatic => HasFlag(DeclarationModifiers.Static);
 
         public sealed override bool IsRefLikeType => HasFlag(DeclarationModifiers.Ref);
 
-        public override bool IsReadOnly => HasFlag(DeclarationModifiers.ReadOnly);
+        public sealed override bool IsReadOnly => HasFlag(DeclarationModifiers.ReadOnly);
 
-        public override bool IsSealed => HasFlag(DeclarationModifiers.Sealed);
+        public sealed override bool IsSealed => HasFlag(DeclarationModifiers.Sealed);
 
-        public override bool IsAbstract => HasFlag(DeclarationModifiers.Abstract);
+        public sealed override bool IsAbstract => HasFlag(DeclarationModifiers.Abstract);
 
         internal bool IsPartial => HasFlag(DeclarationModifiers.Partial);
 
@@ -1727,7 +1728,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             var location = Locations[0];
             var compilation = DeclaringCompilation;
 
-            if (this.IsRefLikeType)
+            if (this.IsRefLikeType || this.IsExtension)
             {
                 compilation.EnsureIsByRefLikeAttributeExists(diagnostics, location, modifyCompilation: true);
             }
@@ -3355,9 +3356,22 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 case TypeKind.Class:
                 case TypeKind.Interface:
                 case TypeKind.Submission:
-                case TypeKind.Extension:
                     AddSynthesizedTypeMembersIfNecessary(builder, declaredMembersAndInitializers, diagnostics);
                     AddSynthesizedConstructorsIfNecessary(builder, declaredMembersAndInitializers, diagnostics);
+                    break;
+
+                case TypeKind.Extension:
+
+                    AddSynthesizedConstructorsIfNecessary(builder, declaredMembersAndInitializers, diagnostics); // TODO2
+
+                    // TODO2 consider folding into cases above
+                    if (ExtensionUnderlyingTypeNoUseSiteDiagnostics is not null)
+                    {
+                        builder.AddNonTypeMember(
+                            new SynthesizedExtensionMarker(this, ExtensionUnderlyingTypeNoUseSiteDiagnostics, BaseExtensionsNoUseSiteDiagnostics, diagnostics),
+                            declaredMembersAndInitializers);
+                    }
+
                     break;
 
                 default:

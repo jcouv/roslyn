@@ -19,6 +19,7 @@ using Microsoft.CodeAnalysis.CSharp.Emit;
 using Microsoft.CodeAnalysis.PooledObjects;
 using Roslyn.Utilities;
 using System.Reflection.Metadata.Ecma335;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 {
@@ -97,7 +98,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 return result;
             }
 
-            if (this.IsUncommon())
+            if (isUncommon())
             {
                 result = new UncommonProperties();
                 return Interlocked.CompareExchange(ref _lazyUncommonProperties, result, null) ?? result;
@@ -105,22 +106,22 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             _lazyUncommonProperties = result = s_noUncommonProperties;
             return result;
-        }
 
-        // enums and types with custom attributes are considered uncommon
-        private bool IsUncommon()
-        {
-            if (this.ContainingPEModule.HasAnyCustomAttributes(_handle))
+            // enums and types with custom attributes are considered uncommon
+            bool isUncommon()
             {
-                return true;
-            }
+                if (this.ContainingPEModule.HasAnyCustomAttributes(_handle))
+                {
+                    return true;
+                }
 
-            if (this.TypeKind == TypeKind.Enum)
-            {
-                return true;
-            }
+                if (this.TypeKind is TypeKind.Enum or TypeKind.Extension)
+                {
+                    return true;
+                }
 
-            return false;
+                return false;
+            }
         }
 
         private class UncommonProperties
@@ -148,6 +149,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             internal ImmutableArray<byte> lazyFilePathChecksum = default;
             internal string lazyDisplayFileName;
 
+            internal TypeSymbol lazyDeclaredExtensionUnderlyingType = null; // TODO2
+            internal ImmutableArray<NamedTypeSymbol> lazyDeclaredBaseExtensions = default; // TODO2
+            internal ImmutableArray<NamedTypeSymbol> lazyBaseExtensions = default; // TODO2
+
 #if DEBUG
             internal bool IsDefaultValue()
             {
@@ -164,7 +169,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                     !lazyHasInterpolatedStringHandlerAttribute.HasValue() &&
                     !lazyHasRequiredMembers.HasValue() &&
                     lazyFilePathChecksum.IsDefault &&
-                    lazyDisplayFileName == null;
+                    lazyDisplayFileName == null &&
+                    lazyDeclaredExtensionUnderlyingType is null &&
+                    lazyDeclaredBaseExtensions.IsDefault &&
+                    lazyBaseExtensions.IsDefault;
             }
 #endif
         }
@@ -503,16 +511,23 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                     }
 
                     var moduleSymbol = ContainingPEModule;
-                    TypeSymbol decodedType = DynamicTypeDecoder.TransformType(baseType, 0, _handle, moduleSymbol);
-                    decodedType = NativeIntegerTypeDecoder.TransformType(decodedType, _handle, moduleSymbol, this);
-                    decodedType = TupleTypeDecoder.DecodeTupleTypesIfApplicable(decodedType, _handle, moduleSymbol);
-                    baseType = (NamedTypeSymbol)NullableTypeDecoder.TransformType(TypeWithAnnotations.Create(decodedType), _handle, moduleSymbol, accessSymbol: this, nullableContext: this).Type;
+                    baseType = (NamedTypeSymbol)ApplyTransforms(baseType, _handle, moduleSymbol);
                 }
 
                 Interlocked.CompareExchange(ref _lazyDeclaredBaseType, baseType, ErrorTypeSymbol.UnknownResultType);
             }
 
             return _lazyDeclaredBaseType;
+        }
+
+        private TypeSymbol ApplyTransforms(TypeSymbol type, EntityHandle targetSymbolToken, PEModuleSymbol moduleSymbol)
+        {
+            // PROTOTYPE consider sharing this code with other locations that decode types
+            // TODO2 need to review this in details (`accessSymbol: this` for example)
+            TypeSymbol decodedType = DynamicTypeDecoder.TransformType(type, 0, targetSymbolToken, moduleSymbol);
+            decodedType = NativeIntegerTypeDecoder.TransformType(decodedType, targetSymbolToken, moduleSymbol, this);
+            decodedType = TupleTypeDecoder.DecodeTupleTypesIfApplicable(decodedType, targetSymbolToken, moduleSymbol);
+            return NullableTypeDecoder.TransformType(TypeWithAnnotations.Create(decodedType), targetSymbolToken, moduleSymbol, accessSymbol: this, nullableContext: this).Type;
         }
 
         internal override ImmutableArray<NamedTypeSymbol> GetDeclaredInterfaces(ConsList<TypeSymbol> basesBeingResolved)
@@ -617,17 +632,62 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
         }
 
 #nullable enable
-        internal sealed override bool IsExtension => false; // PROTOTYPE Extension symbols not yet supported in metadata
+        internal sealed override bool IsExtension => TypeKind == TypeKind.Extension;
 
-        internal sealed override TypeSymbol? ExtensionUnderlyingTypeNoUseSiteDiagnostics => null; // PROTOTYPE
+        // TODO2
+        internal sealed override TypeSymbol? ExtensionUnderlyingTypeNoUseSiteDiagnostics
+        {
+            get
+            {
+                // TODO2 should call GetDeclaredExtensionUnderlyingType() and deal with cycle
+                return GetDeclaredExtensionUnderlyingType();
+            }
+        }
+
         internal sealed override ImmutableArray<NamedTypeSymbol> BaseExtensionsNoUseSiteDiagnostics
-            => ImmutableArray<NamedTypeSymbol>.Empty; // PROTOTYPE
+        {
+            get
+            {
+                // TODO2 should call GetDeclaredBaseExtensions() and deal with cycle and cache in lazyBaseExtensions?
+                return GetDeclaredBaseExtensions();
+            }
+        }
 
         internal sealed override TypeSymbol? GetDeclaredExtensionUnderlyingType()
-            => throw ExceptionUtilities.Unreachable(); // PROTOTYPE
+        {
+            if (this.TypeKind != TypeKind.Extension)
+                return null;
+
+            var uncommon = GetUncommonProperties();
+            if (uncommon == s_noUncommonProperties)
+                return null;
+
+            if (uncommon.lazyDeclaredExtensionUnderlyingType is not null)
+                return uncommon.lazyDeclaredExtensionUnderlyingType;
+
+            DecodeExtensionType(out TypeSymbol underlyingType, out _);
+            Interlocked.CompareExchange(ref uncommon.lazyDeclaredExtensionUnderlyingType, underlyingType, null);
+
+            return uncommon.lazyDeclaredExtensionUnderlyingType;
+        }
 
         internal sealed override ImmutableArray<NamedTypeSymbol> GetDeclaredBaseExtensions()
-            => throw ExceptionUtilities.Unreachable(); // PROTOTYPE
+        {
+            if (this.TypeKind != TypeKind.Extension)
+                return ImmutableArray<NamedTypeSymbol>.Empty;
+
+            var uncommon = GetUncommonProperties();
+            if (uncommon == s_noUncommonProperties)
+                return ImmutableArray<NamedTypeSymbol>.Empty;
+
+            if (!uncommon.lazyDeclaredBaseExtensions.IsDefault)
+                return uncommon.lazyDeclaredBaseExtensions;
+
+            DecodeExtensionType(out _, out ImmutableArray<NamedTypeSymbol> baseExtensions);
+            ImmutableInterlocked.InterlockedCompareExchange(ref uncommon.lazyDeclaredBaseExtensions, baseExtensions, default);
+
+            return uncommon.lazyDeclaredBaseExtensions;
+        }
 #nullable disable
 
         // Record structs get erased when emitted to metadata
@@ -1342,7 +1402,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                     // (to allow efficient lookup when matching property accessors).
                     PooledDictionary<MethodDefinitionHandle, PEMethodSymbol> methodHandleToSymbol = this.CreateMethods(nonFieldMembers);
 
-                    if (this.TypeKind == TypeKind.Struct)
+                    if (this.TypeKind == TypeKind.Struct) // TODO2
                     {
                         bool haveParameterlessConstructor = false;
                         foreach (MethodSymbol method in nonFieldMembers)
@@ -1745,6 +1805,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                                 contains = moduleHasExtension.ToThreeState();
                             }
                             break;
+                            // TODO2 test extension method in extension type
                     }
 
                     uncommon.lazyContainsExtensionMethods = contains;
@@ -1754,6 +1815,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             }
         }
 
+#nullable enable
         public override TypeKind TypeKind
         {
             get
@@ -1789,8 +1851,19 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                                     break;
 
                                 case SpecialType.System_ValueType:
-                                    // System.Enum is the only class that derives from ValueType
-                                    if (this.SpecialType != SpecialType.System_Enum)
+                                    if (this.SpecialType == SpecialType.System_Enum)
+                                    {
+                                        // System.Enum is the only class that derives from ValueType
+                                        break;
+                                    }
+
+                                    // PROTOTYPE consider caching/optimizing this computation
+                                    if (IsExtensionType(foundMarkerMethod: out _))
+                                    {
+                                        // Extension
+                                        result = TypeKind.Extension;
+                                    }
+                                    else
                                     {
                                         // Struct
                                         result = TypeKind.Struct;
@@ -1806,6 +1879,146 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 return result;
             }
         }
+
+        private bool IsExtensionType([NotNullWhen(true)] out MethodDefinitionHandle? foundMarkerMethod)
+        {
+            var moduleSymbol = this.ContainingPEModule;
+            var module = moduleSymbol.Module;
+            foundMarkerMethod = null;
+
+            // TODO2 check for IsByRefLikeType attribute
+            try
+            {
+                foreach (var methodHandle in module.GetMethodsOfTypeOrThrow(_handle))
+                {
+                    var methodName = module.GetMethodDefNameOrThrow(methodHandle);
+                    if (methodName == WellKnownMemberNames.ExtensionMarkerMethodName)
+                    {
+                        if (foundMarkerMethod != null)
+                        {
+                            return false;
+                        }
+
+                        foundMarkerMethod = methodHandle;
+                    }
+                }
+
+                return foundMarkerMethod is not null;
+            }
+            catch (BadImageFormatException)
+            {
+            }
+
+            return false;
+        }
+
+        private void DecodeExtensionType(out TypeSymbol underlyingType, out ImmutableArray<NamedTypeSymbol> baseExtensions)
+        {
+            // PROTOTYPE we should also decode `implicit` vs. `explicit`
+            // PROTOTYPE we may want to check that no fields are present
+            // PROTOTYPE consider optimizing/caching
+
+            if (!tryDecodeExtensionType(out underlyingType, out baseExtensions))
+            {
+                if (underlyingType is null)
+                {
+                    // TODO2 test and consider using this error type for other cases too
+                    underlyingType = new UnsupportedMetadataTypeSymbol();
+                }
+
+                if (baseExtensions.IsDefault)
+                {
+                    baseExtensions = ImmutableArray<NamedTypeSymbol>.Empty;
+                }
+            }
+
+            return;
+
+            bool tryDecodeExtensionType(out TypeSymbol? underlyingType, out ImmutableArray<NamedTypeSymbol> baseExtensions)
+            {
+                var found = IsExtensionType(out MethodDefinitionHandle? foundMarkerMethod);
+                Debug.Assert(found);
+                var markerMethod = foundMarkerMethod.Value;
+                var moduleSymbol = this.ContainingPEModule;
+
+                underlyingType = null;
+                baseExtensions = default;
+
+                MethodAttributes localFlags;
+                moduleSymbol.Module.GetMethodDefPropsOrThrow(markerMethod, name: out _, implFlags: out _, out localFlags, rva: out _);
+                if (localFlags != (MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig))
+                {
+                    return false;
+                }
+
+                SignatureHeader signatureHeader;
+                BadImageFormatException mrEx;
+                ParamInfo<TypeSymbol>[] paramInfos = new MetadataDecoder(moduleSymbol, context: this)
+                    .GetSignatureForMethod(markerMethod, out signatureHeader, out mrEx);
+
+                if (mrEx is not null || signatureHeader.IsGeneric || paramInfos.Length <= 1)
+                {
+                    return false;
+                }
+
+                var baseExtensionsBuilder = ArrayBuilder<NamedTypeSymbol>.GetInstance(paramInfos.Length - 1);
+                for (int i = 0; i < paramInfos.Length; i++)
+                {
+                    var paramInfo = paramInfos[i];
+                    if (paramInfo.IsByRef ||
+                        !paramInfo.RefCustomModifiers.IsDefault || // TODO2 test this // TODO2 is default or empty the right check?
+                        !paramInfo.CustomModifiers.IsDefault) // TODO2 test this // TODO2 is default or empty the right check? // TODO2 could we have modopts on base extensions?
+                    {
+                        return false;
+                    }
+
+                    TypeSymbol type = paramInfo.Type;
+                    type = ApplyTransforms(type, paramInfo.Handle, moduleSymbol);
+
+                    if (i == 0)
+                    {
+                        if (type.SpecialType != SpecialType.System_Void)
+                        {
+                            return false;
+                        }
+                    }
+                    else if (i == 1)
+                    {
+                        if (SourceExtensionTypeSymbol.IsRestrictedExtensionUnderlyingType(type))
+                        {
+                            // TODO2 consider a different LookupResultKind
+                            var info = new CSDiagnosticInfo(ErrorCode.ERR_MalformedExtensionInMetadata);
+                            underlyingType = new ExtendedErrorTypeSymbol(type, LookupResultKind.NotReferencable, info, unreported: true);
+                        }
+                        else
+                        {
+                            underlyingType = type;
+                        }
+                    }
+                    else
+                    {
+                        // TODO2 block invalid base extensions
+                        NamedTypeSymbol baseExtension;
+                        if (type is NamedTypeSymbol { IsExtension: true } namedType)
+                        {
+                            baseExtension = namedType;
+                        }
+                        else
+                        {
+                            // TODO2 consider a different LookupResultKind
+                            var info = new CSDiagnosticInfo(ErrorCode.ERR_MalformedExtensionInMetadata);
+                            baseExtension = new ExtendedErrorTypeSymbol(type, LookupResultKind.NotReferencable, info, unreported: true);
+                        }
+
+                        baseExtensionsBuilder.Add(baseExtension);
+                    }
+                }
+
+                baseExtensions = baseExtensionsBuilder.ToImmutableAndFree();
+                return true;
+            }
+        }
+#nullable disable
 
         internal sealed override bool IsInterface
         {
@@ -1823,6 +2036,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
         private NamedTypeSymbol MakeAcyclicBaseType()
         {
+            if (TypeKind is TypeKind.Extension)
+            {
+                return null;
+            }
+
             NamedTypeSymbol declaredBase = GetDeclaredBaseType(null);
 
             // implicit base is not interesting for metadata cycle detection
@@ -1904,7 +2122,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             // for ordinary embeddable struct types we import private members so that we can report appropriate errors if the structure is used
             var isOrdinaryEmbeddableStruct = false;
 
-            if (this.TypeKind == TypeKind.Struct)
+            if (this.TypeKind is TypeKind.Struct or TypeKind.Extension) // TODO2
             {
                 if (this.SpecialType == Microsoft.CodeAnalysis.SpecialType.None)
                 {
@@ -1959,8 +2177,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             var module = moduleSymbol.Module;
             var map = PooledDictionary<MethodDefinitionHandle, PEMethodSymbol>.GetInstance();
 
+            // PROTOTYPE are extensions embeddable? TODO2
             // for ordinary embeddable struct types we import private members so that we can report appropriate errors if the structure is used
-            var isOrdinaryEmbeddableStruct = (this.TypeKind == TypeKind.Struct) && (this.SpecialType == Microsoft.CodeAnalysis.SpecialType.None) && this.ContainingAssembly.IsLinked;
+            var isOrdinaryEmbeddableStruct = (this.TypeKind is TypeKind.Struct) && (this.SpecialType == SpecialType.None) && this.ContainingAssembly.IsLinked;
 
             try
             {
@@ -2085,6 +2304,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
         protected virtual DiagnosticInfo GetUseSiteDiagnosticImpl()
         {
+            // TODO2 review this
             // GetCompilerFeatureRequiredDiagnostic depends on UnsupportedCompilerFeature being the highest priority diagnostic, or it will return incorrect
             // results and assert in Debug mode.
             DiagnosticInfo diagnostic = DeriveCompilerFeatureRequiredDiagnostic();
@@ -2145,6 +2365,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
         {
             var decoder = new MetadataDecoder(ContainingPEModule, this);
             var diag = PEUtilities.DeriveCompilerFeatureRequiredAttributeDiagnostic(this, ContainingPEModule, Handle, allowedFeatures: IsRefLikeType ? CompilerFeatureRequiredFeatures.RefStructs : CompilerFeatureRequiredFeatures.None, decoder);
+            // TODO2 handle compiler required feature attribute
 
             if (diag != null)
             {
@@ -2369,7 +2590,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 }
 
                 bool ignoreByRefLikeMarker = this.IsRefLikeType;
-                ObsoleteAttributeHelpers.InitializeObsoleteDataFromMetadata(ref uncommon.lazyObsoleteAttributeData, _handle, ContainingPEModule, ignoreByRefLikeMarker, ignoreRequiredMemberMarker: false);
+                bool ignoreExtensionMarker = this.IsExtension;
+
+                ObsoleteAttributeHelpers.InitializeObsoleteDataFromMetadata(ref uncommon.lazyObsoleteAttributeData, _handle, ContainingPEModule,
+                    ignoreByRefLikeMarker, ignoreRequiredMemberMarker: false, ignoreExtensionMarker);
+
                 return uncommon.lazyObsoleteAttributeData;
             }
         }

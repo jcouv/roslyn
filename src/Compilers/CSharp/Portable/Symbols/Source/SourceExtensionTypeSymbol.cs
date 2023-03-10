@@ -42,20 +42,21 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         protected override void CheckUnderlyingType(BindingDiagnosticBag diagnostics)
         {
-            var underlyingType = this.ExtensionUnderlyingTypeNoUseSiteDiagnostics;
+            // TODO2
+            //var underlyingType = this.ExtensionUnderlyingTypeNoUseSiteDiagnostics;
 
-            if (underlyingType is null)
-                return;
+            //if (underlyingType is null)
+            //    return;
 
-            var singleDeclaration = this.FirstDeclarationWithExplicitUnderlyingType();
-            if (singleDeclaration != null)
-            {
-                var corLibrary = this.ContainingAssembly.CorLibrary;
-                var conversions = new TypeConversions(corLibrary);
-                var location = singleDeclaration.NameLocation;
+            //var singleDeclaration = this.FirstDeclarationWithExplicitUnderlyingType();
+            //if (singleDeclaration != null)
+            //{
+            //    var corLibrary = this.ContainingAssembly.CorLibrary;
+            //    var conversions = new TypeConversions(corLibrary);
+            //    var location = singleDeclaration.NameLocation;
 
-                underlyingType.CheckAllConstraints(DeclaringCompilation, conversions, location, diagnostics);
-            }
+            //    underlyingType.CheckAllConstraints(DeclaringCompilation, conversions, location, diagnostics);
+            //}
         }
 
         protected override void CheckBaseExtensions(BindingDiagnosticBag diagnostics)
@@ -84,7 +85,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                 foreach (var baseExtension in allBaseExtensionPerCLRSignature)
                 {
-                    baseExtension.CheckAllConstraints(DeclaringCompilation, conversions, location, diagnostics);
+                    // TODO2
+                    //baseExtension.CheckAllConstraints(DeclaringCompilation, conversions, location, diagnostics);
 
                     // PROTOTYPE confirm what we allow in terms of variation between various underlying types
                     var baseUnderlyingType = baseExtension.ExtensionUnderlyingTypeNoUseSiteDiagnostics;
@@ -523,7 +525,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        private static bool IsRestrictedExtensionUnderlyingType(TypeSymbol type)
+        internal static bool IsRestrictedExtensionUnderlyingType(TypeSymbol type)
         {
             if (type.IsDynamic() || type.IsPointerOrFunctionPointer() || type.IsRefLikeType || type.IsExtension)
             {
