@@ -7,7 +7,7 @@
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.CSharp.Syntax; // BUG this using is reported as unused, but removing it breaks the code (see VariableDeclaratorSyntax below)
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
 using Microsoft.CodeAnalysis.Test.Utilities;
 using Roslyn.Test.Utilities;
@@ -5446,7 +5446,7 @@ class C
         comp.VerifyDiagnostics();
         var tree = comp.SyntaxTrees.Single();
         var model = comp.GetSemanticModel(tree);
-        var variableDeclarator = tree.GetRoot().DescendantNodes().OfType<VariableDeclaratorSyntax>().Single();
+        var variableDeclarator = tree.GetRoot().DescendantNodes().OfType<VariableDeclaratorSyntax>().Single(); // BUG issue with unused using
         var variable = model.GetDeclaredSymbol(variableDeclarator);
         var publicType = (Symbols.PublicModel.NonErrorNamedTypeSymbol)variable.GetTypeOrReturnType();
         VerifyNotExtension<AnonymousTypeManager.AnonymousTypePublicSymbol>(publicType.UnderlyingNamedTypeSymbol);
