@@ -62,10 +62,9 @@ C.M();
         Assert.Equal(DefaultHelpLinkUri, diag.Descriptor.HelpLinkUri);
     }
 
-    [Fact]
-    public void OnAssembly()
+    [Theory, CombinatorialData]
+    public void OnAssembly(bool inSource)
     {
-        // Ignored on assemblies
         var libSrc = """
 [assembly: System.Diagnostics.CodeAnalysis.Experimental("DiagID1")]
 public class C
@@ -78,14 +77,25 @@ public class C
 C.M();
 """;
 
-        var comp = CreateCompilation(src, references: new[] { CreateCompilation(new[] { libSrc, experimentalAttributeSrc }).EmitToImageReference() });
-        comp.VerifyDiagnostics();
+        var comp = inSource
+            ? CreateCompilation(new[] { src, libSrc, experimentalAttributeSrc })
+            : CreateCompilation(src, references: new[] { CreateCompilation(new[] { libSrc, experimentalAttributeSrc }).EmitToImageReference() });
+
+        comp.VerifyDiagnostics(
+            // (1,1): warning DiagID1: 'C' is for evaluation purposes only and is subject to change or removal in future updates.
+            // C.M();
+            Diagnostic("DiagID1", "C").WithArguments("C").WithLocation(1, 1)
+            );
+
+        var diag = comp.GetDiagnostics().Single();
+        Assert.Equal("DiagID1", diag.Id);
+        Assert.Equal(ErrorCode.WRN_Experimental, (ErrorCode)diag.Code);
+        Assert.Equal(DefaultHelpLinkUri, diag.Descriptor.HelpLinkUri);
     }
 
-    [Fact]
-    public void OnModule()
+    [Theory, CombinatorialData]
+    public void OnModule(bool inSource)
     {
-        // Ignored on modules
         var libSrc = """
 [module: System.Diagnostics.CodeAnalysis.Experimental("DiagID1")]
 public class C
@@ -98,8 +108,20 @@ public class C
 C.M();
 """;
 
-        var comp = CreateCompilation(src, references: new[] { CreateCompilation(new[] { libSrc, experimentalAttributeSrc }).EmitToImageReference() });
-        comp.VerifyDiagnostics();
+        var comp = inSource
+            ? CreateCompilation(new[] { src, libSrc, experimentalAttributeSrc })
+            : CreateCompilation(src, references: new[] { CreateCompilation(new[] { libSrc, experimentalAttributeSrc }).EmitToImageReference() });
+
+        comp.VerifyDiagnostics(
+            // (1,1): warning DiagID1: 'C' is for evaluation purposes only and is subject to change or removal in future updates.
+            // C.M();
+            Diagnostic("DiagID1", "C").WithArguments("C").WithLocation(1, 1)
+            );
+
+        var diag = comp.GetDiagnostics().Single();
+        Assert.Equal("DiagID1", diag.Id);
+        Assert.Equal(ErrorCode.WRN_Experimental, (ErrorCode)diag.Code);
+        Assert.Equal(DefaultHelpLinkUri, diag.Descriptor.HelpLinkUri);
     }
 
     [Theory, CombinatorialData]

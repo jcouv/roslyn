@@ -4971,7 +4971,7 @@ DiagID1: 'C' is for evaluation purposes only and is subject to change or removal
                ~
 ]]></expected>)
 
-            Dim diag = Comp.GetDiagnostics().Single()
+            Dim diag = comp.GetDiagnostics().Single()
             Assert.Equal("DiagID1", diag.Id)
             Assert.Equal(ERRID.WRN_Experimental, diag.Code)
             Assert.Equal("https://example.org/DiagID1", diag.Descriptor.HelpLinkUri)

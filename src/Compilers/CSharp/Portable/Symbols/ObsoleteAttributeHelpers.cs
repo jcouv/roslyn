@@ -95,6 +95,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal static ObsoleteDiagnosticKind GetObsoleteDiagnosticKind(Symbol symbol, Symbol containingMember, bool forceComplete = false)
         {
+            if (symbol.ContainingModule.ObsoleteKind == ObsoleteAttributeKind.Experimental)
+            {
+                return ObsoleteDiagnosticKind.Diagnostic;
+            }
+
             switch (symbol.ObsoleteKind)
             {
                 case ObsoleteAttributeKind.None:

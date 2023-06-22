@@ -652,5 +652,37 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return _lazyUseUpdatedEscapeRules == ThreeState.True;
             }
         }
+
+        internal override (CSharpAttributeData?, BoundAttribute?) EarlyDecodeWellKnownAttribute(
+            ref EarlyDecodeWellKnownAttributeArguments<EarlyWellKnownAttributeBinder, NamedTypeSymbol, AttributeSyntax, AttributeLocation> arguments)
+        {
+            CSharpAttributeData? attributeData;
+            BoundAttribute? boundAttribute;
+            ObsoleteAttributeData? obsoleteData;
+
+            if (CSharpAttributeData.IsTargetEarlyAttribute(arguments.AttributeType, arguments.AttributeSyntax, AttributeDescription.ExperimentalAttribute)
+                && EarlyDecodeDeprecatedOrExperimentalOrObsoleteAttribute(ref arguments, out attributeData, out boundAttribute, out obsoleteData))
+            {
+                if (obsoleteData != null)
+                {
+                    arguments.GetOrCreateData<TypeEarlyWellKnownAttributeData>().ObsoleteAttributeData = obsoleteData;
+                    return (attributeData, boundAttribute);
+                }
+            }
+
+            return base.EarlyDecodeWellKnownAttribute(ref arguments);
+        }
+
+        internal sealed override ObsoleteAttributeData? ObsoleteAttributeData
+        {
+            get
+            {
+                // TODO2
+                foreach (var attribute in GetAttributesBag().Attributes)
+                {
+                    if (attribute.IsTargetAttribute)
+                }
+            }
+        }
     }
 }

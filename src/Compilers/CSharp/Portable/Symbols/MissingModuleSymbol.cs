@@ -236,5 +236,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             return (object)other != null && assembly.Equals(other.assembly, compareKind) && string.Equals(_name, other._name, StringComparison.OrdinalIgnoreCase);
         }
+
+#nullable enable
+        internal sealed override ObsoleteAttributeData? ObsoleteAttributeData => null;
     }
 }
