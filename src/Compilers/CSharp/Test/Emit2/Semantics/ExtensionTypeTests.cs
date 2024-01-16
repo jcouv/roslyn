@@ -20788,5 +20788,246 @@ implicit extension E for I
         Assert.Equal("System.Int32 E.this[ref System.Int32 i] { get; }", model.GetSymbolInfo(memberAccess).Symbol.ToTestDisplayString());
         Assert.Empty(model.GetMemberGroup(memberAccess).ToTestDisplayStrings()); // PROTOTYPE need to fix the semantic model
     }
+
+    // TODO2 add tests for properties
+    [ConditionalFact(typeof(CoreClrOnly))]
+    public void ExtensionPropertyAccess_Simple_Getter()
+    {
+        var source = """
+System.Console.Write(new C().P);
+
+class C { }
+
+implicit extension E for C
+{
+    public int P => 42;
+}
+""";
+        var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
+        comp.VerifyDiagnostics();
+
+        // PROTOTYPE Execute when adding support for emitting non-static members
+        //CompileAndVerify(comp, expectedOutput: "42", verify: Verification.FailsPEVerify)
+        //    .VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var memberAccess = GetSyntax<MemberAccessExpressionSyntax>(tree, "new C().P");
+        Assert.Equal("System.Int32 E.P { get; }", model.GetSymbolInfo(memberAccess).Symbol.ToTestDisplayString());
+
+        Assert.Empty(model.GetMemberGroup(memberAccess)); // PROTOTYPE need to fix the semantic model
+    }
+
+    [ConditionalFact(typeof(CoreClrOnly))]
+    public void ExtensionPropertyAccess_Simple_Setter()
+    {
+        var source = """
+new C().P = 43;
+
+class C { }
+
+implicit extension E for C
+{
+    public int P { set { System.Console.Write($"{value}"); } }
+}
+""";
+        var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
+        comp.VerifyDiagnostics();
+
+        // PROTOTYPE Execute when adding support for emitting non-static members
+        //CompileAndVerify(comp, expectedOutput: "43", verify: Verification.FailsPEVerify)
+        //    .VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var memberAccess = GetSyntax<MemberAccessExpressionSyntax>(tree, "new C().P");
+        Assert.Equal("System.Int32 E.P { set; }", model.GetSymbolInfo(memberAccess).Symbol.ToTestDisplayString());
+
+        Assert.Empty(model.GetMemberGroup(memberAccess)); // PROTOTYPE need to fix the semantic model
+    }
+
+    [ConditionalFact(typeof(CoreClrOnly))]
+    public void ExtensionPropertyAccess_BaseReceiver()
+    {
+        var source = """
+class Base { }
+
+class C : Base
+{
+    public void M()
+    {
+        System.Console.Write(base.P);
+    }
+}
+
+implicit extension E for Base
+{
+    public int P => throw null;
+}
+""";
+        var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
+        // PROTOTYPE confirm we don't want to add special rules for `base`
+        comp.VerifyDiagnostics(
+            // (7,35): error CS0117: 'Base' does not contain a definition for 'P'
+            //         System.Console.Write(base.P);
+            Diagnostic(ErrorCode.ERR_NoSuchMember, "P").WithArguments("Base", "P").WithLocation(7, 35)
+            );
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var memberAccess = GetSyntax<MemberAccessExpressionSyntax>(tree, "base.P");
+        Assert.Null(model.GetSymbolInfo(memberAccess).Symbol);
+        Assert.Empty(model.GetMemberGroup(memberAccess));
+    }
+
+    [Fact]
+    public void ExtensionPropertyAccess_AmbiguityWithExtensionOnBaseType()
+    {
+        var source = """
+System.Console.Write(new C().P);
+
+class Base { }
+
+class C : Base { }
+
+implicit extension E1 for Base
+{
+    public int P => throw null;
+}
+
+implicit extension E2 for C
+{
+    public int P => throw null;
+}
+""";
+        var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
+        comp.VerifyDiagnostics(
+            // (1,30): error CS0229: Ambiguity between 'E1.P' and 'E2.P'
+            // System.Console.Write(new C().P);
+            Diagnostic(ErrorCode.ERR_AmbigMember, "P").WithArguments("E1.P", "E2.P").WithLocation(1, 30)
+            );
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var memberAccess = GetSyntax<MemberAccessExpressionSyntax>(tree, "new C().P");
+        Assert.Null(model.GetSymbolInfo(memberAccess).Symbol);
+        Assert.Empty(model.GetMemberGroup(memberAccess)); // PROTOTYPE need to fix the semantic model
+    }
+
+    [ConditionalFact(typeof(CoreClrOnly))]
+    public void ExtensionPropertyAccess_ExtensionOnBaseType()
+    {
+        var source = """
+System.Console.Write(new C().P);
+
+class Base { }
+
+class C : Base { }
+
+implicit extension E for Base
+{
+    public int P => 42;
+}
+""";
+        var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
+        comp.VerifyDiagnostics();
+
+        // PROTOTYPE Execute when adding support for emitting non-static members
+        //CompileAndVerify(comp, expectedOutput: "42", verify: Verification.FailsPEVerify)
+        //    .VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var memberAccess = GetSyntax<MemberAccessExpressionSyntax>(tree, "new C().P");
+        Assert.Equal("System.Int32 E.P { get; }", model.GetSymbolInfo(memberAccess).Symbol.ToTestDisplayString());
+        Assert.Empty(model.GetMemberGroup(memberAccess));
+    }
+
+    [Fact]
+    public void ExtensionPropertyAccess_InaccessibleProperty()
+    {
+        var source = """
+var x = new C().P;
+_ = new C().P;
+
+class C { }
+
+implicit extension E for C
+{
+    protected string P => throw null;
+}
+""";
+        var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
+        comp.VerifyDiagnostics(
+            // (1,17): error CS1061: 'C' does not contain a definition for 'P' and no accessible extension method 'P' accepting a first argument of type 'C' could be found (are you missing a using directive or an assembly reference?)
+            // var x = new C().P;
+            Diagnostic(ErrorCode.ERR_NoSuchMemberOrExtension, "P").WithArguments("C", "P").WithLocation(1, 17),
+            // (2,13): error CS1061: 'C' does not contain a definition for 'P' and no accessible extension method 'P' accepting a first argument of type 'C' could be found (are you missing a using directive or an assembly reference?)
+            // _ = new C().P;
+            Diagnostic(ErrorCode.ERR_NoSuchMemberOrExtension, "P").WithArguments("C", "P").WithLocation(2, 13)
+            );
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var memberAccess0 = GetSyntaxes<ElementAccessExpressionSyntax>(tree, "new C()[1]").First();
+        Assert.Null(model.GetSymbolInfo(memberAccess0).Symbol);
+        Assert.Empty(model.GetMemberGroup(memberAccess0)); // PROTOTYPE need to fix the semantic model
+
+        var memberAccess1 = GetSyntaxes<ElementAccessExpressionSyntax>(tree, "new C()[1]").Last();
+        Assert.Null(model.GetSymbolInfo(memberAccess1).Symbol);
+        Assert.Empty(model.GetMemberGroup(memberAccess1)); // PROTOTYPE need to fix the semantic model
+    }
+
+    [Fact]
+    public void ExtensionPropertyAccess_InaccessibleAccessor_Getter()
+    {
+        var source = """
+var x = new C().P;
+
+class C { }
+
+implicit extension E for C
+{
+    public int P { protected get { throw null; } set { throw null; } }
+}
+""";
+        // TODO2 missing diagnostic
+        var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
+        comp.VerifyEmitDiagnostics(
+            );
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var memberAccess = GetSyntax<MemberAccessExpressionSyntax>(tree, "new C().P");
+        Assert.Equal("System.Int32 E.P { protected get; set; }", model.GetSymbolInfo(memberAccess).Symbol.ToTestDisplayString());
+        Assert.Empty(model.GetMemberGroup(memberAccess)); // PROTOTYPE need to fix the semantic model
+    }
+
+    [Fact]
+    public void ExtensionPropertyAccess_InaccessibleAccessor_Setter()
+    {
+        var source = """
+new C().P = 42;
+
+class C { }
+
+implicit extension E for C
+{
+    public int P { get { throw null; } protected set { throw null; } }
+}
+""";
+        var comp = CreateCompilation(source, targetFramework: TargetFramework.Net70);
+        comp.VerifyEmitDiagnostics(
+            // (1,1): error CS0272: The property or indexer 'E.P' cannot be used in this context because the set accessor is inaccessible
+            // new C().P = 42;
+            Diagnostic(ErrorCode.ERR_InaccessibleSetter, "new C().P").WithArguments("E.P").WithLocation(1, 1)
+            );
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var memberAccess = GetSyntax<MemberAccessExpressionSyntax>(tree, "new C().P");
+        Assert.Null(model.GetSymbolInfo(memberAccess).Symbol);
+        Assert.Empty(model.GetMemberGroup(memberAccess)); // PROTOTYPE need to fix the semantic model
+    }
 }
 
