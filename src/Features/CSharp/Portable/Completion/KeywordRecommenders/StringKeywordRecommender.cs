@@ -49,7 +49,7 @@ internal sealed class StringKeywordRecommender : AbstractSpecialTypePreselecting
             context.IsPossibleTupleContext ||
             context.IsMemberDeclarationContext(
                 validModifiers: SyntaxKindSet.AllMemberModifiers,
-                validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordTypeDeclarations,
+                validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordExtensionTypeDeclarations,
                 canBePartial: false,
                 cancellationToken);
     }

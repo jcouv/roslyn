@@ -37,7 +37,7 @@ internal class ClassKeywordRecommender : AbstractSyntacticSingleKeywordRecommend
             context.IsGlobalStatementContext ||
             context.IsTypeDeclarationContext(
                 validModifiers: s_validModifiers,
-                validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordTypeDeclarations,
+                validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordExtensionTypeDeclarations,
                 canBePartial: true,
                 cancellationToken: cancellationToken) ||
             context.IsRecordDeclarationContext(s_validModifiers, cancellationToken) ||

@@ -66,7 +66,7 @@ internal class AbstractKeywordRecommender : AbstractSyntacticSingleKeywordRecomm
                 cancellationToken: cancellationToken) ||
             context.IsTypeDeclarationContext(
                 validModifiers: s_validTypeModifiers,
-                validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordTypeDeclarations,
+                validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordExtensionTypeDeclarations,
                 canBePartial: false,
                 cancellationToken: cancellationToken);
     }

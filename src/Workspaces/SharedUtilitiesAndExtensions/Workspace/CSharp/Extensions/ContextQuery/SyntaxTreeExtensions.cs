@@ -533,7 +533,7 @@ internal static partial class SyntaxTreeExtensions
         bool canBePartial,
         CancellationToken cancellationToken)
     {
-        // We only allow nested types inside a class, struct, or interface, not inside a
+        // We only allow nested types inside a class, struct, interface, or extension, not inside a
         // an enum.
         var typeDecl = context != null
             ? context.ContainingTypeDeclaration
@@ -759,7 +759,7 @@ internal static partial class SyntaxTreeExtensions
                 position,
                 context: null,
                 validModifiers: SyntaxKindSet.AllMemberModifiers,
-                validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordTypeDeclarations,
+                validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordExtensionTypeDeclarations,
                 canBePartial: false,
                 cancellationToken: cancellationToken) ||
             syntaxTree.IsLocalFunctionDeclarationContext(position, cancellationToken);

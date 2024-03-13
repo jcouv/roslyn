@@ -139,9 +139,9 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.Recommendations
         }
 
         [Fact]
-        public async Task TestNotAfterMethodInPartialType()
+        public async Task TestAfterMethodInPartialType()
         {
-            await VerifyAbsenceAsync(
+            await VerifyKeywordAsync(
                 """
                 partial class C {
                   void Goo() {}
@@ -150,9 +150,9 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.Recommendations
         }
 
         [Fact]
-        public async Task TestNotAfterFieldInPartialClass()
+        public async Task TestAfterFieldInPartialClass()
         {
-            await VerifyAbsenceAsync(
+            await VerifyKeywordAsync(
                 """
                 partial class C {
                   int i;

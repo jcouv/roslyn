@@ -46,6 +46,6 @@ internal class EventKeywordRecommender : AbstractSyntacticSingleKeywordRecommend
             syntaxTree.IsGlobalMemberDeclarationContext(position, SyntaxKindSet.AllGlobalMemberModifiers, cancellationToken) ||
             context.IsMemberDeclarationContext(validModifiers: s_validClassModifiers, validTypeDeclarations: SyntaxKindSet.ClassInterfaceRecordTypeDeclarations, canBePartial: false, cancellationToken: cancellationToken) ||
             context.IsMemberDeclarationContext(validModifiers: s_validStructModifiers, validTypeDeclarations: SyntaxKindSet.StructOnlyTypeDeclarations, canBePartial: false, cancellationToken: cancellationToken) ||
-            context.IsMemberAttributeContext(SyntaxKindSet.ClassInterfaceStructRecordTypeDeclarations, cancellationToken);
+            context.IsMemberAttributeContext(SyntaxKindSet.ClassInterfaceStructRecordExtensionTypeDeclarations, cancellationToken);
     }
 }

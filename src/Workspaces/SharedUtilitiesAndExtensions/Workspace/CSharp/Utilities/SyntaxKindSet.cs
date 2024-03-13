@@ -73,16 +73,19 @@ internal class SyntaxKindSet
         SyntaxKind.RecordDeclaration,
         SyntaxKind.StructDeclaration,
         SyntaxKind.RecordStructDeclaration,
+        // TODO2
         SyntaxKind.EnumDeclaration,
+        // TODO2 file
     };
 
-    public static readonly ISet<SyntaxKind> ClassInterfaceStructRecordTypeDeclarations = new HashSet<SyntaxKind>(SyntaxFacts.EqualityComparer)
+    public static readonly ISet<SyntaxKind> ClassInterfaceStructRecordExtensionTypeDeclarations = new HashSet<SyntaxKind>(SyntaxFacts.EqualityComparer)
     {
         SyntaxKind.InterfaceDeclaration,
         SyntaxKind.ClassDeclaration,
         SyntaxKind.RecordDeclaration,
         SyntaxKind.StructDeclaration,
         SyntaxKind.RecordStructDeclaration,
+        SyntaxKind.ExtensionDeclaration,
     };
 
     public static readonly ISet<SyntaxKind> ClassInterfaceRecordTypeDeclarations = new HashSet<SyntaxKind>(SyntaxFacts.EqualityComparer)
@@ -90,12 +93,14 @@ internal class SyntaxKindSet
         SyntaxKind.InterfaceDeclaration,
         SyntaxKind.ClassDeclaration,
         SyntaxKind.RecordDeclaration,
+        // TODO2 event, protected
     };
 
     public static readonly ISet<SyntaxKind> ClassRecordTypeDeclarations = new HashSet<SyntaxKind>(SyntaxFacts.EqualityComparer)
     {
         SyntaxKind.ClassDeclaration,
         SyntaxKind.RecordDeclaration,
+        // TODO2 abstract, sealed, virtual
     };
 
     public static readonly ISet<SyntaxKind> ClassStructRecordTypeDeclarations = new HashSet<SyntaxKind>(SyntaxFacts.EqualityComparer)
@@ -104,6 +109,7 @@ internal class SyntaxKindSet
         SyntaxKind.RecordDeclaration,
         SyntaxKind.StructDeclaration,
         SyntaxKind.RecordStructDeclaration,
+        // TODO2 implicit, explicit, override, static, ctor
     };
 
     public static readonly ISet<SyntaxKind> StructOnlyTypeDeclarations = new HashSet<SyntaxKind>(SyntaxFacts.EqualityComparer)

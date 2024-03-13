@@ -31,7 +31,7 @@ internal class InterfaceKeywordRecommender : AbstractSyntacticSingleKeywordRecom
             context.IsGlobalStatementContext ||
             context.IsTypeDeclarationContext(
                 validModifiers: s_validModifiers,
-                validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordTypeDeclarations,
+                validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordExtensionTypeDeclarations,
                 canBePartial: true,
                 cancellationToken: cancellationToken);
     }

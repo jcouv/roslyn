@@ -23,6 +23,7 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.Recommendations
     public abstract class RecommenderTests : TestBase
     {
         protected static readonly CSharpParseOptions CSharp9ParseOptions = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp9);
+        protected static readonly CSharpParseOptions CSharp13ParseOptions = CSharpParseOptions.Default.WithLanguageVersion(CodeAnalysis.CSharp.Shared.Extensions.LanguageVersionExtensions.CSharpNext);
 
         protected abstract string KeywordText { get; }
         internal Func<int, CSharpSyntaxContext, Task<ImmutableArray<RecommendedKeyword>>>? RecommendKeywordsAsync;

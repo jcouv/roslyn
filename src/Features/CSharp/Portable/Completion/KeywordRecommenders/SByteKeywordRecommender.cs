@@ -47,7 +47,7 @@ internal class SByteKeywordRecommender : AbstractSpecialTypePreselectingKeywordR
             context.IsPossibleTupleContext ||
             context.IsMemberDeclarationContext(
                 validModifiers: SyntaxKindSet.AllMemberModifiers,
-                validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordTypeDeclarations,
+                validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordExtensionTypeDeclarations,
                 canBePartial: false,
                 cancellationToken: cancellationToken);
     }

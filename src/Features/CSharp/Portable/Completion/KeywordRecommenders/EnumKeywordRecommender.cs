@@ -30,7 +30,7 @@ internal class EnumKeywordRecommender : AbstractSyntacticSingleKeywordRecommende
             context.IsGlobalStatementContext ||
             context.IsTypeDeclarationContext(
                 validModifiers: s_validModifiers,
-                validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordTypeDeclarations,
+                validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordExtensionTypeDeclarations,
                 canBePartial: false,
                 cancellationToken: cancellationToken);
     }

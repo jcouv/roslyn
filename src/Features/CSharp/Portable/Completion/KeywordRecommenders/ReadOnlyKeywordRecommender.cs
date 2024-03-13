@@ -35,7 +35,7 @@ internal class ReadOnlyKeywordRecommender : AbstractSyntacticSingleKeywordRecomm
             context.SyntaxTree.IsGlobalMemberDeclarationContext(context.Position, SyntaxKindSet.AllGlobalMemberModifiers, cancellationToken) ||
             context.IsMemberDeclarationContext(
                 validModifiers: s_validMemberModifiers,
-                validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordTypeDeclarations,
+                validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordExtensionTypeDeclarations,
                 canBePartial: false,
                 cancellationToken: cancellationToken) ||
             IsStructAccessorContext(context);
@@ -51,7 +51,7 @@ internal class ReadOnlyKeywordRecommender : AbstractSyntacticSingleKeywordRecomm
     private static bool IsValidContextForType(CSharpSyntaxContext context, CancellationToken cancellationToken)
     {
         return context.IsTypeDeclarationContext(validModifiers: SyntaxKindSet.AllTypeModifiers,
-            validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordTypeDeclarations, canBePartial: true, cancellationToken);
+            validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordExtensionTypeDeclarations, canBePartial: true, cancellationToken);
     }
 
     private static bool IsStructAccessorContext(CSharpSyntaxContext context)
