@@ -11,6 +11,18 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.KeywordRecommenders;
 
 internal class ExplicitKeywordRecommender : AbstractSyntacticSingleKeywordRecommender
 {
+    private static readonly ISet<SyntaxKind> s_validExtensionModifiers = new HashSet<SyntaxKind>(SyntaxFacts.EqualityComparer)
+        {
+            SyntaxKind.NewKeyword,
+            SyntaxKind.PublicKeyword,
+            SyntaxKind.ProtectedKeyword,
+            SyntaxKind.InternalKeyword,
+            SyntaxKind.PrivateKeyword,
+            SyntaxKind.StaticKeyword,
+            SyntaxKind.UnsafeKeyword,
+            SyntaxKind.FileKeyword,
+        };
+
     private static readonly ISet<SyntaxKind> s_validNonInterfaceMemberModifiers = new HashSet<SyntaxKind>(SyntaxFacts.EqualityComparer)
         {
             SyntaxKind.StaticKeyword,
@@ -34,6 +46,15 @@ internal class ExplicitKeywordRecommender : AbstractSyntacticSingleKeywordRecomm
 
     protected override bool IsValidContext(int position, CSharpSyntaxContext context, CancellationToken cancellationToken)
     {
+        if (context.IsGlobalStatementContext ||
+         context.IsTypeDeclarationContext(
+             validModifiers: s_validExtensionModifiers,
+             validTypeDeclarations: SyntaxKindSet.ClassInterfaceStructRecordExtensionTypeDeclarations, // TODO2
+             canBePartial: true,
+             cancellationToken: cancellationToken))
+        {
+            return true;
+        }
         if (context.IsMemberDeclarationContext(validModifiers: s_validNonInterfaceMemberModifiers, validTypeDeclarations: SyntaxKindSet.ClassStructRecordTypeDeclarations, canBePartial: false, cancellationToken: cancellationToken))
         {
             // operators must be both public and static
