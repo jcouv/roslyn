@@ -356,6 +356,20 @@ internal sealed class CSharpSyntaxContext : SyntaxContext
         return modifiers.IsProperSubsetOf(validModifiers);
     }
 
+    public bool IsExtensionDeclarationContext(ISet<SyntaxKind> validModifiers, CancellationToken cancellationToken)
+    {
+        // TODO2
+        var previousToken = LeftToken.GetPreviousTokenIfTouchingWord(Position);
+
+        if (!previousToken.IsKind(SyntaxKind.ImplicitKeyword) && !previousToken.IsKind(SyntaxKind.ExplicitKeyword))
+            return false;
+
+        var positionBeforeRecordKeyword = previousToken.SpanStart;
+        var modifiers = SyntaxTree.GetPrecedingModifiers(positionBeforeRecordKeyword, cancellationToken);
+
+        return modifiers.IsProperSubsetOf(validModifiers);
+    }
+
     public bool IsMemberAttributeContext(ISet<SyntaxKind> validTypeDeclarations, CancellationToken cancellationToken)
     {
         // cases:

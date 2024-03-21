@@ -28,7 +28,7 @@ internal static partial class SyntaxTreeExtensions
         var token = tokenOnLeftOfPosition.GetPreviousTokenIfTouchingWord(position);
 
         var result = new HashSet<SyntaxKind>(SyntaxFacts.EqualityComparer);
-        while (token.IsPotentialModifier(out var modifierKind))
+        while (token.IsPotentialModifier(out var modifierKind)) // TODO2
         {
             result.Add(modifierKind);
             positionBeforeModifiers = token.FullSpan.Start;

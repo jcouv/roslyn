@@ -583,7 +583,7 @@ internal static partial class SyntaxTreeExtensions
             return false;
         }
 
-        var modifierTokens = context?.PrecedingModifiers ?? syntaxTree.GetPrecedingModifiers(position, cancellationToken);
+        var modifierTokens = context?.PrecedingModifiers ?? syntaxTree.GetPrecedingModifiers(position, cancellationToken); // TODO2
         if (modifierTokens.IsEmpty())
             return false;
 
