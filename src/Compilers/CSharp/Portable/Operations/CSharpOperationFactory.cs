@@ -1224,7 +1224,7 @@ namespace Microsoft.CodeAnalysis.Operations
             ITypeSymbol? collectionType = expr.GetPublicTypeSymbol();
             bool isImplicit = expr.WasCompilerGenerated;
             IMethodSymbol? constructMethod = getConstructMethod((CSharpCompilation)_semanticModel.Compilation, expr).GetPublicSymbol();
-            ImmutableArray<IOperation> elements = expr.Elements.SelectAsArray((element, expr) => CreateBoundCollectionExpressionElement(expr, element), expr);
+            ImmutableArray<IOperation> elements = expr.Elements.SelectAsArray(static (element, arg) => arg.self.CreateBoundCollectionExpressionElement(arg.expr, element), (expr, self: this));
             return new CollectionExpressionOperation(
                 constructMethod,
                 elements,
@@ -2515,10 +2515,10 @@ namespace Microsoft.CodeAnalysis.Operations
         {
             ITypeSymbol matchedType = (boundRecursivePattern.DeclaredType?.Type ?? boundRecursivePattern.InputType.StrippedType()).GetPublicSymbol();
             ImmutableArray<IPatternOperation> deconstructionSubpatterns = boundRecursivePattern.Deconstruction is { IsDefault: false } deconstructions
-                ? deconstructions.SelectAsArray((p, fac) => (IPatternOperation)fac.Create(p.Pattern), this)
+                ? deconstructions.SelectAsArray(static (p, fac) => (IPatternOperation)fac.Create(p.Pattern), this)
                 : ImmutableArray<IPatternOperation>.Empty;
             ImmutableArray<IPropertySubpatternOperation> propertySubpatterns = boundRecursivePattern.Properties is { IsDefault: false } properties
-                ? properties.SelectAsArray((p, arg) => arg.Fac.CreatePropertySubpattern(p, arg.MatchedType), (Fac: this, MatchedType: matchedType))
+                ? properties.SelectAsArray(static (p, arg) => arg.Fac.CreatePropertySubpattern(p, arg.MatchedType), (Fac: this, MatchedType: matchedType))
                 : ImmutableArray<IPropertySubpatternOperation>.Empty;
             return new RecursivePatternOperation(
                 matchedType,
@@ -2536,7 +2536,7 @@ namespace Microsoft.CodeAnalysis.Operations
         private IRecursivePatternOperation CreateBoundRecursivePatternOperation(BoundITuplePattern boundITuplePattern)
         {
             ImmutableArray<IPatternOperation> deconstructionSubpatterns = boundITuplePattern.Subpatterns is { IsDefault: false } subpatterns
-                ? subpatterns.SelectAsArray((p, fac) => (IPatternOperation)fac.Create(p.Pattern), this)
+                ? subpatterns.SelectAsArray(static (p, fac) => (IPatternOperation)fac.Create(p.Pattern), this)
                 : ImmutableArray<IPatternOperation>.Empty;
 
             return new RecursivePatternOperation(
@@ -2581,7 +2581,7 @@ namespace Microsoft.CodeAnalysis.Operations
             return new ListPatternOperation(
                 lengthSymbol: Binder.GetPropertySymbol(boundNode.LengthAccess, out _, out _).GetPublicSymbol(),
                 indexerSymbol: Binder.GetIndexerOrImplicitIndexerSymbol(boundNode.IndexerAccess).GetPublicSymbol(),
-                patterns: boundNode.Subpatterns.SelectAsArray((p, fac) => (IPatternOperation)fac.Create(p), this),
+                patterns: boundNode.Subpatterns.SelectAsArray(static (p, fac) => (IPatternOperation)fac.Create(p), this),
                 declaredSymbol: boundNode.Variable.GetPublicSymbol(),
                 inputType: boundNode.InputType.GetPublicSymbol(),
                 narrowedType: boundNode.NarrowedType.GetPublicSymbol(),

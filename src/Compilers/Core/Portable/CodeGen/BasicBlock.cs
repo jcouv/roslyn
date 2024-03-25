@@ -56,7 +56,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
             public static readonly ObjectPool<BasicBlock> Pool = CreatePool(32);
             private static ObjectPool<BasicBlock> CreatePool(int size)
             {
-                return new ObjectPool<BasicBlock>(() => new PooledBasicBlock(), size);
+                return new ObjectPool<BasicBlock>(static () => new PooledBasicBlock(), size);
             }
 
             protected BasicBlock()

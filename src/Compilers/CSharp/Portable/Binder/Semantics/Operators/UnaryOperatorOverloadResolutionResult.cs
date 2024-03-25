@@ -139,7 +139,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private static ObjectPool<UnaryOperatorOverloadResolutionResult> CreatePool()
         {
             ObjectPool<UnaryOperatorOverloadResolutionResult> pool = null;
-            pool = new ObjectPool<UnaryOperatorOverloadResolutionResult>(() => new UnaryOperatorOverloadResolutionResult(), 10);
+            pool = new ObjectPool<UnaryOperatorOverloadResolutionResult>(static () => new UnaryOperatorOverloadResolutionResult(), 10);
             return pool;
         }
 

@@ -186,8 +186,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
 #if DEBUG
             // Exercise enumeration of all paths to node
-            VisitPathsToNode(nodes[0], targetNode, nullPaths: true, handler: (currentPathToNode, currentRequiresFalseWhenClause) => true);
-            VisitPathsToNode(nodes[0], targetNode, nullPaths: false, handler: (currentPathToNode, currentRequiresFalseWhenClause) => true);
+            VisitPathsToNode(nodes[0], targetNode, nullPaths: true, handler: static (currentPathToNode, currentRequiresFalseWhenClause) => true);
+            VisitPathsToNode(nodes[0], targetNode, nullPaths: false, handler: static (currentPathToNode, currentRequiresFalseWhenClause) => true);
 #endif
 
             unnamedEnumValue = false;

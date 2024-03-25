@@ -3539,7 +3539,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             var invokeMethod = n.DelegateInvokeMethod;
             return invokeMethod!.Parameters.SequenceEqual(l.Parameters,
-                        (p1, p2) => p1.Type.Equals(p2.Type, TypeCompareKind.AllNullableIgnoreOptions | TypeCompareKind.IgnoreTupleNames)) &&
+                        static (p1, p2) => p1.Type.Equals(p2.Type, TypeCompareKind.AllNullableIgnoreOptions | TypeCompareKind.IgnoreTupleNames)) &&
                    invokeMethod.ReturnType.Equals(l.ReturnType, TypeCompareKind.AllNullableIgnoreOptions | TypeCompareKind.IgnoreTupleNames);
         }
 
@@ -7062,9 +7062,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 if (expanded)
                 {
-                    TypeWithAnnotations paramsIterationType = default;
                     parameterAnnotationsOpt = arguments.SelectAsArray(
-                        (argument, i, arg) => arg.self.GetCorrespondingParameter(i, arg.parametersOpt, arg.argsToParamsOpt, expanded: true, ref paramsIterationType).Annotations,
+                        static (argument, i, arg) =>
+                        {
+                            TypeWithAnnotations paramsIterationType = default;
+                            return arg.self.GetCorrespondingParameter(i, arg.parametersOpt, arg.argsToParamsOpt, expanded: true, ref paramsIterationType).Annotations;
+                        },
                         (self: this, parametersOpt, argsToParamsOpt));
                 }
                 else
@@ -8222,7 +8225,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private void VisitTupleExpression(BoundTupleExpression node)
         {
             var arguments = node.Arguments;
-            ImmutableArray<TypeWithState> elementTypes = arguments.SelectAsArray((a, w) => w.VisitRvalueWithState(a), this);
+            ImmutableArray<TypeWithState> elementTypes = arguments.SelectAsArray(static (a, w) => w.VisitRvalueWithState(a), this);
             ImmutableArray<TypeWithAnnotations> elementTypesWithAnnotations = elementTypes.SelectAsArray(a => a.ToTypeWithAnnotations(compilation));
             var tupleOpt = (NamedTypeSymbol?)node.Type;
             if (tupleOpt is null)
@@ -8241,7 +8244,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 tupleOpt = tupleOpt.WithElementTypes(elementTypesWithAnnotations);
                 if (!_disableDiagnostics)
                 {
-                    var locations = tupleOpt.TupleElements.SelectAsArray((element, location) => element.TryGetFirstLocation() ?? location, node.Syntax.Location);
+                    var locations = tupleOpt.TupleElements.SelectAsArray(static (element, location) => element.TryGetFirstLocation() ?? location, node.Syntax.Location);
                     var diagnostics = BindingDiagnosticBag.GetInstance(withDiagnostics: true, withDependencies: false);
                     Debug.Assert(diagnostics.DiagnosticBag is { });
 

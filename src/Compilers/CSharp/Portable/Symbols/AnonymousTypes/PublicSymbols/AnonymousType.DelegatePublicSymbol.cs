@@ -79,7 +79,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return ImmutableArray.Create<Symbol>(constructor, invokeMethod);
             }
 
-            public override ImmutableArray<Symbol> GetMembers(string name) => GetMembers().WhereAsArray((member, name) => member.Name == name, name);
+            public override ImmutableArray<Symbol> GetMembers(string name) => GetMembers().WhereAsArray(static (member, name) => member.Name == name, name);
 
             public override bool IsImplicitlyDeclared => true;
 

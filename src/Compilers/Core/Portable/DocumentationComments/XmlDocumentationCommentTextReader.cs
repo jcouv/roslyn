@@ -21,7 +21,7 @@ namespace Microsoft.CodeAnalysis
         private readonly Reader _textReader = new Reader();
 
         private static readonly ObjectPool<XmlDocumentationCommentTextReader> s_pool =
-            new ObjectPool<XmlDocumentationCommentTextReader>(() => new XmlDocumentationCommentTextReader(), size: 2);
+            new ObjectPool<XmlDocumentationCommentTextReader>(static () => new XmlDocumentationCommentTextReader(), size: 2);
 
         public static XmlException ParseAndGetException(string text)
         {

@@ -853,7 +853,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             internal static bool TryGetNames(TypeSymbol type, ArrayBuilder<string?> namesBuilder)
             {
-                type.VisitType((t, builder, _ignore) => AddNames(t, builder), namesBuilder);
+                type.VisitType(static (t, builder, _ignore) => AddNames(t, builder), namesBuilder);
                 return namesBuilder.Any(name => name != null);
             }
 
@@ -893,7 +893,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 Debug.Assert(flagsBuilder.Any());
                 Debug.Assert(flagsBuilder.Contains(true));
 
-                var result = flagsBuilder.SelectAsArray((flag, constantType) => new TypedConstant(constantType, TypedConstantKind.Primitive, flag), booleanType);
+                var result = flagsBuilder.SelectAsArray(static (flag, constantType) => new TypedConstant(constantType, TypedConstantKind.Primitive, flag), booleanType);
                 flagsBuilder.Free();
                 return result;
             }
@@ -926,11 +926,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     // Native compiler encodes an extra transform flag, always false, for each custom modifier.
                     HandleCustomModifiers(customModifiersCount, transformFlagsBuilder);
-                    type.VisitType((typeSymbol, builder, isNested) => AddFlags(typeSymbol, builder, isNested, addCustomModifierFlags: true), transformFlagsBuilder);
+                    type.VisitType(static (typeSymbol, builder, isNested) => AddFlags(typeSymbol, builder, isNested, addCustomModifierFlags: true), transformFlagsBuilder);
                 }
                 else
                 {
-                    type.VisitType((typeSymbol, builder, isNested) => AddFlags(typeSymbol, builder, isNested, addCustomModifierFlags: false), transformFlagsBuilder);
+                    type.VisitType(static (typeSymbol, builder, isNested) => AddFlags(typeSymbol, builder, isNested, addCustomModifierFlags: false), transformFlagsBuilder);
                 }
             }
 
@@ -994,7 +994,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 static void handleFunctionPointerType(FunctionPointerTypeSymbol funcPtr, ArrayBuilder<bool> transformFlagsBuilder, bool addCustomModifierFlags)
                 {
                     Func<TypeSymbol, (ArrayBuilder<bool>, bool), bool, bool> visitor =
-                        (TypeSymbol type, (ArrayBuilder<bool> builder, bool addCustomModifierFlags) param, bool isNestedNamedType) => AddFlags(type, param.builder, isNestedNamedType, param.addCustomModifierFlags);
+                        static (TypeSymbol type, (ArrayBuilder<bool> builder, bool addCustomModifierFlags) param, bool isNestedNamedType) => AddFlags(type, param.builder, isNestedNamedType, param.addCustomModifierFlags);
 
                     // The function pointer type itself gets a false
                     transformFlagsBuilder.Add(false);
@@ -1041,7 +1041,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             internal static void Encode(ArrayBuilder<bool> builder, TypeSymbol type)
             {
                 Debug.Assert(type.ContainingAssembly?.RuntimeSupportsNumericIntPtr != true);
-                type.VisitType((typeSymbol, builder, isNested) => AddFlags(typeSymbol, builder), builder);
+                type.VisitType(static (typeSymbol, builder, isNested) => AddFlags(typeSymbol, builder), builder);
             }
 
             private static bool AddFlags(TypeSymbol type, ArrayBuilder<bool> builder)

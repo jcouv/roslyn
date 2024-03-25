@@ -30,7 +30,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             private readonly ImmutableDictionary<(BoundNode?, Symbol), Symbol> _updatedSymbolsMap;
 
-            private static readonly Func<(int position, Snapshot snapshot), int, int> BinarySearchComparer = (current, target) => current.position.CompareTo(target);
+            private static readonly Func<(int position, Snapshot snapshot), int, int> BinarySearchComparer = static (current, target) => current.position.CompareTo(target);
 
             private SnapshotManager(ImmutableArray<SharedWalkerState> walkerSharedStates, ImmutableArray<(int position, Snapshot snapshot)> incrementalSnapshots, ImmutableDictionary<(BoundNode?, Symbol), Symbol> updatedSymbolsMap)
             {
@@ -172,7 +172,7 @@ Now {updatedSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}");
                     Debug.Assert(_symbolToSlot.Count == _walkerStates.Count);
                     Debug.Assert(_symbolToSlot.Count > 0);
                     _symbolToSlot.Free();
-                    var snapshotsArray = EnumerableExtensions.SelectAsArray<KeyValuePair<int, Snapshot>, (int, Snapshot)>(_incrementalSnapshots, (kvp) => (kvp.Key, kvp.Value));
+                    var snapshotsArray = EnumerableExtensions.SelectAsArray<KeyValuePair<int, Snapshot>, (int, Snapshot)>(_incrementalSnapshots, static (kvp) => (kvp.Key, kvp.Value));
 
                     var updatedSymbols = _updatedSymbolMap.ToImmutable();
                     return new SnapshotManager(_walkerStates.ToImmutableAndFree(), snapshotsArray, updatedSymbols);

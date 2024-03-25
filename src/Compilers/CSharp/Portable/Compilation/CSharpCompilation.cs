@@ -4044,7 +4044,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 type => TypeWithAnnotations.Create(type.EnsureCSharpSymbolOrNull(nameof(parameterTypes)), type.NullableAnnotation.ToInternalAnnotation()));
             var internalCallingConvention = callingConvention.FromSignatureConvention();
             var conventionModifiers = internalCallingConvention == CallingConvention.Unmanaged && !callingConventionTypes.IsDefaultOrEmpty
-                ? callingConventionTypes.SelectAsArray((type, i, @this) => getCustomModifierForType(type, @this, i), this)
+                ? callingConventionTypes.SelectAsArray(static (type, i, @this) => getCustomModifierForType(type, @this, i), this)
                 : ImmutableArray<CustomModifier>.Empty;
 
             return FunctionPointerTypeSymbol.CreateFromParts(
@@ -4133,7 +4133,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 tupleType = tupleType.WithElementTypes(
                     tupleType.TupleElementTypesWithAnnotations.ZipAsArray(
                         elementNullableAnnotations,
-                        (t, a) => TypeWithAnnotations.Create(t.Type, a.ToInternalAnnotation())));
+                        static (t, a) => TypeWithAnnotations.Create(t.Type, a.ToInternalAnnotation())));
             }
             return tupleType.GetPublicSymbol();
         }

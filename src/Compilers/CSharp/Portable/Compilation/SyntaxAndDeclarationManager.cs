@@ -20,7 +20,7 @@ namespace Microsoft.CodeAnalysis.CSharp
     internal sealed partial class SyntaxAndDeclarationManager : CommonSyntaxAndDeclarationManager
     {
         private static readonly ObjectPool<Stack<SingleNamespaceOrTypeDeclaration>> s_declarationStack =
-            new ObjectPool<Stack<SingleNamespaceOrTypeDeclaration>>(() => new Stack<SingleNamespaceOrTypeDeclaration>());
+            new ObjectPool<Stack<SingleNamespaceOrTypeDeclaration>>(static () => new Stack<SingleNamespaceOrTypeDeclaration>());
 
         private State _lazyState;
 

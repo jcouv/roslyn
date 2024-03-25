@@ -125,7 +125,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                 var property = new NativeIntegerPropertySymbol(
                                     this,
                                     underlyingProperty,
-                                    (container, property, underlyingAccessor) => underlyingAccessor is null ? null : new NativeIntegerMethodSymbol(container, underlyingAccessor, property));
+                                    static (container, property, underlyingAccessor) => underlyingAccessor is null ? null : new NativeIntegerMethodSymbol(container, underlyingAccessor, property));
                                 builder.Add(property);
                                 builder.AddIfNotNull(property.GetMethod);
                                 builder.AddIfNotNull(property.SetMethod);
@@ -137,7 +137,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        public override ImmutableArray<Symbol> GetMembers(string name) => GetMembers().WhereAsArray((member, name) => member.Name == name, name);
+        public override ImmutableArray<Symbol> GetMembers(string name) => GetMembers().WhereAsArray(static (member, name) => member.Name == name, name);
 
         public override ImmutableArray<NamedTypeSymbol> GetTypeMembers() => ImmutableArray<NamedTypeSymbol>.Empty;
 
@@ -217,7 +217,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             if (_lazyInterfaces.IsDefault)
             {
-                var interfaces = _underlyingType.InterfacesNoUseSiteDiagnostics(basesBeingResolved).SelectAsArray((type, map) => map.SubstituteNamedType(type), GetTypeMap());
+                var interfaces = _underlyingType.InterfacesNoUseSiteDiagnostics(basesBeingResolved).SelectAsArray(static (type, map) => map.SubstituteNamedType(type), GetTypeMap());
                 ImmutableInterlocked.InterlockedInitialize(ref _lazyInterfaces, interfaces);
             }
             return _lazyInterfaces;
@@ -356,7 +356,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 if (_lazyParameters.IsDefault)
                 {
-                    var parameters = UnderlyingMethod.Parameters.SelectAsArray((p, m) => (ParameterSymbol)new NativeIntegerParameterSymbol(m._container, m, p), this);
+                    var parameters = UnderlyingMethod.Parameters.SelectAsArray(static (p, m) => (ParameterSymbol)new NativeIntegerParameterSymbol(m._container, m, p), this);
                     ImmutableInterlocked.InterlockedInitialize(ref _lazyParameters, parameters);
                 }
                 return _lazyParameters;

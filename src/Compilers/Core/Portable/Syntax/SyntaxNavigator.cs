@@ -90,7 +90,7 @@ namespace Microsoft.CodeAnalysis
         }
 
         private static readonly ObjectPool<Stack<ChildSyntaxList.Enumerator>> s_childEnumeratorStackPool
-            = new ObjectPool<Stack<ChildSyntaxList.Enumerator>>(() => new Stack<ChildSyntaxList.Enumerator>(), 10);
+            = new ObjectPool<Stack<ChildSyntaxList.Enumerator>>(static () => new Stack<ChildSyntaxList.Enumerator>(), 10);
 
         internal SyntaxToken GetFirstToken(SyntaxNode current, Func<SyntaxToken, bool>? predicate, Func<SyntaxTrivia, bool>? stepInto)
         {
@@ -136,7 +136,7 @@ namespace Microsoft.CodeAnalysis
         }
 
         private static readonly ObjectPool<Stack<ChildSyntaxList.Reversed.Enumerator>> s_childReversedEnumeratorStackPool
-            = new ObjectPool<Stack<ChildSyntaxList.Reversed.Enumerator>>(() => new Stack<ChildSyntaxList.Reversed.Enumerator>(), 10);
+            = new ObjectPool<Stack<ChildSyntaxList.Reversed.Enumerator>>(static () => new Stack<ChildSyntaxList.Reversed.Enumerator>(), 10);
 
         internal SyntaxToken GetLastToken(SyntaxNode current, Func<SyntaxToken, bool> predicate, Func<SyntaxTrivia, bool>? stepInto)
         {

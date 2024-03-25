@@ -52,12 +52,12 @@ namespace Microsoft.CodeAnalysis
             new ConcurrentCache<List<Section>, AnalyzerConfigOptionsResult>(50, SequenceEqualComparer.Instance); // arbitrary size
 
         private readonly ObjectPool<TreeOptions.Builder> _treeOptionsPool =
-            new ObjectPool<TreeOptions.Builder>(() => ImmutableDictionary.CreateBuilder<string, ReportDiagnostic>(Section.PropertiesKeyComparer));
+            new ObjectPool<TreeOptions.Builder>(static () => ImmutableDictionary.CreateBuilder<string, ReportDiagnostic>(Section.PropertiesKeyComparer));
 
         private readonly ObjectPool<AnalyzerOptions.Builder> _analyzerOptionsPool =
-            new ObjectPool<AnalyzerOptions.Builder>(() => ImmutableDictionary.CreateBuilder<string, string>(Section.PropertiesKeyComparer));
+            new ObjectPool<AnalyzerOptions.Builder>(static () => ImmutableDictionary.CreateBuilder<string, string>(Section.PropertiesKeyComparer));
 
-        private readonly ObjectPool<List<Section>> _sectionKeyPool = new ObjectPool<List<Section>>(() => new List<Section>());
+        private readonly ObjectPool<List<Section>> _sectionKeyPool = new ObjectPool<List<Section>>(static () => new List<Section>());
 
         private SingleInitNullable<AnalyzerConfigOptionsResult> _lazyConfigOptions;
 

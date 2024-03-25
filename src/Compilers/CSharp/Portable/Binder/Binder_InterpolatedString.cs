@@ -936,7 +936,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     diagnostics);
             }
 
-            Debug.Assert(handlerParameterIndexes.All((index, paramLength) => index >= BoundInterpolatedStringArgumentPlaceholder.InstanceParameter && index < paramLength,
+            Debug.Assert(handlerParameterIndexes.All(static (index, paramLength) => index >= BoundInterpolatedStringArgumentPlaceholder.InstanceParameter && index < paramLength,
                                                      parameters.Length));
 
             // We need to find the appropriate argument expression for every expected parameter, and error on any that occur after the current parameter

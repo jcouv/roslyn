@@ -1592,7 +1592,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private static ObjectPool<OverloadResolutionResult<TMember>> CreatePool()
         {
             ObjectPool<OverloadResolutionResult<TMember>> pool = null;
-            pool = new ObjectPool<OverloadResolutionResult<TMember>>(() => new OverloadResolutionResult<TMember>(), 10);
+            pool = new ObjectPool<OverloadResolutionResult<TMember>>(static () => new OverloadResolutionResult<TMember>(), 10);
             return pool;
         }
 

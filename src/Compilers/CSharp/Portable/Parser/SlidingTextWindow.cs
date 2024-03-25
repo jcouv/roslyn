@@ -58,7 +58,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax
 
         private readonly StringTable _strings;
 
-        private static readonly ObjectPool<char[]> s_windowPool = new ObjectPool<char[]>(() => new char[DefaultWindowLength]);
+        private static readonly ObjectPool<char[]> s_windowPool = new ObjectPool<char[]>(static () => new char[DefaultWindowLength]);
 
         public SlidingTextWindow(SourceText text)
         {

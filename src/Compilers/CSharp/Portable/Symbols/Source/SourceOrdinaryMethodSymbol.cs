@@ -577,8 +577,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             static bool hasDifferencesInParameterOrTypeParameterName(SourceOrdinaryMethodSymbol definition, SourceOrdinaryMethodSymbol implementation)
             {
-                return !definition.Parameters.SequenceEqual(implementation.Parameters, (a, b) => a.Name == b.Name) ||
-                    !definition.TypeParameters.SequenceEqual(implementation.TypeParameters, (a, b) => a.Name == b.Name);
+                return !definition.Parameters.SequenceEqual(implementation.Parameters, static (a, b) => a.Name == b.Name) ||
+                    !definition.TypeParameters.SequenceEqual(implementation.TypeParameters, static (a, b) => a.Name == b.Name);
             }
         }
 

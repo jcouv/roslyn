@@ -149,7 +149,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private static ObjectPool<MethodGroup> CreatePool()
         {
             ObjectPool<MethodGroup> pool = null;
-            pool = new ObjectPool<MethodGroup>(() => new MethodGroup(), 10);
+            pool = new ObjectPool<MethodGroup>(static () => new MethodGroup(), 10);
             return pool;
         }
 

@@ -22,7 +22,7 @@ namespace Microsoft.CodeAnalysis
         private class ListPool<T> : ObjectPool<List<T>>
         {
             public ListPool()
-                : base(() => new List<T>(10), 10)
+                : base(static () => new List<T>(10), 10)
             { }
 
             public void ClearAndFree(List<T> list)

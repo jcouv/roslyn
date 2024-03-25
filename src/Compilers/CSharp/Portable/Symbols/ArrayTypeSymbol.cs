@@ -520,7 +520,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             protected override ArrayTypeSymbol WithElementTypeCore(TypeWithAnnotations newElementType)
             {
-                var newInterfaces = _interfaces.SelectAsArray((i, t) => i.OriginalDefinition.Construct(t), newElementType.Type);
+                var newInterfaces = _interfaces.SelectAsArray(static (i, t) => i.OriginalDefinition.Construct(t), newElementType.Type);
                 return new SZArray(newElementType, BaseTypeNoUseSiteDiagnostics, newInterfaces);
             }
 

@@ -177,7 +177,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private static ObjectPool<AnalyzedArguments> CreatePool()
         {
             ObjectPool<AnalyzedArguments>? pool = null;
-            pool = new ObjectPool<AnalyzedArguments>(() => new AnalyzedArguments(), 10);
+            pool = new ObjectPool<AnalyzedArguments>(static () => new AnalyzedArguments(), 10);
             return pool;
         }
 

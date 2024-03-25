@@ -967,7 +967,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         {
                             CheckValidNullableEventOverride(overridingEvent.DeclaringCompilation, overriddenEvent, overridingEvent,
                                                             diagnostics,
-                                                            (diagnostics, overriddenEvent, overridingEvent, location) => diagnostics.Add(ErrorCode.WRN_NullabilityMismatchInTypeOnOverride, location),
+                                                            static (diagnostics, overriddenEvent, overridingEvent, location) => diagnostics.Add(ErrorCode.WRN_NullabilityMismatchInTypeOnOverride, location),
                                                             overridingMemberLocation);
                         }
                     }
@@ -1204,7 +1204,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal static bool IsOrContainsErrorType(TypeSymbol typeSymbol)
         {
-            return (object)typeSymbol.VisitType((currentTypeSymbol, unused1, unused2) => currentTypeSymbol.IsErrorType(), (object)null) != null;
+            return (object)typeSymbol.VisitType(static (currentTypeSymbol, unused1, unused2) => currentTypeSymbol.IsErrorType(), (object)null) != null;
         }
 
         /// <summary>

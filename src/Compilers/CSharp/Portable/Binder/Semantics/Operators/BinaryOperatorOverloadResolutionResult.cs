@@ -142,7 +142,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private static ObjectPool<BinaryOperatorOverloadResolutionResult> CreatePool()
         {
             ObjectPool<BinaryOperatorOverloadResolutionResult> pool = null;
-            pool = new ObjectPool<BinaryOperatorOverloadResolutionResult>(() => new BinaryOperatorOverloadResolutionResult(), 10);
+            pool = new ObjectPool<BinaryOperatorOverloadResolutionResult>(static () => new BinaryOperatorOverloadResolutionResult(), 10);
             return pool;
         }
 

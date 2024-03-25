@@ -552,7 +552,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        private static readonly Func<TypeSymbol, CheckConstraintsArgsBoxed, bool, bool> s_checkConstraintsSingleTypeFunc = (type, arg, unused) => CheckConstraintsSingleType(type, in arg.Args);
+        private static readonly Func<TypeSymbol, CheckConstraintsArgsBoxed, bool, bool> s_checkConstraintsSingleTypeFunc = static (type, arg, unused) => CheckConstraintsSingleType(type, in arg.Args);
 
         private static bool CheckConstraintsSingleType(TypeSymbol type, in CheckConstraintsArgs args)
         {

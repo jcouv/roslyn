@@ -92,7 +92,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         public static bool HaveCorrespondingSynthesizedRecordPropertySymbol(SourceParameterSymbol parameter)
         {
             return parameter.ContainingSymbol is SynthesizedPrimaryConstructor &&
-                   parameter.ContainingType.GetMembersUnordered().Any((s, parameter) => (s as SynthesizedRecordPropertySymbol)?.BackingParameter == (object)parameter, parameter);
+                   parameter.ContainingType.GetMembersUnordered().Any(static (s, parameter) => (s as SynthesizedRecordPropertySymbol)?.BackingParameter == (object)parameter, parameter);
         }
     }
 }

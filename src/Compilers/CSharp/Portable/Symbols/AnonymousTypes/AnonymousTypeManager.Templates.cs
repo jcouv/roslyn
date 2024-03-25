@@ -375,7 +375,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 var builder = ArrayBuilder<TypeParameterSymbol>.GetInstance();
                 builder.AddRange(referenced);
-                builder.Sort((x, y) => compareTypeParameters(x, y));
+                builder.Sort(static (x, y) => compareTypeParameters(x, y));
                 typeParameters = builder.ToImmutableAndFree();
             }
             referenced.Free();
@@ -573,7 +573,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 if (GeneratedNames.TryParseSynthesizedDelegateName(key.Name, out var refKinds, out var returnsVoid, out var generation, out var parameterCount))
                 {
                     var delegateKey = new SynthesizedDelegateKey(parameterCount, refKinds, returnsVoid, generation);
-                    this.AnonymousDelegates.GetOrAdd(delegateKey, (k, args) => CreatePlaceholderSynthesizedDelegateValue(key.Name, args.refKinds, args.returnsVoid, args.parameterCount), (refKinds, returnsVoid, parameterCount));
+                    this.AnonymousDelegates.GetOrAdd(delegateKey, static (k, args) => args.self.CreatePlaceholderSynthesizedDelegateValue(args.key.Name, args.refKinds, args.returnsVoid, args.parameterCount), (refKinds, returnsVoid, parameterCount, key, self: this));
                 }
             }
 

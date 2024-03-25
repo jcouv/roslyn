@@ -640,7 +640,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         }
 
         private static readonly Func<TypeWithAnnotations, TypeWithAnnotations> s_setUnknownNullability =
-            (type) => type.SetUnknownNullabilityForReferenceTypes();
+            static (type) => type.SetUnknownNullabilityForReferenceTypes();
 
         /// <summary>
         /// Merges features of the type with another type where there is an identity conversion between them.

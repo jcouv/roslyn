@@ -16,7 +16,7 @@ namespace Microsoft.CodeAnalysis.PooledObjects
         private static class DefaultDelegatePool<T>
             where T : class, new()
         {
-            public static readonly ObjectPool<T> Instance = new(() => new T(), 20);
+            public static readonly ObjectPool<T> Instance = new(static () => new T(), 20);
         }
 
         private static Releaser GetPooledDelegate<TPooled, TArg, TUnboundDelegate, TBoundDelegate>(TUnboundDelegate unboundDelegate, TArg argument, out TBoundDelegate boundDelegate)

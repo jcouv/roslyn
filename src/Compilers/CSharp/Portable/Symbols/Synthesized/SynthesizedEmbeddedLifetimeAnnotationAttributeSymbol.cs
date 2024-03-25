@@ -22,7 +22,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 new SynthesizedEmbeddedAttributeConstructorWithBodySymbol(
                     this,
                     getParameters: m => ImmutableArray<ParameterSymbol>.Empty,
-                    getConstructorBody: (_, _, _) => { }));
+                    getConstructorBody: static (_, _, _) => { }));
         }
 
         public override ImmutableArray<MethodSymbol> Constructors => _constructors;

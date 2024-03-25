@@ -367,8 +367,8 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
         /// </summary>
         private static bool IsMultidimensionalInitializer(ImmutableArray<BoundExpression> inits)
         {
-            Debug.Assert(inits.All((init) => init.Kind != BoundKind.ArrayInitialization) ||
-                         inits.All((init) => init.Kind == BoundKind.ArrayInitialization),
+            Debug.Assert(inits.All(static (init) => init.Kind != BoundKind.ArrayInitialization) ||
+                         inits.All(static (init) => init.Kind == BoundKind.ArrayInitialization),
                          "all or none should be nested");
 
             return inits.Length != 0 && inits[0].Kind == BoundKind.ArrayInitialization;

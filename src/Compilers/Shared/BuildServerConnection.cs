@@ -109,7 +109,7 @@ namespace Microsoft.CodeAnalysis.CommandLine
                     request,
                     pipeName,
                     timeoutOverride,
-                    tryCreateServerFunc: (_, _) => false,
+                    tryCreateServerFunc: static (_, _) => false,
                     logger,
                     cancellationToken).ConfigureAwait(false);
 

@@ -17,7 +17,7 @@ namespace Microsoft.Cci
         private const int PoolSize = 128;
         private const int PoolChunkSize = 1024;
 
-        private static readonly ObjectPool<PooledBlobBuilder> s_chunkPool = new ObjectPool<PooledBlobBuilder>(() => new PooledBlobBuilder(PoolChunkSize), PoolSize);
+        private static readonly ObjectPool<PooledBlobBuilder> s_chunkPool = new ObjectPool<PooledBlobBuilder>(static () => new PooledBlobBuilder(PoolChunkSize), PoolSize);
 
         private PooledBlobBuilder(int size)
             : base(size)

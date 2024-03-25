@@ -398,7 +398,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 && lambda._refKind == _refKind
                 && TypeSymbol.Equals(lambda.ReturnType, this.ReturnType, compareKind)
                 && ParameterTypesWithAnnotations.SequenceEqual(lambda.ParameterTypesWithAnnotations, compareKind,
-                                                               (p1, p2, compareKind) => p1.Equals(p2, compareKind))
+                                                               static (p1, p2, compareKind) => p1.Equals(p2, compareKind))
                 && lambda.ContainingSymbol.Equals(ContainingSymbol, compareKind);
         }
 

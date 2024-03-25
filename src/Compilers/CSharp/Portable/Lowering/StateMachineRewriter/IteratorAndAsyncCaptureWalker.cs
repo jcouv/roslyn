@@ -94,7 +94,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            Debug.Assert(!allVariables.Any((s, method) => s.Symbol is ParameterSymbol { ContainingSymbol: var container } && container != method && container is not SynthesizedPrimaryConstructor, method));
+            Debug.Assert(!allVariables.Any(static (s, method) => s.Symbol is ParameterSymbol { ContainingSymbol: var container } && container != method && container is not SynthesizedPrimaryConstructor, method));
 
             var variablesToHoist = new OrderedSet<Symbol>();
             if (compilation.Options.OptimizationLevel != OptimizationLevel.Release)

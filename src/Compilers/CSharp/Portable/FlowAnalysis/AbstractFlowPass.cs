@@ -599,7 +599,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 case BoundKind.TupleLiteral:
                 case BoundKind.ConvertedTupleLiteral:
-                    ((BoundTupleExpression)node).VisitAllElements((x, self) => self.VisitLvalue(x), this);
+                    ((BoundTupleExpression)node).VisitAllElements(static (x, self) => self.VisitLvalue(x), this);
                     break;
 
                 case BoundKind.InlineArrayAccess:
@@ -2600,7 +2600,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     arg.parts.Add(interpolatedString);
                     return true;
                 },
-                binaryOperatorCallback: (op, arg) => arg.@this.VisitInterpolatedStringBinaryOperatorNode(op));
+                binaryOperatorCallback: static (op, arg) => arg.@this.VisitInterpolatedStringBinaryOperatorNode(op));
 
             Debug.Assert(parts.Count >= 2);
 

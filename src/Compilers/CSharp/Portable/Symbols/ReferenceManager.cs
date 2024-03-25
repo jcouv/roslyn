@@ -266,7 +266,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var assemblySymbol = new PEAssemblySymbol(assembly, DocumentationProvider.Default, isLinked: false, importOptions: importOptions);
 
                 var unifiedAssemblies = this.UnifiedAssemblies.WhereAsArray(
-                    (unified, referencedAssembliesByIdentity) => referencedAssembliesByIdentity.Contains(unified.OriginalReference, allowHigherVersion: false), referencedAssembliesByIdentity);
+                    static (unified, referencedAssembliesByIdentity) => referencedAssembliesByIdentity.Contains(unified.OriginalReference, allowHigherVersion: false), referencedAssembliesByIdentity);
 
                 InitializeAssemblyReuseData(assemblySymbol, peReferences, unifiedAssemblies);
 
@@ -286,7 +286,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return symbol;
                 }
 
-                if (map.TryGetValue(identity, out symbol, (v1, v2, s) => true))
+                if (map.TryGetValue(identity, out symbol, static (v1, v2, s) => true))
                 {
                     // TODO: https://github.com/dotnet/roslyn/issues/9004
                     throw new NotSupportedException(string.Format(CodeAnalysisResources.ChangingVersionOfAssemblyReferenceIsNotAllowedDuringDebugging, identity, symbol.Identity.Version));

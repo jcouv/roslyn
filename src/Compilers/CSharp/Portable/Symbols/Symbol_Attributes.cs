@@ -357,7 +357,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 // Early bind and decode some well-known attributes.
                 EarlyWellKnownAttributeData? earlyData = this.EarlyDecodeWellKnownAttributes(binders, boundAttributeTypes, attributesToBind, symbolPart, attributeDataArray, boundAttributeArray);
-                Debug.Assert(!attributeDataArray.Contains((attr) => attr != null && attr.HasErrors));
+                Debug.Assert(!attributeDataArray.Contains(static (attr) => attr != null && attr.HasErrors));
 
                 // Store data decoded from early bound well-known attributes.
                 // TODO: what if this succeeds on another thread, not ours?
@@ -768,7 +768,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(attributesToBind.Any());
             Debug.Assert(binders.Any());
             Debug.Assert(attributeDataArray != null);
-            Debug.Assert(!attributeDataArray.Contains((attr) => attr != null));
+            Debug.Assert(!attributeDataArray.Contains(static (attr) => attr != null));
 
             var earlyBinder = new EarlyWellKnownAttributeBinder(binders[0]);
             var arguments = new EarlyDecodeWellKnownAttributeArguments<EarlyWellKnownAttributeBinder, NamedTypeSymbol, AttributeSyntax, AttributeLocation>();

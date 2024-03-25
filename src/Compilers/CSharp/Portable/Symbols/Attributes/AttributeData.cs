@@ -90,7 +90,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             Debug.Assert(!attributeType.IsErrorType());
 
             int argumentCount = (attributeSyntax.ArgumentList != null) ?
-                attributeSyntax.ArgumentList.Arguments.Count<AttributeArgumentSyntax>((arg) => arg.NameEquals == null) :
+                attributeSyntax.ArgumentList.Arguments.Count<AttributeArgumentSyntax>(static (arg) => arg.NameEquals == null) :
                 0;
             return AttributeData.IsTargetEarlyAttribute(attributeType, argumentCount, description);
         }

@@ -715,7 +715,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return ReferenceEquals(this, other) ||
                 (EqualsNoParameters(other, compareKind)
                  && _parameters.SequenceEqual(other._parameters, compareKind,
-                     (param1, param2, compareKind) => param1.MethodEqualityChecks(param2, compareKind)));
+                     static (param1, param2, compareKind) => param1.MethodEqualityChecks(param2, compareKind)));
         }
 
         private bool EqualsNoParameters(FunctionPointerMethodSymbol other, TypeCompareKind compareKind)

@@ -40,7 +40,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             CancellationToken cancellationToken,
             int? levelsToCompute = null)
         {
-            ComputeDeclarations(model, associatedSymbol, node, (n, level) => InvalidLevel(level), getSymbol, builder, levelsToCompute, cancellationToken);
+            ComputeDeclarations(model, associatedSymbol, node, static (n, level) => InvalidLevel(level), getSymbol, builder, levelsToCompute, cancellationToken);
         }
 
         private static bool InvalidLevel(int? level)

@@ -1244,7 +1244,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         private static int IndexOfInitializerContainingPosition(ImmutableArray<FieldOrPropertyInitializer> initializers, int position)
         {
             // Search for the start of the span (the spans are non-overlapping and sorted)
-            int index = initializers.BinarySearch(position, (initializer, pos) => initializer.Syntax.Span.Start.CompareTo(pos));
+            int index = initializers.BinarySearch(position, static (initializer, pos) => initializer.Syntax.Span.Start.CompareTo(pos));
 
             // Binary search returns non-negative result if the position is exactly the start of some span.
             if (index >= 0)
@@ -1294,7 +1294,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         public override ImmutableArray<NamedTypeSymbol> GetTypeMembers(ReadOnlyMemory<char> name, int arity)
         {
-            return GetTypeMembers(name).WhereAsArray((t, arity) => t.Arity == arity, arity);
+            return GetTypeMembers(name).WhereAsArray(static (t, arity) => t.Arity == arity, arity);
         }
 
         private Dictionary<ReadOnlyMemory<char>, ImmutableArray<NamedTypeSymbol>> GetTypeMembersDictionary()
@@ -1903,7 +1903,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 }
 
                 var resultType = type.VisitType(
-                    predicate: (t, a, b) => !t.TupleElementNames.IsDefaultOrEmpty && !t.IsErrorType(),
+                    predicate: static (t, a, b) => !t.TupleElementNames.IsDefaultOrEmpty && !t.IsErrorType(),
                     arg: (object?)null);
                 return resultType is object;
             }

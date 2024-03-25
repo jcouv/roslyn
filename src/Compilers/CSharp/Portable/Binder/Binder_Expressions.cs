@@ -174,7 +174,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return new BoundBadExpression(syntax,
                 resultKind,
                 symbols,
-                childNodes.SelectAsArray((e, self) => self.BindToTypeForErrorRecovery(e), this),
+                childNodes.SelectAsArray(static (e, self) => self.BindToTypeForErrorRecovery(e), this),
                 CreateErrorType())
             { WasCompilerGenerated = wasCompilerGenerated };
         }
@@ -4201,7 +4201,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 boundInitExprOpt = BindArrayInitializerExpressions(initSyntax, diagnostics, dimension: 1, rank: 1);
             }
 
-            boundInitExprOpt = boundInitExprOpt.SelectAsArray((expr, t) => GenerateConversionForAssignment(t.elementType, expr, t.diagnostics), (elementType, diagnostics));
+            boundInitExprOpt = boundInitExprOpt.SelectAsArray(static (expr, t) => t.self.GenerateConversionForAssignment(t.elementType, expr, t.diagnostics), (elementType, diagnostics, self: this));
 
             if (sizeOpt != null)
             {

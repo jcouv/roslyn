@@ -178,8 +178,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         private MemberSemanticModel GetOrAddModelForAttribute(MemberSemanticModel containing, AttributeSyntax attribute)
         {
             return ImmutableInterlocked.GetOrAdd(ref _childMemberModels, attribute,
-                                                 (node, binderAndModel) => CreateModelForAttribute(binderAndModel.binder, (AttributeSyntax)node, binderAndModel.model),
-                                                 (binder: containing.GetEnclosingBinder(attribute.SpanStart), model: containing));
+                                                 static (node, arg) => arg.self.CreateModelForAttribute(arg.binder, (AttributeSyntax)node, arg.model),
+                                                 (binder: containing.GetEnclosingBinder(attribute.SpanStart), model: containing, self: this));
         }
 
         private MemberSemanticModel GetOrAddModelForParameter(SyntaxNode node, MemberSemanticModel containing, ParameterSyntax paramDecl)

@@ -644,7 +644,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public static ObjectPool<ExpressionVariableFinder> CreatePool()
         {
-            return new ObjectPool<ExpressionVariableFinder>(() => new ExpressionVariableFinder(), 10);
+            return new ObjectPool<ExpressionVariableFinder>(static () => new ExpressionVariableFinder(), 10);
         }
         #endregion
     }

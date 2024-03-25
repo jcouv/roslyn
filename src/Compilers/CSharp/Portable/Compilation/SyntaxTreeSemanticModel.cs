@@ -2425,7 +2425,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                         case SymbolKind.NamedType:
                             Debug.Assert((object)declaredSymbol.GetSymbol() == (object)entryPoint.ContainingSymbol);
-                            return (node) => false;
+                            return static (node) => false;
 
                         default:
                             ExceptionUtilities.UnexpectedValue(declaredSymbol.Kind);
@@ -2510,7 +2510,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 case ParameterSyntax param when declaredSymbol.Kind == SymbolKind.Property && param.Parent?.Parent is RecordDeclarationSyntax recordDeclaration && recordDeclaration.ParameterList == param.Parent:
                     Debug.Assert(declaredSymbol.GetSymbol() is SynthesizedRecordPropertySymbol);
-                    return (node) => false;
+                    return static (node) => false;
             }
 
             return null;

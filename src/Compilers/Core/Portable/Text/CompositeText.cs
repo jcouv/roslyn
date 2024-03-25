@@ -322,7 +322,7 @@ namespace Microsoft.CodeAnalysis.Text
         }
 
         private static readonly ObjectPool<HashSet<SourceText>> s_uniqueSourcesPool
-            = new ObjectPool<HashSet<SourceText>>(() => new HashSet<SourceText>(), 5);
+            = new ObjectPool<HashSet<SourceText>>(static () => new HashSet<SourceText>(), 5);
 
         /// <summary>
         /// Compute total text length and total size of storage buffers held

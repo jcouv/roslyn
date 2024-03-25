@@ -375,7 +375,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 translatedStatement = F.Block(
                     translatedStatement,
-                    F.Block(variableCleanup.SelectAsArray((e, f) => (BoundStatement)f.ExpressionStatement(e), F)));
+                    F.Block(variableCleanup.SelectAsArray(static (e, f) => (BoundStatement)f.ExpressionStatement(e), F)));
             }
 
             variableCleanup.Free();

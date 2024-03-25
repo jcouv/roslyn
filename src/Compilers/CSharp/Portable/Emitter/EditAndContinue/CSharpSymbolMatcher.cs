@@ -879,7 +879,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                 if ((object)originalDef != type)
                 {
                     var discardedUseSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
-                    var translatedTypeArguments = type.GetAllTypeArguments(ref discardedUseSiteInfo).SelectAsArray((t, v) => t.WithTypeAndModifiers((TypeSymbol)v.Visit(t.Type),
+                    var translatedTypeArguments = type.GetAllTypeArguments(ref discardedUseSiteInfo).SelectAsArray(static (t, v) => t.WithTypeAndModifiers((TypeSymbol)v.Visit(t.Type),
                                                                                                                                                   v.VisitCustomModifiers(t.CustomModifiers)),
                                                                                                                  this);
 

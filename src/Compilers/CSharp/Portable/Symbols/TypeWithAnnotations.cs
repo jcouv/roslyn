@@ -591,7 +591,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             var type = TypeSymbolExtensions.VisitType(
                 typeWithAnnotationsOpt,
                 typeOpt,
-                typeWithAnnotationsPredicate: (t, a, b) => t.NullableAnnotation != NullableAnnotation.Oblivious && !t.Type.IsErrorType() && !t.Type.IsValueType,
+                typeWithAnnotationsPredicate: static (t, a, b) => t.NullableAnnotation != NullableAnnotation.Oblivious && !t.Type.IsErrorType() && !t.Type.IsValueType,
                 typePredicate: null,
                 arg: (object)null);
             return (object)type != null;

@@ -2144,7 +2144,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
         private static bool IsLastAccess(LocalDefUseInfo locInfo, int counter)
         {
-            return locInfo.LocalDefs.Any((d) => counter == d.Start && counter == d.End);
+            return locInfo.LocalDefs.Any(static (d, counter) => counter == d.Start && counter == d.End, arg: counter);
         }
 
         public override BoundNode VisitLocal(BoundLocal node)
@@ -2208,7 +2208,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
             // do actual assignment
 
-            Debug.Assert(locInfo.LocalDefs.Any((d) => _nodeCounter == d.Start && _nodeCounter <= d.End));
+            Debug.Assert(locInfo.LocalDefs.Any(static (d, nodeCounter) => nodeCounter == d.Start && nodeCounter <= d.End, arg: _nodeCounter));
             var isLast = IsLastAccess(locInfo, _nodeCounter);
 
             if (isLast)

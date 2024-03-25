@@ -202,7 +202,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         public override ImmutableArray<NamedTypeSymbol> GetTypeMembers(ReadOnlyMemory<char> name, int arity)
         {
-            return GetTypeMembers(name).WhereAsArray((s, arity) => s.Arity == arity, arity);
+            return GetTypeMembers(name).WhereAsArray(static (s, arity) => s.Arity == arity, arity);
         }
 
         internal override ModuleSymbol ContainingModule

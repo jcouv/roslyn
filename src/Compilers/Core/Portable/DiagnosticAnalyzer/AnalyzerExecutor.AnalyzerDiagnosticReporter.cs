@@ -22,7 +22,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             public readonly Action<Diagnostic> AddDiagnosticAction;
 
             private static readonly ObjectPool<AnalyzerDiagnosticReporter> s_objectPool =
-                new ObjectPool<AnalyzerDiagnosticReporter>(() => new AnalyzerDiagnosticReporter(), 10);
+                new ObjectPool<AnalyzerDiagnosticReporter>(static () => new AnalyzerDiagnosticReporter(), 10);
 
             public static AnalyzerDiagnosticReporter GetInstance(
                 SourceOrAdditionalFile contextFile,

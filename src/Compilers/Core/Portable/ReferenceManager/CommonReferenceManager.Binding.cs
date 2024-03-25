@@ -16,7 +16,7 @@ namespace Microsoft.CodeAnalysis
     internal partial class CommonReferenceManager<TCompilation, TAssemblySymbol>
     {
         private static readonly ObjectPool<MultiDictionary<string, (AssemblyData DefinitionData, int DefinitionIndex)>> s_pool =
-            new ObjectPool<MultiDictionary<string, (AssemblyData DefinitionData, int DefinitionIndex)>>(() => new MultiDictionary<string, (AssemblyData DefinitionData, int DefinitionIndex)>(AssemblyIdentityComparer.SimpleNameComparer));
+            new ObjectPool<MultiDictionary<string, (AssemblyData DefinitionData, int DefinitionIndex)>>(static () => new MultiDictionary<string, (AssemblyData DefinitionData, int DefinitionIndex)>(AssemblyIdentityComparer.SimpleNameComparer));
 
         /// <summary>
         /// For the given set of AssemblyData objects, do the following:
@@ -720,8 +720,8 @@ namespace Microsoft.CodeAnalysis
             return false;
         }
 
-        private static readonly ObjectPool<Queue<AssemblyReferenceCandidate>> s_candidatesToExaminePool = new ObjectPool<Queue<AssemblyReferenceCandidate>>(() => new Queue<AssemblyReferenceCandidate>());
-        private static readonly ObjectPool<List<TAssemblySymbol?>> s_candidateReferencedSymbolsPool = new ObjectPool<List<TAssemblySymbol?>>(() => new List<TAssemblySymbol?>(capacity: 1024));
+        private static readonly ObjectPool<Queue<AssemblyReferenceCandidate>> s_candidatesToExaminePool = new ObjectPool<Queue<AssemblyReferenceCandidate>>(static () => new Queue<AssemblyReferenceCandidate>());
+        private static readonly ObjectPool<List<TAssemblySymbol?>> s_candidateReferencedSymbolsPool = new ObjectPool<List<TAssemblySymbol?>>(static () => new List<TAssemblySymbol?>(capacity: 1024));
 
         private void ReuseAssemblySymbols(BoundInputAssembly[] boundInputs, TAssemblySymbol[] candidateInputAssemblySymbols, ImmutableArray<AssemblyData> assemblies, int corLibraryIndex)
         {

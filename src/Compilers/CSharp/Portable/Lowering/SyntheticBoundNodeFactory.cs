@@ -1730,7 +1730,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (discardsPresent)
             {
                 arguments = arguments.SelectAsArray(
-                    (arg, t) => arg.Kind == BoundKind.DiscardExpression ? t.factory.MakeTempForDiscard((BoundDiscardExpression)arg, t.builder) : arg,
+                    static (arg, t) => arg.Kind == BoundKind.DiscardExpression ? t.factory.MakeTempForDiscard((BoundDiscardExpression)arg, t.builder) : arg,
                     (factory: this, builder: builder));
             }
 
