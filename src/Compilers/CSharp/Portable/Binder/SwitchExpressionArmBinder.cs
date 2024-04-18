@@ -43,7 +43,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression? whenClause = node.WhenClause != null
                 ? armBinder.BindBooleanExpression(node.WhenClause.Condition, diagnostics)
                 : null;
-            BoundExpression armResult = armBinder.BindValue(node.Expression, diagnostics, BindValueKind.RValue);
+            BoundExpression armResult = armBinder.BindValue(node.Expression, diagnostics, BindValueKind.RValue, resolveExtensions: true); // TODO2
             var label = new GeneratedLabelSymbol("arm");
             return new BoundSwitchExpressionArm(node, locals, pattern, whenClause, armResult, label, hasErrors | pattern.HasErrors);
         }

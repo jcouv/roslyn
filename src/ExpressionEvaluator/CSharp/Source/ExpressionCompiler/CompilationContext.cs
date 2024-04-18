@@ -794,7 +794,7 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
             var bindingDiagnostics = BindingDiagnosticBag.GetInstance(withDiagnostics: true, withDependencies: false);
             RoslynDebug.AssertNotNull(bindingDiagnostics.DiagnosticBag);
 
-            var expression = binder.BindValue(syntax, bindingDiagnostics, Binder.BindValueKind.RValue);
+            var expression = binder.BindValue(syntax, bindingDiagnostics, Binder.BindValueKind.RValue); // TODO2
             diagnostics.AddRange(bindingDiagnostics.DiagnosticBag);
             bindingDiagnostics.Free();
 

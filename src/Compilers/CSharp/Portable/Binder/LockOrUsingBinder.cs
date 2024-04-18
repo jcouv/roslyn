@@ -81,7 +81,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // Filter out method group in conversion.
                 var expressionDiagnostics = BindingDiagnosticBag.GetInstance();
-                BoundExpression boundExpression = originalBinder.BindValue(TargetExpressionSyntax, expressionDiagnostics, Binder.BindValueKind.RValueOrMethodGroup);
+                BoundExpression boundExpression = originalBinder.BindValue(TargetExpressionSyntax, expressionDiagnostics, BindValueKind.RValue); // TODO2
                 if (targetTypeOpt is object)
                 {
                     boundExpression = originalBinder.GenerateConversionForAssignment(targetTypeOpt, boundExpression, expressionDiagnostics);

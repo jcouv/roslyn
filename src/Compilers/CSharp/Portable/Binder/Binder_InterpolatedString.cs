@@ -87,7 +87,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                     }
                                 }
 
-                                var value = BindValue(interpolation.Expression, diagnostics, BindValueKind.RValue);
+                                var value = BindValue(interpolation.Expression, diagnostics, BindValueKind.RValue); // TODO2
 
                                 // We need to ensure the argument is not a lambda, method group, etc. It isn't nice to wait until lowering,
                                 // when we perform overload resolution, to report a problem. So we do that check by calling
@@ -98,7 +98,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                 BoundLiteral? format = null;
                                 if (interpolation.AlignmentClause != null)
                                 {
-                                    alignment = GenerateConversionForAssignment(intType, BindValue(interpolation.AlignmentClause.Value, diagnostics, Binder.BindValueKind.RValue), diagnostics);
+                                    alignment = GenerateConversionForAssignment(intType, BindValue(interpolation.AlignmentClause.Value, diagnostics, Binder.BindValueKind.RValue), diagnostics); // TODO2
                                     var alignmentConstant = alignment.ConstantValueOpt;
                                     if (alignmentConstant != null && !alignmentConstant.IsBad)
                                     {

@@ -89,7 +89,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                             TypeSymbol intType = binder.GetSpecialType(SpecialType.System_Int32, diagnostics, sizeExpression);
                             BoundExpression boundSizeExpression = binder.GenerateConversionForAssignment(
                                 intType,
-                                binder.BindValue(sizeExpression, diagnostics, Binder.BindValueKind.RValue),
+                                binder.BindValue(sizeExpression, diagnostics, Binder.BindValueKind.RValue), // TODO2
                                 diagnostics);
 
                             // GetAndValidateConstantValue doesn't generate a very intuitive-reading diagnostic

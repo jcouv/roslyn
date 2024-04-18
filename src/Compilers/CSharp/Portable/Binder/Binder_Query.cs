@@ -834,7 +834,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 lambdaBodyBinder = lambdaBodyBinder.GetRequiredBinder(expression);
                 Debug.Assert(lambdaSymbol != null);
-                BoundExpression boundExpression = lambdaBodyBinder.BindValue(expression, diagnostics, BindValueKind.RValue);
+                BoundExpression boundExpression = lambdaBodyBinder.BindValue(expression, diagnostics, BindValueKind.RValue, resolveExtensions: true);
                 return lambdaBodyBinder.CreateLambdaBlockForQueryClause(expression, boundExpression, diagnostics);
             }), withDependencies);
         }
@@ -844,7 +844,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             return MakeQueryUnboundLambda(expression, new QueryUnboundLambdaState(this, qvm, ImmutableArray.Create(parameter), (LambdaSymbol lambdaSymbol, Binder lambdaBodyBinder, BindingDiagnosticBag diagnostics) =>
             {
                 lambdaBodyBinder = lambdaBodyBinder.GetRequiredBinder(expression);
-                BoundExpression boundExpression = lambdaBodyBinder.BindValue(expression, diagnostics, BindValueKind.RValue);
+                BoundExpression boundExpression = lambdaBodyBinder.BindValue(expression, diagnostics, BindValueKind.RValue, resolveExtensions: true); // TODO2 still trying to hit this...
 
                 // We transform the expression from "expr" to "expr.Cast<castTypeOpt>()".
                 boundExpression = lambdaBodyBinder.MakeQueryInvocation(expression, boundExpression, "Cast", castTypeSyntax, castType, diagnostics

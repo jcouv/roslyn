@@ -22,9 +22,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             node.Left.CheckDeconstructionCompatibleArgument(diagnostics);
 
-            BoundExpression left = BindValue(node.Left, diagnostics, GetBinaryAssignmentKind(node.Kind()));
+            BoundExpression left = BindValue(node.Left, diagnostics, GetBinaryAssignmentKind(node.Kind()), resolveExtensions: true);
             ReportSuppressionIfNeeded(left, diagnostics);
-            BoundExpression right = BindValue(node.Right, diagnostics, BindValueKind.RValue);
+            BoundExpression right = BindValue(node.Right, diagnostics, BindValueKind.RValue, resolveExtensions: true);
             BinaryOperatorKind kind = SyntaxKindToBinaryOperatorKind(node.Kind());
 
             // If either operand is bad, don't try to do binary operator overload resolution; that will just
@@ -467,6 +467,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             BoundExpression result = BindExpression(current, diagnostics);
+            result = ResolveToExtensionMemberIfPossible(result, diagnostics);
 
             if (node.IsKind(SyntaxKind.SubtractExpression)
                 && current.IsKind(SyntaxKind.ParenthesizedExpression))
@@ -493,7 +494,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 BinaryExpressionSyntax syntaxNode = syntaxNodes.Pop();
                 BindValueKind bindValueKind = GetBinaryAssignmentKind(syntaxNode.Kind());
                 BoundExpression left = CheckValue(result, bindValueKind, diagnostics);
-                BoundExpression right = BindValue(syntaxNode.Right, diagnostics, BindValueKind.RValue);
+                BoundExpression right = BindValue(syntaxNode.Right, diagnostics, BindValueKind.RValue, resolveExtensions: true);
                 BoundExpression boundOp = BindSimpleBinaryOperator(syntaxNode, diagnostics, left, right, leaveUnconvertedIfInterpolatedString: true);
                 result = boundOp;
             }
@@ -2261,7 +2262,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             operandSyntax.CheckDeconstructionCompatibleArgument(diagnostics);
 
-            BoundExpression operand = BindToNaturalType(BindValue(operandSyntax, diagnostics, BindValueKind.IncrementDecrement), diagnostics);
+            BoundExpression operand = BindToNaturalType(BindValue(operandSyntax, diagnostics, BindValueKind.IncrementDecrement, resolveExtensions: true), diagnostics);
             UnaryOperatorKind kind = SyntaxKindToUnaryOperatorKind(node.Kind());
 
             // If the operand is bad, avoid generating cascading errors.
@@ -2462,7 +2463,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         // Based on ExpressionBinder::bindPtrIndirection.
         private BoundExpression BindPointerIndirectionExpression(PrefixUnaryExpressionSyntax node, BindingDiagnosticBag diagnostics)
         {
-            BoundExpression operand = BindToNaturalType(BindValue(node.Operand, diagnostics, GetUnaryAssignmentKind(node.Kind())), diagnostics);
+            BoundExpression operand = BindToNaturalType(BindValue(node.Operand, diagnostics, GetUnaryAssignmentKind(node.Kind())), diagnostics); // TODO2 redundant, need to test
 
             TypeSymbol pointedAtType;
             bool hasErrors;
@@ -2509,7 +2510,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         // Based on ExpressionBinder::bindPtrAddr.
         private BoundExpression BindAddressOfExpression(PrefixUnaryExpressionSyntax node, BindingDiagnosticBag diagnostics)
         {
-            BoundExpression operand = BindToNaturalType(BindValue(node.Operand, diagnostics, BindValueKind.AddressOf), diagnostics);
+            BoundExpression operand = BindToNaturalType(BindValue(node.Operand, diagnostics, BindValueKind.AddressOf), diagnostics); // TODO2
             ReportSuppressionIfNeeded(operand, diagnostics);
 
             bool hasErrors = operand.HasAnyErrors; // This would propagate automatically, but by reading it explicitly we can reduce cascading.
@@ -2706,7 +2707,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private BoundExpression BindUnaryOperator(PrefixUnaryExpressionSyntax node, BindingDiagnosticBag diagnostics)
         {
-            BoundExpression operand = BindToNaturalType(BindValue(node.Operand, diagnostics, GetUnaryAssignmentKind(node.Kind())), diagnostics);
+            BoundExpression operand = BindToNaturalType(BindValue(node.Operand, diagnostics, GetUnaryAssignmentKind(node.Kind()), resolveExtensions: true), diagnostics);
             BoundLiteral constant = BindIntegralMinValConstants(node, operand, diagnostics);
             return constant ?? BindUnaryOperatorCore(node, node.OperatorToken.Text, operand, diagnostics);
         }
@@ -3945,9 +3946,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private BoundExpression BindNullCoalescingOperator(BinaryExpressionSyntax node, BindingDiagnosticBag diagnostics)
         {
-            var leftOperand = BindValue(node.Left, diagnostics, BindValueKind.RValue);
+            var leftOperand = BindValue(node.Left, diagnostics, BindValueKind.RValue, resolveExtensions: true); // TODO2 redundant
             leftOperand = BindToNaturalType(leftOperand, diagnostics);
-            var rightOperand = BindValue(node.Right, diagnostics, BindValueKind.RValue);
+            var rightOperand = BindValue(node.Right, diagnostics, BindValueKind.RValue, resolveExtensions: true); // TODO2 redundant
 
             // If either operand is bad, bail out preventing more cascading errors
             if (leftOperand.HasAnyErrors || rightOperand.HasAnyErrors)
@@ -4134,9 +4135,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             MessageID.IDS_FeatureCoalesceAssignmentExpression.CheckFeatureAvailability(diagnostics, node.OperatorToken);
 
-            BoundExpression leftOperand = BindValue(node.Left, diagnostics, BindValueKind.CompoundAssignment);
+            BoundExpression leftOperand = BindValue(node.Left, diagnostics, BindValueKind.CompoundAssignment, resolveExtensions: true); // TODO2 redundant
             ReportSuppressionIfNeeded(leftOperand, diagnostics);
-            BoundExpression rightOperand = BindValue(node.Right, diagnostics, BindValueKind.RValue);
+            BoundExpression rightOperand = BindValue(node.Right, diagnostics, BindValueKind.RValue, resolveExtensions: true); // TODO2 redundant
 
             // If either operand is bad, bail out preventing more cascading errors
             if (leftOperand.HasAnyErrors || rightOperand.HasAnyErrors)
@@ -4256,6 +4257,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 CheckFeatureAvailability(node, MessageID.IDS_FeatureRefConditional, diagnostics);
             }
 
+            // TODO2 test ref scenario
             return isRef ? BindRefConditionalOperator(node, whenTrue, whenFalse, diagnostics) : BindValueConditionalOperator(node, whenTrue, whenFalse, diagnostics);
         }
 
@@ -4263,8 +4265,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         private BoundExpression BindValueConditionalOperator(ConditionalExpressionSyntax node, ExpressionSyntax whenTrue, ExpressionSyntax whenFalse, BindingDiagnosticBag diagnostics)
         {
             BoundExpression condition = BindBooleanExpression(node.Condition, diagnostics);
-            BoundExpression trueExpr = BindValue(whenTrue, diagnostics, BindValueKind.RValue);
-            BoundExpression falseExpr = BindValue(whenFalse, diagnostics, BindValueKind.RValue);
+            BoundExpression trueExpr = BindValue(whenTrue, diagnostics, BindValueKind.RValue, resolveExtensions: true);
+            BoundExpression falseExpr = BindValue(whenFalse, diagnostics, BindValueKind.RValue, resolveExtensions: true);
+
             CompoundUseSiteInfo<AssemblySymbol> useSiteInfo = GetNewCompoundUseSiteInfo(diagnostics);
             ConstantValue? constantValue = null;
             TypeSymbol? bestType = BestTypeInferrer.InferBestTypeForConditionalOperator(trueExpr, falseExpr, this.Conversions, out bool hadMultipleCandidates, ref useSiteInfo);
@@ -4309,8 +4312,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         private BoundExpression BindRefConditionalOperator(ConditionalExpressionSyntax node, ExpressionSyntax whenTrue, ExpressionSyntax whenFalse, BindingDiagnosticBag diagnostics)
         {
             BoundExpression condition = BindBooleanExpression(node.Condition, diagnostics);
-            BoundExpression trueExpr = BindValue(whenTrue, diagnostics, BindValueKind.RValue | BindValueKind.RefersToLocation);
-            BoundExpression falseExpr = BindValue(whenFalse, diagnostics, BindValueKind.RValue | BindValueKind.RefersToLocation);
+            BoundExpression trueExpr = BindValue(whenTrue, diagnostics, BindValueKind.RValue | BindValueKind.RefersToLocation); // TODO2
+            BoundExpression falseExpr = BindValue(whenFalse, diagnostics, BindValueKind.RValue | BindValueKind.RefersToLocation); // TODO2
             bool hasErrors = trueExpr.HasErrors | falseExpr.HasErrors;
             TypeSymbol trueType = trueExpr.Type;
             TypeSymbol falseType = falseExpr.Type;

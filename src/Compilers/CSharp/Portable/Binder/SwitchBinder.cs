@@ -494,7 +494,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     Debug.Assert(node.Kind() == SyntaxKind.GotoCaseStatement);
 
                     // Bind the goto case expression
-                    gotoCaseExpressionOpt = gotoBinder.BindValue(node.Expression, diagnostics, BindValueKind.RValue);
+                    gotoCaseExpressionOpt = gotoBinder.BindValue(node.Expression, diagnostics, BindValueKind.RValue); // TODO2 redundant
 
                     gotoCaseExpressionOpt = ConvertCaseExpression(node, gotoCaseExpressionOpt, out gotoCaseExpressionConstant,
                         diagnostics, isGotoCaseExpr: true);

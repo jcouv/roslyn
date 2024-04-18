@@ -238,7 +238,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             TypeSymbol elementType = GetIteratorElementType().Type;
             BoundExpression argument = (node.Expression == null)
                 ? BadExpression(node).MakeCompilerGenerated()
-                : BindValue(node.Expression, diagnostics, BindValueKind.RValue);
+                : BindValue(node.Expression, diagnostics, BindValueKind.RValue); // TODO2
 
             if (!argument.HasAnyErrors)
             {
@@ -389,7 +389,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private BoundExpression BindThrownExpression(ExpressionSyntax exprSyntax, BindingDiagnosticBag diagnostics, ref bool hasErrors)
         {
-            var boundExpr = BindValue(exprSyntax, diagnostics, BindValueKind.RValue);
+            var boundExpr = BindValue(exprSyntax, diagnostics, BindValueKind.RValue); // TODO2 redundant
             if (Compilation.LanguageVersion < MessageID.IDS_FeatureSwitchExpression.RequiredVersion())
             {
                 // This is the pre-C# 8 algorithm for binding a thrown expression.
@@ -892,7 +892,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return CheckValue(result, valueKind, diagnostics);
             }
 
-            BoundExpression value = BindValue(initializer, diagnostics, valueKind);
+            BoundExpression value = BindValue(initializer, diagnostics, valueKind); // TODO2
             BoundExpression expression = value.Kind switch
             {
                 BoundKind.UnboundLambda => BindToInferredDelegateType(value, diagnostics),
@@ -1432,11 +1432,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (isRef)
                 MessageID.IDS_FeatureRefReassignment.CheckFeatureAvailability(diagnostics, node.Right.GetFirstToken());
 
-            var op1 = BindValue(node.Left, diagnostics, lhsKind);
+            var op1 = BindValue(node.Left, diagnostics, lhsKind); // TODO2
             ReportSuppressionIfNeeded(op1, diagnostics);
 
             var rhsKind = isRef ? GetRequiredRHSValueKindForRefAssignment(op1) : BindValueKind.RValue;
-            var op2 = BindValue(rhsExpr, diagnostics, rhsKind);
+            var op2 = BindValue(rhsExpr, diagnostics, rhsKind); // TODO2
 
             bool discardAssignment = op1.Kind == BoundKind.DiscardExpression;
             if (discardAssignment)
@@ -1822,7 +1822,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (node.Kind() != SyntaxKind.ArrayInitializerExpression)
             {
-                return BindValue(node, diagnostics, valueKind);
+                return BindValue(node, diagnostics, valueKind); // TODO2
             }
 
             BoundExpression result;
@@ -2554,7 +2554,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // SPEC ERROR: Basically, the spec should say "use unary operator overload resolution
             // SPEC ERROR: to find the candidate set and choose a unique best operator true".
 
-            var expr = BindValue(node, diagnostics, BindValueKind.RValue);
+            var expr = BindValue(node, diagnostics, BindValueKind.RValue); // TODO2
             var boolean = GetSpecialType(SpecialType.System_Boolean, diagnostics, node);
 
             if (expr.HasAnyErrors)
@@ -2910,7 +2910,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (expressionSyntax != null)
             {
                 BindValueKind requiredValueKind = GetRequiredReturnValueKind(refKind);
-                arg = BindValue(expressionSyntax, diagnostics, requiredValueKind);
+                arg = BindValue(expressionSyntax, diagnostics, requiredValueKind, resolveExtensions: true);
             }
             else
             {
@@ -3491,7 +3491,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 RefKind refKind;
                 ExpressionSyntax expressionSyntax = expressionBody.Expression.CheckAndUnwrapRefExpression(diagnostics, out refKind);
                 BindValueKind requiredValueKind = bodyBinder.GetRequiredReturnValueKind(refKind);
-                BoundExpression expression = bodyBinder.BindValue(expressionSyntax, diagnostics, requiredValueKind);
+                BoundExpression expression = bodyBinder.BindValue(expressionSyntax, diagnostics, requiredValueKind); // TODO2
                 return bodyBinder.CreateBlockFromExpression(expressionBody, bodyBinder.GetDeclaredLocalsForScope(expressionBody), refKind, expression, expressionSyntax, diagnostics);
             }
         }
@@ -3507,7 +3507,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             RefKind refKind;
             var expressionSyntax = body.CheckAndUnwrapRefExpression(diagnostics, out refKind);
             BindValueKind requiredValueKind = GetRequiredReturnValueKind(refKind);
-            BoundExpression expression = bodyBinder.BindValue(expressionSyntax, diagnostics, requiredValueKind);
+            BoundExpression expression = bodyBinder.BindValue(expressionSyntax, diagnostics, requiredValueKind, resolveExtensions: true);
             return bodyBinder.CreateBlockFromExpression(body, bodyBinder.GetDeclaredLocalsForScope(body), refKind, expression, expressionSyntax, diagnostics);
         }
 

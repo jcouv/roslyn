@@ -233,15 +233,22 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// did not meet the requirements, the return value will be a <see cref="BoundBadExpression"/> that
         /// (typically) wraps the subexpression.
         /// </summary>
-        internal BoundExpression BindValue(ExpressionSyntax node, BindingDiagnosticBag diagnostics, BindValueKind valueKind)
+        internal BoundExpression BindValue(ExpressionSyntax node, BindingDiagnosticBag diagnostics, BindValueKind valueKind, bool resolveExtensions = false)
         {
+            // TODO2 it's possible that the behavior should be the default (rather than optional). Need to review/test callers
             var result = this.BindExpression(node, diagnostics: diagnostics, invoked: false, indexed: false);
-            return CheckValue(result, valueKind, diagnostics);
+            if (resolveExtensions)
+            {
+                // TODO2 maybe this logic should be moved into CheckValue?
+                result = ResolveToExtensionMemberIfPossible(result, diagnostics);
+            }
+
+            return CheckValue(result, valueKind, diagnostics); // TODO2 this also does ResolveToExtensionMemberIfPossible
         }
 
         internal BoundExpression BindRValueWithoutTargetType(ExpressionSyntax node, BindingDiagnosticBag diagnostics, bool reportNoTargetType = true)
         {
-            return BindToNaturalType(BindValue(node, diagnostics, BindValueKind.RValue), diagnostics, reportNoTargetType);
+            return BindToNaturalType(BindValue(node, diagnostics, BindValueKind.RValue), diagnostics, reportNoTargetType); // TODO2
         }
 
         /// <summary>
@@ -523,7 +530,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Binder defaultValueBinder = this.GetBinder(defaultValueSyntax);
             Debug.Assert(defaultValueBinder != null);
 
-            valueBeforeConversion = defaultValueBinder.BindValue(defaultValueSyntax.Value, diagnostics, BindValueKind.RValue);
+            valueBeforeConversion = defaultValueBinder.BindValue(defaultValueSyntax.Value, diagnostics, BindValueKind.RValue, resolveExtensions: true);
 
             // Always generate the conversion, even if the expression is not convertible to the given type.
             // We want the erroneous conversion in the tree.
@@ -541,7 +548,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Binder initializerBinder = this.GetBinder(equalsValueSyntax);
             Debug.Assert(initializerBinder != null);
 
-            var initializer = initializerBinder.BindValue(equalsValueSyntax.Value, diagnostics, BindValueKind.RValue);
+            var initializer = initializerBinder.BindValue(equalsValueSyntax.Value, diagnostics, BindValueKind.RValue, resolveExtensions: true);
             initializer = initializerBinder.GenerateConversionForAssignment(symbol.ContainingType.EnumUnderlyingType, initializer, diagnostics);
             return new BoundFieldEqualsValue(equalsValueSyntax, symbol, initializerBinder.GetDeclaredLocalsForScope(equalsValueSyntax), initializer);
         }
@@ -869,7 +876,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var firstToken = node.GetFirstToken();
             diagnostics.Add(ErrorCode.ERR_UnexpectedToken, firstToken.GetLocation(), firstToken.ValueText);
             return new BoundBadExpression(
-                node, LookupResultKind.Empty, ImmutableArray<Symbol>.Empty, ImmutableArray.Create<BoundExpression>(BindToTypeForErrorRecovery(BindValue(node.Expression, BindingDiagnosticBag.Discarded, BindValueKind.RefersToLocation))),
+                node, LookupResultKind.Empty, ImmutableArray<Symbol>.Empty, ImmutableArray.Create<BoundExpression>(BindToTypeForErrorRecovery(BindValue(node.Expression, BindingDiagnosticBag.Discarded, BindValueKind.RefersToLocation))), // TODO2
                 CreateErrorType("ref"));
         }
 
@@ -1021,7 +1028,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // this should be a parse error already.
                 var args = numElements == 1 ?
-                    ImmutableArray.Create(BindValue(arguments[0].Expression, diagnostics, BindValueKind.RValue)) :
+                    ImmutableArray.Create(BindValue(arguments[0].Expression, diagnostics, BindValueKind.RValue, resolveExtensions: true)) :
                     ImmutableArray<BoundExpression>.Empty;
 
                 return BadExpression(node, args);
@@ -1051,7 +1058,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     elementLocations.Add(argumentSyntax.Location);
                 }
 
-                BoundExpression boundArgument = BindValue(argumentSyntax.Expression, diagnostics, BindValueKind.RValue);
+                BoundExpression boundArgument = BindValue(argumentSyntax.Expression, diagnostics, BindValueKind.RValue, resolveExtensions: true);
                 if (boundArgument.Type?.SpecialType == SpecialType.System_Void)
                 {
                     diagnostics.Add(ErrorCode.ERR_VoidInTuple, argumentSyntax.Location);
@@ -1232,7 +1239,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // __refvalue(tr, T) requires that tr be a TypedReference and T be a type.
             // The result is a *variable* of type T.
 
-            BoundExpression argument = BindValue(node.Expression, diagnostics, BindValueKind.RValue);
+            BoundExpression argument = BindValue(node.Expression, diagnostics, BindValueKind.RValue); // TODO2
             bool hasErrors = argument.HasAnyErrors;
 
             TypeSymbol typedReferenceType = this.Compilation.GetSpecialType(SpecialType.System_TypedReference);
@@ -1255,7 +1262,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private BoundExpression BindMakeRef(MakeRefExpressionSyntax node, BindingDiagnosticBag diagnostics)
         {
             // __makeref(x) requires that x be a variable, and not be of a restricted type.
-            BoundExpression argument = this.BindValue(node.Expression, diagnostics, BindValueKind.RefOrOut);
+            BoundExpression argument = this.BindValue(node.Expression, diagnostics, BindValueKind.RefOrOut); // TODO2
 
             bool hasErrors = argument.HasAnyErrors;
 
@@ -1280,7 +1287,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             // __reftype(x) requires that x be implicitly convertible to TypedReference.
 
-            BoundExpression argument = BindValue(node.Expression, diagnostics, BindValueKind.RValue);
+            BoundExpression argument = BindValue(node.Expression, diagnostics, BindValueKind.RValue); // TODO2
             bool hasErrors = argument.HasAnyErrors;
 
             TypeSymbol typedReferenceType = this.Compilation.GetSpecialType(SpecialType.System_TypedReference);
@@ -2497,7 +2504,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private BoundExpression BindCast(CastExpressionSyntax node, BindingDiagnosticBag diagnostics)
         {
-            BoundExpression operand = this.BindValue(node.Expression, diagnostics, BindValueKind.RValue);
+            BoundExpression operand = this.BindValue(node.Expression, diagnostics, BindValueKind.RValue, resolveExtensions: true);
             TypeWithAnnotations targetTypeWithAnnotations = this.BindType(node.Type, diagnostics);
             TypeSymbol targetType = targetTypeWithAnnotations.Type;
 
@@ -2522,7 +2529,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // Used in lowering as the second argument to the constructor. Example: new Index(value, fromEnd: true)
             GetSpecialType(SpecialType.System_Boolean, diagnostics, node);
 
-            BoundExpression boundOperand = BindValue(node.Operand, diagnostics, BindValueKind.RValue);
+            BoundExpression boundOperand = BindValue(node.Operand, diagnostics, BindValueKind.RValue, resolveExtensions: true);
             TypeSymbol intType = GetSpecialType(SpecialType.System_Int32, diagnostics, node);
             TypeSymbol indexType = GetWellKnownType(WellKnownType.System_Index, diagnostics, node);
 
@@ -2630,7 +2637,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return null;
             }
 
-            BoundExpression boundOperand = BindValue(operand, diagnostics, BindValueKind.RValue);
+            BoundExpression boundOperand = BindValue(operand, diagnostics, BindValueKind.RValue, resolveExtensions: true);
             TypeSymbol indexType = GetWellKnownType(WellKnownType.System_Index, diagnostics, operand);
 
             if (boundOperand.Type?.IsNullableType() == true)
@@ -3330,11 +3337,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression argument;
             if (allowArglist)
             {
-                argument = this.BindValueAllowArgList(argumentExpression, diagnostics, valueKind);
+                argument = this.BindValueAllowArgList(argumentExpression, diagnostics, valueKind); // TODO2?
             }
             else
             {
-                argument = this.BindValue(argumentExpression, diagnostics, valueKind);
+                argument = this.BindValue(argumentExpression, diagnostics, valueKind); // TODO2
             }
 
             return argument;
@@ -3639,7 +3646,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // These make the parse tree nicer, but they shouldn't actually appear in the bound tree.
             if (dimension.Kind() != SyntaxKind.OmittedArraySizeExpression)
             {
-                var size = BindValue(dimension, diagnostics, BindValueKind.RValue);
+                var size = BindValue(dimension, diagnostics, BindValueKind.RValue, resolveExtensions: true);
                 if (!size.HasAnyErrors)
                 {
                     size = ConvertToArrayIndex(size, diagnostics, allowIndexAndRange: false, indexOrRangeWellknownType: out _);
@@ -3755,7 +3762,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // only be values, not array initializers.
                 foreach (var expression in initializer.Expressions)
                 {
-                    var boundExpression = BindValue(expression, diagnostics, BindValueKind.RValue);
+                    var boundExpression = BindValue(expression, diagnostics, BindValueKind.RValue, resolveExtensions: true);
                     exprBuilder.Add(boundExpression);
                 }
             }
@@ -3772,7 +3779,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         // We have non-array initializer expression, but we expected an array initializer expression.
 
-                        var boundExpression = BindValue(expression, diagnostics, BindValueKind.RValue);
+                        var boundExpression = BindValue(expression, diagnostics, BindValueKind.RValue, resolveExtensions: true);
                         if ((object)boundExpression.Type == null || !boundExpression.Type.IsErrorType())
                         {
                             if (!boundExpression.HasAnyErrors)
@@ -4101,7 +4108,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression count = null;
             if (countSyntax.Kind() != SyntaxKind.OmittedArraySizeExpression)
             {
-                count = BindValue(countSyntax, diagnostics, BindValueKind.RValue);
+                count = BindValue(countSyntax, diagnostics, BindValueKind.RValue, resolveExtensions: true);
                 count = GenerateConversionForAssignment(GetSpecialType(SpecialType.System_Int32, diagnostics, node), count, diagnostics);
                 if (IsNegativeConstantForArraySize(count))
                 {
@@ -4851,7 +4858,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return syntax switch
                 {
                     ExpressionElementSyntax { Expression: CollectionExpressionSyntax nestedCollectionExpression } => @this.BindCollectionExpression(nestedCollectionExpression, diagnostics, nestingLevel + 1),
-                    ExpressionElementSyntax expressionElementSyntax => @this.BindValue(expressionElementSyntax.Expression, diagnostics, BindValueKind.RValue),
+                    ExpressionElementSyntax expressionElementSyntax => @this.BindValue(expressionElementSyntax.Expression, diagnostics, BindValueKind.RValue, resolveExtensions: true),
                     SpreadElementSyntax spreadElementSyntax => bindSpreadElement(spreadElementSyntax, diagnostics, @this),
                     _ => throw ExceptionUtilities.UnexpectedValue(syntax.Kind())
                 };
@@ -5231,7 +5238,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     Debug.Assert(rhsValueKind == BindValueKind.RValue);
                     return BindInitializerExpression((InitializerExpressionSyntax)syntax, type, typeSyntax, isForNewInstance: false, diagnostics);
                 default:
-                    return BindValue(syntax, diagnostics, rhsValueKind);
+                    return BindValue(syntax, diagnostics, rhsValueKind, resolveExtensions: true);
             }
         }
 
@@ -5329,7 +5336,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            var boundExpression = BindValue(memberInitializer, diagnostics, BindValueKind.RValue);
+            var boundExpression = BindValue(memberInitializer, diagnostics, BindValueKind.RValue, resolveExtensions: true);
             Error(diagnostics, ErrorCode.ERR_InvalidInitializerElementInitializer, memberInitializer);
             return BindToTypeForErrorRecovery(ToBadExpression(boundExpression, LookupResultKind.NotAValue));
         }
@@ -5891,7 +5898,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 var exprBuilder = ArrayBuilder<BoundExpression>.GetInstance();
                 foreach (var childElementInitializer in elementInitializerExpressions)
                 {
-                    exprBuilder.Add(BindValue(childElementInitializer, diagnostics, BindValueKind.RValue));
+                    exprBuilder.Add(BindValue(childElementInitializer, diagnostics, BindValueKind.RValue, resolveExtensions: true));
                 }
 
                 return BindCollectionInitializerElementAddMethod(
@@ -10851,7 +10858,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression receiver = BindConditionalAccessReceiver(node, diagnostics);
 
             var conditionalAccessBinder = new BinderWithConditionalReceiver(this, receiver);
-            var access = conditionalAccessBinder.BindValue(node.WhenNotNull, diagnostics, BindValueKind.RValue);
+            var access = conditionalAccessBinder.BindValue(node.WhenNotNull, diagnostics, BindValueKind.RValue, resolveExtensions: true);
 
             if (receiver.HasAnyErrors || access.HasAnyErrors)
             {

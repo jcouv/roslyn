@@ -96,7 +96,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(locals.NestedVariables is object);
 
             var deconstructionDiagnostics = BindingDiagnosticBag.GetInstance(withDiagnostics: true, withDependencies: diagnostics.AccumulatesDependencies);
-            BoundExpression boundRight = rightPlaceholder ?? BindValue(right, deconstructionDiagnostics, BindValueKind.RValue);
+            BoundExpression boundRight = rightPlaceholder ?? BindValue(right, deconstructionDiagnostics, BindValueKind.RValue, resolveExtensions: true);
 
             boundRight = FixTupleLiteral(locals.NestedVariables, boundRight, deconstruction, deconstructionDiagnostics);
             boundRight = BindToNaturalType(boundRight, diagnostics);
