@@ -215,6 +215,8 @@ internal abstract partial class AbstractNavigateToSearchService
                 return NavigateToItemKind.Property;
             case DeclaredSymbolInfoKind.Struct:
                 return NavigateToItemKind.Structure;
+            case DeclaredSymbolInfoKind.Extension:
+                return NavigateToItemKind.OtherSymbol; // TODO2
             default:
                 throw ExceptionUtilities.UnexpectedValue(declaredSymbolInfo.Kind);
         }
@@ -308,6 +310,7 @@ internal abstract partial class AbstractNavigateToSearchService
 
                     default:
                         // Not a recognized symbol info kind
+                        // TODO2
                         break;
                 }
             }

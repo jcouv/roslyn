@@ -188,6 +188,7 @@ internal readonly struct RoslynNavigateToItem(
                 case DeclaredSymbolInfoKind.Module:
                 case DeclaredSymbolInfoKind.Struct:
                 case DeclaredSymbolInfoKind.RecordStruct:
+                case DeclaredSymbolInfoKind.Extension:
                     return true;
                 default:
                     return false;
@@ -301,6 +302,7 @@ internal readonly struct RoslynNavigateToItem(
                 DeclaredSymbolInfoKind.Property => Glyph.PropertyPublic,
                 DeclaredSymbolInfoKind.Struct => Glyph.StructurePublic,
                 DeclaredSymbolInfoKind.RecordStruct => Glyph.StructurePublic,
+                DeclaredSymbolInfoKind.Extension => Glyph.StructurePublic, // TODO2
                 _ => Glyph.ClassPublic,
             };
 
