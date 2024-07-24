@@ -46,7 +46,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         bool Cci.ITypeReference.IsValueType
         {
-            get { return AdaptedNamedTypeSymbol.IsValueType || AdaptedNamedTypeSymbol.IsExtension; } // PROTOTYPE emit extensions as static classes
+            get { return AdaptedNamedTypeSymbol.IsValueType; }
         }
 
         Cci.ITypeDefinition Cci.ITypeReference.GetResolvedType(EmitContext context)
@@ -297,7 +297,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 // although extensions semantically don't have a base we need to emit one into metadata:
                 Debug.Assert(baseType is null);
-                baseType = AdaptedNamedTypeSymbol.ContainingAssembly.GetSpecialType(SpecialType.System_ValueType);
+                baseType = AdaptedNamedTypeSymbol.ContainingAssembly.GetSpecialType(SpecialType.System_Object);
             }
 
             Debug.Assert(baseType?.IsExtension != true);

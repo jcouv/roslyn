@@ -1897,17 +1897,19 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                                         // System.Enum is the only class that derives from ValueType
                                         break;
                                     }
+                                    else
+                                    {
+                                        // Struct
+                                        result = TypeKind.Struct;
+                                    }
+                                    break;
 
+                                case SpecialType.System_Object:
                                     // PROTOTYPE consider caching/optimizing this computation
                                     if (!TryGetExtensionMarkerMethod().IsNil)
                                     {
                                         // Extension
                                         result = TypeKind.Extension;
-                                    }
-                                    else
-                                    {
-                                        // Struct
-                                        result = TypeKind.Struct;
                                     }
                                     break;
                             }

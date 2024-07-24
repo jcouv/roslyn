@@ -1902,7 +1902,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (IsExtension)
             {
-                Binder.GetSpecialType(DeclaringCompilation, SpecialType.System_ValueType, declaration.NameLocations[0], diagnostics);
                 CheckUnboundedExtensionErasure(diagnostics);
             }
 

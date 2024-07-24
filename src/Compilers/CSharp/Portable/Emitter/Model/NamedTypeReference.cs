@@ -70,7 +70,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
         {
             get
             {
-                return UnderlyingNamedType.IsValueType || UnderlyingNamedType.IsExtension; // PROTOTYPE emit extensions as static classes
+                return UnderlyingNamedType.IsValueType;
             }
         }
 

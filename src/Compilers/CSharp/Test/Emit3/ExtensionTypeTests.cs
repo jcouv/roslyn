@@ -199,7 +199,8 @@ public {{(isExplicit ? "explicit" : "implicit")}} extension R for UnderlyingClas
     class NestedType { }
     static class StaticNestedType { }
     explicit extension NestedR for UnderlyingClass { }
-    public R(int i) { }
+    // PROTOTYPE need to decide what to do with constructors
+    //public R(int i) { }
     public static implicit operator R(int i) => throw null;
     public static implicit operator R(UnderlyingClass c) => throw null;
 
@@ -303,11 +304,7 @@ explicit extension R for C { }
 """;
         var comp = CreateCompilation(src);
         comp.MakeTypeMissing(SpecialType.System_ValueType);
-        comp.VerifyDiagnostics(
-            // (2,20): error CS0518: Predefined type 'System.ValueType' is not defined or imported
-            // explicit extension R for C { }
-            Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "R").WithArguments("System.ValueType").WithLocation(2, 20)
-            );
+        comp.VerifyEmitDiagnostics();
     }
 
     [Fact]
@@ -360,7 +357,7 @@ class C<T>
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .custom instance void [mscorlib]System.Runtime.CompilerServices.IsByRefLikeAttribute::.ctor() = ( 01 00 00 00 )
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit)}}'(object '') cil managed
@@ -2377,8 +2374,15 @@ static explicit extension R for UnderlyingClass
         var r = comp.GlobalNamespace.GetTypeMember("R");
         VerifyExtension<SourceExtensionTypeSymbol>(r, isExplicit: true);
         Assert.Equal("UnderlyingClass", r.GetExtendedTypeNoUseSiteDiagnostics(null).ToTestDisplayString());
-        Assert.True(r.IsStatic);
         comp.VerifyDiagnostics();
+        CompileAndVerify(comp, symbolValidator: validate, sourceSymbolValidator: validate);
+
+        static void validate(ModuleSymbol module)
+        {
+            var r = module.GlobalNamespace.GetTypeMember("R");
+            VerifyExtension<TypeSymbol>(r, isExplicit: true);
+            Assert.True(r.IsStatic);
+        }
     }
 
     [Fact]
@@ -2394,8 +2398,16 @@ static explicit extension R for UnderlyingClass
         var r = comp.GlobalNamespace.GetTypeMember("R");
         VerifyExtension<SourceExtensionTypeSymbol>(r, isExplicit: true);
         Assert.Equal("UnderlyingClass", r.GetExtendedTypeNoUseSiteDiagnostics(null).ToTestDisplayString());
-        Assert.True(r.IsStatic);
         comp.VerifyDiagnostics();
+
+        CompileAndVerify(comp, symbolValidator: validate, sourceSymbolValidator: validate);
+
+        static void validate(ModuleSymbol module)
+        {
+            var r = module.GlobalNamespace.GetTypeMember("R");
+            VerifyExtension<TypeSymbol>(r, isExplicit: true);
+            Assert.True(r.IsStatic);
+        }
     }
 
     [Fact]
@@ -2431,7 +2443,7 @@ explicit extension R for UnderlyingClass
 }
 
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method private hidebysig static void '<ExplicitExtension>$'(class C '') cil managed
     {
@@ -4836,7 +4848,7 @@ public explicit extension R1 for R2.Nested2<R2>
     {
         var ilSource = """
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method private hidebysig static void '<ExplicitExtension>$'(valuetype R2 '') cil managed
     {
@@ -4845,7 +4857,7 @@ public explicit extension R1 for R2.Nested2<R2>
 }
 
 .class public sequential ansi sealed beforefieldinit R2
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method private hidebysig static void '<ExplicitExtension>$'(valuetype R1 '') cil managed
     {
@@ -4883,7 +4895,7 @@ public explicit extension R3 for object : R1 { }
     {
         var ilSource = """
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method private hidebysig static void '<ExplicitExtension>$'(object '', valuetype R2 '') cil managed
     {
@@ -4892,7 +4904,7 @@ public explicit extension R3 for object : R1 { }
 }
 
 .class public sequential ansi sealed beforefieldinit R2
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method private hidebysig static void '<ExplicitExtension>$'(object o, valuetype R1 '') cil managed
     {
@@ -5766,7 +5778,7 @@ explicit extension R4<U> for C<U> : R3<U> { }
 }
 
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method private hidebysig static void '<ExplicitExtension>$'(object '') cil managed
     {
@@ -5775,7 +5787,7 @@ explicit extension R4<U> for C<U> : R3<U> { }
 }
 
 .class public sequential ansi sealed beforefieldinit R2
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method private hidebysig static void '<ExplicitExtension>$'(class C '', valuetype R1 '') cil managed
     {
@@ -7286,7 +7298,7 @@ public unsafe explicit extension R2<T> for C : R1<int*> { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit)}}'(object '') cil managed
     {
@@ -7321,7 +7333,7 @@ public explicit extension R2 for object : R1 { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method {{methodAccessibility}} hidebysig static void '{{ExtensionMarkerName(false)}}'(object '') cil managed
     {
@@ -7355,7 +7367,7 @@ object.M();
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit)}}'(object& '') cil managed
     {
@@ -7400,7 +7412,7 @@ public explicit extension R2 for object : R1 { }
         // PROTOTYPE consider allowing modopts in extension marker methods
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method private hidebysig static void modopt(object) '{{ExtensionMarkerName(isExplicit)}}'(object '') cil managed
     {
@@ -7441,7 +7453,7 @@ public explicit extension R2 for object : R1 { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method private hidebysig static void modreq(object) '{{ExtensionMarkerName(isExplicit)}}'(object '') cil managed
     {
@@ -7480,7 +7492,7 @@ public explicit extension R2 for object : R1 { }
         // PROTOTYPE consider allowing modopts in extension marker methods
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit)}}'(object modopt(object) '') cil managed
     {
@@ -7525,7 +7537,7 @@ public explicit extension R2 for object : R1 { }
         // PROTOTYPE consider allowing modopts in extension marker methods
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit)}}'(object modreq(object) '') cil managed
     {
@@ -7571,7 +7583,7 @@ public explicit extension R2 for object : R1 { }
         // PROTOTYPE consider allowing modopts in extension marker methods
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit)}}'(object '') cil managed
     {
@@ -7580,7 +7592,7 @@ public explicit extension R2 for object : R1 { }
 }
 
 .class public sequential ansi sealed beforefieldinit R2
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit)}}'(object '', valuetype R2 modopt(object) '') cil managed
     {
@@ -7626,7 +7638,7 @@ public explicit extension R3 for object : R2 { }
     {
         var ilSource = """
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
 }
 """;
@@ -7663,7 +7675,7 @@ public explicit extension R2 for object : R1 { }
         // A mix between `extension R1 for object { }` and `extension R1 for string { }`
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit)}}'(object '') cil managed
     {
@@ -7707,7 +7719,6 @@ public explicit extension R2 for object : R1 { }
 
         Assert.Equal(new[]
             {
-                "R1..ctor()",
                 $$"""void R1.{{ExtensionMarkerName(isExplicit)}}(System.Object A_0)""",
                 $$"""void R1.{{ExtensionMarkerName(isExplicit)}}(System.String A_0)"""
             },
@@ -7719,7 +7730,7 @@ public explicit extension R2 for object : R1 { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit)}}'(object '') cil managed
     {
@@ -7763,7 +7774,6 @@ public explicit extension R2 for object : R1 { }
 
         Assert.Equal(new[]
             {
-                "R1..ctor()",
                 $$"""void R1.{{ExtensionMarkerName(isExplicit)}}(System.Object A_0)""",
                 $$"""void R1.{{ExtensionMarkerName(!isExplicit)}}(System.String A_0)"""
             },
@@ -7775,7 +7785,7 @@ public explicit extension R2 for object : R1 { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .custom instance void [mscorlib]System.Runtime.CompilerServices.ExtensionAttribute::.ctor() = ( 01 00 00 00)
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit)}}'(object '') cil managed
@@ -7813,7 +7823,7 @@ static class OtherExtension
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit)}}'(object '') cil managed
     {
@@ -7842,7 +7852,7 @@ public explicit extension R2 for object : R1 { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit)}}'(object '') cil managed
     {
@@ -7889,7 +7899,7 @@ public explicit extension R2 for object : R1 { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R0
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit)}}'(object '') cil managed
     {
@@ -7898,7 +7908,7 @@ public explicit extension R2 for object : R1 { }
 }
 
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit)}}'(valuetype R0 '') cil managed
     {
@@ -7945,7 +7955,7 @@ public explicit extension R2 for object : R1 { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit: true)}}'(valuetype R1 '') cil managed
     {
@@ -7991,7 +8001,7 @@ public explicit extension R2 for object : R1 { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit: true)}}'(object '', object '') cil managed
     {
@@ -8029,7 +8039,7 @@ public explicit extension R2 for object : R1 { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit: true)}}'(object '', valuetype R1 '') cil managed
     {
@@ -8069,7 +8079,7 @@ public explicit extension R2 for object : R1 { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit: true)}}'(object '') cil managed
     {
@@ -8078,7 +8088,7 @@ public explicit extension R2 for object : R1 { }
 }
 
 .class public sequential ansi sealed beforefieldinit R2
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit: true)}}'(object '', valuetype R1 '', valuetype R1 '') cil managed
     {
@@ -8124,7 +8134,7 @@ public explicit extension R3 for object : R2 { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method private hidebysig static void '{{ExtensionMarkerName(isExplicit)}}'(object '') cil managed
     {
@@ -8166,7 +8176,7 @@ public explicit extension R2 for object : R1 { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method private hidebysig void '{{ExtensionMarkerName(isExplicit)}}'(object '') cil managed
     {
@@ -8208,7 +8218,7 @@ public explicit extension R2 for object : R1 { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public static void '{{ExtensionMarkerName(isExplicit: true)}}'(object '') cil managed
     {
@@ -8241,7 +8251,7 @@ public explicit extension R2 for object : R1 { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit)}}'() cil managed
     {
@@ -8283,7 +8293,7 @@ public explicit extension R2 for object : R1 { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method private hidebysig static int32 '{{ExtensionMarkerName(isExplicit)}}'(object '') cil managed
     {
@@ -8325,7 +8335,7 @@ public explicit extension R2 for object : R1 { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit: true)}}'<T>(object '') cil managed
     {
@@ -8559,7 +8569,7 @@ public explicit extension R2 for object : R1<nint> { }
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .custom instance void [mscorlib]System.Runtime.CompilerServices.ExtensionAttribute::.ctor() = ( 01 00 00 00)
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit: true)}}'(object '') cil managed
@@ -8598,7 +8608,7 @@ static class OtherExtension
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit: true)}}'(object '') cil managed
     {
@@ -12180,7 +12190,7 @@ implicit extension E<T, U> for I2<T>
 
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit E`1<T>
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit: false)}}'(object '') cil managed
     {
@@ -35271,7 +35281,7 @@ public implicit extension E<T> for T where T : struct
     {
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit R1
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit: false)}}'(object '') cil managed
     {
@@ -39503,7 +39513,7 @@ class Program
         verifier.VerifyTypeIL("E",
 """
 .class public sequential ansi sealed beforefieldinit E
-	extends [System.Runtime]System.ValueType
+	extends [System.Runtime]System.Object
 {
     .pack 0
     .size 1
@@ -39670,7 +39680,7 @@ class Program
         verifier.VerifyTypeIL("E",
 """
 .class public sequential ansi sealed beforefieldinit E
-	extends [System.Runtime]System.ValueType
+	extends [System.Runtime]System.Object
 {
     .pack 0
     .size 1
@@ -39832,7 +39842,7 @@ class C<T>
         verifier.VerifyTypeIL("E`1",
 """
 .class private sequential ansi sealed beforefieldinit E`1<T>
-	extends [System.Runtime]System.ValueType
+	extends [System.Runtime]System.Object
 {
     .pack 0
     .size 1
@@ -39851,7 +39861,7 @@ class C<T>
 		IL_0002: callvirt instance void class C`1<!T>::Increment(!0)
 		IL_0007: ldarg.0
 		IL_0008: ldarg.1
-		IL_0009: call void valuetype E`1<!T>::EIncrement(class C`1<!0> modreq([System.Runtime]System.Runtime.CompilerServices.ExtensionAttribute), !0)
+		IL_0009: call void class E`1<!T>::EIncrement(class C`1<!0> modreq([System.Runtime]System.Runtime.CompilerServices.ExtensionAttribute), !0)
 		IL_000e: ret
 	} // end of method E`1::Method
 	.method public hidebysig static 
@@ -39984,7 +39994,7 @@ class C
         verifier.VerifyTypeIL("E",
 """
 .class private sequential ansi sealed beforefieldinit E
-	extends [System.Runtime]System.ValueType
+	extends [System.Runtime]System.Object
 {
     .pack 0
     .size 1
@@ -40138,7 +40148,7 @@ class C : I1
         verifier.VerifyTypeIL("E`1",
 """
 .class private sequential ansi sealed beforefieldinit E`1<class (I1) T>
-	extends [System.Runtime]System.ValueType
+	extends [System.Runtime]System.Object
 {
     .pack 0
     .size 1
@@ -40155,7 +40165,7 @@ class C : I1
 		IL_0001: box !T
 		IL_0006: callvirt instance void I1::Increment()
 		IL_000b: ldarg.0
-		IL_000c: call void valuetype E`1<!T>::EIncrement(!0 modreq([System.Runtime]System.Runtime.CompilerServices.ExtensionAttribute))
+		IL_000c: call void class E`1<!T>::EIncrement(!0 modreq([System.Runtime]System.Runtime.CompilerServices.ExtensionAttribute))
 		IL_0011: ret
 	} // end of method E`1::Method
 	.method public hidebysig static 
@@ -40353,7 +40363,7 @@ struct S : I1
         verifier.VerifyTypeIL("E`1",
 """
 .class private sequential ansi sealed beforefieldinit E`1<(I1) T>
-	extends [System.Runtime]System.ValueType
+	extends [System.Runtime]System.Object
 {
     .pack 0
     .size 1
@@ -40370,7 +40380,7 @@ struct S : I1
 		IL_0001: constrained. !T
 		IL_0007: callvirt instance void I1::Increment()
 		IL_000c: ldarg.0
-		IL_000d: call void valuetype E`1<!T>::EIncrement(!0 modreq([System.Runtime]System.Runtime.CompilerServices.ExtensionAttribute)&)
+		IL_000d: call void class E`1<!T>::EIncrement(!0 modreq([System.Runtime]System.Runtime.CompilerServices.ExtensionAttribute)&)
 		IL_0012: ret
 	} // end of method E`1::Method
 	.method public hidebysig static 
@@ -40510,7 +40520,7 @@ struct S : I1
         verifier.VerifyTypeIL("E`1",
 """
 .class private sequential ansi sealed beforefieldinit E`1<valuetype .ctor (I1, [System.Runtime]System.ValueType) T>
-	extends [System.Runtime]System.ValueType
+	extends [System.Runtime]System.Object
 {
     .pack 0
     .size 1
@@ -40527,7 +40537,7 @@ struct S : I1
 		IL_0001: constrained. !T
 		IL_0007: callvirt instance void I1::Increment()
 		IL_000c: ldarg.0
-		IL_000d: call void valuetype E`1<!T>::EIncrement(!0 modreq([System.Runtime]System.Runtime.CompilerServices.ExtensionAttribute)&)
+		IL_000d: call void class E`1<!T>::EIncrement(!0 modreq([System.Runtime]System.Runtime.CompilerServices.ExtensionAttribute)&)
 		IL_0012: ret
 	} // end of method E`1::Method
 	.method public hidebysig static 
@@ -41288,7 +41298,7 @@ class Program
         // }
         var ilSource = """
 .class public sequential ansi sealed beforefieldinit E
-	extends [mscorlib]System.ValueType
+	extends [mscorlib]System.Object
 {
 	.method public hidebysig static 
 		void Method (
@@ -41404,7 +41414,7 @@ class Program
         verifier.VerifyTypeIL("E",
 """
 .class public sequential ansi sealed beforefieldinit E
-	extends [System.Runtime]System.ValueType
+	extends [System.Runtime]System.Object
 {
     .pack 0
     .size 1
@@ -41571,7 +41581,7 @@ class Program
         verifier.VerifyTypeIL("E",
 """
 .class public sequential ansi sealed beforefieldinit E
-	extends [System.Runtime]System.ValueType
+	extends [System.Runtime]System.Object
 {
     .pack 0
     .size 1
@@ -41732,7 +41742,7 @@ class Program
         verifier.VerifyTypeIL("E",
 """
 .class public sequential ansi sealed beforefieldinit E
-	extends [System.Runtime]System.ValueType
+	extends [System.Runtime]System.Object
 {
 	.custom instance void [System.Runtime]System.Reflection.DefaultMemberAttribute::.ctor(string) = (
 		01 00 04 49 74 65 6d 00 00
@@ -41869,7 +41879,7 @@ class Program
         verifier.VerifyTypeIL("E",
 """
 .class public sequential ansi sealed beforefieldinit E
-	extends [System.Runtime]System.ValueType
+	extends [System.Runtime]System.Object
 {
 	.custom instance void [System.Runtime]System.Reflection.DefaultMemberAttribute::.ctor(string) = (
 		01 00 04 49 74 65 6d 00 00
@@ -42021,7 +42031,7 @@ class Program
         verifier.VerifyTypeIL("E",
 """
 .class public sequential ansi sealed beforefieldinit E
-	extends [System.Runtime]System.ValueType
+	extends [System.Runtime]System.Object
 {
     .pack 0
     .size 1
@@ -42203,7 +42213,7 @@ class Program
         verifier.VerifyTypeIL("E",
 """
 .class public sequential ansi sealed beforefieldinit E
-	extends [System.Runtime]System.ValueType
+	extends [System.Runtime]System.Object
 {
     .pack 0
     .size 1
@@ -42336,7 +42346,7 @@ class Program
         // }
         var ilSource = """
 .class public sequential ansi sealed beforefieldinit E
-	extends [mscorlib]System.ValueType
+	extends [mscorlib]System.Object
 {
 	.method public hidebysig static 
 		void Method (
@@ -42461,7 +42471,7 @@ class Program
         // }
         var ilSource = """
 .class public sequential ansi sealed beforefieldinit E
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static 
     	void Method (
@@ -42573,7 +42583,7 @@ class Program
         // }
         var ilSource = """
 .class public sequential ansi sealed beforefieldinit E
-	extends [mscorlib]System.ValueType
+	extends [mscorlib]System.Object
 {
 	.method public hidebysig specialname static 
 		int32 get_P1 (
@@ -42760,7 +42770,7 @@ class Program
         // }
         var ilSource = """
 .class public sequential ansi sealed beforefieldinit E
-	extends [mscorlib]System.ValueType
+	extends [mscorlib]System.Object
 {
 	.method public hidebysig specialname static 
 		int32 get_P1 (
@@ -42937,7 +42947,7 @@ class Program
         // }
         var ilSource = """
 .class public sequential ansi sealed beforefieldinit E
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .custom instance void [mscorlib]System.Reflection.DefaultMemberAttribute::.ctor(string) = (
     	01 00 04 49 74 65 6d 00 00
@@ -43134,7 +43144,7 @@ class Program
         // }
         var ilSource = """
 .class public sequential ansi sealed beforefieldinit E
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .custom instance void [mscorlib]System.Reflection.DefaultMemberAttribute::.ctor(string) = (
     	01 00 04 49 74 65 6d 00 00
@@ -43323,7 +43333,7 @@ class Program
         // }
         var ilSource = """
 .class public sequential ansi sealed beforefieldinit E
-	extends [mscorlib]System.ValueType
+	extends [mscorlib]System.Object
 {
 	.method public hidebysig specialname static 
 		void add_E1 (
@@ -43563,7 +43573,7 @@ class Program
         // }
         var ilSource = """
 .class public sequential ansi sealed beforefieldinit E
-	extends [mscorlib]System.ValueType
+	extends [mscorlib]System.Object
 {
 	.method public hidebysig specialname static 
 		void add_E1 (
@@ -43851,7 +43861,7 @@ public class C
         // }
         var ilSrc = $$"""
 .class public sequential ansi sealed beforefieldinit E
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit: true)}}'(object '') cil managed
     {
@@ -45612,7 +45622,7 @@ public class D
         // }
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit E
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit: true)}}'(object '') cil managed
     {
@@ -45682,7 +45692,7 @@ public class Derived : Base
         // }
         var ilSource = $$"""
 .class public sequential ansi sealed beforefieldinit E
-    extends [mscorlib]System.ValueType
+    extends [mscorlib]System.Object
 {
     .method public hidebysig static void '{{ExtensionMarkerName(isExplicit: true)}}'(object '') cil managed
     {
