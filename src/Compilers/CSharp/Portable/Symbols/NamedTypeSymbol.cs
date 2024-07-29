@@ -389,7 +389,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             get
             {
                 var kind = TypeKind;
-                return kind != TypeKind.Enum && kind != TypeKind.Struct && kind != TypeKind.Error && kind != TypeKind.Extension;
+                if (kind is TypeKind.Enum or TypeKind.Struct or TypeKind.Error)
+                {
+                    return false;
+                }
+
+                if (kind is TypeKind.Extension && GetExtendedTypeNoUseSiteDiagnostics(null) is { } extendedType)
+                {
+                    return extendedType.IsReferenceType;
+                }
+
+                return true;
             }
         }
 
@@ -403,7 +413,18 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             get
             {
                 var kind = TypeKind;
-                return kind == TypeKind.Struct || kind == TypeKind.Enum;
+                if (kind == TypeKind.Struct || kind == TypeKind.Enum)
+                {
+                    return true;
+                }
+
+                if (kind == TypeKind.Extension && GetExtendedTypeNoUseSiteDiagnostics(null) is { } extendedType)
+                {
+                    Debug.Assert(!extendedType.IsExtension);
+                    return extendedType.IsValueType;
+                }
+
+                return false;
             }
         }
 
@@ -801,8 +822,19 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// </summary>
         internal override bool Equals(TypeSymbol t2, TypeCompareKind comparison)
         {
+            if ((comparison & TypeCompareKind.IgnoreExtensions) != 0)
+            {
+                // If not explicitly comparing considering extensions, we compare extended types instead
+                t2 = t2.ExtendedTypeOrSelf();
+                if (this.GetExtendedTypeNoUseSiteDiagnostics(null) is { } extendedType)
+                {
+                    return extendedType.Equals(t2, comparison);
+                }
+            }
+
             if ((object)t2 == this) return true;
             if ((object)t2 == null) return false;
+
 
             if ((comparison & TypeCompareKind.IgnoreDynamic) != 0)
             {
@@ -904,7 +936,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 }
             }
 
-            if (this.IsTupleType && !tupleNamesEquals(other, comparison))
+            if (this.GetIsTupleType() && !tupleNamesEquals(other, comparison))
             {
                 return false;
             }
@@ -1030,7 +1062,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             allTypeArguments.Free();
             allTypeParameters.Free();
 
-            return IsTupleType ? MergeTupleNames((NamedTypeSymbol)other, result) : result;
+            return GetIsTupleType() ? MergeTupleNames((NamedTypeSymbol)other, result) : result;
         }
 
         /// <summary>
@@ -1050,7 +1082,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             Debug.Assert(typeA.Equals(typeB, TypeCompareKind.IgnoreDynamicAndTupleNames | TypeCompareKind.IgnoreNullableModifiersForReferenceTypes));
 
             // Tuple types act as covariant when merging equivalent types.
-            bool isTuple = typeA.IsTupleType;
+            bool isTuple = typeA.GetIsTupleType();
 
             var definition = typeA.OriginalDefinition;
             bool haveChanges = false;

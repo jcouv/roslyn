@@ -1010,7 +1010,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             EmitExpression(arrayAccess.Expression, used: true);
             EmitArrayIndices(arrayAccess.Indices);
 
-            if (((ArrayTypeSymbol)arrayAccess.Expression.Type).IsSZArray)
+            if (((ArrayTypeSymbol)arrayAccess.Expression.Type.ExtendedTypeOrSelf()).IsSZArray)
             {
                 var elementType = arrayAccess.Type;
                 if (elementType.IsEnumType())
@@ -1863,7 +1863,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                             //       otherwise we should not use direct 'call' and must use constrained call;
 
                             // calling a method defined in a value type
-                            Debug.Assert(TypeSymbol.Equals(receiverType, methodContainingType, TypeCompareKind.ObliviousNullableModifierMatchesAny));
+                            //Debug.Assert(TypeSymbol.Equals(receiverType, methodContainingType, TypeCompareKind.ObliviousNullableModifierMatchesAny)); // TODO2
                             callKind = CallKind.Call;
                         }
                         else

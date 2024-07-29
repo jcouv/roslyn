@@ -197,6 +197,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal override bool Equals(TypeSymbol? other, TypeCompareKind comparison)
         {
+            // TODO2
             if (other is null)
             {
                 return false;

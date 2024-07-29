@@ -253,7 +253,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // Figure out the deconstruct method (if one is required) and determine the types we get from the RHS at this level
             var deconstructMethod = default(DeconstructMethodInfo);
-            if (type.IsTupleType)
+            if (type.GetIsTupleType())
             {
                 // tuple literal such as `(1, 2)`, `(null, null)`, `(x.P, y.M())`
                 tupleOrDeconstructedTypes = type.TupleElementTypesWithAnnotations.SelectAsArray(TypeMap.AsTypeSymbol);

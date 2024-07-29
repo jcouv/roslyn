@@ -316,7 +316,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // var (x, y) = ((byte, byte)) (1, 2);
             // var (a, _) = ((short, short))((int, int))(1L, 2L);
             Debug.Assert(right.Type is { });
-            if (right.Type.IsTupleType)
+            if (right.Type.GetIsTupleType())
             {
                 inInit = false;
                 return AccessTupleFields(VisitExpression(right), temps, effects.deconstructions);
@@ -335,7 +335,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ArrayBuilder<BoundExpression> effects)
         {
             Debug.Assert(expression.Type is { });
-            Debug.Assert(expression.Type.IsTupleType);
+            Debug.Assert(expression.Type.GetIsTupleType());
             var tupleType = expression.Type;
             var tupleElementTypes = tupleType.TupleElementTypesWithAnnotations;
 

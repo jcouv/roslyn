@@ -23,6 +23,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private BoundExpression MakeLiteral(SyntaxNode syntax, ConstantValue constantValue, TypeSymbol? type, BoundLiteral? oldNodeOpt = null)
         {
             Debug.Assert(constantValue != null);
+            Debug.Assert(type?.GetExtendedTypeNoUseSiteDiagnostics(null) is null); // TODO2 review callers
 
             if (constantValue.IsDecimal)
             {

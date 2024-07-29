@@ -504,12 +504,25 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// Gets corresponding primitive type code for this type declaration.
         /// </summary>
         internal Microsoft.Cci.PrimitiveTypeCode PrimitiveTypeCode
-            => TypeKind switch
+        {
+            get
             {
-                TypeKind.Pointer => Microsoft.Cci.PrimitiveTypeCode.Pointer,
-                TypeKind.FunctionPointer => Microsoft.Cci.PrimitiveTypeCode.FunctionPointer,
-                _ => SpecialTypes.GetTypeCode(SpecialType)
-            };
+                // TODO2 revie callers
+                if (this.GetExtendedTypeNoUseSiteDiagnostics(null) is { } extendedType)
+                {
+                    return extendedType.PrimitiveTypeCode;
+                }
+
+                return PrimitiveTypeCodeNoExtensions;
+            }
+        }
+
+        internal Microsoft.Cci.PrimitiveTypeCode PrimitiveTypeCodeNoExtensions => TypeKind switch
+        {
+            TypeKind.Pointer => Microsoft.Cci.PrimitiveTypeCode.Pointer,
+            TypeKind.FunctionPointer => Microsoft.Cci.PrimitiveTypeCode.FunctionPointer,
+            _ => SpecialTypes.GetTypeCode(SpecialType)
+        };
 
         #region Use-Site Diagnostics
 
@@ -546,7 +559,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// <summary>
         /// Is this a symbol for a Tuple.
         /// </summary>
-        public virtual bool IsTupleType => false;
+        public virtual bool GetIsTupleType(bool includeExtensions = false) // PROTOTYPE review callers and use a non-optional parameter // TODO2
+        {
+            if (includeExtensions && this.GetExtendedTypeNoUseSiteDiagnostics(null) is { } extendedType)
+            {
+                Debug.Assert(!extendedType.IsExtension);
+                return extendedType.GetIsTupleType(includeExtensions: false);
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// True if the type represents a native integer. In C#, the types represented
@@ -564,7 +586,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// </summary>
         internal bool IsTupleTypeOfCardinality(int targetCardinality)
         {
-            if (IsTupleType)
+            if (GetIsTupleType())
             {
                 return TupleElementTypesWithAnnotations.Length == targetCardinality;
             }
@@ -575,18 +597,18 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// <summary>
         /// If this symbol represents a tuple type, get the types of the tuple's elements.
         /// </summary>
-        public virtual ImmutableArray<TypeWithAnnotations> TupleElementTypesWithAnnotations => default(ImmutableArray<TypeWithAnnotations>);
+        public virtual ImmutableArray<TypeWithAnnotations> TupleElementTypesWithAnnotations => default(ImmutableArray<TypeWithAnnotations>); // TODO2 review callers
 
         /// <summary>
         /// If this symbol represents a tuple type, get the names of the tuple's elements.
         /// </summary>
-        public virtual ImmutableArray<string> TupleElementNames => default(ImmutableArray<string>);
+        public virtual ImmutableArray<string> TupleElementNames => default(ImmutableArray<string>); // TODO2 review callers
 
         /// <summary>
         /// If this symbol represents a tuple type, get the fields for the tuple's elements.
         /// Otherwise, returns default.
         /// </summary>
-        public virtual ImmutableArray<FieldSymbol> TupleElements => default(ImmutableArray<FieldSymbol>);
+        public virtual ImmutableArray<FieldSymbol> TupleElements => default(ImmutableArray<FieldSymbol>); // TODO2 review callers
 
 #nullable enable
         /// <summary>

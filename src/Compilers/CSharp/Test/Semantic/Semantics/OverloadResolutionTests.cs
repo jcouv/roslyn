@@ -716,7 +716,7 @@ namespace System.Runtime.CompilerServices { class AsyncMethodBuilderAttribute : 
         // Return the underlying type of the most-nested part of the TupleTypeSymbol.
         private static NamedTypeSymbol GetUnderlyingTupleTypeRest(TypeSymbol type)
         {
-            while (type.IsTupleType)
+            while (type.GetIsTupleType())
             {
                 var typeArgs = ((NamedTypeSymbol)type).TypeArguments();
                 if (typeArgs.Length < 8)

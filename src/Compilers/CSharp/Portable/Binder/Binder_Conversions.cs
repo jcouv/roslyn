@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -60,7 +61,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             BindingDiagnosticBag diagnostics,
             bool hasErrors = false)
         {
-
             var result = createConversion(syntax, source, conversion, isCast, conversionGroupOpt, wasCompilerGenerated, destination, diagnostics, hasErrors);
 
             Debug.Assert(result is BoundConversion
@@ -324,19 +324,19 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     Debug.Assert(conversion.UnderlyingConversions.Length == 1);
 
-                    if (destination.IsNullableType())
+                    if (destination.IsNullableType(includeExtensions: true))
                     {
-                        switch (source.Type?.IsNullableType())
+                        switch (source.Type?.IsNullableType(includeExtensions: true))
                         {
                             case true:
                                 _ = CreateConversion(
                                         syntax,
-                                        new BoundValuePlaceholder(source.Syntax, source.Type.GetNullableUnderlyingType()),
+                                        new BoundValuePlaceholder(source.Syntax, source.Type.GetNullableUnderlyingType(includeExtensions: true)),
                                         conversion.UnderlyingConversions[0],
                                         isCast: false,
                                         conversionGroupOpt: null,
                                         wasCompilerGenerated,
-                                        destination.GetNullableUnderlyingType(),
+                                        destination.GetNullableUnderlyingType(includeExtensions: true),
                                         diagnostics);
                                 break;
 
@@ -348,7 +348,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                         isCast: false,
                                         conversionGroupOpt: null,
                                         wasCompilerGenerated,
-                                        destination.GetNullableUnderlyingType(),
+                                        destination.GetNullableUnderlyingType(includeExtensions: true),
                                         diagnostics);
                                 break;
                         }
@@ -356,11 +356,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                         conversion.UnderlyingConversions[0].AssertUnderlyingConversionsChecked();
                         conversion.MarkUnderlyingConversionsChecked();
                     }
-                    else if (source.Type?.IsNullableType() == true)
+                    else if (source.Type?.IsNullableType(includeExtensions: true) == true)
                     {
                         _ = CreateConversion(
                                 syntax,
-                                new BoundValuePlaceholder(source.Syntax, source.Type.GetNullableUnderlyingType()),
+                                new BoundValuePlaceholder(source.Syntax, source.Type.GetNullableUnderlyingType(includeExtensions: true)),
                                 conversion.UnderlyingConversions[0],
                                 isCast: false,
                                 conversionGroupOpt: null,
@@ -377,7 +377,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                     ImmutableArray<TypeWithAnnotations> sourceTypes;
                     ImmutableArray<TypeWithAnnotations> destTypes;
 
-                    if (source.Type?.TryGetElementTypesWithAnnotationsIfTupleType(out sourceTypes) == true &&
+                    var sourceType = source.Type.ExtendedTypeOrSelf();
+                    destination = destination.ExtendedTypeOrSelf();
+
+                    if (sourceType?.TryGetElementTypesWithAnnotationsIfTupleType(out sourceTypes) == true &&
                         destination.TryGetElementTypesWithAnnotationsIfTupleType(out destTypes) &&
                         sourceTypes.Length == destTypes.Length)
                     {
@@ -2215,22 +2218,23 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             // We have a successful tuple conversion; rather than producing a separate conversion node 
             // which is a conversion on top of a tuple literal, tuple conversion is an element-wise conversion of arguments.
-            Debug.Assert(conversion.IsNullable == destination.IsNullableType());
+            Debug.Assert(conversion.IsNullable == destination.IsNullableType(includeExtensions: true));
 
             var destinationWithoutNullable = destination;
             var conversionWithoutNullable = conversion;
 
             if (conversion.IsNullable)
             {
-                destinationWithoutNullable = destination.GetNullableUnderlyingType();
+                destinationWithoutNullable = destination.GetNullableUnderlyingType(includeExtensions: true);
                 conversionWithoutNullable = conversion.UnderlyingConversions[0];
                 conversion.MarkUnderlyingConversionsChecked();
             }
 
             Debug.Assert(conversionWithoutNullable.IsTupleLiteralConversion);
 
-            NamedTypeSymbol targetType = (NamedTypeSymbol)destinationWithoutNullable;
-            if (targetType.IsTupleType)
+            NamedTypeSymbol targetType = (NamedTypeSymbol)destinationWithoutNullable.ExtendedTypeOrSelf();
+
+            if (targetType.GetIsTupleType(includeExtensions: false))
             {
                 NamedTypeSymbol.ReportTupleNamesMismatchesIfAny(targetType, sourceTuple, diagnostics);
 
@@ -2240,7 +2244,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // but element names has not changed and locations of their declarations 
                 // should not be confused with element locations on the target type.
 
-                if (sourceTuple.Type is NamedTypeSymbol { IsTupleType: true } sourceType)
+                if (sourceTuple.Type is NamedTypeSymbol { } sourceType && sourceType.GetIsTupleType(includeExtensions: false))
                 {
                     targetType = targetType.WithTupleDataFrom(sourceType);
                 }
@@ -2881,6 +2885,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             RoslynDebug.Assert(source != null);
             RoslynDebug.Assert((object)destination != null);
 
+            destination = destination.ExtendedTypeOrSelf();
+
             // The diagnostics bag can be null in cases where we know ahead of time that the
             // conversion will succeed without error or warning. (For example, if we have a valid
             // implicit numeric conversion on a constant of numeric type.)
@@ -2958,7 +2964,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // an Implicit Enumeration Conversion. Such a thing should not be constant folded
                     // because nullable enums are never constants.
 
-                    if (destination.IsNullableType())
+                    if (destination.IsNullableType(includeExtensions: false))
                     {
                         return null;
                     }
@@ -2983,7 +2989,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(!sourceValue.IsBad);
 
             SpecialType destinationType;
-            if ((object)destination != null && destination.IsEnumType())
+            if ((object)destination != null && destination.IsEnumType()) // TODO2
             {
                 var underlyingType = ((NamedTypeSymbol)destination).EnumUnderlyingType;
                 RoslynDebug.Assert((object)underlyingType != null);
@@ -2992,7 +2998,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
             else
             {
-                destinationType = destination.GetSpecialTypeSafe();
+                destinationType = destination.GetSpecialTypeSafe(); // TODO2
             }
 
             // In an unchecked context we ignore overflowing conversions on conversions from any
@@ -3079,7 +3085,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     case ConstantValueTypeDiscriminator.Byte:
                         byte byteValue = value.ByteValue;
-                        switch (destinationType)
+                        switch (destinationType) // TODO2
                         {
                             case SpecialType.System_Byte: return (byte)byteValue;
                             case SpecialType.System_Char: return (char)byteValue;

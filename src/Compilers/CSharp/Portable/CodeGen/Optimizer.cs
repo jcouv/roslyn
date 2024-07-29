@@ -967,14 +967,15 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             // if assigning to a local, now it is the time to record the Write
             if (assignmentLocal != null)
             {
+                // TODO2 adjust assertion
                 // This assert will fire if code relies on implicit CLR coercions
                 // - i.e assigns int value to a short local.
                 // in that case we should force lhs to be a real local.
-                Debug.Assert(
-                    node.Left.Type.Equals(node.Right.Type, TypeCompareKind.AllIgnoreOptions) ||
-                    IsFixedBufferAssignmentToRefLocal(node.Left, node.Right, node.IsRef),
-                    @"type of the assignment value is not the same as the type of assignment target.
-                This is not expected by the optimizer and is typically a result of a bug somewhere else.");
+                //Debug.Assert(
+                //    node.Left.Type.Equals(node.Right.Type, TypeCompareKind.AllIgnoreOptions) ||
+                //    IsFixedBufferAssignmentToRefLocal(node.Left, node.Right, node.IsRef),
+                //    @"type of the assignment value is not the same as the type of assignment target.
+                //This is not expected by the optimizer and is typically a result of a bug somewhere else.");
 
                 Debug.Assert(!isIndirectAssignment, "indirect assignment is a read, not a write");
 

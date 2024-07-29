@@ -4,6 +4,7 @@
 
 #nullable disable
 
+using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -493,7 +494,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return Conversion.GetTrivialConversion(convKind);
             }
 
-            return Conversion.MakeNullableConversion(convKind, FastClassifyConversion(source.StrippedType(), target.StrippedType()));
+            return Conversion.MakeNullableConversion(convKind, FastClassifyConversion(source.StrippedType(includeExtensions: true), target.StrippedType(includeExtensions: true)));
         }
 
         public Conversion ClassifyBuiltInConversion(TypeSymbol source, TypeSymbol destination, bool isChecked, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
@@ -902,11 +903,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                     break;
 
                 case ConversionKind.ImplicitNullable:
-                    var strippedSource = source.StrippedType();
-                    var strippedDestination = destination.StrippedType();
+                    var strippedSource = source.StrippedType(includeExtensions: true);
+                    var strippedDestination = destination.StrippedType(includeExtensions: true);
                     var underlyingConversion = DeriveStandardExplicitFromOppositeStandardImplicitConversion(strippedSource, strippedDestination, ref useSiteInfo);
 
-                    // the opposite underlying conversion may not exist 
+                    // the opposite underlying conversion may not exist
                     // for example if underlying conversion is implicit tuple
                     impliedExplicitConversion = underlyingConversion.Exists ?
                         Conversion.MakeNullableConversion(ConversionKind.ExplicitNullable, underlyingConversion) :
@@ -1125,6 +1126,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     break;
             }
 
+            // PROTOTYPE handle inline array conversion
             // Neither Span<T>, nor ReadOnlySpan<T> can be wrapped into a Nullable<T>, therefore, there is no point to check for an attempt to convert to Nullable types here. 
             if (!IsAttributeArgumentBinding && !IsParameterDefaultValueBinding && // These checks prevent cycles caused by attribute binding when HasInlineArrayAttribute check triggers that.
                 source?.HasInlineArrayAttribute(out _) == true &&
@@ -1142,6 +1144,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 #nullable enable
         private Conversion GetImplicitCollectionExpressionConversion(BoundUnconvertedCollectionExpression collectionExpression, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
+            // PROTOTYPE handle collection expression conversions
             var collectionExpressionConversion = GetCollectionExpressionConversion(collectionExpression, destination, ref useSiteInfo);
             if (collectionExpressionConversion.Exists)
             {
@@ -1223,7 +1226,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             // SPEC: An implicit conversion exists from the null literal to any nullable type. 
-            if (destination.IsNullableType())
+            if (destination.IsNullableType(includeExtensions: true))
             {
                 // The spec defines a "null literal conversion" specifically as a conversion from
                 // null to nullable type.
@@ -1344,7 +1347,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             // A constant-expression of type int can be converted to type sbyte, byte, short, 
             // ushort, uint, or ulong, provided the value of the constant-expression is within the
             // range of the destination type.
-            var specialSource = source.Type.GetSpecialTypeSafe();
+            var specialSource = source.Type.ExtendedTypeOrSelf().GetSpecialTypeSafe();
+
+            destination = destination.ExtendedTypeOrSelf();
 
             if (specialSource == SpecialType.System_Int32)
             {
@@ -1388,6 +1393,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(Compilation != null);
             Debug.Assert((object)destination != null);
 
+            var sourceType = sourceExpression.Type;
+
             // NB: need to check for explicit tuple literal conversion before checking for explicit conversion from type
             //     The same literal may have both explicit tuple conversion and explicit tuple literal conversion to the target type.
             //     They are, however, observably different conversions via the order of argument evaluations and element-wise conversions
@@ -1400,7 +1407,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            var sourceType = sourceExpression.Type;
             if (sourceType is { })
             {
                 // Try using the short-circuit "fast-conversion" path.
@@ -1433,8 +1439,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             // For historical reasons we actually allow a conversion from any *numeric constant
             // zero* to be converted to any enum type, not just the literal integer zero.
 
-            bool validType = destination.IsEnumType() ||
-                destination.IsNullableType() && destination.GetNullableUnderlyingType().IsEnumType();
+            bool validType = destination.IsEnumType(includeExtensions: true) ||
+                destination.IsNullableType(includeExtensions: true) && destination.GetNullableUnderlyingType(includeExtensions: true).IsEnumType(includeExtensions: true);
 
             if (!validType)
             {
@@ -1444,12 +1450,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             var sourceConstantValue = source.ConstantValueOpt;
             return sourceConstantValue != null &&
                 source.Type is object &&
-                IsNumericType(source.Type) &&
+                IsNumericType(source.Type) && // PROTOTYPE revisit if we allow constants of extension type
                 IsConstantNumericZero(sourceConstantValue);
         }
 
         private static LambdaConversionResult IsAnonymousFunctionCompatibleWithDelegate(UnboundLambda anonymousFunction, TypeSymbol type, CSharpCompilation compilation, bool isTargetExpressionTree)
         {
+            // PROTOTYPE handle conversions to extensions on delegate types
             Debug.Assert((object)anonymousFunction != null);
             Debug.Assert((object)type != null);
 
@@ -1571,6 +1578,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private static LambdaConversionResult IsAnonymousFunctionCompatibleWithExpressionTree(UnboundLambda anonymousFunction, NamedTypeSymbol type, CSharpCompilation compilation)
         {
+            // PROTOTYPE handle conversions to extensions on Expression
             Debug.Assert((object)anonymousFunction != null);
             Debug.Assert((object)type != null);
             Debug.Assert(type.IsExpressionTree());
@@ -1609,6 +1617,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public static LambdaConversionResult IsAnonymousFunctionCompatibleWithType(UnboundLambda anonymousFunction, TypeSymbol type, CSharpCompilation compilation)
         {
+            // PROTOTYPE handle conversions to extensions on delegate types and Expression
             Debug.Assert((object)anonymousFunction != null);
             Debug.Assert((object)type != null);
 
@@ -1639,6 +1648,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal static CollectionExpressionTypeKind GetCollectionExpressionTypeKind(CSharpCompilation compilation, TypeSymbol destination, out TypeWithAnnotations elementType)
         {
+            // PROTOTYPE handle conversions to extensions on collection types
             Debug.Assert(compilation is { });
 
             if (destination is ArrayTypeSymbol arrayType)
@@ -1704,6 +1714,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal Conversion ClassifyImplicitUserDefinedConversionForV6SwitchGoverningType(TypeSymbol sourceType, out TypeSymbol switchGoverningType, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
+            // PROTOTYPE handle user-defined conversions
             // SPEC:    The governing type of a switch statement is established by the switch expression.
             // SPEC:    1) If the type of the switch expression is sbyte, byte, short, ushort, int, uint,
             // SPEC:       long, ulong, bool, char, string, or an enum-type, or if it is the nullable type
@@ -1795,6 +1806,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             var compareKind = includeNullability ?
                 TypeCompareKind.AllIgnoreOptions & ~TypeCompareKind.IgnoreNullableModifiersForReferenceTypes :
                 TypeCompareKind.AllIgnoreOptions;
+            compareKind |= TypeCompareKind.IgnoreExtensions;
+
             return type1.Equals(type2, compareKind);
         }
 
@@ -1865,7 +1878,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             var type = typeWithAnnotations.Type;
             return type is object &&
-                (type.IsPossiblyNullableReferenceTypeTypeParameter() || type.IsNullableTypeOrTypeParameter());
+                (type.IsPossiblyNullableReferenceTypeTypeParameter() || type.IsNullableTypeOrTypeParameter()); // TODO2
         }
 
         /// <summary>
@@ -2013,6 +2026,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert((object)source != null);
             Debug.Assert((object)destination != null);
 
+            source = source.ExtendedTypeOrSelf();
+            destination = destination.ExtendedTypeOrSelf();
+
             if (!IsNumericType(source) || !IsNumericType(destination))
             {
                 return ConversionKind.UnsetConversionKind;
@@ -2075,6 +2091,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private static bool IsNumericType(TypeSymbol type)
         {
+            Debug.Assert(type.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
+
             switch (type.SpecialType)
             {
                 case SpecialType.System_Char:
@@ -2099,6 +2117,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private static bool HasSpecialIntPtrConversion(TypeSymbol source, TypeSymbol target)
         {
+            // PROTOTYPE handle IntPtr conversion
             Debug.Assert((object)source != null);
             Debug.Assert((object)target != null);
 
@@ -2187,13 +2206,15 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert((object)source != null);
             Debug.Assert((object)destination != null);
+            destination = destination.ExtendedTypeOrSelf();
+            source = source.ExtendedTypeOrSelf();
 
             // SPEC: The explicit enumeration conversions are:
             // SPEC: From sbyte, byte, short, ushort, int, uint, long, ulong, nint, nuint, char, float, double, or decimal to any enum-type.
             // SPEC: From any enum-type to sbyte, byte, short, ushort, int, uint, long, ulong, nint, nuint, char, float, double, or decimal.
             // SPEC: From any enum-type to any other enum-type.
 
-            if (IsNumericType(source) && destination.IsEnumType())
+            if (IsNumericType(source) && destination.IsEnumType(includeExtensions: false))
             {
                 return true;
             }
@@ -2217,19 +2238,22 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert((object)source != null);
             Debug.Assert((object)destination != null);
 
+            source = source.ExtendedTypeOrSelf();
+            destination = destination.ExtendedTypeOrSelf();
+
             // SPEC: Predefined implicit conversions that operate on non-nullable value types can also be used with 
             // SPEC: nullable forms of those types. For each of the predefined implicit identity, numeric and tuple conversions
             // SPEC: that convert from a non-nullable value type S to a non-nullable value type T, the following implicit 
             // SPEC: nullable conversions exist:
             // SPEC: * An implicit conversion from S? to T?.
             // SPEC: * An implicit conversion from S to T?.
-            if (!destination.IsNullableType())
+            if (!destination.IsNullableType(includeExtensions: false))
             {
                 return Conversion.NoConversion;
             }
 
-            TypeSymbol unwrappedDestination = destination.GetNullableUnderlyingType();
-            TypeSymbol unwrappedSource = source.StrippedType();
+            TypeSymbol unwrappedDestination = destination.GetNullableUnderlyingType(includeExtensions: false);
+            TypeSymbol unwrappedSource = source.StrippedType(includeExtensions: false);
 
             if (!unwrappedSource.IsValueType)
             {
@@ -2306,6 +2330,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(Compilation is not null);
 
             var arguments = source.Arguments;
+            destination = destination.ExtendedTypeOrSelf();
 
             // check if the type is actually compatible type for a tuple of given cardinality
             if (!destination.IsTupleTypeOfCardinality(arguments.Length))
@@ -2384,6 +2409,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             ImmutableArray<TypeWithAnnotations> sourceTypes;
             ImmutableArray<TypeWithAnnotations> destTypes;
 
+            source = source.ExtendedTypeOrSelf();
+            destination = destination.ExtendedTypeOrSelf();
+
             if (!source.TryGetElementTypesWithAnnotationsIfTupleType(out sourceTypes) ||
                 !destination.TryGetElementTypesWithAnnotationsIfTupleType(out destTypes) ||
                 sourceTypes.Length != destTypes.Length)
@@ -2420,13 +2448,16 @@ namespace Microsoft.CodeAnalysis.CSharp
             // SPEC: An explicit conversion from S to T?.
             // SPEC: An explicit conversion from S? to T.
 
-            if (!source.IsNullableType() && !destination.IsNullableType())
+            source = source.ExtendedTypeOrSelf();
+            destination = destination.ExtendedTypeOrSelf();
+
+            if (!source.IsNullableType(includeExtensions: false) && !destination.IsNullableType(includeExtensions: false))
             {
                 return Conversion.NoConversion;
             }
 
-            TypeSymbol unwrappedSource = source.StrippedType();
-            TypeSymbol unwrappedDestination = destination.StrippedType();
+            TypeSymbol unwrappedSource = source.StrippedType(includeExtensions: false);
+            TypeSymbol unwrappedDestination = destination.StrippedType(includeExtensions: false);
 
             if (HasIdentityConversionInternal(unwrappedSource, unwrappedDestination))
             {
@@ -2466,6 +2497,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert((object)source != null);
             Debug.Assert((object)destination != null);
+            Debug.Assert(source.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
+            Debug.Assert(destination.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
+
             var s = source as ArrayTypeSymbol;
             var d = destination as ArrayTypeSymbol;
             if ((object)s == null || (object)d == null)
@@ -2489,12 +2523,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert((object)source != null);
             Debug.Assert((object)destination != null);
 
-            if (HasIdentityConversionInternal(source, destination))
+            if (HasIdentityConversionInternal((TypeSymbol)source, destination))
             {
                 return true;
             }
 
-            return HasImplicitReferenceConversion(source, destination, ref useSiteInfo);
+            return HasImplicitReferenceConversion((TypeSymbol)source, destination, ref useSiteInfo);
         }
 
         private static bool HasImplicitDynamicConversionFromExpression(TypeSymbol expressionType, TypeSymbol destination)
@@ -2520,6 +2554,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert((object)source != null);
             Debug.Assert((object)destination != null);
+            Debug.Assert(source.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
+            Debug.Assert(destination.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
 
             if (!source.IsSZArray)
             {
@@ -2618,6 +2654,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             // SPEC: UNDONE: or reference conversion to a reference-type T0 and T0 has an identity conversion to T.
             // UNDONE: Is the right thing to do here to strip dynamic off and check for convertibility?
 
+            source = source.ExtendedTypeOrSelf();
+            destination = destination.ExtendedTypeOrSelf();
+
             // SPEC: From any reference type to object and dynamic.
             if (destination.SpecialType == SpecialType.System_Object || destination.Kind == SymbolKind.DynamicType)
             {
@@ -2662,6 +2701,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private bool HasImplicitConversionToInterface(TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
+            Debug.Assert(source.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
+            Debug.Assert(destination.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
+
             if (!destination.IsInterfaceType())
             {
                 return false;
@@ -2696,6 +2738,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private bool HasImplicitConversionFromArray(TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
+            Debug.Assert(source.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
+            Debug.Assert(destination.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
+
             var s = source as ArrayTypeSymbol;
             if (s is null)
             {
@@ -2737,6 +2782,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private bool HasImplicitConversionFromDelegate(TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
+            // PROTOTYPE handle conversions from extensions on delegate types
             if (!source.IsDelegateType())
             {
                 return false;
@@ -2784,6 +2830,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal bool IsValidFunctionTypeConversionTarget(TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
+            // PROTOTYPE handle conversions to extensions on delegate types
             if (destination.SpecialType == SpecialType.System_MulticastDelegate)
             {
                 return true;
@@ -2827,6 +2874,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public bool HasImplicitTypeParameterConversion(TypeParameterSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
+            // TODO2 unsure if extensions can get here
             if (HasImplicitReferenceTypeParameterConversion(source, destination, ref useSiteInfo))
             {
                 return true;
@@ -3283,6 +3331,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert((object)source != null);
             Debug.Assert((object)destination != null);
 
+            source = source.ExtendedTypeOrSelf();
+            destination = destination.ExtendedTypeOrSelf();
+
             // Certain type parameter conversions are classified as boxing conversions.
             if ((source.TypeKind == TypeKind.TypeParameter) &&
                 HasImplicitBoxingTypeParameterConversion((TypeParameterSymbol)source, destination, ref useSiteInfo))
@@ -3299,9 +3350,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // A boxing conversion exists from a nullable type to a reference type if and only if a
             // boxing conversion exists from the underlying type.
-            if (source.IsNullableType())
+            if (source.IsNullableType(includeExtensions: false))
             {
-                return HasBoxingConversion(source.GetNullableUnderlyingType(), destination, ref useSiteInfo);
+                return HasBoxingConversion(source.GetNullableUnderlyingType(includeExtensions: false), destination, ref useSiteInfo);
             }
 
             // A boxing conversion exists from any non-nullable value type to object and dynamic, to
@@ -3437,6 +3488,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             // SPEC: The explicit reference conversions are:
             // SPEC: From object and dynamic to any other reference type.
+            source = source.ExtendedTypeOrSelf();
+            destination = destination.ExtendedTypeOrSelf();
 
             if (source.SpecialType == SpecialType.System_Object)
             {
@@ -3508,6 +3561,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert((object)source != null);
             Debug.Assert((object)destination != null);
+            Debug.Assert(source.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
+            Debug.Assert(destination.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
 
             TypeParameterSymbol s = source as TypeParameterSymbol;
             TypeParameterSymbol t = destination as TypeParameterSymbol;
@@ -3560,6 +3615,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert((object)source != null);
             Debug.Assert((object)destination != null);
+            Debug.Assert(source.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
+            Debug.Assert(destination.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
 
             TypeParameterSymbol s = source as TypeParameterSymbol;
             TypeParameterSymbol t = destination as TypeParameterSymbol;
@@ -3611,6 +3668,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert((object)source != null);
             Debug.Assert((object)destination != null);
+            Debug.Assert(source.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
+            Debug.Assert(destination.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
 
             // SPEC: From System.Delegate and the interfaces it implements to any delegate-type.
             // We also support System.MulticastDelegate in the implementation, in spite of it not being mentioned in the spec.
@@ -3700,6 +3759,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert((object)source != null);
             Debug.Assert((object)destination != null);
+            Debug.Assert(source.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
+            Debug.Assert(destination.GetExtendedTypeNoUseSiteDiagnostics(null) is null);
 
             var sourceArray = source as ArrayTypeSymbol;
             var destinationArray = destination as ArrayTypeSymbol;
@@ -3792,6 +3853,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert((object)source != null);
             Debug.Assert((object)destination != null);
+            source = source.ExtendedTypeOrSelf();
+            destination = destination.ExtendedTypeOrSelf();
 
             if (destination.IsPointerOrFunctionPointer())
             {
@@ -3810,7 +3873,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (specialTypeSource == SpecialType.System_Object || specialTypeSource == SpecialType.System_ValueType)
             {
-                if (destination.IsValueType && !destination.IsNullableType())
+                if (destination.IsValueType && !destination.IsNullableType(includeExtensions: false))
                 {
                     return true;
                 }
@@ -3820,14 +3883,14 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (source.IsInterfaceType() &&
                 destination.IsValueType &&
-                !destination.IsNullableType() &&
+                !destination.IsNullableType(includeExtensions: false) &&
                 HasBoxingConversion(destination, source, ref useSiteInfo))
             {
                 return true;
             }
 
             // SPEC: Furthermore type System.Enum can be unboxed to any enum-type.
-            if (source.SpecialType == SpecialType.System_Enum && destination.IsEnumType())
+            if (source.SpecialType == SpecialType.System_Enum && destination.IsEnumType(includeExtensions: false))
             {
                 return true;
             }
@@ -3836,8 +3899,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             // SPEC: conversion exists from the reference type to the underlying non-nullable-value-type 
             // SPEC: of the nullable-type.
             if (source.IsReferenceType &&
-                destination.IsNullableType() &&
-                HasUnboxingConversion(source, destination.GetNullableUnderlyingType(), ref useSiteInfo))
+                destination.IsNullableType(includeExtensions: false) &&
+                HasUnboxingConversion(source, destination.GetNullableUnderlyingType(includeExtensions: false), ref useSiteInfo))
             {
                 return true;
             }

@@ -1401,17 +1401,17 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (type.IsDynamic()
                     || (typeWithAnnotations.NullableAnnotation.IsAnnotated() && !type.IsValueType)
                     || type.IsNativeIntegerWrapperType
-                    || (type.IsTupleType && !type.TupleElementNames.IsDefault))
+                    || (type.GetIsTupleType() && !type.TupleElementNames.IsDefault))
                 {
                     diagnostics.Add(ErrorCode.ERR_AttrDependentTypeNotAllowed, attributeName, type);
                     return true;
                 }
 
-                if (type.IsUnboundGenericType() || type.Kind == SymbolKind.TypeParameter)
-                {
-                    diagnostics.Add(ErrorCode.ERR_AttrTypeArgCannotBeTypeVar, attributeName, type);
-                    return true;
-                }
+                //if (type.IsUnboundGenericType() || type.Kind == SymbolKind.TypeParameter)
+                //{
+                //    diagnostics.Add(ErrorCode.ERR_AttrTypeArgCannotBeTypeVar, attributeName, type);
+                //    return true;
+                //}
 
                 return false;
             }, typePredicate: null, arg: (attributeName, diagnostics));
@@ -2500,10 +2500,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             TypeWithAnnotations targetTypeWithAnnotations = this.BindType(node.Type, diagnostics);
             TypeSymbol targetType = targetTypeWithAnnotations.Type;
 
-            if (targetType.IsNullableType() &&
+            if (targetType.IsNullableType() && // TODO2
                 !operand.HasAnyErrors &&
                 (object)operand.Type != null &&
-                !operand.Type.IsNullableType() &&
+                !operand.Type.IsNullableType() && // TODO2
                 !TypeSymbol.Equals(targetType.GetNullableUnderlyingType(), operand.Type, TypeCompareKind.ConsiderEverything2))
             {
                 return BindExplicitNullableCastFromNonNullable(node, operand, targetTypeWithAnnotations, diagnostics);
@@ -2839,7 +2839,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         private BoundExpression BindExplicitNullableCastFromNonNullable(ExpressionSyntax node, BoundExpression operand, TypeWithAnnotations targetTypeWithAnnotations, BindingDiagnosticBag diagnostics)
         {
-            Debug.Assert(targetTypeWithAnnotations.HasType && targetTypeWithAnnotations.IsNullableType());
+            Debug.Assert(targetTypeWithAnnotations.HasType && targetTypeWithAnnotations.IsNullableType()); // TODO2
             Debug.Assert((object)operand.Type != null && !operand.Type.IsNullableType());
 
             // Section 6.2.3 of the spec only applies when the non-null version of the types involved have a

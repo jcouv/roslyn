@@ -486,18 +486,18 @@ class C
                 Assert.Equal("Base1", field6Type.Name);
                 Assert.Equal(1, field6Type.TypeParameters.Length);
                 var firstTuple = field6Type.TypeArguments().Single();
-                Assert.True(firstTuple.IsTupleType);
+                Assert.True(firstTuple.GetIsTupleType());
                 Assert.True(firstTuple.TupleElementNames.IsDefault);
                 Assert.Equal(2, firstTuple.TupleElementTypesWithAnnotations.Length);
                 var secondTuple = firstTuple.TupleElementTypesWithAnnotations[1].Type;
-                Assert.True(secondTuple.IsTupleType);
+                Assert.True(secondTuple.GetIsTupleType());
                 Assert.True(secondTuple.TupleElementNames.IsDefault);
                 Assert.Equal(2, secondTuple.TupleElementTypesWithAnnotations.Length);
 
                 // public static ValueTuple Field7;
                 var field7 = _derivedClass.GetMember<FieldSymbol>("Field7");
                 ValidateTupleNameAttribute(field7.GetAttributes(), expectedTupleNamesAttribute: false);
-                Assert.True(field7.Type.IsTupleType);
+                Assert.True(field7.Type.GetIsTupleType());
                 Assert.Empty(field7.Type.TupleElementTypesWithAnnotations);
 
                 // public static (int e1, int e2, int e3, int e4, int e5, int e6, int e7, int e8, int e9) Field8;
@@ -938,7 +938,7 @@ public interface I3<T>
                     var typeParam = t.TypeParameters.Single();
                     var constraint = (NamedTypeSymbol)typeParam.ConstraintTypes().Single();
                     var typeArg = constraint.TypeArguments().Single();
-                    Assert.True(typeArg.IsTupleType);
+                    Assert.True(typeArg.GetIsTupleType());
                     Assert.Equal(tupleNames, typeArg.TupleElementNames);
                 }
             }
@@ -1038,7 +1038,7 @@ public interface I3 : I1<(int c, int d)> {}";
                 {
                     var interfaceImpl = t.Interfaces().Single();
                     var typeArg = interfaceImpl.TypeArguments().Single();
-                    Assert.True(typeArg.IsTupleType);
+                    Assert.True(typeArg.GetIsTupleType());
                     Assert.Equal(tupleNames, typeArg.TupleElementNames);
                 }
             }

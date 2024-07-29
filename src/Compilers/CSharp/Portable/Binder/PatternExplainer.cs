@@ -466,7 +466,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // Handle the special case of a tuple pattern
             string tryHandleTuplePattern(ref bool unnamedEnumValue)
             {
-                if (input.Type.IsTupleType &&
+                if (input.Type.GetIsTupleType() &&
                     constraints.IsEmpty &&
                     evaluations.All(e => e is BoundDagFieldEvaluation { Field: var field } && field.IsTupleElement()))
                 {

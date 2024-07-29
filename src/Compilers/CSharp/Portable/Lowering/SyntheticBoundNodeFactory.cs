@@ -480,7 +480,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public BoundExpression AssignmentExpression(SyntaxNode syntax, BoundExpression left, BoundExpression right, bool isRef = false, bool hasErrors = false, bool wasCompilerGenerated = false)
         {
             Debug.Assert(left.Type is { } && right.Type is { } &&
-                (left.Type.Equals(right.Type, TypeCompareKind.AllIgnoreOptions) ||
+                (left.Type.Equals(right.Type, TypeCompareKind.AllIgnoreOptions | TypeCompareKind.IgnoreExtensions) ||
                  StackOptimizerPass1.IsFixedBufferAssignmentToRefLocal(left, right, isRef) ||
                  right.Type.IsErrorType() || left.Type.IsErrorType()));
 

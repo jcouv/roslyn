@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+// TODO2 review this file
 #nullable disable
 
 using System.Collections.Immutable;
@@ -43,6 +44,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override Conversion GetMethodGroupDelegateConversion(BoundMethodGroup source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
+            // PROTOTYPE handle conversions to extensions on delegate types
             // Must be a bona fide delegate type, not an expression tree type.
             if (!destination.IsDelegateType())
             {
@@ -505,6 +507,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public override Conversion GetStackAllocConversion(BoundStackAllocArrayCreation sourceExpression, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
+            // PROTOTYPE handle stackalloc conversion
             if (sourceExpression.NeedsToBeConverted())
             {
                 Debug.Assert((object)sourceExpression.Type == null);

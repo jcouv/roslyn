@@ -491,7 +491,7 @@ public class C4 : C3
                 Assert.True(iface.IsGenericType);
                 Assert.Equal(1, iface.TypeArguments().Length);
                 TypeSymbol typeArg = iface.TypeArguments()[0];
-                Assert.True(typeArg.IsTupleType);
+                Assert.True(typeArg.GetIsTupleType());
                 Assert.False(((NamedTypeSymbol)typeArg).IsSerializable);
                 Assert.Equal(2, typeArg.TupleElementTypesWithAnnotations.Length);
                 Assert.All(typeArg.TupleElementTypesWithAnnotations,
@@ -506,7 +506,7 @@ public class C4 : C3
                 Assert.True(iface.IsGenericType);
                 Assert.Equal(1, iface.TypeArguments().Length);
                 typeArg = iface.TypeArguments()[0];
-                Assert.True(typeArg.IsTupleType);
+                Assert.True(typeArg.GetIsTupleType());
                 Assert.Equal(2, typeArg.TupleElementTypesWithAnnotations.Length);
                 Assert.All(typeArg.TupleElementTypesWithAnnotations,
                    t => Assert.Equal(SpecialType.System_Int32, t.SpecialType));
@@ -518,7 +518,7 @@ public class C4 : C3
                 Assert.True(iface.IsGenericType);
                 Assert.Equal(1, iface.TypeArguments().Length);
                 typeArg = iface.TypeArguments()[0];
-                Assert.True(typeArg.IsTupleType);
+                Assert.True(typeArg.GetIsTupleType());
                 Assert.Equal(2, typeArg.TupleElementTypesWithAnnotations.Length);
                 Assert.All(typeArg.TupleElementTypesWithAnnotations,
                    t => Assert.Equal(SpecialType.System_Int32, t.SpecialType));
@@ -530,7 +530,7 @@ public class C4 : C3
                 Assert.True(iface.IsGenericType);
                 Assert.Equal(1, iface.TypeArguments().Length);
                 typeArg = iface.TypeArguments()[0];
-                Assert.True(typeArg.IsTupleType);
+                Assert.True(typeArg.GetIsTupleType());
                 Assert.Equal(2, typeArg.TupleElementTypesWithAnnotations.Length);
                 Assert.All(typeArg.TupleElementTypesWithAnnotations,
                    t => Assert.Equal(SpecialType.System_Int32, t.SpecialType));
@@ -693,7 +693,7 @@ public struct TestEnumerable : IEnumerable<(int key, int val)>
                 Assert.True(constraint.IsGenericType);
                 Assert.Equal(1, constraint.TypeArguments().Length);
                 TypeSymbol typeArg = constraint.TypeArguments()[0];
-                Assert.True(typeArg.IsTupleType);
+                Assert.True(typeArg.GetIsTupleType());
                 Assert.Equal(2, typeArg.TupleElementTypesWithAnnotations.Length);
                 Assert.All(typeArg.TupleElementTypesWithAnnotations,
                    t => Assert.Equal(SpecialType.System_Int32, t.SpecialType));
@@ -709,7 +709,7 @@ public struct TestEnumerable : IEnumerable<(int key, int val)>
                 Assert.True(constraint.IsGenericType);
                 Assert.Equal(1, constraint.TypeArguments().Length);
                 typeArg = constraint.TypeArguments()[0];
-                Assert.True(typeArg.IsTupleType);
+                Assert.True(typeArg.GetIsTupleType());
                 Assert.Equal(2, typeArg.TupleElementTypesWithAnnotations.Length);
                 Assert.All(typeArg.TupleElementTypesWithAnnotations,
                    t => Assert.Equal(SpecialType.System_Int32, t.SpecialType));
@@ -836,12 +836,12 @@ val: -2
 
             var validField = c.GetMember<FieldSymbol>("ValidField");
             Assert.False(validField.Type.IsErrorType());
-            Assert.True(validField.Type.IsTupleType);
+            Assert.True(validField.Type.GetIsTupleType());
             Assert.True(validField.Type.TupleElementNames.IsDefault);
 
             var validFieldWithAttribute = c.GetMember<FieldSymbol>("ValidFieldWithAttribute");
             Assert.True(validFieldWithAttribute.Type.IsErrorType());
-            Assert.False(validFieldWithAttribute.Type.IsTupleType);
+            Assert.False(validFieldWithAttribute.Type.GetIsTupleType());
             Assert.IsType<UnsupportedMetadataTypeSymbol>(validFieldWithAttribute.Type);
 
             var tooFewNames = c.GetMember<FieldSymbol>("TooFewNames");
@@ -929,34 +929,34 @@ val: -2
 
             var validField = c.GetMember<FieldSymbol>("ValidField");
             Assert.False(validField.Type.IsErrorType());
-            Assert.True(validField.Type.IsTupleType);
+            Assert.True(validField.Type.GetIsTupleType());
             Assert.True(validField.Type.TupleElementNames.IsDefault);
 
             var validFieldWithAttribute = c.GetMember<FieldSymbol>("ValidFieldWithAttribute");
             Assert.True(validFieldWithAttribute.Type.IsErrorType());
-            Assert.False(validFieldWithAttribute.Type.IsTupleType);
+            Assert.False(validFieldWithAttribute.Type.GetIsTupleType());
             Assert.IsType<UnsupportedMetadataTypeSymbol>(validFieldWithAttribute.Type);
 
             var partialNames = c.GetMember<FieldSymbol>("PartialNames");
             Assert.False(partialNames.Type.IsErrorType());
-            Assert.True(partialNames.Type.IsTupleType);
+            Assert.True(partialNames.Type.GetIsTupleType());
             Assert.Equal("(System.Int32 e1, System.Int32)", partialNames.TypeWithAnnotations.ToTestDisplayString());
 
             var allNullNames = c.GetMember<FieldSymbol>("AllNullNames");
             Assert.False(allNullNames.Type.IsErrorType());
-            Assert.True(allNullNames.Type.IsTupleType);
+            Assert.True(allNullNames.Type.GetIsTupleType());
             Assert.Equal("(System.Int32, System.Int32)", allNullNames.TypeWithAnnotations.ToTestDisplayString());
 
             var partialNamesMethod = c.GetMember<MethodSymbol>("PartialNamesMethod");
             var partialParamType = partialNamesMethod.Parameters.Single().TypeWithAnnotations;
             Assert.False(partialParamType.Type.IsErrorType());
-            Assert.True(partialParamType.Type.IsTupleType);
+            Assert.True(partialParamType.Type.GetIsTupleType());
             Assert.Equal("System.ValueTuple<(System.Int32 e1, System.Int32)>", partialParamType.ToTestDisplayString());
 
             var allNullNamesMethod = c.GetMember<MethodSymbol>("AllNullNamesMethod");
             var allNullParamType = allNullNamesMethod.Parameters.Single().TypeWithAnnotations;
             Assert.False(allNullParamType.Type.IsErrorType());
-            Assert.True(allNullParamType.Type.IsTupleType);
+            Assert.True(allNullParamType.Type.GetIsTupleType());
             Assert.Equal("System.ValueTuple<(System.Int32, System.Int32)>", allNullParamType.ToTestDisplayString());
         }
 
@@ -995,7 +995,7 @@ val: -2
 
             var field1 = c.GetMember<FieldSymbol>("Field1");
             Assert.False(field1.Type.IsErrorType());
-            Assert.True(field1.Type.IsTupleType);
+            Assert.True(field1.Type.GetIsTupleType());
             Assert.True(field1.Type.TupleElementNames.IsDefault);
 
             NamedTypeSymbol field2Type = (NamedTypeSymbol)c.GetMember<FieldSymbol>("Field2").Type;
@@ -1003,12 +1003,12 @@ val: -2
             Assert.True(field2Type.IsGenericType);
 
             var first = field2Type.TypeArguments()[0];
-            Assert.True(first.IsTupleType);
+            Assert.True(first.GetIsTupleType());
             Assert.Equal(1, first.TupleElementTypesWithAnnotations.Length);
             Assert.True(first.TupleElementNames.IsDefault);
 
             var second = first.TupleElementTypesWithAnnotations[0].Type;
-            Assert.True(second.IsTupleType);
+            Assert.True(second.GetIsTupleType());
             Assert.True(second.TupleElementNames.IsDefault);
             Assert.Equal(2, second.TupleElementTypesWithAnnotations.Length);
             Assert.All(second.TupleElementTypesWithAnnotations, t =>
@@ -1615,7 +1615,7 @@ class C
             var x = nodes.OfType<VariableDeclaratorSyntax>().First();
             var xSymbol = model.GetDeclaredSymbol(x).GetSymbol<SourceLocalSymbol>().Type;
             Assert.Equal("(System.Int32, System.String a)", xSymbol.ToTestDisplayString());
-            Assert.True(xSymbol.IsTupleType);
+            Assert.True(xSymbol.GetIsTupleType());
 
             Assert.Equal(new[] { "System.Int32", "System.String" }, xSymbol.TupleElementTypesWithAnnotations.SelectAsArray(t => t.ToTestDisplayString()));
             Assert.Equal(new[] { null, "a" }, xSymbol.TupleElementNames);
@@ -3346,7 +3346,7 @@ class C
 
             var mTuple = (NamedTypeSymbol)c.GetMember<MethodSymbol>("M").ReturnType;
 
-            Assert.True(mTuple.IsTupleType);
+            Assert.True(mTuple.GetIsTupleType());
             Assert.Equal(TypeKind.Error, mTuple.TupleUnderlyingType.TypeKind);
             Assert.Equal(SymbolKind.ErrorType, mTuple.TupleUnderlyingType.Kind);
             Assert.IsAssignableFrom<ErrorTypeSymbol>(mTuple.TupleUnderlyingType);
@@ -4473,7 +4473,7 @@ namespace System
                 Diagnostic(ErrorCode.WRN_UnreferencedVarAssg, "x").WithArguments("x").WithLocation(6, 13)
                 );
             var vt2 = comp.GetTypeByMetadataName("System.ValueTuple`2");
-            Assert.True(vt2.IsTupleType);
+            Assert.True(vt2.GetIsTupleType());
             Assert.True(vt2.IsDefinition);
             AssertEx.Equal(new[] { "T1 (T1, T2).Item1", "T2 (T1, T2).Item2" }, vt2.TupleElements.ToTestDisplayStrings());
             vt2.TupleElements.All(e => verifyTupleErrorField(e));
@@ -4501,7 +4501,7 @@ namespace System
             Assert.Equal("(T1, T2)", unnamedTuple.ToTestDisplayString());
             Assert.Equal(SymbolKind.NamedType, unnamedTuple.Kind);
             Assert.True(unnamedTuple.IsDefinition);
-            Assert.True(unnamedTuple.IsTupleType);
+            Assert.True(unnamedTuple.GetIsTupleType());
             Assert.Same(vt2, unnamedTuple);
             Assert.IsType<SourceNonExtensionNamedTypeSymbol>(unnamedTuple);
             Assert.Same(vt2, unnamedTuple.ConstructedFrom);
@@ -4512,7 +4512,7 @@ namespace System
             Assert.Equal("(T1 a, T2 b)", namedTuple.ToTestDisplayString());
             Assert.Equal(SymbolKind.NamedType, namedTuple.Kind);
             Assert.False(namedTuple.IsDefinition);
-            Assert.True(namedTuple.IsTupleType);
+            Assert.True(namedTuple.GetIsTupleType());
             Assert.IsType<ConstructedNamedTypeSymbol>(namedTuple);
             Assert.NotSame(vt2, namedTuple);
             Assert.Same(vt2, namedTuple.ConstructedFrom);
@@ -5828,7 +5828,7 @@ namespace System
             var vt8 = comp.GetWellKnownType(WellKnownType.System_ValueTuple_TRest)
                           .Construct(intType, stringType, intType, stringType, intType, stringType, intType, vt0);
 
-            Assert.False(vt8.IsTupleType);
+            Assert.False(vt8.GetIsTupleType());
             Assert.Throws<ArgumentException>(() => comp.CreateTupleTypeSymbol(vt8, default));
         }
 
@@ -6032,7 +6032,7 @@ namespace System
             Assert.True(tuple8WithoutNames.IsTupleType);
             Assert.Equal("System.ValueTuple<System.Int32, System.String, System.Int32, System.String, System.Int32, System.String, System.Int32, System.ValueTuple<System.String>[missing]>[missing]",
                         tuple8WithoutNames.ToTestDisplayString());
-            Assert.False(vt8.OriginalDefinition.IsTupleType);
+            Assert.False(vt8.OriginalDefinition.GetIsTupleType());
 
             Assert.True(GetTupleElementNames(tuple8WithoutNames).IsDefault);
 
@@ -6933,7 +6933,7 @@ class C
             var comp = CSharpCompilation.Create("test", references: new[] { MscorlibRef });
             NamedTypeSymbol stringType = comp.GetSpecialType(SpecialType.System_String);
 
-            Assert.False(stringType.IsTupleType);
+            Assert.False(stringType.GetIsTupleType());
             Assert.True(stringType.TupleElements.IsDefault);
             Assert.Null(stringType.TupleUnderlyingType);
         }
@@ -11153,7 +11153,7 @@ class C
             Assert.Equal(SymbolKind.NamedType, m1Tuple.Kind);
             Assert.Equal(TypeKind.Struct, m1Tuple.TypeKind);
             Assert.False(m1Tuple.IsImplicitlyDeclared);
-            Assert.True(m1Tuple.IsTupleType);
+            Assert.True(m1Tuple.GetIsTupleType());
             Assert.True(m1Tuple.Equals(m1Tuple.TupleUnderlyingType, TypeCompareKind.ConsiderEverything));
             var tupleType = comp.Compilation.CommonGetWellKnownType(WellKnownType.System_ValueTuple_T2);
             Assert.Same(tupleType, m1Tuple.ConstructedFrom);
@@ -11417,7 +11417,7 @@ class C
             Assert.Equal(SymbolKind.NamedType, m1Tuple.Kind);
             Assert.Equal(TypeKind.Struct, m1Tuple.TypeKind);
             Assert.False(m1Tuple.IsImplicitlyDeclared);
-            Assert.True(m1Tuple.IsTupleType);
+            Assert.True(m1Tuple.GetIsTupleType());
             Assert.Equal("(System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, System.Int32)",
                 m1Tuple.TupleUnderlyingType.ToTestDisplayString());
             Assert.Equal("System.ValueTuple<T1, T2, T3, T4, T5, T6, T7, TRest>", m1Tuple.OriginalDefinition.ToTestDisplayString());
@@ -11807,7 +11807,7 @@ class C
                 "System.Int32 (System.Int32, System.Int32).System.ITupleInternal.Size.get",
                 "System.Int32 (System.Int32, System.Int32).System.ITupleInternal.Size { get; }");
 
-            Assert.True(m3TupleRestTuple.IsTupleType);
+            Assert.True(m3TupleRestTuple.GetIsTupleType());
             AssertTupleTypeEquality(m3TupleRestTuple);
             Assert.True(m3TupleRestTuple.Locations.IsEmpty);
             Assert.True(m3TupleRestTuple.DeclaringSyntaxReferences.IsEmpty);
@@ -12735,7 +12735,7 @@ class C
             Assert.Equal(SymbolKind.NamedType, m1Tuple.Kind);
             Assert.Equal(TypeKind.Struct, m1Tuple.TypeKind);
             Assert.False(m1Tuple.IsImplicitlyDeclared);
-            Assert.True(m1Tuple.IsTupleType);
+            Assert.True(m1Tuple.GetIsTupleType());
             Assert.Same(m1Tuple, m1Tuple);
             Assert.Equal("(T1, T2)", m1Tuple.ConstructedFrom.ToTestDisplayString());
             Assert.Equal("(T1, T2)", m1Tuple.OriginalDefinition.ToTestDisplayString());
@@ -13447,7 +13447,7 @@ namespace System
 
         private void AssertTupleNonElementField(FieldSymbol sym)
         {
-            Assert.True(sym.ContainingType.IsTupleType);
+            Assert.True(sym.ContainingType.GetIsTupleType());
             Assert.False(sym.IsVirtualTupleField);
 
             //it is not an element so index must be negative
@@ -13456,7 +13456,7 @@ namespace System
 
         private void AssertVirtualTupleElementField(FieldSymbol sym)
         {
-            Assert.True(sym.ContainingType.IsTupleType);
+            Assert.True(sym.ContainingType.GetIsTupleType());
             Assert.True(sym.IsVirtualTupleField);
 
             //it is an element so must have nonnegative index
@@ -13465,7 +13465,7 @@ namespace System
 
         private void AssertNonvirtualTupleElementField(FieldSymbol sym)
         {
-            Assert.True(sym.ContainingType.IsTupleType);
+            Assert.True(sym.ContainingType.GetIsTupleType());
             Assert.False(sym.IsVirtualTupleField);
 
             //it is an element so must have nonnegative index
@@ -13933,7 +13933,7 @@ public class Test
             var test = comp.GetTypeByMetadataName("Test");
 
             var m1Tuple = (NamedTypeSymbol)test.GetMember<MethodSymbol>("M1").ReturnType;
-            Assert.True(m1Tuple.IsTupleType);
+            Assert.True(m1Tuple.GetIsTupleType());
             Assert.Equal("(System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, System.Int32)",
                          m1Tuple.ToTestDisplayString());
         }
@@ -14097,7 +14097,7 @@ public class Test
                 var test = comp.GetTypeByMetadataName("Test");
 
                 var m1Tuple = (NamedTypeSymbol)test.GetMember<MethodSymbol>("M1").ReturnType;
-                Assert.True(m1Tuple.IsTupleType);
+                Assert.True(m1Tuple.GetIsTupleType());
                 AssertEx.Equal("System.ValueTuple<System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, (System.Int32 a, System.Int32 b)>",
                              m1Tuple.ToTestDisplayString());
             }
@@ -22284,7 +22284,7 @@ public class B
             Assert.Equal("(System.Int32, System.Int32)[missing]", methodM.ReturnTypeWithAnnotations.ToTestDisplayString());
             Assert.IsType<ConstructedErrorTypeSymbol>(methodM.ReturnType);
             Assert.IsType<MissingMetadataTypeSymbol.TopLevel>(methodM.ReturnType.OriginalDefinition);
-            Assert.True(methodM.ReturnType.IsTupleType);
+            Assert.True(methodM.ReturnType.GetIsTupleType());
             Assert.True(methodM.ReturnType.IsErrorType());
             foreach (var item in methodM.ReturnType.TupleElements)
             {
@@ -22324,7 +22324,7 @@ public class B
             Assert.Equal("(System.Int32 Item1, System.Int32 Bob)[missing]", methodM.ReturnTypeWithAnnotations.ToTestDisplayString());
             Assert.IsType<ConstructedErrorTypeSymbol>(methodM.ReturnType);
             Assert.IsType<MissingMetadataTypeSymbol.TopLevel>(methodM.ReturnType.OriginalDefinition);
-            Assert.True(methodM.ReturnType.IsTupleType);
+            Assert.True(methodM.ReturnType.GetIsTupleType());
             Assert.True(methodM.ReturnType.IsErrorType());
             foreach (var item in methodM.ReturnType.TupleElements)
             {
@@ -26752,13 +26752,13 @@ public class ClassB
                 if (decodingSuccessful)
                 {
                     Assert.Equal("(System.Int32 alice, System.Int32 bob)[missing]", tuple.ToTestDisplayString());
-                    Assert.True(tuple.IsTupleType);
+                    Assert.True(tuple.GetIsTupleType());
                     Assert.True(tuple.IsErrorType());
                 }
                 else
                 {
                     Assert.Equal("(System.Int32, System.Int32)[missing]", tuple.ToTestDisplayString());
-                    Assert.True(tuple.IsTupleType);
+                    Assert.True(tuple.GetIsTupleType());
                     Assert.True(tuple.IsErrorType());
                 }
             }
@@ -26824,7 +26824,7 @@ public class ClassB
                 var tuple = iEnumerable.TypeArguments()[0];
                 AssertEx.Equal("System.ValueTuple<System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, System.Int32, System.ValueTuple<System.Int32>[missing]>[missing]", tuple.ToTestDisplayString());
                 Assert.True(tuple.IsErrorType());
-                Assert.True(tuple.IsTupleType);
+                Assert.True(tuple.GetIsTupleType());
             }
         }
 
@@ -26897,7 +26897,7 @@ public class ClassB
                     Assert.Equal("(System.Int32, System.Int32)", tuple.ToTestDisplayString());
                 }
 
-                Assert.True(tuple.IsTupleType);
+                Assert.True(tuple.GetIsTupleType());
                 Assert.False(tuple.TupleUnderlyingType.IsErrorType());
                 Assert.False(tuple.IsErrorType());
             }
@@ -26964,7 +26964,7 @@ public class ClassB
                         ? "(System.Int32 charlie, System.Int32 dylan)"
                         : "(System.Int32, System.Int32)",
                     tuple1.ToTestDisplayString());
-                Assert.True(tuple1.IsTupleType);
+                Assert.True(tuple1.GetIsTupleType());
                 Assert.False(tuple1.TupleUnderlyingType.IsErrorType());
                 Assert.False(tuple1.IsErrorType());
 
@@ -26980,7 +26980,7 @@ public class ClassB
                         ? "(System.Int32 alice, System.Int32 bob)"
                         : "(System.Int32, System.Int32)",
                     tuple2.ToTestDisplayString());
-                Assert.True(tuple2.IsTupleType);
+                Assert.True(tuple2.GetIsTupleType());
                 Assert.False(tuple2.TupleUnderlyingType.IsErrorType());
                 Assert.False(tuple2.IsErrorType());
             }
@@ -28247,7 +28247,7 @@ namespace System
                     var isSourceSymbol = tuple.ContainingModule is SourceModuleSymbol;
 
                     var namedType = (NamedTypeSymbol)tuple;
-                    Assert.True(namedType.IsTupleType);
+                    Assert.True(namedType.GetIsTupleType());
                     Assert.Equal(isSourceSymbol ? "SourceNonExtensionNamedTypeSymbol" : (retargeting ? "RetargetingNamedTypeSymbol" : "PENamedTypeSymbolGeneric"),
                         namedType.GetType().Name);
 
@@ -28329,7 +28329,7 @@ namespace System
                     var isSourceSymbol = tuple.ContainingModule is SourceModuleSymbol;
 
                     var namedType = (NamedTypeSymbol)tuple;
-                    Assert.False(namedType.IsTupleType);
+                    Assert.False(namedType.GetIsTupleType());
                     var item = namedType.GetMember<FieldSymbol>(name);
                     Assert.Equal(-1, item.TupleElementIndex);
                     if (retargeting)
@@ -28417,7 +28417,7 @@ namespace System
                 {
                     var isSourceSymbol = namedType.ContainingModule is SourceModuleSymbol;
 
-                    Assert.True(namedType.IsTupleType);
+                    Assert.True(namedType.GetIsTupleType());
                     var item = namedType.GetMember<FieldSymbol>(name);
                     if (retargeting)
                     {

@@ -2247,7 +2247,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                         // Cannot reference System.Void directly.
                         var singleType = singleResult as TypeSymbol;
-                        if ((object)singleType != null && singleType.PrimitiveTypeCode == Cci.PrimitiveTypeCode.Void && simpleName == "Void")
+                        if ((object)singleType != null && singleType.PrimitiveTypeCodeNoExtensions == Cci.PrimitiveTypeCode.Void && simpleName == "Void")
                         {
                             wasError = true;
                             var errorInfo = new CSDiagnosticInfo(ErrorCode.ERR_SystemVoid);

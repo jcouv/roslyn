@@ -50,7 +50,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         public static bool CanImplicitlyExtend(NamedTypeSymbol extension, TypeSymbol type, out AbstractTypeParameterMap? map)
         {
-            Debug.Assert(extension is not null);
+            Debug.Assert(extension.IsDefinition);
             Debug.Assert(type is not null);
             map = null;
 

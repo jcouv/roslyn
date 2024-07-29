@@ -104,13 +104,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             ImmutableArray<Location?> elementLocations = default,
             ImmutableArray<Location> locations = default)
         {
-            Debug.Assert(tupleCompatibleType.IsTupleType);
+            Debug.Assert(tupleCompatibleType.GetIsTupleType());
             return tupleCompatibleType.WithElementNames(elementNames, elementLocations, errorPositions, locations);
         }
 
         internal NamedTypeSymbol WithTupleDataFrom(NamedTypeSymbol original)
         {
-            if (!IsTupleType || (original._lazyTupleData == null && this._lazyTupleData == null) || TupleData!.EqualsIgnoringTupleUnderlyingType(original.TupleData))
+            if (!GetIsTupleType() || (original._lazyTupleData == null && this._lazyTupleData == null) || TupleData!.EqualsIgnoringTupleUnderlyingType(original.TupleData))
             {
                 return this;
             }
@@ -119,7 +119,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         }
 
         internal NamedTypeSymbol? TupleUnderlyingType
-            => this._lazyTupleData != null ? this.TupleData!.TupleUnderlyingType : (this.IsTupleType ? this : null);
+            => this._lazyTupleData != null ? this.TupleData!.TupleUnderlyingType : (this.GetIsTupleType() ? this : null);
 
         /// <summary>
         /// Copy this tuple, but modify it to use the new element types.
@@ -163,14 +163,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                                                   ImmutableArray<bool> errorPositions,
                                                   ImmutableArray<Location> locations)
         {
-            Debug.Assert(IsTupleType);
+            Debug.Assert(GetIsTupleType());
             Debug.Assert(newElementNames.IsDefault || this.TupleElementTypesWithAnnotations.Length == newElementNames.Length);
             return WithTupleData(new TupleExtraData(this.TupleUnderlyingType!, newElementNames, newElementLocations, errorPositions, locations));
         }
 
         private NamedTypeSymbol WithTupleData(TupleExtraData newData)
         {
-            Debug.Assert(IsTupleType);
+            Debug.Assert(GetIsTupleType());
 
             if (newData.EqualsIgnoringTupleUnderlyingType(TupleData))
             {
@@ -526,14 +526,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        public sealed override bool IsTupleType
-            => IsTupleTypeOfCardinality(tupleCardinality: out _);
+        public sealed override bool GetIsTupleType(bool includeExtensions = false)
+        {
+            return IsTupleTypeOfCardinality(tupleCardinality: out _);
+        }
 
         internal TupleExtraData? TupleData
         {
             get
             {
-                if (!IsTupleType)
+                if (!GetIsTupleType())
                 {
                     return null;
                 }
@@ -557,19 +559,19 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             => _lazyTupleData is null ? default : _lazyTupleData.ElementLocations;
 
         public sealed override ImmutableArray<TypeWithAnnotations> TupleElementTypesWithAnnotations
-            => IsTupleType ? TupleData!.TupleElementTypesWithAnnotations(this) : default;
+            => GetIsTupleType() ? TupleData!.TupleElementTypesWithAnnotations(this) : default;
 
         public sealed override ImmutableArray<FieldSymbol> TupleElements
-            => IsTupleType ? TupleData!.TupleElements(this) : default;
+            => GetIsTupleType() ? TupleData!.TupleElements(this) : default;
 
         public TMember? GetTupleMemberSymbolForUnderlyingMember<TMember>(TMember? underlyingMemberOpt) where TMember : Symbol
         {
-            return IsTupleType ? TupleData!.GetTupleMemberSymbolForUnderlyingMember(underlyingMemberOpt) : null;
+            return GetIsTupleType() ? TupleData!.GetTupleMemberSymbolForUnderlyingMember(underlyingMemberOpt) : null;
         }
 
         protected ArrayBuilder<Symbol> MakeSynthesizedTupleMembers(ImmutableArray<Symbol> currentMembers, HashSet<Symbol>? replacedFields = null)
         {
-            Debug.Assert(IsTupleType);
+            Debug.Assert(GetIsTupleType());
             Debug.Assert(currentMembers.All(m => !(m is TupleVirtualElementFieldSymbol)));
 
             var elementTypes = TupleElementTypesWithAnnotations;
@@ -920,7 +922,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             internal TupleExtraData(NamedTypeSymbol underlyingType)
             {
                 RoslynDebug.Assert(underlyingType is object);
-                Debug.Assert(underlyingType.IsTupleType);
+                Debug.Assert(underlyingType.GetIsTupleType());
                 Debug.Assert(underlyingType.TupleElementNames.IsDefault);
 
                 TupleUnderlyingType = underlyingType;

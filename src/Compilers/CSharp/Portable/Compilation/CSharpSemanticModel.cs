@@ -1830,7 +1830,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             static void addSymbolUnlessSkipped(ArrayBuilder<ISymbol> results, Symbol singleSymbol, TypeSymbol? skipType)
             {
-                if (!singleSymbol.ContainingType.OriginalDefinition.Equals(skipType, TypeCompareKind.AllIgnoreOptions))
+                if (!singleSymbol.ContainingType.OriginalDefinition.Equals(skipType, TypeCompareKind.AllIgnoreOptions)) // TODO2
                 {
                     results.Add(singleSymbol.GetPublicSymbol());
                 }

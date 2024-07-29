@@ -1905,11 +1905,17 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             var nullableType2 = nullableType as NamedTypeSymbol;
             Debug.Assert(nullableType2 is { });
-            return UnsafeGetSpecialTypeMethod(syntax, member, compilation, diagnostics).AsMember(nullableType2);
+            Debug.Assert(nullableType2.IsNullableType(includeExtensions: true));
+            return UnsafeGetSpecialTypeMethod(syntax, member, compilation, diagnostics).AsMember((NamedTypeSymbol)nullableType2.ExtendedTypeOrSelf());
         }
 
-        private bool TryGetNullableMethod(SyntaxNode syntax, TypeSymbol nullableType, SpecialMember member, out MethodSymbol result, bool isOptional = false)
+        private bool TryGetNullableMethod(SyntaxNode syntax, TypeSymbol nullableType, SpecialMember member, out MethodSymbol result, bool isOptional = false, bool includeExtensions = false) // TODO2 review callers
         {
+            if (includeExtensions)
+            {
+                nullableType = nullableType.ExtendedTypeOrSelf();
+            }
+
             var nullableType2 = (NamedTypeSymbol)nullableType;
             if (TryGetSpecialTypeMethod(syntax, member, out result, isOptional))
             {
@@ -2076,7 +2082,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // Don't even call this method if the expression cannot be nullable.
             Debug.Assert(
                 exprType is null ||
-                exprType.IsNullableTypeOrTypeParameter() ||
+                exprType.IsNullableTypeOrTypeParameter(includeExtensions: true) ||
                 !exprType.IsValueType ||
                 exprType.IsPointerOrFunctionPointer());
 
@@ -2098,12 +2104,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (exprType is { })
             {
-                if (exprType.Kind == SymbolKind.TypeParameter)
+                if (exprType.Kind == SymbolKind.TypeParameter) // TODO2
                 {
                     // Box type parameters.
                     rewrittenExpr = MakeConversionNode(syntax, rewrittenExpr, Conversion.Boxing, objectType, @checked: false);
                 }
-                else if (exprType.IsNullableType())
+                else if (exprType.IsNullableType(includeExtensions: true))
                 {
                     operatorKind |= BinaryOperatorKind.NullableNull;
                 }

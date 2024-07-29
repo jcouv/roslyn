@@ -287,7 +287,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
             }
 
             // Now decode into a tuple, if it is one
-            if (decodedType.IsTupleType)
+            if (decodedType.GetIsTupleType())
             {
                 int tupleCardinality = decodedType.TupleElementTypesWithAnnotations.Length;
                 if (tupleCardinality > 0)

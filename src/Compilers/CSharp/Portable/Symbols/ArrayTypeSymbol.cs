@@ -340,6 +340,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal override bool Equals(TypeSymbol? t2, TypeCompareKind comparison)
         {
+            if ((comparison & TypeCompareKind.IgnoreExtensions) != 0)
+            {
+                // If not explicitly comparing considering extensions, we compare extended types instead
+                t2 = t2.ExtendedTypeOrSelf();
+            }
+
             return this.Equals(t2 as ArrayTypeSymbol, comparison);
         }
 

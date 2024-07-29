@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+// TODO2 review this file
 #nullable disable
 
 using System.Diagnostics;
@@ -227,7 +228,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             // turn operand into an O(operandType)
             // if the operand is already verifiably an O, we can use it as-is
             // otherwise we need to box it, so that verifier will start tracking an O
-            if (!conversion.Operand.Type.IsVerifierReference())
+            if (!conversion.Operand.Type.IsVerifierReference()) // TODO2
             {
                 EmitBox(conversion.Operand.Type, conversion.Operand.Syntax);
             }
@@ -242,7 +243,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 _builder.EmitOpCode(ILOpCode.Unbox_any);
                 EmitSymbolToken(conversion.Type, conversion.Syntax);
             }
-            else if (resultType.IsArray())
+            else if (resultType.IsArray()) // TODO2
             {
                 // need a static cast here to satisfy verifier
                 // Example: Derived[] can be used in place of Base[] for all purposes except for LDELEMA <Base> 
@@ -285,10 +286,10 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
         {
             // Nullable enumeration conversions should have already been lowered into
             // implicit or explicit nullable conversions.
-            Debug.Assert(!conversion.Type.IsNullableType());
+            Debug.Assert(!conversion.Type.IsNullableType(includeExtensions: true));
 
-            var fromType = conversion.Operand.Type;
-            if (fromType.IsEnumType())
+            var fromType = conversion.Operand.Type.ExtendedTypeOrSelf();
+            if (fromType.IsEnumType(includeExtensions: false))
             {
                 fromType = ((NamedTypeSymbol)fromType).EnumUnderlyingType;
             }
@@ -296,8 +297,8 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             var fromPredefTypeKind = fromType.PrimitiveTypeCode;
             Debug.Assert(IsNumeric(fromType));
 
-            var toType = conversion.Type;
-            if (toType.IsEnumType())
+            var toType = conversion.Type.ExtendedTypeOrSelf();
+            if (toType.IsEnumType(includeExtensions: false))
             {
                 toType = ((NamedTypeSymbol)toType).EnumUnderlyingType;
             }

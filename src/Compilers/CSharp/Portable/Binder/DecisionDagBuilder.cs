@@ -550,7 +550,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     // nothing to do, as there are no tests for the zero elements of this tuple
                 }
-                else if (inputType.IsTupleType)
+                else if (inputType.GetIsTupleType())
                 {
                     ImmutableArray<FieldSymbol> elements = inputType.TupleElements;
                     ImmutableArray<TypeWithAnnotations> elementTypes = inputType.TupleElementTypesWithAnnotations;

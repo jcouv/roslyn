@@ -108,8 +108,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             internal Multiple(ImmutableArray<TupleBinaryOperatorInfo> operators, TypeSymbol? leftConvertedTypeOpt, TypeSymbol? rightConvertedTypeOpt)
                 : base(leftConvertedTypeOpt, rightConvertedTypeOpt)
             {
-                Debug.Assert(leftConvertedTypeOpt is null || leftConvertedTypeOpt.StrippedType().IsTupleType);
-                Debug.Assert(rightConvertedTypeOpt is null || rightConvertedTypeOpt.StrippedType().IsTupleType);
+                Debug.Assert(leftConvertedTypeOpt is null || leftConvertedTypeOpt.StrippedType().GetIsTupleType());
+                Debug.Assert(rightConvertedTypeOpt is null || rightConvertedTypeOpt.StrippedType().GetIsTupleType());
                 Debug.Assert(!operators.IsDefault);
                 Debug.Assert(operators.IsEmpty || operators.Length > 1); // an empty array is used for error cases, otherwise tuples must have cardinality > 1
 

@@ -69,15 +69,12 @@ public class ExtensionTypeTests : CompilingTestBase
         Assert.False(namedType.IsSealed);
         Assert.False(namedType.IsRecord);
         Assert.False(namedType.IsRecordStruct);
-        Assert.False(namedType.IsReferenceType);
-        Assert.False(namedType.IsValueType);
         Assert.False(namedType.IsTypeParameter());
         Assert.False(namedType.IsAnonymousType);
-        Assert.False(namedType.IsEnumType());
         Assert.False(namedType.IsErrorType());
         Assert.Equal(specialType, namedType.SpecialType);
         Assert.False(namedType.IsObjectType());
-        Assert.False(namedType.IsTupleType);
+        Assert.False(namedType.GetIsTupleType());
         Assert.True(namedType.TupleElements.IsDefault);
         Assert.Empty(namedType.InterfacesNoUseSiteDiagnostics());
         Assert.Empty(namedType.AllInterfacesNoUseSiteDiagnostics); // PROTOTYPE
@@ -93,6 +90,11 @@ public class ExtensionTypeTests : CompilingTestBase
             // PROTOTYPE consider whether we want to expose invalid underlying types
             // in context of public APIs
             VerifyNotExtension<TypeSymbol>(underlyingType);
+
+            Assert.Equal(underlyingType.IsReferenceType, namedType.IsReferenceType);
+            Assert.Equal(underlyingType.IsValueType, namedType.IsValueType);
+            Assert.Equal(underlyingType.IsEnumType(), namedType.IsEnumType(includeExtensions: true));
+            Assert.Equal(underlyingType.IsNullableType(), namedType.IsNullableType(includeExtensions: true));
         }
 
         if (namedType != (object)namedType.OriginalDefinition)
@@ -17559,11 +17561,13 @@ implicit extension E2 for C
     public void ExtensionInvocation_Instance_ExtensionMethodOnUnderlying()
     {
         var src = """
+C.Method(new C());
+
 class C
 {
-    public void Method(E1 e)
+    public static void Method(E1 e)
     {
-        e.M();
+        System.Console.Write(e.M());
     }
 }
 
@@ -17574,19 +17578,14 @@ static class E2
     public static string M(this C c) => "ran";
 }
 """;
-        var comp = CreateCompilation(src);
-        // PROTOTYPE need to bind and emit an extension method on a receiver of an extension type
-        comp.VerifyDiagnostics(
-            // (5,9): error CS1929: 'E1' does not contain a definition for 'M' and the best extension method overload 'E2.M(C)' requires a receiver of type 'C'
-            //         e.M();
-            Diagnostic(ErrorCode.ERR_BadInstanceArgType, "e").WithArguments("E1", "M", "E2.M(C)", "C").WithLocation(5, 9));
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
 
-        var tree = comp.SyntaxTrees.Single();
+        var tree = comp.SyntaxTrees.First();
         var model = comp.GetSemanticModel(tree);
         var memberAccess = GetSyntax<MemberAccessExpressionSyntax>(tree, "e.M");
-        // PROTOTYPE need to fix the semantic model
-        Assert.Null(model.GetSymbolInfo(memberAccess).Symbol);
-        Assert.Equal([], model.GetMemberGroup(memberAccess).ToTestDisplayStrings());
+        Assert.Equal("System.String C.M()", model.GetSymbolInfo(memberAccess).Symbol.ToTestDisplayString());
+        Assert.Equal(["System.String C.M()"], model.GetMemberGroup(memberAccess).ToTestDisplayStrings());
     }
 
     [Fact]
@@ -17632,15 +17631,15 @@ static class E2
 """;
         var comp = CreateCompilation(src);
         comp.VerifyDiagnostics(
-            // (1,1): error CS1929: 'E1' does not contain a definition for 'M' and the best extension method overload 'E2.M(C)' requires a receiver of type 'C'
+            // (1,1): error CS0120: An object reference is required for the non-static field, method, or property 'E2.M(C)'
             // E1.M();
-            Diagnostic(ErrorCode.ERR_BadInstanceArgType, "E1").WithArguments("E1", "M", "E2.M(C)", "C").WithLocation(1, 1));
+            Diagnostic(ErrorCode.ERR_ObjectRequired, "E1.M").WithArguments("E2.M(C)").WithLocation(1, 1));
 
         var tree = comp.SyntaxTrees.Single();
         var model = comp.GetSemanticModel(tree);
         var memberAccess = GetSyntax<MemberAccessExpressionSyntax>(tree, "E1.M");
-        Assert.Null(model.GetSymbolInfo(memberAccess).Symbol);
-        Assert.Equal([], model.GetMemberGroup(memberAccess).ToTestDisplayStrings());
+        Assert.Equal("System.String C.M()", model.GetSymbolInfo(memberAccess).Symbol.ToTestDisplayString());
+        Assert.Equal(["System.String C.M()"], model.GetMemberGroup(memberAccess).ToTestDisplayStrings());
     }
 
     [ConditionalFact(typeof(NoUsedAssembliesValidation))] // PROTOTYPE(instance) enable and execute once we can lower/emit for non-static scenarios
@@ -29474,7 +29473,7 @@ class C
         var x = e.M;
     }
 
-    public static int M<T>() => throw null;
+    public static int M<T>() => throw null; // TODO2 should this be instance method instead?
 }
 
 implicit extension E1 for C { }
@@ -29485,10 +29484,8 @@ static class E2
 }
 """;
         var comp = CreateCompilation(src);
-        comp.VerifyDiagnostics(
-            // (5,17): error CS0411: The type arguments for method 'C.M<T>()' cannot be inferred from the usage. Try specifying the type arguments explicitly.
-            //         var x = e.M;
-            Diagnostic(ErrorCode.ERR_CantInferMethTypeArgs, "e.M").WithArguments("C.M<T>()").WithLocation(5, 17));
+        comp.VerifyDiagnostics();
+        // TODO2 run
 
         var tree = comp.SyntaxTrees.Single();
         var model = comp.GetSemanticModel(tree);
@@ -29496,10 +29493,9 @@ static class E2
         Assert.Equal("System.Func<System.String> x", model.GetDeclaredSymbol(x).ToTestDisplayString());
 
         var memberAccess = GetSyntax<MemberAccessExpressionSyntax>(tree, "e.M");
-        // PROTOTYPE need to bind and emit an extension method on a receiver of an extension type
-        Assert.Null(model.GetSymbolInfo(memberAccess).Symbol);
+        Assert.Equal("System.String C.M()", model.GetSymbolInfo(memberAccess).Symbol.ToTestDisplayString());
         // PROTOTYPE need to fix the semantic model
-        Assert.Equal(["System.Int32 C.M<T>()"], model.GetMemberGroup(memberAccess).ToTestDisplayStrings());
+        Assert.Equal(["System.Int32 C.M<T>()"], model.GetMemberGroup(memberAccess).ToTestDisplayStrings()); // TODO2
 
         var src2 = """
 var x = new Derived().M;
@@ -29553,21 +29549,17 @@ static class E2
 }
 """;
         var comp = CreateCompilation(src);
-        // PROTOTYPE need to bind and emit an extension method on a receiver of an extension type
-        comp.VerifyDiagnostics(
-            // (5,19): error CS1061: 'E1' does not contain a definition for 'M' and no accessible extension method 'M' accepting a first argument of type 'E1' could be found (are you missing a using directive or an assembly reference?)
-            //         var x = e.M;
-            Diagnostic(ErrorCode.ERR_NoSuchMemberOrExtension, "M").WithArguments("E1", "M").WithLocation(5, 19));
+        comp.VerifyDiagnostics();
+        // TODO2 run
 
         var tree = comp.SyntaxTrees.Single();
         var model = comp.GetSemanticModel(tree);
         var x = GetSyntax<VariableDeclaratorSyntax>(tree, "x = e.M");
-        Assert.Equal("? x", model.GetDeclaredSymbol(x).ToTestDisplayString());
+        Assert.Equal("System.Func<System.String> x", model.GetDeclaredSymbol(x).ToTestDisplayString());
 
         var memberAccess = GetSyntax<MemberAccessExpressionSyntax>(tree, "e.M");
-        // PROTOTYPE need to fix the semantic model
-        Assert.Null(model.GetSymbolInfo(memberAccess).Symbol);
-        Assert.Equal([], model.GetMemberGroup(memberAccess).ToTestDisplayStrings());
+        Assert.Equal("System.String C.M()", model.GetSymbolInfo(memberAccess).Symbol.ToTestDisplayString());
+        Assert.Equal(["System.String C.M()"], model.GetMemberGroup(memberAccess).ToTestDisplayStrings());
 
         var src2 = """
 var x = new Derived().M;
@@ -29748,7 +29740,6 @@ static class E2
     public void InferredVariable_ValueReceiver_GenericExtensionMethod()
     {
         var src = """
-
 class C 
 { 
     void M(E e)
@@ -47695,9 +47686,8 @@ public class D
 
         // Missing references
         CreateCompilation([src, ExtensionErasureAttributeDefinition], references: [bRef, cRef, eRef]).VerifyEmitDiagnostics(
-            // (3,30): error CS0012: The type 'A' is defined in an assembly that is not referenced. You must add a reference to assembly 'AssemblyA, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'.
-            //     public E<B> M() => throw null;
-            Diagnostic(ErrorCode.ERR_NoTypeDef, "null").WithArguments("A", "AssemblyA, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null").WithLocation(3, 30));
+            // error CS0012: The type 'A' is defined in an assembly that is not referenced. You must add a reference to assembly 'AssemblyA, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'.
+            Diagnostic(ErrorCode.ERR_NoTypeDef).WithArguments("A", "AssemblyA, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null").WithLocation(1, 1));
 
         CreateCompilation([src, ExtensionErasureAttributeDefinition], references: [aRef, cRef, eRef]).VerifyEmitDiagnostics(
             // (3,14): error CS0246: The type or namespace name 'B' could not be found (are you missing a using directive or an assembly reference?)
@@ -48383,10 +48373,11 @@ public class D
         var verifier = CompileAndVerify(comp/*, expectedOutput: "ran"*/).VerifyDiagnostics();
         verifier.VerifyIL("D.Main", """
 {
-  // Code size       25 (0x19)
+  // Code size       27 (0x1b)
   .maxstack  2
   .locals init (<>f__AnonymousType0<int, int> V_0, //x
-                <>f__AnonymousType0<int, int> V_1) //y
+                <>f__AnonymousType0<int, int> V_1, //y
+                <>f__AnonymousType0<int, int> V_2)
   IL_0000:  nop
   IL_0001:  ldc.i4.1
   IL_0002:  ldc.i4.2
@@ -48395,10 +48386,12 @@ public class D
   IL_0009:  ldloc.0
   IL_000a:  call       "E<<anonymous type: int A, int B>> D.Extend<<anonymous type: int A, int B>>(<anonymous type: int A, int B>)"
   IL_000f:  stloc.1
-  IL_0010:  ldloca.s   V_1
-  IL_0012:  call       "void E<<anonymous type: int A, int B>>.Method(ref <anonymous type: int A, int B>)"
-  IL_0017:  nop
-  IL_0018:  ret
+  IL_0010:  ldloc.1
+  IL_0011:  stloc.2
+  IL_0012:  ldloca.s   V_2
+  IL_0014:  call       "void E<<anonymous type: int A, int B>>.Method(ref <anonymous type: int A, int B>)"
+  IL_0019:  nop
+  IL_001a:  ret
 }
 """);
     }
@@ -48948,4 +48941,5406 @@ public explicit extension E for int
             }
         }
     }
+
+    [Theory, CombinatorialData]
+    public void Conversion_Identity_ToExtension_Simple(bool isImplicit)
+    {
+        var keyword = isImplicit ? "implicit" : "explicit";
+        var src = $$"""
+int i = 42;
+/*<bind>*/
+E e = i;
+/*</bind>*/
+e.M();
+
+public {{keyword}} extension E for int
+{
+    public void M() { System.Console.Write(this); }
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        var verifier = CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+{
+  // Code size       11 (0xb)
+  .maxstack  1
+  .locals init (int V_0) //e
+  IL_0000:  ldc.i4.s   42
+  IL_0002:  stloc.0
+  IL_0003:  ldloca.s   V_0
+  IL_0005:  call       "void E.M(ref int)"
+  IL_000a:  ret
+}
+""");
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var literal = GetSyntax<LiteralExpressionSyntax>(tree, "42");
+        var conversion = model.GetConversion(literal);
+        Assert.Equal(ConversionKind.Identity, conversion.Kind);
+
+        string expectedOperationTree = """
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'E e = i;')
+IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'E e = i')
+  Declarators:
+      IVariableDeclaratorOperation (Symbol: E e) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e = i')
+        Initializer:
+          IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= i')
+            IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E, IsImplicit) (Syntax: 'i')
+              Conversion: CommonConversion (Exists: True, IsIdentity: True, IsNumeric: False, IsReference: False, IsUserDefined: False) (MethodSymbol: null)
+              Operand:
+                ILocalReferenceOperation: i (OperationKind.LocalReference, Type: System.Int32) (Syntax: 'i')
+  Initializer:
+    null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, DiagnosticDescription.None);
+    }
+
+    [Fact]
+    public void Conversion_Identity_ToExtension_WrongType()
+    {
+        var src = $$"""
+E e1 = 42L;
+E e2 = null;
+E e3 = string.Empty;
+E e4 = new object();
+
+public implicit extension E for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,3): warning CS0219: The variable 'e1' is assigned but its value is never used
+            // E e1 = 42L;
+            Diagnostic(ErrorCode.WRN_UnreferencedVarAssg, "e1").WithArguments("e1").WithLocation(1, 3),
+            // (1,8): error CS0266: Cannot implicitly convert type 'long' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e1 = 42L;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "42L").WithArguments("long", "E").WithLocation(1, 8),
+            // (2,8): error CS0037: Cannot convert null to 'E' because it is a non-nullable value type
+            // E e2 = null;
+            Diagnostic(ErrorCode.ERR_ValueCantBeNull, "null").WithArguments("E").WithLocation(2, 8),
+            // (3,8): error CS0029: Cannot implicitly convert type 'string' to 'E'
+            // E e3 = string.Empty;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "string.Empty").WithArguments("string", "E").WithLocation(3, 8),
+            // (4,8): error CS0266: Cannot implicitly convert type 'object' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e4 = new object();
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "new object()").WithArguments("object", "E").WithLocation(4, 8));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var e1 = GetSyntax<LiteralExpressionSyntax>(tree, "42L");
+        Assert.Equal(ConversionKind.ExplicitNumeric, model.GetConversion(e1).Kind);
+        var e2 = GetSyntax<LiteralExpressionSyntax>(tree, "null");
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(e2).Kind);
+        var e3 = GetSyntax<MemberAccessExpressionSyntax>(tree, "string.Empty");
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(e3).Kind);
+        var e4 = GetSyntax<ObjectCreationExpressionSyntax>(tree, "new object()");
+        Assert.Equal(ConversionKind.Unboxing, model.GetConversion(e4).Kind);
+    }
+
+    [Fact]
+    public void Conversion_Identity_FromExtension_WrongType()
+    {
+        var src = $$"""
+E e = 42;
+byte l = e;
+string s = e;
+
+public implicit extension E for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,10): error CS0266: Cannot implicitly convert type 'E' to 'byte'. An explicit conversion exists (are you missing a cast?)
+            // byte l = e;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e").WithArguments("E", "byte").WithLocation(2, 10),
+            // (3,12): error CS0029: Cannot implicitly convert type 'E' to 'string'
+            // string s = e;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "e").WithArguments("E", "string").WithLocation(3, 12));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var e1 = GetSyntaxes<IdentifierNameSyntax>(tree, "e").First();
+        Assert.Equal(ConversionKind.ExplicitNumeric, model.GetConversion(e1).Kind);
+        var e2 = GetSyntaxes<IdentifierNameSyntax>(tree, "e").Skip(1).First();
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(e2).Kind);
+    }
+
+    [Theory, CombinatorialData]
+    public void Conversion_Identity_ToExtendedType_Simple(bool isImplicit)
+    {
+        var keyword = isImplicit ? "implicit" : "explicit";
+        var src = $$"""
+E e = 42;
+System.Console.Write((f(e), e.ToInt()));
+
+int f(E e)
+{
+    int i = e;
+/*<bind>*/
+    return i;
+/*</bind>*/
+}
+
+public {{keyword}} extension E for int
+{
+    public int ToInt()
+    {
+        return this;
+    }
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        var verifier = CompileAndVerify(comp, expectedOutput: "(42, 42)").VerifyDiagnostics();
+        verifier.VerifyIL("E.ToInt", """
+{
+  // Code size        3 (0x3)
+  .maxstack  1
+  IL_0000:  ldarg.0
+  IL_0001:  ldind.i4
+  IL_0002:  ret
+}
+""");
+
+        string expectedOperationTree = @"
+IReturnOperation (OperationKind.Return, Type: null) (Syntax: 'return i;')
+  ReturnedValue:
+    ILocalReferenceOperation: i (OperationKind.LocalReference, Type: System.Int32) (Syntax: 'i')
+";
+
+        VerifyOperationTreeAndDiagnosticsForTest<ReturnStatementSyntax>(src, expectedOperationTree, DiagnosticDescription.None);
+    }
+
+    [Theory, CombinatorialData]
+    public void Conversion_Identity_ToSelf(bool isImplicit)
+    {
+        var keyword = isImplicit ? "implicit" : "explicit";
+        var src = $$"""
+E e1 = 42;
+E e2 = e1;
+e2.M();
+
+public {{keyword}} extension E for int { public void M() { System.Console.Write("ran"); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_Identity_ToExtension_TODO2()
+    {
+        var src = """
+E1<E2> e = new C<int>();
+e.M();
+
+public class C<T> { }
+public implicit extension E1<T> for C<T> { public void M() { System.Console.Write(typeof(T)); } }
+public implicit extension E2 for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "System.Int32").VerifyDiagnostics();
+    }
+
+    [Theory, CombinatorialData]
+    public void Conversion_Identity_BetweenTwoExtensionTypes(bool isImplicit)
+    {
+        var keyword = isImplicit ? "implicit" : "explicit";
+        var src = $$"""
+E1 e1 = 42;
+E2 e2 = e1; // 1
+
+public explicit extension E1 for int { }
+public {{keyword}} extension E2 for int { }
+""";
+
+        // PROTOTYPE we probably want to block that conversion, or make it explicit
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,9): error CS0029: Cannot implicitly convert type 'E1' to 'E2'
+            // E2 e2 = e1; // 1
+            //Diagnostic(ErrorCode.ERR_NoImplicitConv, "e1").WithArguments("E1", "E2").WithLocation(2, 9)
+            );
+    }
+
+    [Fact]
+    public void Conversion_Identity_BetweenTwoExtensionTypes_WithTypeArguments()
+    {
+        var src = $$"""
+E<int> e = 42;
+E<string> e2 = e; // 1
+
+public explicit extension E<T> for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        // TODO2
+    }
+
+    [Theory, CombinatorialData]
+    public void Conversion_Identity_BetweenTwoExtensionTypes_Nested(bool isImplicit)
+    {
+        // TODO2
+        var keyword = isImplicit ? "implicit" : "explicit";
+        var src = $$"""
+C<E1> e1 = new C<int>();
+C<E2> e2 = e1;
+
+public explicit extension E1 for int { }
+public {{keyword}} extension E2 for int { }
+public class C<T> { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        // TODO2
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<IdentifierNameSyntax>(tree, "e1").First();
+        Assert.Equal(ConversionKind.Identity, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_Identity_BetweenTwoExtensionTypes_Cast()
+    {
+        var src = """
+E1 e1 = 42;
+E2 e2 = (E2)e1; // 1
+
+public explicit extension E1 for int { }
+public explicit extension E2 for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        // TODO2
+    }
+
+    [Fact]
+    public void Conversion_Identity_ToExtension_Generic()
+    {
+        var src = """
+var c = new C<string, int>("hi", 42);
+E<string> e = c;
+e.M();
+
+public class C<T1, T2>
+{
+    public T1 Field1;
+    public T2 Field2;
+    public C(T1 t1, T2 t2) { Field1 = t1; Field2 = t2; }
+}
+
+public explicit extension E<T> for C<T, int>
+{
+    public void M() { System.Console.Write((this.Field1, this.Field2)); }
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "(hi, 42)");
+    }
+
+    [Fact]
+    public void Conversion_Identity_ToExtendedType_Generic()
+    {
+        var src = """
+var c = new C<string, int>("hi", 42);
+E<string> e = c;
+var c2 = e.ToC();
+System.Console.Write((c2.Field1, c2.Field2));
+
+public class C<T1, T2>
+{
+    public T1 Field1;
+    public T2 Field2;
+    public C(T1 t1, T2 t2) { Field1 = t1; Field2 = t2; }
+}
+
+public explicit extension E<T> for C<T, int>
+{
+    public C<T, int> ToC() => this;
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "(hi, 42)");
+    }
+
+    [Fact]
+    public void Conversion_Identity_ToExtension_Variance()
+    {
+        // TODO2
+        var src = """
+I<object> io = null;
+I<E> ie = io;
+
+public interface I<T> { }
+
+public explicit extension E for object
+{
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        //CompileAndVerify(comp, expectedOutput: "(hi, 42)");
+    }
+
+    [Theory, CombinatorialData]
+    public void Conversion_Identity_ToExtension_Nullability(bool isImplicit)
+    {
+        var keyword = isImplicit ? "implicit" : "explicit";
+        var src = $$"""
+#nullable enable
+
+C<object?> c = new();
+E<object> e = c; // 1
+
+public class C<T> { }
+
+public {{keyword}} extension E<T> for C<T> { }
+""";
+
+        // TODO2 review how this warning was produced
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (4,15): warning CS8619: Nullability of reference types in value of type 'C<object?>' doesn't match target type 'E<object>'.
+            // E<object> e = c; // 1
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "c").WithArguments("C<object?>", "E<object>").WithLocation(4, 15));
+    }
+
+    [Theory, CombinatorialData]
+    public void Conversion_Identity_ToExtendedType_Nullability(bool isImplicit)
+    {
+        var keyword = isImplicit ? "implicit" : "explicit";
+        var src = $$"""
+#nullable enable
+
+C<object?> c = new();
+E<object?> e = c;
+C<object> c2 = e; // 1
+
+public class C<T> { }
+
+public {{keyword}} extension E<T> for C<T> { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (5,16): warning CS8619: Nullability of reference types in value of type 'E<object?>' doesn't match target type 'C<object>'.
+            // C<object> c2 = e; // 1
+            Diagnostic(ErrorCode.WRN_NullabilityMismatchInAssignment, "e").WithArguments("E<object?>", "C<object>").WithLocation(5, 16));
+    }
+
+    [Fact]
+    public void Conversion_Identity_ToExtension_InConstraint()
+    {
+        var src = """
+C c = new C();
+E e = c;
+local(e);
+
+void local<T>(T t) where T : C { }
+public class C { }
+public implicit extension E for C { }
+""";
+
+        // TODO2
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        // TODO2 we're going to need to emit erasure for type arguments to metadata... class D : C<E> { }
+    }
+
+    [Fact]
+    public void TODO2()
+    {
+        var src = """
+var c = new C<string, int>("hi", 42);
+E<string> e = c;
+System.Console.Write((e.Field1, e.Field2)); // TODO2 using fields
+
+public class C<T1, T2>
+{
+    public T1 Field1;
+    public T2 Field2;
+    public C(T1 t1, T2 t2) { Field1 = t1; Field2 = t2; }
+}
+
+public explicit extension E<T> for C<T, int> { }
+""";
+
+        // TODO2
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "(hi, 42)");
+    }
+
+    [Fact]
+    public void Conversion_ReferenceTODO2_ToExtension_Generic_Base()
+    {
+        var src = """
+var d = new Derived("hi", 42);
+E<string> e = d;
+e.M();
+
+public class Derived : Base<string, int>
+{
+    public Derived(string s, int i) : base(s, i) { }
+}
+
+public class Base<T1, T2>
+{
+    public T1 Field1;
+    public T2 Field2;
+    public Base(T1 t1, T2 t2) { Field1 = t1; Field2 = t2; }
+}
+
+public explicit extension E<T> for Base<T, int>
+{
+    public void M() { System.Console.Write((this.Field1, this.Field2)); }
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "(hi, 42)");
+    }
+
+    [Fact]
+    public void Conversion_ReferenceTODO2_ToExtension_Implicit_Generic_ForInterface()
+    {
+        var src = """
+var c = new C("hi", 42);
+E<string> e = c;
+e.M();
+
+public class C : I<string, int>
+{
+    public string P1 { get; set; }
+    public int P2 { get; set; }
+    public C(string s, int i) { P1 = s; P2 = i; }
+}
+
+public interface I<T1, T2>
+{
+    public T1 P1 { get; set; }
+    public T2 P2 { get; set; }
+}
+
+public explicit extension E<T> for I<T, int>
+{
+    public void M() { System.Console.Write((this.P1, this.P2)); }
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "(hi, 42)");
+    }
+
+    [Fact]
+    public void Conversion_TODO2_Identity_ToExtendedType_FromConstant()
+    {
+        var src = """
+E e = 42;
+System.Console.Write(e.Id());
+
+public implicit extension E for int
+{
+    public int Id() => this;
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "42");
+    }
+
+    [Fact]
+    public void Conversion_ToExtendedType_InConstraint()
+    {
+        var src = """
+C c = new C();
+local(c);
+
+void local<T>(T t) where T : E { }
+public class C { }
+public implicit extension E for C { }
+""";
+
+        // TODO2 should reconsider allowing this scenario...
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (4,30): error CS0706: Invalid constraint type. A type used as a constraint must be an interface, a non-sealed class or a type parameter.
+            // void local<T>(T t) where T : E { }
+            Diagnostic(ErrorCode.ERR_BadConstraintType, "E").WithLocation(4, 30));
+    }
+
+    [Fact]
+    public void Conversion_Identity_ToExtendedType_InConstraint_Generic()
+    {
+        var src = """
+I<object> i = null;
+var i2 = local(i);
+i2.Get().M();
+
+T local<T>(T t) where T : I<E> => t;
+
+public interface I<out T> { public T Get(); }
+public explicit extension E for object { public void M() { } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (3,10): error CS1061: 'object' does not contain a definition for 'M' and no accessible extension method 'M' accepting a first argument of type 'object' could be found (are you missing a using directive or an assembly reference?)
+            // i2.Get().M();
+            Diagnostic(ErrorCode.ERR_NoSuchMemberOrExtension, "M").WithArguments("object", "M").WithLocation(3, 10));
+        // PROTOTYPE confirm expected type inference
+        // TODO2 emit erasure in constraints
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<InvocationExpressionSyntax>(tree, "local(i)");
+        Assert.Equal("I<System.Object> local<I<System.Object>>(I<System.Object> t)", model.GetSymbolInfo(expr).Symbol.ToTestDisplayString());
+    }
+
+    [Theory]
+    [InlineData("sbyte", "short")]
+    [InlineData("sbyte", "int")]
+    [InlineData("sbyte", "long")]
+    [InlineData("sbyte", "float")]
+    [InlineData("sbyte", "double")]
+    [InlineData("sbyte", "decimal")]
+    [InlineData("byte", "short")]
+    [InlineData("byte", "ushort")]
+    [InlineData("byte", "int")]
+    [InlineData("byte", "uint")]
+    [InlineData("byte", "long")]
+    [InlineData("byte", "ulong")]
+    [InlineData("byte", "float")]
+    [InlineData("byte", "double")]
+    [InlineData("byte", "decimal")]
+    [InlineData("short", "int")]
+    [InlineData("short", "long")]
+    [InlineData("short", "float")]
+    [InlineData("short", "double")]
+    [InlineData("short", "decimal")]
+    [InlineData("ushort", "int")]
+    [InlineData("ushort", "uint")]
+    [InlineData("ushort", "long")]
+    [InlineData("ushort", "ulong")]
+    [InlineData("ushort", "float")]
+    [InlineData("ushort", "double")]
+    [InlineData("ushort", "decimal")]
+    [InlineData("int", "long")]
+    [InlineData("int", "float")]
+    [InlineData("int", "double")]
+    [InlineData("int", "decimal")]
+    [InlineData("uint", "long")]
+    [InlineData("uint", "ulong")]
+    [InlineData("uint", "float")]
+    [InlineData("uint", "double")]
+    [InlineData("uint", "decimal")]
+    [InlineData("long", "float")]
+    [InlineData("long", "double")]
+    [InlineData("long", "decimal")]
+    [InlineData("ulong", "float")]
+    [InlineData("ulong", "double")]
+    [InlineData("ulong", "decimal")]
+    [InlineData("char", "ushort")]
+    [InlineData("char", "int")]
+    [InlineData("char", "uint")]
+    [InlineData("char", "long")]
+    [InlineData("char", "ulong")]
+    [InlineData("char", "float")]
+    [InlineData("char", "double")]
+    [InlineData("char", "decimal")]
+    [InlineData("float", "double")]
+    public void Conversion_ImplicitNumeric(string fromType, string toType)
+    {
+        // from extension type
+        var src = $$"""
+{{fromType}} x = ({{fromType}})42;
+/*<bind>*/
+E e = x;
+/*</bind>*/
+e.M();
+
+public explicit extension E for {{toType}} { public void M() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        Assert.Equal(ConversionKind.ImplicitNumeric, model.GetConversion(expr).Kind);
+
+        string expectedOperationTree = $$"""
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'E e = x;')
+  IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'E e = x')
+    Declarators:
+        IVariableDeclaratorOperation (Symbol: E e) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e = x')
+          Initializer:
+            IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= x')
+              IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E, IsImplicit) (Syntax: 'x')
+                Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: True, IsReference: False, IsUserDefined: False) (MethodSymbol: null)
+                Operand:
+                  ILocalReferenceOperation: x (OperationKind.LocalReference, Type: {{fullFromType(fromType)}}) (Syntax: 'x')
+    Initializer:
+      null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, DiagnosticDescription.None);
+
+        // from extension type
+        src = $$"""
+E e = (E)42;
+{{toType}} x = e;
+System.Console.Write(x);
+
+public explicit extension E for {{fromType}} { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.ImplicitNumeric, model.GetConversion(expr).Kind);
+
+        // to nullable type of extension
+        src = $$"""
+{{fromType}} x = ({{fromType}})42;
+/*<bind>*/
+E? e = x;
+/*</bind>*/
+e?.M();
+
+public explicit extension E for {{toType}} { public void M() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        Assert.Equal(ConversionKind.ImplicitNullable, model.GetConversion(expr).Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, model.GetConversion(expr).UnderlyingConversions.Single().Kind);
+
+        expectedOperationTree = $$"""
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'E? e = x;')
+  IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'E? e = x')
+    Declarators:
+        IVariableDeclaratorOperation (Symbol: E? e) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e = x')
+          Initializer:
+            IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= x')
+              IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E?, IsImplicit) (Syntax: 'x')
+                Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: False, IsReference: False, IsUserDefined: False) (MethodSymbol: null)
+                Operand:
+                  ILocalReferenceOperation: x (OperationKind.LocalReference, Type: {{fullFromType(fromType)}}) (Syntax: 'x')
+    Initializer:
+      null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, DiagnosticDescription.None);
+
+        // from and to nullable type
+        src = $$"""
+{{fromType}}? x = ({{fromType}}?)42;
+/*<bind>*/
+E? e = x;
+/*</bind>*/
+e?.M();
+
+public explicit extension E for {{toType}} { public void M() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        Assert.Equal(ConversionKind.ImplicitNullable, model.GetConversion(expr).Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, model.GetConversion(expr).UnderlyingConversions.Single().Kind);
+
+        expectedOperationTree = $$"""
+
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'E? e = x;')
+  IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'E? e = x')
+    Declarators:
+        IVariableDeclaratorOperation (Symbol: E? e) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e = x')
+          Initializer:
+            IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= x')
+              IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E?, IsImplicit) (Syntax: 'x')
+                Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: False, IsReference: False, IsUserDefined: False) (MethodSymbol: null)
+                Operand:
+                  ILocalReferenceOperation: x (OperationKind.LocalReference, Type: {{fullFromType(fromType)}}?) (Syntax: 'x')
+    Initializer:
+      null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, DiagnosticDescription.None);
+
+        // from nullable type without cast
+        src = $$"""
+{{fromType}}? x = ({{fromType}}?)42;
+E e = x;
+
+public explicit extension E for {{toType}} { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'fromType?' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments(fromType + "?", "E").WithLocation(2, 7));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        Assert.Equal(ConversionKind.ExplicitNullable, model.GetConversion(expr).Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, model.GetConversion(expr).UnderlyingConversions.Single().Kind);
+
+        // from nullable type with cast
+        src = $$"""
+{{fromType}}? x = ({{fromType}}?)42;
+/*<bind>*/
+E e = (E)x;
+/*</bind>*/
+e.M();
+
+public explicit extension E for {{toType}} { public void M() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        expectedOperationTree = $$"""
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'E e = (E)x;')
+  IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'E e = (E)x')
+    Declarators:
+        IVariableDeclaratorOperation (Symbol: E e) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e = (E)x')
+          Initializer:
+            IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= (E)x')
+              IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E) (Syntax: '(E)x')
+                Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: False, IsReference: False, IsUserDefined: False) (MethodSymbol: null)
+                Operand:
+                  ILocalReferenceOperation: x (OperationKind.LocalReference, Type: {{fullFromType(fromType)}}?) (Syntax: 'x')
+    Initializer:
+      null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, DiagnosticDescription.None);
+
+        // between extensions
+        src = $$"""
+E1 e1 = ({{fromType}})42;
+E2 e2 = e1;
+e2.M();
+
+public explicit extension E1 for {{fromType}} { }
+public explicit extension E2 for {{toType}} { public void M() { System.Console.Write(this); } }
+""";
+
+        // PROTOTYPE we may want those conversions between extension types to be explicit-only
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        static string fullFromType(string fromType)
+        {
+            return fromType switch
+            {
+                "sbyte" => "System.SByte",
+                "byte" => "System.Byte",
+                "short" => "System.Int16",
+                "ushort" => "System.UInt16",
+                "int" => "System.Int32",
+                "uint" => "System.UInt32",
+                "long" => "System.Int64",
+                "ulong" => "System.UInt64",
+                "char" => "System.Char",
+                "float" => "System.Single",
+                _ => throw ExceptionUtilities.UnexpectedValue(fromType)
+            };
+        }
+    }
+    // TODO2 test E e = 42;
+
+    [Theory]
+    [InlineData("short", "sbyte")]
+    [InlineData("int", "sbyte")]
+    [InlineData("long", "sbyte")]
+    [InlineData("float", "sbyte")]
+    [InlineData("double", "sbyte")]
+    [InlineData("decimal", "sbyte")]
+    [InlineData("short", "byte")]
+    [InlineData("ushort", "byte")]
+    [InlineData("int", "byte")]
+    [InlineData("uint", "byte")]
+    [InlineData("long", "byte")]
+    [InlineData("ulong", "byte")]
+    [InlineData("float", "byte")]
+    [InlineData("double", "byte")]
+    [InlineData("decimal", "byte")]
+    [InlineData("int", "short")]
+    [InlineData("long", "short")]
+    [InlineData("float", "short")]
+    [InlineData("double", "short")]
+    [InlineData("decimal", "short")]
+    [InlineData("int", "ushort")]
+    [InlineData("uint", "ushort")]
+    [InlineData("long", "ushort")]
+    [InlineData("ulong", "ushort")]
+    [InlineData("float", "ushort")]
+    [InlineData("double", "ushort")]
+    [InlineData("decimal", "ushort")]
+    [InlineData("long", "int")]
+    [InlineData("float", "int")]
+    [InlineData("double", "int")]
+    [InlineData("decimal", "int")]
+    [InlineData("long", "uint")]
+    [InlineData("ulong", "uint")]
+    [InlineData("float", "uint")]
+    [InlineData("double", "uint")]
+    [InlineData("decimal", "uint")]
+    [InlineData("float", "long")]
+    [InlineData("double", "long")]
+    [InlineData("decimal", "long")]
+    [InlineData("float", "ulong")]
+    [InlineData("double", "ulong")]
+    [InlineData("decimal", "ulong")]
+    [InlineData("ushort", "char")]
+    [InlineData("int", "char")]
+    [InlineData("uint", "char")]
+    [InlineData("long", "char")]
+    [InlineData("ulong", "char")]
+    [InlineData("float", "char")]
+    [InlineData("double", "char")]
+    [InlineData("decimal", "char")]
+    [InlineData("double", "float")]
+    public void Conversion_ImplicitNumeric_ReverseOrder(string fromType, string toType)
+    {
+        // to extension type
+        var src = $$"""
+{{fromType}} x = ({{fromType}})42;
+E e = x;
+e.M();
+
+public explicit extension E for {{toType}} { public void M() { } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'fromType' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments(fromType, "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        Assert.Equal(ConversionKind.ExplicitNumeric, model.GetConversion(expr).Kind);
+
+        // from extension type
+        src = $$"""
+E e = (E)42;
+{{toType}} x = e;
+System.Console.Write(x);
+
+public explicit extension E for {{fromType}} { public void M() { } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,10): error CS0266: Cannot implicitly convert type 'E' to 'toType'. An explicit conversion exists (are you missing a cast?)
+            // toType x = e;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e").WithArguments("E", toType));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.ExplicitNumeric, model.GetConversion(expr).Kind);
+
+        // from nullable
+        src = $$"""
+{{fromType}}? x = ({{fromType}}?)42;
+E e = x;
+e.M();
+
+public explicit extension E for {{toType}} { public void M() { } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'fromType?' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments(fromType + "?", "E").WithLocation(2, 7));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        Assert.Equal(ConversionKind.ExplicitNullable, model.GetConversion(expr).Kind);
+
+        // to nullable
+        src = $$"""
+{{fromType}} x = ({{fromType}})42;
+E? e = x;
+e?.M();
+
+public explicit extension E for {{toType}} { public void M() { } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,8): error CS0266: Cannot implicitly convert type 'fromType' to 'E?'. An explicit conversion exists (are you missing a cast?)
+            // E? e = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments(fromType, "E?").WithLocation(2, 8));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        Assert.Equal(ConversionKind.ExplicitNullable, model.GetConversion(expr).Kind);
+
+        // from and to nullable
+        src = $$"""
+{{fromType}}? x = ({{fromType}}?)42;
+E? e = x;
+e?.M();
+
+public explicit extension E for {{toType}} { public void M() { } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,8): error CS0266: Cannot implicitly convert type 'fromType?' to 'E?'. An explicit conversion exists (are you missing a cast?)
+            // E? e = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments(fromType + "?", "E?").WithLocation(2, 8));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        Assert.Equal(ConversionKind.ExplicitNullable, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_NullLiteral_ReferenceType()
+    {
+        // Spec: [There is an implicit reference conversion] From the null literal to any reference-type.
+        var src = """
+/*<bind>*/
+E e = null;
+/*</bind>*/
+System.Console.Write(e is null);
+
+public implicit extension E for object { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "True").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<LiteralExpressionSyntax>(tree, "null").First();
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+
+        string expectedOperationTree = """
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'E e = null;')
+  IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'E e = null')
+    Declarators:
+        IVariableDeclaratorOperation (Symbol: E e) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e = null')
+          Initializer:
+            IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= null')
+              IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E, Constant: null, IsImplicit) (Syntax: 'null')
+                Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: False, IsReference: True, IsUserDefined: False) (MethodSymbol: null)
+                Operand:
+                  ILiteralOperation (OperationKind.Literal, Type: null, Constant: null) (Syntax: 'null')
+    Initializer:
+      null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, DiagnosticDescription.None);
+    }
+
+    [Fact]
+    public void Conversion_NullLiteral_ReferenceType_TypeArgument()
+    {
+        // Spec: [There is an implicit reference conversion] From the null literal to any reference-type.
+        var src = """
+/*<bind>*/
+E<object> e = null;
+/*</bind>*/
+System.Console.Write(e is null);
+
+public implicit extension E<T> for T where T : class { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "True").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<LiteralExpressionSyntax>(tree, "null").First();
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+
+        string expectedOperationTree = """
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'E<object> e = null;')
+  IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'E<object> e = null')
+    Declarators:
+        IVariableDeclaratorOperation (Symbol: E<System.Object> e) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e = null')
+          Initializer:
+            IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= null')
+              IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E<System.Object>, Constant: null, IsImplicit) (Syntax: 'null')
+                Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: False, IsReference: True, IsUserDefined: False) (MethodSymbol: null)
+                Operand:
+                  ILiteralOperation (OperationKind.Literal, Type: null, Constant: null) (Syntax: 'null')
+    Initializer:
+      null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, DiagnosticDescription.None);
+    }
+
+    [Fact]
+    public void Conversion_NullLiteral_ValueType()
+    {
+        var src = """
+E e = null;
+
+public implicit extension E for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,7): error CS0037: Cannot convert null to 'E' because it is a non-nullable value type
+            // E e = null;
+            Diagnostic(ErrorCode.ERR_ValueCantBeNull, "null").WithArguments("E").WithLocation(1, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<LiteralExpressionSyntax>(tree, "null").First();
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_NullLiteral_ValueType_TypeArgument()
+    {
+        var src = """
+E<int> e = null;
+
+public implicit extension E<T> for T where T : struct { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,12): error CS0037: Cannot convert null to 'E<int>' because it is a non-nullable value type
+            // E<int> e = null;
+            Diagnostic(ErrorCode.ERR_ValueCantBeNull, "null").WithArguments("E<int>").WithLocation(1, 12));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<LiteralExpressionSyntax>(tree, "null").First();
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_NullLiteral_NullableOfExtension()
+    {
+        // Spec: An implicit conversion exists from the null literal to any reference type or nullable value type. 
+        // TODO2 crashes
+        var src = """
+/*<bind>*/
+E? e1 = null;
+/*</bind>*/
+
+System.Console.Write(e1.HasValue);
+
+public implicit extension E for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "False").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<LiteralExpressionSyntax>(tree, "null").First();
+        Assert.Equal(ConversionKind.NullLiteral, model.GetConversion(expr).Kind);
+
+        string expectedOperationTree = """
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'E? e1 = null;')
+  IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'E? e1 = null')
+    Declarators:
+        IVariableDeclaratorOperation (Symbol: E? e1) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e1 = null')
+          Initializer:
+            IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= null')
+              IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E?, Constant: null, IsImplicit) (Syntax: 'null')
+                Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: False, IsReference: False, IsUserDefined: False) (MethodSymbol: null)
+                Operand:
+                  ILiteralOperation (OperationKind.Literal, Type: null, Constant: null) (Syntax: 'null')
+    Initializer:
+      null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, []);
+    }
+
+    [Fact]
+    public void Conversion_NullLiteral_ExtensionOfNullableOfExtension()
+    {
+        // Spec: An implicit conversion exists from the null literal to any reference type or nullable value type. 
+        var src = """
+E1 e1 = null;
+System.Console.Write(e1.HasValue);
+
+public implicit extension E1 for E2? { }
+public implicit extension E2 for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        var verifier = CompileAndVerify(comp, expectedOutput: "False").VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+ {
+  // Code size       21 (0x15)
+  .maxstack  1
+  .locals init (int? V_0) //e1
+  IL_0000:  ldloca.s   V_0
+  IL_0002:  initobj    "int?"
+  IL_0008:  ldloca.s   V_0
+  IL_000a:  call       "bool E2?.HasValue.get"
+  IL_000f:  call       "void System.Console.Write(bool)"
+  IL_0014:  ret
+}
+""");
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<LiteralExpressionSyntax>(tree, "null").First();
+        Assert.Equal(ConversionKind.NullLiteral, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void TODO2_PatternOnNullableOfExtension()
+    {
+        // PROTOTYPE handle patterns on nullable of extensions
+        var src = """
+static void local(E? e)
+{
+    System.Console.Write((e is null, e is 42));
+}
+
+public implicit extension E for int { }
+""";
+
+        Assert.ThrowsAny<InvalidOperationException>(() =>
+        {
+            var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+            CompileAndVerify(comp).VerifyDiagnostics(
+                // (2,4): warning CS0219: The variable 'e1' is assigned but its value is never used
+                // E? e1 = null;
+                Diagnostic(ErrorCode.WRN_UnreferencedVarAssg, "e1").WithArguments("e1").WithLocation(2, 4));
+        }
+        );
+    }
+
+    [Fact]
+    public void Conversion_NullLiteral_ExtensionOfNullable()
+    {
+        // Spec: An implicit conversion exists from the null literal to any reference type or nullable value type. 
+        var src = """
+/*<bind>*/
+E e = null;
+/*</bind>*/
+System.Console.Write(e is null);
+
+public implicit extension E for int? { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        var verifier = CompileAndVerify(comp, expectedOutput: "True").VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+ {
+  // Code size       24 (0x18)
+  .maxstack  2
+  .locals init (int? V_0) //e
+  IL_0000:  ldloca.s   V_0
+  IL_0002:  initobj    "int?"
+  IL_0008:  ldloca.s   V_0
+  IL_000a:  call       "bool int?.HasValue.get"
+  IL_000f:  ldc.i4.0
+  IL_0010:  ceq
+  IL_0012:  call       "void System.Console.Write(bool)"
+  IL_0017:  ret
+}
+""");
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<LiteralExpressionSyntax>(tree, "null").First();
+        Assert.Equal(ConversionKind.NullLiteral, model.GetConversion(expr).Kind);
+
+        var e = comp.GlobalNamespace.GetTypeMember("E");
+        Assert.True(e.IsNullableType(includeExtensions: true));
+        Assert.False(e.IsNullableType(includeExtensions: false));
+        Assert.True(e.IsNullableTypeOrTypeParameter(includeExtensions: true));
+        Assert.False(e.IsNullableTypeOrTypeParameter(includeExtensions: false));
+
+        string expectedOperationTree = """
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'E e = null;')
+  IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'E e = null')
+    Declarators:
+        IVariableDeclaratorOperation (Symbol: E e) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e = null')
+          Initializer:
+            IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= null')
+              IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E, Constant: null, IsImplicit) (Syntax: 'null')
+                Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: False, IsReference: False, IsUserDefined: False) (MethodSymbol: null)
+                Operand:
+                  ILiteralOperation (OperationKind.Literal, Type: null, Constant: null) (Syntax: 'null')
+    Initializer:
+      null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, DiagnosticDescription.None);
+    }
+
+    [Fact]
+    public void Conversion_NullLiteral_ExtendedTypeIsNullableOfExtensionType()
+    {
+        // Spec: An implicit conversion exists from the null literal to any reference type or nullable value type. 
+        var src = """
+/*<bind>*/
+E1 e = null;
+/*</bind>*/
+System.Console.Write(e is null);
+
+public implicit extension E1 for E2? { }
+public implicit extension E2 for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "True").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<LiteralExpressionSyntax>(tree, "null").First();
+        Assert.Equal(ConversionKind.NullLiteral, model.GetConversion(expr).Kind);
+
+        string expectedOperationTree = """
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'E1 e = null;')
+IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'E1 e = null')
+  Declarators:
+      IVariableDeclaratorOperation (Symbol: E1 e) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e = null')
+        Initializer:
+          IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= null')
+            IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E1, Constant: null, IsImplicit) (Syntax: 'null')
+              Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: False, IsReference: False, IsUserDefined: False) (MethodSymbol: null)
+              Operand:
+                ILiteralOperation (OperationKind.Literal, Type: null, Constant: null) (Syntax: 'null')
+  Initializer:
+    null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, DiagnosticDescription.None);
+    }
+
+    [Fact]
+    public void Conversion_NullLiteral_NullableOfExtension_TypeArgument()
+    {
+        // Spec: An implicit conversion exists from the null literal to any reference type or nullable value type. 
+        var src = """
+E? e1 = 42;
+new Derived().M<E?>(e1);
+
+/*<bind>*/
+E? e2 = null;
+/*</bind>*/
+new Derived().M<E?>(e2);
+
+abstract class Base<T>
+{
+    public abstract void M<U>(U u) where U : T;
+}
+
+class Derived : Base<E?>
+{
+    public override void M<U>(U u) // U is constrained to System.Nullable<E>
+    {
+        System.Console.Write((u is null, u is 42));
+    }
+}
+
+public explicit extension E for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        var verifier = CompileAndVerify(comp, expectedOutput: "(False, True)(True, False)").VerifyDiagnostics();
+        verifier.VerifyIL("Derived.M<U>(U)", """
+{
+  // Code size       61 (0x3d)
+  .maxstack  3
+  IL_0000:  ldarg.1
+  IL_0001:  box        "U"
+  IL_0006:  ldnull
+  IL_0007:  ceq
+  IL_0009:  ldarg.1
+  IL_000a:  box        "U"
+  IL_000f:  isinst     "int"
+  IL_0014:  brfalse.s  IL_002c
+  IL_0016:  ldarg.1
+  IL_0017:  box        "U"
+  IL_001c:  isinst     "int"
+  IL_0021:  unbox.any  "int"
+  IL_0026:  ldc.i4.s   42
+  IL_0028:  ceq
+  IL_002a:  br.s       IL_002d
+  IL_002c:  ldc.i4.0
+  IL_002d:  newobj     "System.ValueTuple<bool, bool>..ctor(bool, bool)"
+  IL_0032:  box        "System.ValueTuple<bool, bool>"
+  IL_0037:  call       "void System.Console.Write(object)"
+  IL_003c:  ret
+}
+""");
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<LiteralExpressionSyntax>(tree, "null").First();
+        Assert.Equal(ConversionKind.NullLiteral, model.GetConversion(expr).Kind);
+
+        string expectedOperationTree = """
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'E? e2 = null;')
+  IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'E? e2 = null')
+    Declarators:
+        IVariableDeclaratorOperation (Symbol: E? e2) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e2 = null')
+          Initializer:
+            IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= null')
+              IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E?, Constant: null, IsImplicit) (Syntax: 'null')
+                Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: False, IsReference: False, IsUserDefined: False) (MethodSymbol: null)
+                Operand:
+                  ILiteralOperation (OperationKind.Literal, Type: null, Constant: null) (Syntax: 'null')
+    Initializer:
+      null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, DiagnosticDescription.None);
+    }
+
+    [Fact]
+    public void Conversion_NullLiteral_ExtendedTypeIsNullable_TypeArgument()
+    {
+        // Spec: An implicit conversion exists from the null literal to any reference type or nullable value type. 
+        var src = """
+E e1 = 42;
+new Derived().M<E>(e1);
+
+E e2 = null;
+new Derived().M<E>(e2);
+
+abstract class Base<T>
+{
+    public abstract void M<U>(U u) where U : T;
+}
+
+class Derived : Base<E>
+{
+    public override void M<U>(U u)
+    {
+        System.Console.Write(u is null);
+    }
+}
+
+public explicit extension E for int? { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "FalseTrue").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<LiteralExpressionSyntax>(tree, "null").First();
+        Assert.Equal(ConversionKind.NullLiteral, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtensionType_Object()
+    {
+        // Spec: From any reference_type to object and dynamic.
+        var src = """
+string s = "ran";
+/*<bind>*/
+E e = s;
+/*</bind>*/
+e.M();
+
+public implicit extension E for object { public void M() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<IdentifierNameSyntax>(tree, "s").First();
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+
+        string expectedOperationTree = """
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'E e = s;')
+  IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'E e = s')
+    Declarators:
+        IVariableDeclaratorOperation (Symbol: E e) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e = s')
+          Initializer:
+            IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= s')
+              IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E, IsImplicit) (Syntax: 's')
+                Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: False, IsReference: True, IsUserDefined: False) (MethodSymbol: null)
+                Operand:
+                  ILocalReferenceOperation: s (OperationKind.LocalReference, Type: System.String) (Syntax: 's')
+    Initializer:
+      null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, DiagnosticDescription.None);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtensionType_ToDerived()
+    {
+        var src = """
+object o = "ran";
+E e = o;
+
+public implicit extension E for string { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'object' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = o;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "o").WithArguments("object", "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<IdentifierNameSyntax>(tree, "o").First();
+        Assert.Equal(ConversionKind.ExplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtendedType_Object()
+    {
+        // Spec: From any reference_type to object and dynamic.
+        var src = """
+string s = "ran";
+E e = s;
+object o = e;
+System.Console.Write(o);
+
+public implicit extension E for string { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<IdentifierNameSyntax>(tree, "e").First();
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtendedType_Dynamic()
+    {
+        // Spec: From any reference_type to object and dynamic.
+        var src = """
+string s = "ran";
+E e = s;
+dynamic o = e;
+System.Console.Write(o);
+
+public implicit extension E for string { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition], targetFramework: TargetFramework.StandardAndCSharp);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<IdentifierNameSyntax>(tree, "e").First();
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtensionType_ToBase()
+    {
+        // Spec: From any class_type S to any class_type T, provided S is derived from T.
+        var src = """
+Derived d = new Derived();
+E e = d;
+e.Method();
+
+public class Base { public virtual void M() { } }
+public class Derived : Base { public override void M() { System.Console.Write("ran"); } }
+public implicit extension E for Base { public void Method() { this.M(); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "d");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtendedType_ToBase()
+    {
+        // Spec: From any class_type S to any class_type T, provided S is derived from T.
+        var src = """
+E e = new Derived();
+Base b = e;
+b.M();
+
+public class Base { public virtual void M() { } }
+public class Derived : Base { public override void M() { System.Console.Write("ran"); } }
+public implicit extension E for Derived { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtensionType_ToInterface()
+    {
+        // Spec: From any class_type S to any interface_type T, provided S implements T.
+        var src = """
+C c = new C();
+E e = c;
+e.Method();
+
+public interface I { public void M(); }
+public class C : I { public void M() { System.Console.Write("ran"); } }
+public implicit extension E for I { public void Method() { this.M(); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "c");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtendedType_ToInterface()
+    {
+        // Spec: From any class_type S to any interface_type T, provided S implements T.
+        var src = """
+E e = new C();
+I i = e;
+i.M();
+
+public interface I { public void M(); }
+public class C : I { public void M() { System.Console.Write("ran"); } }
+public implicit extension E for C { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtensionType_ToBaseInterface()
+    {
+        // Spec: From any interface_type S to any interface_type T, provided S is derived from T.
+        var src = """
+IDerived d = new C();
+EBase e = d;
+e.Method();
+
+public interface IBase { public void M(); }
+public interface IDerived : IBase { }
+public class C : IDerived { public void M() { System.Console.Write("ran"); } }
+public implicit extension EBase for IBase { public void Method() { this.M(); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "d");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtendedType_ToBaseInterface()
+    {
+        // Spec: From any interface_type S to any interface_type T, provided S is derived from T.
+        var src = """
+EDerived e = new C();
+IBase i = e;
+i.M();
+
+public interface IBase { public void M(); }
+public interface IDerived : IBase { }
+public class C : IDerived { public void M() { System.Console.Write("ran"); } }
+public implicit extension EDerived for IDerived { public void Method() { this.M(); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtensionType_ToArray()
+    {
+        // Spec: From an array_type S with an element type Sᵢ to an array_type T with an element type Tᵢ, provided ...
+        var src = """
+string[] s = new [] { "ran" };
+E e = s;
+e.Method();
+
+// PROTOTYPE allow indexing directly on `this` in extension type on array
+public implicit extension E for object[] { public void Method() { System.Console.Write(((object[])this)[0]); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "s");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToArrayOfExtensionType()
+    {
+        // Spec: From an array_type S with an element type Sᵢ to an array_type T with an element type Tᵢ, provided ...
+        var src = """
+string[] s = new [] { "ran" };
+E[] e = s;
+e[0].Method();
+
+public implicit extension E for object { public void Method() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "s");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToArrayOfExtensionType_BetweenExtensionTypes()
+    {
+        // Spec: From an array_type S with an element type Sᵢ to an array_type T with an element type Tᵢ, provided ...
+        var src = """
+EString[] s = new [] { "ran" };
+EObject[] e = s;
+e[0].Method();
+
+public implicit extension EString for string { }
+public implicit extension EObject for object { public void Method() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "s");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtendedType_ToArray()
+    {
+        // Spec: From an array_type S with an element type Sᵢ to an array_type T with an element type Tᵢ, provided ...
+        var src = """
+E e = new string[] { "ran" };
+object[] o = e;
+System.Console.Write(o[0]);
+
+public implicit extension E for string[] { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToArrayOfExtendedType()
+    {
+        // Spec: From an array_type S with an element type Sᵢ to an array_type T with an element type Tᵢ, provided ...
+        var src = """
+E[] e = new string[] { "ran" };
+object[] o = e;
+System.Console.Write(o[0]);
+
+public implicit extension E for string { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtensionType_ToIList()
+    {
+        // Spec: From a single-dimensional array type S[] to System.Collections.Generic.IList<T>,
+        // System.Collections.Generic.IReadOnlyList<T>, and their base interfaces, provided ...
+        var src = """
+string[] s = new string[] { "ran" };
+E e = s;
+e.Method();
+
+public implicit extension E for System.Collections.Generic.IList<object>
+{
+    // PROTOTYPE allow indexing directly on `this` in extension type on IList
+    public void Method() { System.Console.Write(((System.Collections.Generic.IList<object>)this)[0]); }
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        // ILVerify issue tracked by https://github.com/dotnet/runtime/issues/106282
+        var verifier = CompileAndVerify(comp, expectedOutput: "ran", verify: Verification.FailsILVerify).VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+{
+  // Code size       20 (0x14)
+  .maxstack  4
+  IL_0000:  ldc.i4.1
+  IL_0001:  newarr     "string"
+  IL_0006:  dup
+  IL_0007:  ldc.i4.0
+  IL_0008:  ldstr      "ran"
+  IL_000d:  stelem.ref
+  IL_000e:  call       "void E.Method(System.Collections.Generic.IList<object>)"
+  IL_0013:  ret
+}
+""");
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "s");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+
+        src = """
+string[] s = new [] { "ran" };
+System.Collections.Generic.IList<object> e = s;
+C.Method(e);
+
+public class C
+{
+    public static void Method(System.Collections.Generic.IList<object>  i) { System.Console.Write(i[0]); }
+}
+""";
+        comp = CreateCompilation(src);
+        // [<Main>$]: Unexpected type on the stack. { Offset = 0xe, Found = ref 'string[]', Expected = ref '[netstandard]System.Collections.Generic.IList`1<object>' }
+        verifier = CompileAndVerify(comp, expectedOutput: "ran", verify: Verification.FailsILVerify).VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+{
+  // Code size       20 (0x14)
+  .maxstack  4
+  IL_0000:  ldc.i4.1
+  IL_0001:  newarr     "string"
+  IL_0006:  dup
+  IL_0007:  ldc.i4.0
+  IL_0008:  ldstr      "ran"
+  IL_000d:  stelem.ref
+  IL_000e:  call       "void C.Method(System.Collections.Generic.IList<object>)"
+  IL_0013:  ret
+}
+""");
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtendedType_ToIList()
+    {
+        // Spec: From a single-dimensional array type S[] to System.Collections.Generic.IList<T>,
+        // System.Collections.Generic.IReadOnlyList<T>, and their base interfaces, provided ...
+        var src = """
+E e = new string[] { "ran" };
+System.Collections.Generic.IList<object> i = e;
+System.Console.Write(i[0]);
+
+public implicit extension E for string[] { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        // ILVerify issue tracked by https://github.com/dotnet/runtime/issues/106282
+        //  [<Main>$]: Unexpected type on the stack. { Offset = 0xf, Found = ref 'string[]', Expected = ref '[netstandard]System.Collections.Generic.IList`1<object>' }
+        var verifier = CompileAndVerify(comp, expectedOutput: "ran", verify: Verification.FailsILVerify).VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+
+        // from array of extension type
+        src = """
+E[] e = new string[] { "ran" };
+System.Collections.Generic.IList<object> i = e;
+System.Console.Write(i[0]);
+
+public implicit extension E for string { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        // ILVerify issue tracked by https://github.com/dotnet/runtime/issues/106282
+        //  [<Main>$]: Unexpected type on the stack. { Offset = 0xf, Found = ref 'string[]', Expected = ref '[netstandard]System.Collections.Generic.IList`1<object>' }
+        verifier = CompileAndVerify(comp, expectedOutput: "ran", verify: Verification.FailsILVerify).VerifyDiagnostics();
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+
+        // pre-existing issue with IL verification
+        src = """
+string[] s = new [] { "ran" };
+System.Collections.Generic.IList<object> e = s;
+C.Method(e);
+
+public class C
+{
+    public static void Method(System.Collections.Generic.IList<object>  i) { System.Console.Write(i[0]); }
+}
+""";
+        comp = CreateCompilation(src);
+        // [<Main>$]: Unexpected type on the stack. { Offset = 0xe, Found = ref 'string[]', Expected = ref '[netstandard]System.Collections.Generic.IList`1<object>' }
+        verifier = CompileAndVerify(comp, expectedOutput: "ran", verify: Verification.FailsILVerify).VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+{
+  // Code size       20 (0x14)
+  .maxstack  4
+  IL_0000:  ldc.i4.1
+  IL_0001:  newarr     "string"
+  IL_0006:  dup
+  IL_0007:  ldc.i4.0
+  IL_0008:  ldstr      "ran"
+  IL_000d:  stelem.ref
+  IL_000e:  call       "void C.Method(System.Collections.Generic.IList<object>)"
+  IL_0013:  ret
+}
+""");
+
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtensionType_ToSystemArray()
+    {
+        // Spec: From any array_type to System.Array and the interfaces it implements.
+        var src = """
+string[] s = new string[] { "ran" };
+E e = s;
+e.Method();
+
+public implicit extension E for System.Array
+{
+    // PROTOTYPE allow indexing directly on `this` in extension type on IList
+    public void Method() { System.Console.Write(this.GetValue(0)); }
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "s");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+
+        // to an interface implemented by System.Array
+        src = """
+string[] s = new string[] { "ran" };
+E e = s;
+e.Method();
+
+public implicit extension E for System.Collections.IList
+{
+    // PROTOTYPE allow indexing directly on `this` in extension type on IList
+    public void Method() { System.Console.Write(((System.Collections.IList)this)[0]); }
+}
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "s");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtendedType_ToSystemArray()
+    {
+        // Spec: From any array_type to System.Array and the interfaces it implements.
+        var src = """
+E e = new string[] { "ran" };
+System.Array a = e;
+System.Console.Write(a.GetValue(0));
+
+public implicit extension E for string[] { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+
+        // to an interface implemented by System.Array
+        src = """
+E e = new string[] { "ran" };
+System.Collections.IList i = e;
+System.Console.Write(i[0]);
+
+public implicit extension E for string[] { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtensionType_ToSystemDelegate()
+    {
+        // Spec: From any delegate_type to System.Delegate and the interfaces it implements.
+        var src = """
+MyDelegate d = () => { System.Console.Write("ran"); };
+E e = d;
+e.Method();
+
+public delegate void MyDelegate();
+public implicit extension E for System.Delegate
+{
+    public void Method() { this.DynamicInvoke(); /*DynamicInvoke();*/ } // TODO2
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "d");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+
+        // to an interface implemented by System.Delegate
+        src = """
+MyDelegate d = () => { System.Console.Write("ran"); };
+E e = d;
+e.Method();
+
+public delegate void MyDelegate();
+public implicit extension E for System.Runtime.Serialization.ISerializable
+{
+    public void Method() { ((System.Delegate)(object)this).DynamicInvoke(); }
+}
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "d");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtendedType_ToSystemDelegate()
+    {
+        // Spec: From any delegate_type to System.Delegate and the interfaces it implements.
+        // TODO2 add similar test but without cast to MyDelegate
+        var src = """
+E e = (MyDelegate)(() => { System.Console.Write("ran"); });
+System.Delegate d = e;
+d.DynamicInvoke();
+
+public delegate void MyDelegate();
+public implicit extension E for MyDelegate { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+
+        // to an interface implemented by System.Delegate
+        src = """
+E e = (MyDelegate)(() => { System.Console.Write("ran"); });
+System.Runtime.Serialization.ISerializable d = e;
+((System.Delegate)(object)d).DynamicInvoke();
+
+public delegate void MyDelegate();
+public implicit extension E for MyDelegate { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtensionType_TypeParameterBaseClass()
+    {
+        // Spec: [For T known to be a reference type] From T to its effective base class C,
+        // from T to any base class of C, and from T to any interface implemented by C.
+        var src = """
+class Program
+{
+    public static void M<T>(T t) where T : C
+
+    {
+        EC ec = t;
+        EBase ebase = t;
+        EI ei = t;
+    }
+}
+
+public interface I { }
+public class Base : I { }
+public class C : Base { }
+public explicit extension EC for C { }
+public explicit extension EBase for Base { }
+public explicit extension EI for I { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        //CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics(); // TODO2
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expressions = GetSyntaxes<IdentifierNameSyntax>(tree, "t");
+        foreach (var expr in expressions)
+        {
+            Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+        }
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtensionType_TypeParameterBaseInterface()
+    {
+        // Spec: From T [known to be a reference type] to an interface_type I in T’s effective interface set and from T to any base interface of I.
+        var src = """
+class Program
+{
+    public static void M<T>(T t) where T : class, IDerived
+    {
+        EBase ebase = t;
+        EDerived ederived = t;
+    }
+}
+
+public interface IBase { }
+public interface IDerived : IBase { }
+public explicit extension EBase for IBase { }
+public explicit extension EDerived for IDerived { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        //CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics(); // TODO2
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expressions = GetSyntaxes<IdentifierNameSyntax>(tree, "t");
+        foreach (var expr in expressions)
+        {
+            Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+        }
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtensionType_OtherTypeParameter()
+    {
+        // Spec:  From T [known to be a reference type] to a type parameter U provided that T depends on U
+        var src = """
+public abstract class Base<T>
+{
+    public abstract void M<U>(U u) where U : T;
+}
+
+public class Derived : Base<E>
+{
+    public override void M<U>(U u)
+    {
+        E e = u;
+    }
+}
+
+public explicit extension E for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        // PROTOTYPE confirm expectations for type parameter that is effectively constrained to an extension type
+        comp.VerifyEmitDiagnostics(
+            // (10,15): error CS0029: Cannot implicitly convert type 'U' to 'E'
+            //         E e = u;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "u").WithArguments("U", "E").WithLocation(10, 15));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "u");
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitReference_ToExtensionType_NullToTypeParameter()
+    {
+        // Spec: From the null literal to T [known to be a reference type].
+        var src = """
+public abstract class Base<T>
+{
+    public abstract U M<U>() where U : T;
+}
+
+public class Derived : Base<E>
+{
+    public override U M<U>()
+    {
+        return null;
+    }
+}
+
+public explicit extension E for object { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        //CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics(); // TODO2
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<LiteralExpressionSyntax>(tree, "null");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_Boxing_ToObject()
+    {
+        // Spec: From any value_type to the type object.
+
+        // to extension
+        var src = """
+int i = 42;
+EObject e = i;
+e.M();
+
+public explicit extension EObject for object { public void M() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "i");
+        Assert.Equal(ConversionKind.Boxing, model.GetConversion(expr).Kind);
+
+        // from extension
+        src = """
+E e = 42;
+object o = e;
+System.Console.Write(o);
+
+public explicit extension E for int { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.Boxing, model.GetConversion(expr).Kind);
+
+        // to extension (type parameter)
+        src = """
+new Derived().M<EObject>().M();
+abstract class Base<T>
+{
+    public abstract U M<U>() where U : T;
+}
+
+class Derived : Base<EObject>
+{
+    public override U M<U>()
+    {
+        int i1 = 42;
+        U e = i1; // 1
+        return e;
+    }
+}
+
+class Derived2 : Base<object>
+{
+    public override U M<U>()
+    {
+        int i2 = 42;
+        U e = i2; // 2
+        return e;
+    }
+}
+
+public explicit extension EObject for object { public void M() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (12,15): error CS0029: Cannot implicitly convert type 'int' to 'U'
+            //         U e = i1; // 1
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "i1").WithArguments("int", "U").WithLocation(12, 15),
+            // (22,15): error CS0029: Cannot implicitly convert type 'int' to 'U'
+            //         U e = i2; // 2
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "i2").WithArguments("int", "U").WithLocation(22, 15));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "i1");
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(expr).Kind);
+
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "i2");
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_Boxing_ToSystemValueType()
+    {
+        // Spec: From any value_type to the type System.ValueType.
+
+        // to extension
+        var src = """
+int i = 42;
+E e = i;
+e.M();
+
+public explicit extension E for System.ValueType { public void M() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "i");
+        Assert.Equal(ConversionKind.Boxing, model.GetConversion(expr).Kind);
+
+        // from extension
+        src = """
+E e = 42;
+System.ValueType o = e;
+System.Console.Write(o);
+
+public explicit extension E for int { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.Boxing, model.GetConversion(expr).Kind);
+
+        // from a reference type extension
+        src = """
+E e = "";
+System.ValueType o = e;
+System.Console.Write(o);
+
+public explicit extension E for string { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,22): error CS0029: Cannot implicitly convert type 'E' to 'System.ValueType'
+            // System.ValueType o = e;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "e").WithArguments("E", "System.ValueType").WithLocation(2, 22));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(expr).Kind);
+
+        // to extension (type parameter)
+        src = """
+abstract class Base<T>
+{
+    public abstract U M<U>() where U : T;
+}
+
+class Derived : Base<E>
+{
+    public override U M<U>()
+    {
+        int i1 = 42;
+        U e = i1; // 1
+        return e;
+    }
+}
+
+class Derived2 : Base<System.ValueType>
+{
+    public override U M<U>()
+    {
+        int i2 = 42;
+        U e = i2; // 2
+        return e;
+    }
+}
+
+public explicit extension E for System.ValueType { public void M() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (11,15): error CS0029: Cannot implicitly convert type 'int' to 'U'
+            //         U e = i1; // 1
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "i1").WithArguments("int", "U").WithLocation(11, 15),
+            // (21,15): error CS0029: Cannot implicitly convert type 'int' to 'U'
+            //         U e = i2; // 2
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "i2").WithArguments("int", "U").WithLocation(21, 15));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "i1");
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(expr).Kind);
+
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "i2");
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_Boxing_ToSystemEnum()
+    {
+        // Spec: From any enum_type to the type System.Enum.
+
+        // to extension
+        var src = """
+Enum z = Enum.Zero;
+E e = z;
+e.M();
+
+public enum Enum { Zero }
+public explicit extension E for System.Enum { public void M() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "Zero").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "z");
+        Assert.Equal(ConversionKind.Boxing, model.GetConversion(expr).Kind);
+
+        // from extension
+        src = """
+E z = Enum.Zero;
+System.Enum o = z;
+System.Console.Write(o);
+
+public enum Enum { Zero }
+public explicit extension E for Enum { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "Zero").VerifyDiagnostics();
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "z");
+        Assert.Equal(ConversionKind.Boxing, model.GetConversion(expr).Kind);
+
+        // to extension (type parameter)
+        src = """
+abstract class Base<T>
+{
+    public abstract U M<U>() where U : T;
+}
+
+class Derived : Base<E>
+{
+    public override U M<U>()
+    {
+        Enum z1 = Enum.Zero;
+        U e = z1; // 1
+        return e;
+    }
+}
+
+class Derived2 : Base<System.Enum>
+{
+    public override U M<U>()
+    {
+        Enum z2 = Enum.Zero;
+        U e = z2; // 2
+        return e;
+    }
+}
+
+public enum Enum { Zero }
+public explicit extension E for System.Enum { public void M() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (11,15): error CS0029: Cannot implicitly convert type 'Enum' to 'U'
+            //         U e = z1; // 1
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "z1").WithArguments("Enum", "U").WithLocation(11, 15),
+            // (21,15): error CS0029: Cannot implicitly convert type 'Enum' to 'U'
+            //         U e = z2; // 2
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "z2").WithArguments("Enum", "U").WithLocation(21, 15));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "z1");
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(expr).Kind);
+
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "z2");
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_Boxing_ToInterfaceOfValueType()
+    {
+        // Spec: From any non_nullable_value_type to any interface_type implemented by the non_nullable_value_type.
+
+        // to extension
+        var src = """
+S s = default;
+EI e = s;
+e.M();
+
+public interface I
+{
+    public void Method();
+}
+public struct S : I
+{
+    void I.Method() { System.Console.Write("ran"); }
+}
+public explicit extension EI for I { public void M() { this.Method(); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "s");
+        Assert.Equal(ConversionKind.Boxing, model.GetConversion(expr).Kind);
+
+        // from extension
+        src = """
+E e = default(S);
+I i = e;
+System.Console.Write(i);
+
+public interface I { }
+public struct S : I { }
+public explicit extension E for S { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "S").VerifyDiagnostics();
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.Boxing, model.GetConversion(expr).Kind);
+
+        // to extension (type parameter)
+        src = """
+abstract class Base<T>
+{
+    public abstract U M<U>() where U : T;
+}
+
+class Derived : Base<E>
+{
+    public override U M<U>()
+    {
+        S s1 = default;
+        U e = s1; // 1
+        return e;
+    }
+}
+
+class Derived2 : Base<I>
+{
+    public override U M<U>()
+    {
+        S s2 = default;
+        U e = s2; // 2
+        return e;
+    }
+}
+
+public interface I { }
+public struct S : I { }
+public explicit extension E for I { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (11,15): error CS0029: Cannot implicitly convert type 'S' to 'U'
+            //         U e = s1; // 1
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "s1").WithArguments("S", "U").WithLocation(11, 15),
+            // (21,15): error CS0029: Cannot implicitly convert type 'S' to 'U'
+            //         U e = s2; // 2
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "s2").WithArguments("S", "U").WithLocation(21, 15));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "s1");
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(expr).Kind);
+
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "s2");
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_Boxing_FromNullableValueTypeToReferenceType()
+    {
+        // Spec: From any nullable_value_type to any reference_type where
+        // there is a boxing conversion from the underlying type of the nullable_value_type to the reference_type.
+
+        // to extension
+        var src = """
+S? s = null;
+EI e = s;
+e.M();
+
+public interface I { }
+public struct S : I { }
+public explicit extension EI for I { public void M() { System.Console.Write(this is null); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "True").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "s");
+        Assert.Equal(ConversionKind.Boxing, model.GetConversion(expr).Kind);
+
+        // from nullable of extension
+        src = """
+ES? e = default(S);
+I i = e;
+System.Console.Write(i);
+
+public interface I { }
+public struct S : I { }
+public explicit extension ES for S { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "S").VerifyDiagnostics();
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.Boxing, model.GetConversion(expr).Kind);
+
+        // from extension on nullable value type
+        src = """
+S s = default;
+ENS e = (S?)s;
+I i = e;
+System.Console.Write(i);
+
+public interface I { }
+public struct S : I { }
+public explicit extension ENS for S? { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "S").VerifyDiagnostics();
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.Boxing, model.GetConversion(expr).Kind);
+
+        // from generic extension on System.Nullable<T>
+        src = """
+S s = default;
+EN<S> e = (S?)s;
+I i = e;
+System.Console.Write(i);
+
+public interface I { }
+public struct S : I { }
+public explicit extension EN<T> for System.Nullable<T> where T : struct { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "S").VerifyDiagnostics();
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.Boxing, model.GetConversion(expr).Kind);
+
+        // from generic extension on System.Nullable<T> with a extension struct
+        src = """
+S s = default;
+EN<ES> e = (S?)s;
+I i = e;
+System.Console.Write(i);
+
+public interface I { }
+public struct S : I { }
+public explicit extension EN<T> for System.Nullable<T> where T : struct { }
+public explicit extension ES for S { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "S").VerifyDiagnostics();
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        Assert.Equal(ConversionKind.Boxing, model.GetConversion(expr).Kind);
+
+        // to extension (type parameter)
+        src = """
+abstract class Base<T>
+{
+    public abstract U M<U>() where U : T;
+}
+
+class Derived : Base<E>
+{
+    public override U M<U>()
+    {
+        S s1 = default;
+        U e = s1; // 1
+        return e;
+    }
+}
+
+class Derived2 : Base<I>
+{
+    public override U M<U>()
+    {
+        S s2 = default;
+        U e = s2; // 2
+        return e;
+    }
+}
+
+public interface I { }
+public struct S : I { }
+public explicit extension E for I { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (11,15): error CS0029: Cannot implicitly convert type 'S' to 'U'
+            //         U e = s1; // 1
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "s1").WithArguments("S", "U").WithLocation(11, 15),
+            // (21,15): error CS0029: Cannot implicitly convert type 'S' to 'U'
+            //         U e = s2; // 2
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "s2").WithArguments("S", "U").WithLocation(21, 15));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "s1");
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(expr).Kind);
+
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "s2");
+        Assert.Equal(ConversionKind.NoConversion, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_Boxing_FromTypeParameterToReferenceType()
+    {
+        // Spec: From a type parameter that is not known to be a reference type to any type such that the conversion is permitted [...]
+        var src = """
+S s = default;
+C.M(s).M();
+
+class C
+{
+    public static EI M<T>(T t) where T : I
+        => t;
+}
+
+public interface I { }
+public struct S : I { }
+public explicit extension EI for I { public void M() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        var verifier = CompileAndVerify(comp, expectedOutput: "S").VerifyDiagnostics();
+        verifier.VerifyIL("C.M<T>(T)", """
+{
+  // Code size        7 (0x7)
+  .maxstack  1
+  IL_0000:  ldarg.0
+  IL_0001:  box        "T"
+  IL_0006:  ret
+}
+""");
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "t");
+        Assert.Equal(ConversionKind.Boxing, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitDynamic()
+    {
+        // Spec: An implicit dynamic conversion exists from an expression of type dynamic to any type T
+
+        var src = """
+dynamic d = "ran";
+E e = C.Method(d);
+e.Print();
+
+class C
+{
+    public static E Method(dynamic d) { return d; }
+}
+
+public explicit extension E for string { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition], targetFramework: TargetFramework.StandardAndCSharp);
+        var verifier = CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+        verifier.VerifyIL("C.Method", """
+{
+  // Code size       65 (0x41)
+  .maxstack  3
+  IL_0000:  ldsfld     "System.Runtime.CompilerServices.CallSite<System.Func<System.Runtime.CompilerServices.CallSite, dynamic, string>> C.<>o__0.<>p__0"
+  IL_0005:  brtrue.s   IL_002b
+  IL_0007:  ldc.i4.0
+  IL_0008:  ldtoken    "string"
+  IL_000d:  call       "System.Type System.Type.GetTypeFromHandle(System.RuntimeTypeHandle)"
+  IL_0012:  ldtoken    "C"
+  IL_0017:  call       "System.Type System.Type.GetTypeFromHandle(System.RuntimeTypeHandle)"
+  IL_001c:  call       "System.Runtime.CompilerServices.CallSiteBinder Microsoft.CSharp.RuntimeBinder.Binder.Convert(Microsoft.CSharp.RuntimeBinder.CSharpBinderFlags, System.Type, System.Type)"
+  IL_0021:  call       "System.Runtime.CompilerServices.CallSite<System.Func<System.Runtime.CompilerServices.CallSite, dynamic, string>> System.Runtime.CompilerServices.CallSite<System.Func<System.Runtime.CompilerServices.CallSite, dynamic, string>>.Create(System.Runtime.CompilerServices.CallSiteBinder)"
+  IL_0026:  stsfld     "System.Runtime.CompilerServices.CallSite<System.Func<System.Runtime.CompilerServices.CallSite, dynamic, string>> C.<>o__0.<>p__0"
+  IL_002b:  ldsfld     "System.Runtime.CompilerServices.CallSite<System.Func<System.Runtime.CompilerServices.CallSite, dynamic, string>> C.<>o__0.<>p__0"
+  IL_0030:  ldfld      "System.Func<System.Runtime.CompilerServices.CallSite, dynamic, string> System.Runtime.CompilerServices.CallSite<System.Func<System.Runtime.CompilerServices.CallSite, dynamic, string>>.Target"
+  IL_0035:  ldsfld     "System.Runtime.CompilerServices.CallSite<System.Func<System.Runtime.CompilerServices.CallSite, dynamic, string>> C.<>o__0.<>p__0"
+  IL_003a:  ldarg.0
+  IL_003b:  callvirt   "string System.Func<System.Runtime.CompilerServices.CallSite, dynamic, string>.Invoke(System.Runtime.CompilerServices.CallSite, dynamic)"
+  IL_0040:  ret
+}
+""");
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<ReturnStatementSyntax>(tree, "return d;").Expression;
+        Assert.Equal(ConversionKind.ImplicitDynamic, model.GetConversion(expr).Kind);
+
+        // chained invocation
+        src = """
+dynamic d = "ran";
+try
+{
+    C.Method(d).Print();
+}
+catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException e)
+{
+    System.Console.Write(e.Message);
+}
+
+class C
+{
+    public static E Method(dynamic d)
+        => d;
+}
+
+public explicit extension E for string { public void Print() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition], targetFramework: TargetFramework.StandardAndCSharp);
+        CompileAndVerify(comp, expectedOutput: "'string' does not contain a definition for 'Print'").VerifyDiagnostics();
+
+        // wrong runtime type
+        src = """
+dynamic d = 42;
+try
+{
+    E e = C.Method(d);
+}
+catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException e)
+{
+    System.Console.Write(e.Message);
+}
+
+class C
+{
+    public static E Method(dynamic d)
+        => d;
+}
+
+public explicit extension E for string { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition], targetFramework: TargetFramework.StandardAndCSharp);
+        CompileAndVerify(comp, expectedOutput: "Cannot implicitly convert type 'int' to 'string'").VerifyDiagnostics();
+    }
+
+    [Theory]
+    [InlineData("sbyte")]
+    [InlineData("byte")]
+    [InlineData("short")]
+    [InlineData("ushort")]
+    [InlineData("uint")]
+    [InlineData("ulong")]
+    public void Conversion_ImplicitConstantExpression_FromInt(string toType)
+    {
+        // Spec: A constant_expression of type int can be converted to type sbyte, byte, short, ushort, uint, or ulong,
+        // provided the value of the constant_expression is within the range of the destination type.
+
+        var src = $$"""
+E e = 42;
+e.Print();
+
+public explicit extension E for {{toType}} { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<LiteralExpressionSyntax>(tree, "42");
+        Assert.Equal(ConversionKind.ImplicitConstant, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitConstantExpression_FromInt_WrongType()
+    {
+        // Spec: A constant_expression of type int can be converted to type sbyte, byte, short, ushort, uint, or ulong,
+        // provided the value of the constant_expression is within the range of the destination type.
+
+        var src = """
+E e = 42L;
+e.Print();
+
+public explicit extension E for uint { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,7): error CS0266: Cannot implicitly convert type 'long' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = 42L;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "42L").WithArguments("long", "E").WithLocation(1, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<LiteralExpressionSyntax>(tree, "42L");
+        Assert.Equal(ConversionKind.ExplicitNumeric, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitConstantExpression_FromLong()
+    {
+        // Spec: A constant_expression of type long can be converted to type ulong, provided the value of the constant_expression is not negative.
+
+        var src = """
+E e = 42L;
+e.Print();
+
+public explicit extension E for ulong { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<LiteralExpressionSyntax>(tree, "42L");
+        Assert.Equal(ConversionKind.ImplicitConstant, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitConstantExpression_ToExtensionOfNullable()
+    {
+        var src = """
+E e = 42;
+e.Print();
+
+public explicit extension E for byte? { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<LiteralExpressionSyntax>(tree, "42");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ImplicitConstant, conversion.UnderlyingConversions[0].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitConstantExpression_ToExtensionOfNullableOfExtension()
+    {
+        var src = """
+E1 e = 42;
+e.Print();
+
+public explicit extension E1 for E2? { public void Print() { System.Console.Write(this); } }
+public explicit extension E2 for byte { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<LiteralExpressionSyntax>(tree, "42");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ImplicitConstant, conversion.UnderlyingConversions[0].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitConstantExpression_ConstantExtensionValue()
+    {
+        // PROTOTYPE allow const declarations with extension types
+        var src = """
+const E1 e1 = 42;
+const E2 e2 = e1;
+
+public implicit extension E1 for int { }
+public implicit extension E2 for sbyte { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,7): error CS0283: The type 'E1' cannot be declared const
+            // const E1 e1 = 42;
+            Diagnostic(ErrorCode.ERR_BadConstType, "E1").WithArguments("E1").WithLocation(1, 7),
+            // (2,7): error CS0283: The type 'E2' cannot be declared const
+            // const E2 e2 = e1;
+            Diagnostic(ErrorCode.ERR_BadConstType, "E2").WithArguments("E2").WithLocation(2, 7),
+            // (2,10): warning CS0219: The variable 'e2' is assigned but its value is never used
+            // const E2 e2 = e1;
+            Diagnostic(ErrorCode.WRN_UnreferencedVarAssg, "e2").WithArguments("e2").WithLocation(2, 10));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e1");
+        Assert.Equal(ConversionKind.ImplicitConstant, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitTuple_Simple()
+    {
+        // Spec: An implicit conversion exists from a tuple expression E to a tuple type T if E has the same arity as T and
+        // an implicit conversion exists from each element in E to the corresponding element type in T.
+
+        var src = """
+E e = (1, "ran");
+e.Print();
+
+public explicit extension E for (int, string) { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<TupleExpressionSyntax>(tree, """(1, "ran")""");
+        Assert.Equal(ConversionKind.Identity, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitTuple_TupleOfExtension()
+    {
+        // Spec: An implicit conversion exists from a tuple expression E to a tuple type T if E has the same arity as T and
+        // an implicit conversion exists from each element in E to the corresponding element type in T.
+
+        var src = """
+(E1, E2) e = (1, "ran");
+System.Console.Write(e);
+
+public explicit extension E1 for int { }
+public explicit extension E2 for string { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<TupleExpressionSyntax>(tree, """(1, "ran")""");
+        Assert.Equal(ConversionKind.Identity, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitTuple_TupleOfExtension_NestedImplicitConversions()
+    {
+        // Spec: An implicit conversion exists from a tuple expression E to a tuple type T if E has the same arity as T and
+        // an implicit conversion exists from each element in E to the corresponding element type in T.
+
+        var src = """
+int i = 1;
+string s = "ran";
+(E1, E2) e = (i, s);
+System.Console.Write(e);
+
+public explicit extension E1 for long { }
+public explicit extension E2 for object { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<TupleExpressionSyntax>(tree, """(i, s)""");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitTupleLiteral, conversion.Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[1].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitTuple_NestedImplicitConversions()
+    {
+        // Spec: An implicit conversion exists from a tuple expression E to a tuple type T if E has the same arity as T and
+        // an implicit conversion exists from each element in E to the corresponding element type in T.
+
+        var src = """
+E e = (1, "ran");
+e.Print();
+
+public explicit extension E for (long, object) { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<TupleExpressionSyntax>(tree, """(1, "ran")""");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitTupleLiteral, conversion.Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[1].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitNullable_ImplicitNumeric()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // - An implicit or explicit conversion from S? to T?
+        var src = """
+E1 x = 1;
+E2 e = x;
+e.Print();
+
+public explicit extension E1 for int? { }
+public explicit extension E2 for long? { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "1").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitNullable_ImplicitTuple_FromNullableToNullable_ToNullableOfExtension()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // TODO2 link to tuple conversion spec issue: https://github.com/dotnet/csharpstandard/issues/1155
+        // - An implicit or explicit conversion from S? to T?
+        var src = """
+(int, string)? t = (1, "ran");
+E? e = t;
+e.Value.Print();
+
+public explicit extension E for (long, object) { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "t");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ImplicitTuple, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitNullable_ImplicitTuple_FromNullableToNullable_ToExtensionOfNullable()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // - An implicit or explicit conversion from S? to T?
+        var src = """
+(int, string)? t = (1, "ran");
+E e = t;
+e.Print();
+
+public explicit extension E for (long, object)? { public void Print() { System.Console.Write(this.Value); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "t");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ImplicitTuple, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitNullable_ImplicitTuple_FromNullableToNullable_FromNullableOfExtension()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // TODO2 There may be a spec issue (implicit tuple conversion should also cover expressions of tuple type)
+        // - An implicit or explicit conversion from S? to T?
+        var src = """
+E? t = (1, "ran");
+(long, object)? e = t;
+System.Console.Write(e.Value);
+
+public explicit extension E for (int, string) { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "t");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ImplicitTuple, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitNullable_ImplicitTuple_FromNullableToNullable_FromExtensionOfNullable()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // - An implicit or explicit conversion from S? to T?
+        var src = """
+E e = (1, "ran");
+(long, object)? t = e;
+System.Console.Write(t.Value);
+
+public explicit extension E for (int, string)? { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ImplicitTuple, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitNullable_ImplicitTuple_FromNullableToNullable_FromExtensionOfNullable_ToExtensionOfNullable()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // TODO2 this is weird
+        // - An implicit or explicit conversion from S? to T?
+        var src = """
+E1 e1 = (1, "ran");
+E2 e2 = e1;
+e2.Print();
+
+public explicit extension E1 for (int, string)? { }
+public explicit extension E2 for (long, object)? { public void Print() { System.Console.Write(this.Value); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e1");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ImplicitTuple, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitNullable_ImplicitTuple_FromNullableToNullable_FromExtensionOfNullable_ToNullableOfExtension()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // TODO2 this is weird too
+        // - An implicit or explicit conversion from S? to T?
+        var src = """
+E1 e1 = (1, "ran");
+E2? e2 = e1;
+e2.Value.Print();
+
+public explicit extension E1 for (int, string)? { }
+public explicit extension E2 for (long, object) { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e1");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ImplicitTuple, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ExplicitNullable_ExplicitTuple_FromNullableToNullable_FromExtensionOfNullable_ToNullableOfExtension()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // - An implicit or explicit conversion from S? to T?
+        var src = """
+E1 e1 = (1, "ran");
+E2? e2 = e1;
+e2.Value.Print();
+
+public explicit extension E1 for (long, object)? { }
+public explicit extension E2 for (int, string) { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,10): error CS0266: Cannot implicitly convert type 'E1' to 'E2?'. An explicit conversion exists (are you missing a cast?)
+            // E2? e2 = e1;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e1").WithArguments("E1", "E2?").WithLocation(2, 10));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e1");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ExplicitTuple, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ExplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ExplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+
+        src = """
+E1 e1 = (1, "ran");
+E2? e2 = (E2?)e1;
+e2.Value.Print();
+
+public explicit extension E1 for (long, object)? { }
+public explicit extension E2 for (int, string) { public void Print() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_ExplicitNullable_ExplicitTuple_FromNullableToNullable_FromNullableOfExtension_ToExtensionOfNullable()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // - An implicit or explicit conversion from S? to T?
+        var src = """
+E1? e1 = (1, "ran");
+E2 e2 = e1;
+e2.Print();
+
+public explicit extension E1 for (long, object) { }
+public explicit extension E2 for (int, string)? { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,9): error CS0266: Cannot implicitly convert type 'E1?' to 'E2'. An explicit conversion exists (are you missing a cast?)
+            // E2 e2 = e1;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e1").WithArguments("E1?", "E2").WithLocation(2, 9));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e1");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ExplicitTuple, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ExplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ExplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+
+        src = """
+E1? e1 = (1, "ran");
+E2 e2 = (E2)e1;
+e2.Print();
+
+public explicit extension E1 for (long, object) { }
+public explicit extension E2 for (int, string)? { public void Print() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_ImplicitNullable_ImplicitTuple_ToNullable()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // - An implicit or explicit conversion from S to T?
+        var src = """
+E? e = (1, "ran");
+e.Value.Print();
+
+public explicit extension E for (long, object) { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<TupleExpressionSyntax>(tree, """(1, "ran")""");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ImplicitTupleLiteral, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitNullable_ImplicitTuple_ToExtensionOfNullable()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // - An implicit or explicit conversion from S to T?
+        var src = """
+E e = (1, "ran");
+e.Print();
+
+public explicit extension E for (long, object)? { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<TupleExpressionSyntax>(tree, """(1, "ran")""");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ImplicitTupleLiteral, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ExplicitNullable_ExplicitTuple_ToExtensionOfNullable()
+    {
+        // without cast
+        var src = """
+int i = 1;
+E e = (i, "ran");
+
+public explicit extension E for (byte, string)? { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,3): warning CS0219: The variable 'e' is assigned but its value is never used
+            // E e = (i, "ran");
+            Diagnostic(ErrorCode.WRN_UnreferencedVarAssg, "e").WithArguments("e").WithLocation(2, 3),
+            // (2,7): error CS0266: Cannot implicitly convert type '(int i, string)' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = (i, "ran");
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, """(i, "ran")""").WithArguments("(int i, string)", "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<TupleExpressionSyntax>(tree, """(i, "ran")""");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ExplicitTupleLiteral, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ExplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.Identity, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+
+        // with cast
+        src = """
+int i = 1;
+E e = (E)(i, "ran");
+e.Print();
+
+public explicit extension E for (byte, string)? { public void Print() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_ExplicitNullable_ImplicitTuple_FromNullable()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // - An explicit conversion from S? to T.
+        var src = """
+(int, string)? t = (1, "ran");
+E e = t;
+e.Print();
+
+public explicit extension E for (long, object) { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type '(int, string)?' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = t;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "t").WithArguments("(int, string)?", "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "t");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ExplicitTuple, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+
+        src = """
+(int, string)? t = (1, "ran");
+E e = (E)t;
+e.Print();
+
+public explicit extension E for (long, object) { public void Print() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "(1, ran)");
+    }
+
+    [Fact]
+    public void Conversion_ExplicitStandard_FromNullableToNullable_FromExtensionOfNullable()
+    {
+        var src = """
+E e = 42;
+C c = e;
+
+public explicit extension E for long? { }
+public class C
+{
+    public int? field;
+    public static implicit operator C(int? x) => new C() { field = x };
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'E' to 'C'. An explicit conversion exists (are you missing a cast?)
+            // C c = e;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e").WithArguments("E", "C").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitUserDefined, conversion.Kind);
+        Assert.Equal(ConversionKind.ExplicitNullable, conversion.UserDefinedFromConversion.Kind);
+        Assert.Equal(ConversionKind.Identity, conversion.UserDefinedToConversion.Kind);
+
+        src = """
+E e = 42;
+C c = (C)e;
+System.Console.Write(c.field);
+
+public explicit extension E for long? { }
+public class C
+{
+    public int? field;
+    public static implicit operator C(int? x) => new C() { field = x };
+}
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: """42""").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_ExplicitStandard_FromNullableToNullable_ToExtensionOfNullable()
+    {
+        var src = """
+C c = new C() { field = 42 };
+E e = c;
+
+public explicit extension E for int? { }
+public class C
+{
+    public long? field;
+    public static implicit operator long?(C x) => x.field;
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'C' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = c;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "c").WithArguments("C", "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "c");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitUserDefined, conversion.Kind);
+        Assert.Equal(ConversionKind.Identity, conversion.UserDefinedFromConversion.Kind);
+        Assert.Equal(ConversionKind.ExplicitNullable, conversion.UserDefinedToConversion.Kind);
+
+        src = """
+C c = new C() { field = 42 };
+E e = (E)c;
+System.Console.Write(e);
+
+public explicit extension E for int? { }
+public class C
+{
+    public long? field;
+    public static implicit operator long?(C x) => x.field;
+}
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: """42""").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_ImplicitUserDefined_OnExtendedType()
+    {
+        var src = """
+E e = 42;
+
+public class C
+{
+    public static implicit operator C(int i) => new C();
+}
+public explicit extension E for C { }
+""";
+
+        // PROTOTYPE handle user-defined conversions
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,7): error CS0029: Cannot implicitly convert type 'int' to 'E'
+            // E e = 42;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "42").WithArguments("int", "E").WithLocation(1, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<LiteralExpressionSyntax>(tree, "42");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.NoConversion, conversion.Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitUserDefined_OnExtensionType()
+    {
+        var src = """
+E e = 42;
+
+public class C { }
+public explicit extension E for C
+{
+    public static implicit operator E(int i) => new C();
+}
+""";
+
+        // PROTOTYPE handle user-defined conversions
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,7): error CS0029: Cannot implicitly convert type 'int' to 'E'
+            // E e = 42;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "42").WithArguments("int", "E").WithLocation(1, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<LiteralExpressionSyntax>(tree, "42");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.NoConversion, conversion.Kind);
+    }
+
+    [Fact]
+    public void Conversion_AnonymousFunction()
+    {
+        var src = """
+E e = () => { System.Console.Write("ran"); };
+e();
+System.Action a = e;
+a();
+
+public explicit extension E for System.Action { }
+""";
+
+        // PROTOTYPE handle anonymous function conversions
+        // PROTOTYPE allow invocation of delegates
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,10): error CS1660: Cannot convert lambda expression to type 'E' because it is not a delegate type
+            // E e = () => { System.Console.Write("ran"); };
+            Diagnostic(ErrorCode.ERR_AnonMethToNonDel, "=>").WithArguments("lambda expression", "E").WithLocation(1, 10),
+            // (2,1): error CS0149: Method name expected
+            // e();
+            Diagnostic(ErrorCode.ERR_MethodNameExpected, "e").WithLocation(2, 1));
+    }
+
+    [Fact]
+    public void Conversion_AnonymousFunction_ToExtensionOfExpressionTree()
+    {
+        var src = """
+E e = () => { System.Console.Write("ran"); };
+
+public explicit extension E for System.Linq.Expressions.Expression<System.Action> { }
+""";
+
+        // PROTOTYPE handle anonymous function conversions
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,10): error CS1660: Cannot convert lambda expression to type 'E' because it is not a delegate type
+            // E e = () => { System.Console.Write("ran"); };
+            Diagnostic(ErrorCode.ERR_AnonMethToNonDel, "=>").WithArguments("lambda expression", "E").WithLocation(1, 10));
+    }
+
+    [Fact]
+    public void Conversion_AnonymousFunction_ToExpressionTreeOfExtension()
+    {
+        var src = """
+System.Linq.Expressions.Expression<E> e = () => { System.Console.Write("ran"); };
+
+public explicit extension E for System.Action { }
+""";
+
+        // PROTOTYPE handle anonymous function conversions
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,46): error CS0835: Cannot convert lambda to an expression tree whose type argument 'E' is not a delegate type
+            // System.Linq.Expressions.Expression<E> e = () => { System.Console.Write("ran"); };
+            Diagnostic(ErrorCode.ERR_ExpressionTreeMustHaveDelegate, "=>").WithArguments("E").WithLocation(1, 46));
+    }
+
+    [Fact]
+    public void Conversion_MethodGroup()
+    {
+        var src = """
+E e = () => local;
+System.Action a = e;
+a();
+
+void local() { System.Console.Write("ran"); }
+
+public explicit extension E for System.Action { }
+""";
+
+        // PROTOTYPE handle method group conversions
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,10): error CS1660: Cannot convert lambda expression to type 'E' because it is not a delegate type
+            // E e = () => local;
+            Diagnostic(ErrorCode.ERR_AnonMethToNonDel, "=>").WithArguments("lambda expression", "E").WithLocation(1, 10));
+    }
+
+    [Fact]
+    public void Conversion_DefaultLiteral_ValueType()
+    {
+        var src = """
+E e = default;
+System.Console.Write(e);
+
+public explicit extension E for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "0").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_DefaultLiteral_ValueType_TypeParameter()
+    {
+        var src = """
+E<int> e = default;
+System.Console.Write(e);
+
+public explicit extension E<T> for T where T : struct { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "0").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_DefaultLiteral_ReferenceType()
+    {
+        var src = """
+E e = default;
+System.Console.Write(e == null);
+
+public explicit extension E for object { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "True").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_DefaultLiteral_ReferenceType_TypeParameter()
+    {
+        var src = """
+E<object> e = default;
+System.Console.Write(e == null);
+
+public explicit extension E<T> for T where T : class { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "True").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_ObjectCreation()
+    {
+        var src = """
+E e = new();
+public explicit extension E for int { }
+""";
+
+        // PROTOTYPE handle object creation conversion
+        Assert.ThrowsAny<InvalidOperationException>(() =>
+        {
+            var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+            CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+        });
+    }
+
+    [Fact]
+    public void Conversion_ObjectCreation_ToExtensionOfNullable()
+    {
+        var src = """
+E e = new();
+public explicit extension E for int? { }
+""";
+
+        // PROTOTYPE handle object creation conversion
+        Assert.ThrowsAny<InvalidOperationException>(() =>
+        {
+            var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+            CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+        });
+    }
+
+    [Fact]
+    public void Conversion_ImplicitThrow()
+    {
+        var src = """
+try
+{
+    local();
+}
+catch
+{
+    System.Console.Write("ran");
+}
+
+E local() => throw new System.Exception();
+
+public explicit extension E for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_InterpolationHandler()
+    {
+        var src = """
+E e = $"{42}";
+
+[System.Runtime.CompilerServices.InterpolatedStringHandlerAttribute]
+public class C { }
+
+public explicit extension E for C { }
+""";
+
+        // PROTOTYPE handle interpolation string handler conversions
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition], targetFramework: TargetFramework.Net80);
+        comp.VerifyEmitDiagnostics(
+            // (1,7): error CS0029: Cannot implicitly convert type 'string' to 'E'
+            // E e = $"{42}";
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, @"$""{42}""").WithArguments("string", "E").WithLocation(1, 7));
+    }
+
+    [Fact]
+    public void Conversion_ImplicitCollection_ToExtensionOfArray()
+    {
+        var src = """
+E e = [42];
+
+public explicit extension E for int[] { }
+""";
+
+        // PROTOTYPE handle collection expression conversions
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,7): error CS9174: Cannot initialize type 'E' with a collection expression because the type is not constructible.
+            // E e = [42];
+            Diagnostic(ErrorCode.ERR_CollectionExpressionTargetTypeNotConstructible, "[42]").WithArguments("E").WithLocation(1, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<CollectionExpressionSyntax>(tree, "[42]");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.NoConversion, conversion.Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitEnumeration()
+    {
+        var src = """
+/*<bind>*/
+E e = 0;
+/*</bind>*/
+System.Console.Write(e);
+
+public implicit extension E for Enum { }
+public enum Enum { Zero = 0 }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "Zero");
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<LiteralExpressionSyntax>(tree, "0").First();
+        Assert.Equal(ConversionKind.ImplicitEnumeration, model.GetConversion(expr).Kind);
+
+        string expectedOperationTree = """
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'E e = 0;')
+IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'E e = 0')
+  Declarators:
+      IVariableDeclaratorOperation (Symbol: E e) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e = 0')
+        Initializer:
+          IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= 0')
+            IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E, Constant: 0, IsImplicit) (Syntax: '0')
+              Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: False, IsReference: False, IsUserDefined: False) (MethodSymbol: null)
+              Operand:
+                ILiteralOperation (OperationKind.Literal, Type: System.Int32, Constant: 0) (Syntax: '0')
+  Initializer:
+    null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, []);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitEnumeration_NullableOfExtension()
+    {
+        var src = """
+/*<bind>*/
+E? e = 0;
+/*</bind>*/
+System.Console.Write(e);
+
+public implicit extension E for Enum { }
+public enum Enum { Zero = 0 }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "Zero");
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<LiteralExpressionSyntax>(tree, "0").First();
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitEnumeration, conversion.Kind);
+
+        string expectedOperationTree = """
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'E? e = 0;')
+IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'E? e = 0')
+  Declarators:
+      IVariableDeclaratorOperation (Symbol: E? e) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e = 0')
+        Initializer:
+          IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= 0')
+            IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E?, IsImplicit) (Syntax: '0')
+              Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: False, IsReference: False, IsUserDefined: False) (MethodSymbol: null)
+              Operand:
+                ILiteralOperation (OperationKind.Literal, Type: System.Int32, Constant: 0) (Syntax: '0')
+  Initializer:
+    null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, []);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitEnumeration_NullableExtended()
+    {
+        var src = """
+/*<bind>*/
+E e = 0;
+/*</bind>*/
+//System.Console.Write((e.HasValue, e.Value)); // TODO2
+//System.Console.Write((Enum)e); // TODO2
+
+public implicit extension E for Enum? { }
+public enum Enum { Zero = 0 }
+""";
+
+        var expectedDiagnostics = new[] {
+            // (2,3): warning CS0219: The variable 'e' is assigned but its value is never used
+            // E e = 0;
+            Diagnostic(ErrorCode.WRN_UnreferencedVarAssg, "e").WithArguments("e").WithLocation(2, 3) };
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(expectedDiagnostics);
+        // TODO2 execute
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<LiteralExpressionSyntax>(tree, "0").First();
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitEnumeration, conversion.Kind);
+
+        string expectedOperationTree = """
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'E e = 0;')
+IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'E e = 0')
+  Declarators:
+      IVariableDeclaratorOperation (Symbol: E e) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e = 0')
+        Initializer:
+          IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= 0')
+            IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E, IsImplicit) (Syntax: '0')
+              Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: False, IsReference: False, IsUserDefined: False) (MethodSymbol: null)
+              Operand:
+                ILiteralOperation (OperationKind.Literal, Type: System.Int32, Constant: 0) (Syntax: '0')
+  Initializer:
+    null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, expectedDiagnostics);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitEnumeration_NullableExtended_WithExtensionType()
+    {
+        var src = """
+/*<bind>*/
+E e = 0;
+/*</bind>*/
+//System.Console.Write((e.HasValue, e.Value)); // TODO2
+
+public implicit extension E for E2? { }
+public implicit extension E2 for Enum { }
+public enum Enum { Zero = 0 }
+""";
+
+        var expectedDiagnostics = new[] {
+            // (2,3): warning CS0219: The variable 'e' is assigned but its value is never used
+            // E e = 0;
+            Diagnostic(ErrorCode.WRN_UnreferencedVarAssg, "e").WithArguments("e").WithLocation(2, 3) };
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(expectedDiagnostics);
+        // TODO2 execute
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<LiteralExpressionSyntax>(tree, "0").First();
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitEnumeration, conversion.Kind);
+
+        string expectedOperationTree = """
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'E e = 0;')
+IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'E e = 0')
+  Declarators:
+      IVariableDeclaratorOperation (Symbol: E e) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e = 0')
+        Initializer:
+          IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= 0')
+            IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E, IsImplicit) (Syntax: '0')
+              Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: False, IsReference: False, IsUserDefined: False) (MethodSymbol: null)
+              Operand:
+                ILiteralOperation (OperationKind.Literal, Type: System.Int32, Constant: 0) (Syntax: '0')
+  Initializer:
+    null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, expectedDiagnostics);
+    }
+
+    [Theory]
+    [InlineData("char", "sbyte")]
+    [InlineData("char", "byte")]
+    [InlineData("char", "short")]
+    [InlineData("double", "sbyte")]
+    [InlineData("double", "byte")]
+    [InlineData("double", "float")]
+    [InlineData("double", "decimal")]
+    [InlineData("decimal", "sbyte")]
+    [InlineData("decimal", "byte")]
+    [InlineData("decimal", "float")]
+    [InlineData("decimal", "double")]
+    public void Conversion_ExplicitNumeric(string fromType, string toType)
+    {
+        // to extension (no cast)
+        var src = $$"""
+{{fromType}} x = ({{fromType}})42;
+E e = x;
+
+public implicit extension E for {{toType}} { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (3,7): error CS0266: Cannot implicitly convert type 'fromType' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments(fromType, "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitNumeric, conversion.Kind);
+
+        // to extension (cast)
+        src = $$"""
+{{fromType}} x = ({{fromType}})42;
+E e = (E)x;
+e.Print();
+
+public implicit extension E for {{toType}} { public void Print() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        // from extension (no cast)
+        src = $$"""
+E e = (E)42;
+{{toType}} x = e;
+
+public implicit extension E for {{fromType}} { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (3,10): error CS0266: Cannot implicitly convert type 'E' to 'toType'. An explicit conversion exists (are you missing a cast?)
+            // byte x = e;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e").WithArguments("E", toType));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitNumeric, conversion.Kind);
+
+        // from extension (cast)
+        src = $$"""
+E e = (E)42;
+{{toType}} x = ({{toType}})e;
+System.Console.Write(x);
+
+public implicit extension E for {{fromType}} { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        // to and from extension (no cast)
+        src = $$"""
+E1 e = (E1)42;
+E2 e2 = e;
+
+public implicit extension E1 for {{fromType}} { }
+public implicit extension E2 for {{toType}} { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,9): error CS0266: Cannot implicitly convert type 'E1' to 'E2'. An explicit conversion exists (are you missing a cast?)
+            // E2 e2 = e;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e").WithArguments("E1", "E2").WithLocation(2, 9));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitNumeric, conversion.Kind);
+
+        // to and from extension (cast)
+        src = $$"""
+E1 e = (E1)42;
+E2 e2 = (E2)e;
+e2.Print();
+
+public implicit extension E1 for {{fromType}} { }
+public implicit extension E2 for {{toType}} { public void Print() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+    }
+
+    [Theory]
+    [InlineData("sbyte")]
+    [InlineData("byte")]
+    [InlineData("short")]
+    [InlineData("double")]
+    [InlineData("decimal")]
+    public void Conversion_ExplicitEnumeration_ToEnumType(string fromType)
+    {
+        // Spec: - From sbyte, byte, short, ushort, int, uint, long, ulong, char, float, double, or decimal to any enum_type.
+
+        // to extension (no cast)
+        var src = $$"""
+{{fromType}} x = ({{fromType}})42;
+E e = x;
+
+public implicit extension E for Enum { }
+public enum Enum
+{
+    FourtyTwo = 42
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'fromType' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments(fromType, "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitEnumeration, conversion.Kind);
+
+        // to extension (cast)
+        src = $$"""
+{{fromType}} x = ({{fromType}})42;
+E e = (E)x;
+e.Print();
+
+public implicit extension E for Enum { public void Print() { System.Console.Write(this); } }
+public enum Enum
+{
+    FourtyTwo = 42
+}
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "FourtyTwo");
+
+        // from extension (no cast)
+        src = $$"""
+E e = (E)42;
+Enum x = e;
+
+public implicit extension E for {{fromType}} { }
+public enum Enum
+{
+    FourtyTwo = 42
+}
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,10): error CS0266: Cannot implicitly convert type 'E' to 'Enum'. An explicit conversion exists (are you missing a cast?)
+            // Enum x = e;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e").WithArguments("E", "Enum").WithLocation(2, 10));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitEnumeration, conversion.Kind);
+
+        // from extension (cast)
+        src = $$"""
+E e = (E)42;
+Enum x = (Enum)e;
+System.Console.Write(x);
+
+public implicit extension E for {{fromType}} { }
+public enum Enum
+{
+    FourtyTwo = 42
+}
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "FourtyTwo").VerifyDiagnostics();
+    }
+
+    [Theory]
+    [InlineData("sbyte")]
+    [InlineData("byte")]
+    [InlineData("short")]
+    [InlineData("double")]
+    [InlineData("decimal")]
+    public void Conversion_ExplicitEnumeration_FromEnumType(string toType)
+    {
+        // Spec: - From any enum_type to sbyte, byte, short, ushort, int, uint, long, ulong, char, float, double, or decimal.
+
+        // to extension (no cast)
+        var src = $$"""
+Enum x = Enum.FourtyTwo;
+E e = x;
+
+public implicit extension E for {{toType}} { }
+public enum Enum
+{
+    FourtyTwo = 42
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'Enum' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("Enum", "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitEnumeration, conversion.Kind);
+
+        // to extension (cast)
+        src = $$"""
+Enum x = Enum.FourtyTwo;
+E e = (E)x;
+e.Print();
+
+public implicit extension E for {{toType}} { public void Print() { System.Console.Write(this); } }
+public enum Enum
+{
+    FourtyTwo = 42
+}
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42");
+
+        // from extension (no cast)
+        src = $$"""
+E e = (E)Enum.FourtyTwo;
+{{toType}} x = e;
+
+public implicit extension E for Enum { }
+public enum Enum
+{
+    FourtyTwo = 42
+}
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,13): error CS0266: Cannot implicitly convert type 'E' to 'toType'. An explicit conversion exists (are you missing a cast?)
+            // decimal x = e;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e").WithArguments("E", toType));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitEnumeration, conversion.Kind);
+
+        // from extension (cast)
+        src = $$"""
+E e = (E)Enum.FourtyTwo;
+{{toType}} x = ({{toType}})e;
+System.Console.Write(x);
+
+public implicit extension E for Enum { }
+public enum Enum
+{
+    FourtyTwo = 42
+}
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_ExplicitEnumeration_FromEnumTypeToEnumType()
+    {
+        // Spec: - From any enum_type to any other enum_type.
+
+        // to extension (no cast)
+        var src = """
+Enum1 x = Enum1.FourtyTwo;
+E e = x;
+
+public implicit extension E for Enum2 { }
+
+public enum Enum1 { FourtyTwo = 42 }
+public enum Enum2 { FourtyTwo = 42 }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'Enum1' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("Enum1", "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitEnumeration, conversion.Kind);
+
+        // to extension (cast)
+        src = """
+Enum1 x = Enum1.Value;
+E e = (E)x;
+e.Print();
+
+public implicit extension E for Enum2 { public void Print() { System.Console.Write(this); } }
+public enum Enum1 { Value = 42 }
+public enum Enum2 { FourtyTwo = 42 }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "FourtyTwo");
+
+        // from extension (no cast)
+        src = """
+E e = (E)Enum1.FourtyTwo;
+Enum2 x = e;
+
+public implicit extension E for Enum1 { }
+public enum Enum1 { FourtyTwo = 42 }
+public enum Enum2 { FourtyTwo = 42 }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,11): error CS0266: Cannot implicitly convert type 'E' to 'Enum2'. An explicit conversion exists (are you missing a cast?)
+            // Enum2 x = e;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e").WithArguments("E", "Enum2").WithLocation(2, 11));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitEnumeration, conversion.Kind);
+
+        // from extension (cast)
+        src = """
+E e = (E)Enum1.Value;
+Enum2 x = (Enum2)e;
+System.Console.Write(x);
+
+public implicit extension E for Enum1 { }
+public enum Enum1 { Value = 42 }
+public enum Enum2 { FourtyTwo = 42 }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "FourtyTwo").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_ExplicitNullable()
+    {
+        // Spec: - An explicit conversion from S? to T.
+
+        // to extension (no cast)
+        var src = """
+int? x = 42;
+E e = x;
+
+public implicit extension E for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'int?' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("int?", "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitNullable, conversion.Kind);
+
+        // to extension (cast)
+        src = """
+int? x = 42;
+E e = (E)x;
+e.Print();
+
+public implicit extension E for int { public void Print() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42");
+
+        // from extension (no cast)
+        src = """
+E e = 42;
+int x = e;
+
+public implicit extension E for int? { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,9): error CS0266: Cannot implicitly convert type 'E' to 'int'. An explicit conversion exists (are you missing a cast?)
+            // int x = e;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e").WithArguments("E", "int").WithLocation(2, 9));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitNullable, conversion.Kind);
+
+        // from extension (cast)
+        src = """
+E e = 42;
+int x = (int)e;
+System.Console.Write(x);
+
+public implicit extension E for int? { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+
+        // from extension of nullable of extension to extension (cast)
+        src = """
+E e = 42;
+EInt x = (EInt)e;
+x.Print();
+
+public implicit extension EInt for int { public void Print() { System.Console.Write(this); } }
+public implicit extension E for EInt? { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_ExplicitReference_FromObject()
+    {
+        // Spec: - From object and dynamic to any other reference_type.
+
+        // to extension (no cast)
+        var src = """
+object x = "ran";
+E e = x;
+
+public implicit extension E for string { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'object' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("object", "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitReference, conversion.Kind);
+
+        // to extension (cast)
+        src = """
+object x = "ran";
+E e = (E)x;
+e.Print();
+
+public implicit extension E for string { public void Print() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran");
+
+        // from extension (no cast)
+        src = """
+E e = "ran";
+string x = e;
+
+public implicit extension E for object { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,12): error CS0266: Cannot implicitly convert type 'E' to 'string'. An explicit conversion exists (are you missing a cast?)
+            // string x = e;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e").WithArguments("E", "string").WithLocation(2, 12));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitReference, conversion.Kind);
+
+        // from extension (cast)
+        src = """
+E e = "ran";
+string x = (string)e;
+System.Console.Write(x);
+
+public implicit extension E for object { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_ExplicitReference_FromBase()
+    {
+        // Spec: - From any class_type S to any class_type T, provided S is a base class of
+
+        // to extension (no cast)
+        var src = """
+Base x = new Derived();
+E e = x;
+
+public implicit extension E for Derived { }
+public class Base { }
+public class Derived : Base { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'Base' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("Base", "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitReference, conversion.Kind);
+
+        // to extension (cast)
+        src = """
+Base x = new Derived();
+E e = (E)x;
+e.Print();
+
+public implicit extension E for Derived { }
+public class Base { }
+public class Derived : Base { public void Print() { System.Console.Write("ran"); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        // from extension (no cast)
+        src = """
+E e = new Derived();
+Derived x = e;
+
+public implicit extension E for Base { }
+public class Base { }
+public class Derived : Base { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,13): error CS0266: Cannot implicitly convert type 'E' to 'Derived'. An explicit conversion exists (are you missing a cast?)
+            // Derived x = e;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e").WithArguments("E", "Derived").WithLocation(2, 13));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitReference, conversion.Kind);
+
+        // from extension (cast)
+        src = """
+E e = new Derived();
+Derived x = (Derived)e;
+x.Print();
+
+public implicit extension E for Base { }
+public class Base { }
+public class Derived : Base { public void Print() { System.Console.Write("ran"); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_ExplicitReference_ToInterface()
+    {
+        // Spec: - From any class_type S to any interface_type T, provided S is not sealed and provided S does not implement T.
+
+        // to extension (no cast)
+        var src = """
+Base x = new Derived();
+E e = x;
+
+public implicit extension E for I { }
+public interface I { }
+public class Base { }
+public class Derived : Base, I { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'Base' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("Base", "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitReference, conversion.Kind);
+
+        // to extension (cast)
+        src = """
+Base x = new Derived();
+E e = (E)x;
+e.Print();
+
+public implicit extension E for I { public void Print() { System.Console.Write("ran"); } }
+public interface I { }
+public class Base { }
+public class Derived : Base, I { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        // from extension (no cast)
+        src = """
+E e = new Derived();
+I x = e;
+
+public implicit extension E for Base { }
+public interface I { }
+public class Base { }
+public class Derived : Base, I { }
+""";
+
+        comp = CreateCompilationWithCSharp([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'E' to 'I'. An explicit conversion exists (are you missing a cast?)
+            // I x = e;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e").WithArguments("E", "I").WithLocation(2, 7));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitReference, conversion.Kind);
+
+        // from extension (cast)
+        src = """
+E e = new Derived();
+I x = (I)e;
+x.Print();
+
+public implicit extension E for Base { }
+public interface I { public void Print(); }
+public class Base { }
+public class Derived : Base, I { public void Print() { System.Console.Write("ran"); } }
+""";
+
+        comp = CreateCompilationWithCSharp([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_ExplicitReference_FromInterface()
+    {
+        // Spec: - From any interface_type S to any class_type T, provided T is not sealed or provided T implements S.
+
+        // to extension (no cast)
+        var src = """
+I x = new Derived();
+E e = x;
+
+public implicit extension E for Derived { }
+public interface I { }
+public class Base { }
+public class Derived : Base, I { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'I' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("I", "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitReference, conversion.Kind);
+
+        // to extension (cast)
+        src = """
+I x = new Derived();
+E e = (E)x;
+e.Print();
+
+public implicit extension E for Derived { public void Print() { System.Console.Write("ran"); } }
+public interface I { }
+public class Base { }
+public class Derived : Base, I { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        // from extension (no cast)
+        src = """
+E e = new Derived();
+Derived x = e;
+x.Print();
+
+public implicit extension E for I { }
+public interface I { }
+public class Base { }
+public class Derived : Base, I { public void Print() { System.Console.Write("ran"); } }
+""";
+
+        comp = CreateCompilationWithCSharp([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,13): error CS0266: Cannot implicitly convert type 'E' to 'Derived'. An explicit conversion exists (are you missing a cast?)
+            // Derived x = e;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e").WithArguments("E", "Derived").WithLocation(2, 13));
+
+        tree = comp.SyntaxTrees.First();
+        model = comp.GetSemanticModel(tree);
+        expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitReference, conversion.Kind);
+
+        // from extension (cast)
+        src = """
+E e = new Derived();
+Derived x = (Derived)e;
+x.Print();
+
+public implicit extension E for I { }
+public interface I { }
+public class Base { }
+public class Derived : Base, I { public void Print() { System.Console.Write("ran"); } }
+""";
+
+        comp = CreateCompilationWithCSharp([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+    }
+    // TODO2 test remaining explicit reference conversion cases
+
+    [Fact]
+    public void Conversion_ExplicitTuple()
+    {
+        // from and to extension (no cast)
+        var src = """
+E1 x = (42L, "ran");
+E2 y = x;
+
+public implicit extension E1 for (long, object) { }
+public implicit extension E2 for (int, string) { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,8): error CS0266: Cannot implicitly convert type 'E1' to 'E2'. An explicit conversion exists (are you missing a cast?)
+            // E2 y = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("E1", "E2").WithLocation(2, 8));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitTuple, conversion.Kind);
+
+        // from and to extension (cast)
+        src = """
+E1 x = (42L, "ran");
+E2 y = (E2)x;
+y.Print();
+
+public implicit extension E1 for (long, object) { }
+public implicit extension E2 for (int, string) { public void Print() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "(42, ran)").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_Unboxing_FromObject()
+    {
+        // Spec: - From the type object to any value_type.
+
+        // from and to extension (no cast)
+        var src = """
+E1 x = 42;
+E2 y = x;
+
+public implicit extension E1 for object { }
+public implicit extension E2 for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,8): error CS0266: Cannot implicitly convert type 'E1' to 'E2'. An explicit conversion exists (are you missing a cast?)
+            // E2 y = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("E1", "E2").WithLocation(2, 8));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.Unboxing, conversion.Kind);
+
+        // from and to extension (cast)
+        src = """
+E1 x = 42;
+E2 y = (E2)x;
+y.Print();
+
+public implicit extension E1 for object { }
+public implicit extension E2 for int { public void Print() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_Unboxing_FromSystemValueType()
+    {
+        // Spec: - From the type System.ValueType to any value_type.
+
+        // from and to extension (no cast)
+        var src = """
+E1 x = 42;
+E2 y = x;
+
+public implicit extension E1 for System.ValueType { }
+public implicit extension E2 for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,8): error CS0266: Cannot implicitly convert type 'E1' to 'E2'. An explicit conversion exists (are you missing a cast?)
+            // E2 y = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("E1", "E2").WithLocation(2, 8));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.Unboxing, conversion.Kind);
+
+        // from and to extension (cast)
+        src = """
+E1 x = 42;
+E2 y = (E2)x;
+y.Print();
+
+public implicit extension E1 for System.ValueType { }
+public implicit extension E2 for int { public void Print() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_Unboxing_FromSystemEnum()
+    {
+        // Spec: - From the type System.Enum to any enum_type.
+
+        // from and to extension (no cast)
+        var src = """
+E1 x = E.FourtyTwo;
+E2 y = x;
+
+public implicit extension E1 for System.Enum { }
+public implicit extension E2 for E { }
+public enum E { FourtyTwo = 42 }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,8): error CS0266: Cannot implicitly convert type 'E1' to 'E2'. An explicit conversion exists (are you missing a cast?)
+            // E2 y = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("E1", "E2").WithLocation(2, 8));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.Unboxing, conversion.Kind);
+
+        // from and to extension (cast)
+        src = """
+E1 x = E.FourtyTwo;
+E2 y = (E2)x;
+y.Print();
+
+public implicit extension E1 for System.Enum { }
+public implicit extension E2 for E { public void Print() { System.Console.Write("ran"); } }
+public enum E { FourtyTwo = 42 }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_Unboxing_FromInterfaceTypeToValueType()
+    {
+        // Spec: - From any interface_type to any non-nullable_value_type that implements the interface_type.
+
+        // from and to extension (no cast)
+        var src = """
+E1 x = new S();
+E2 y = x;
+
+public implicit extension E1 for I { }
+public implicit extension E2 for S { }
+public struct S : I { }
+public interface I { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,8): error CS0266: Cannot implicitly convert type 'E1' to 'E2'. An explicit conversion exists (are you missing a cast?)
+            // E2 y = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("E1", "E2").WithLocation(2, 8));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.Unboxing, conversion.Kind);
+
+        // from and to extension (cast)
+        src = """
+E1 x = new S();
+E2 y = (E2)x;
+y.Print();
+
+public implicit extension E1 for I { }
+public implicit extension E2 for S { }
+public struct S : I { public void Print() { System.Console.Write("ran"); } }
+public interface I { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_Unboxing_FromReferenceTypeToNullableValueType()
+    {
+        // Spec: - From any reference_type to any nullable_value_type
+        // where there is an unboxing conversion from reference_type to the underlying non_nullable_value_type of the nullable_value_type.
+
+        // from extension and to extension of nullable (no cast)
+        var src = """
+E1 x = new S();
+E2 y = x;
+
+public implicit extension E1 for I { }
+public implicit extension E2 for S? { }
+public struct S : I { }
+public interface I { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,8): error CS0266: Cannot implicitly convert type 'E1' to 'E2'. An explicit conversion exists (are you missing a cast?)
+            // E2 y = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("E1", "E2").WithLocation(2, 8));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.Unboxing, conversion.Kind);
+
+        // from extension and to extension of nullable (cast)
+        src = """
+E1 x = new S();
+E2 y = (E2)x;
+y.Print();
+
+public implicit extension E1 for I { }
+public implicit extension E2 for S? { public void Print() { System.Console.Write(this); } }
+public struct S : I { }
+public interface I { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "S").VerifyDiagnostics();
+
+        // from extension and to nullable of extension (cast)
+        src = """
+E1 x = new S();
+E2? y = (E2?)x;
+y.Value.Print();
+
+public implicit extension E1 for I { }
+public implicit extension E2 for S { public void Print() { System.Console.Write(this); } }
+public struct S : I { }
+public interface I { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "S").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_Unboxing_FromTypeParameterToInterface()
+    {
+        // Spec: - From any interface_type to T [For a type_parameter T that is not known to be a reference type]
+
+        // from extension and to extension of nullable (no cast)
+        var src = """
+class C<T>
+{
+    public void M(I i)
+    {
+        E1 x = i;
+        E2<T> y = x;
+    }
+}
+public implicit extension E1 for I { }
+public implicit extension E2<U> for U { }
+public interface I { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (6,19): error CS0266: Cannot implicitly convert type 'E1' to 'E2<T>'. An explicit conversion exists (are you missing a cast?)
+            //         E2<T> y = x;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "x").WithArguments("E1", "E2<T>").WithLocation(6, 19));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "x");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.Unboxing, conversion.Kind);
+
+        // from and to extension (cast)
+        src = """
+C<S>.M(new S());
+class C<T>
+{
+    public static void M(I i)
+    {
+        E1 x = i;
+        E2<T> y = (E2<T>)x;
+        y.Print();
+    }
+}
+public implicit extension E1 for I { }
+public implicit extension E2<U> for U { public void Print() { System.Console.Write(this); } }
+public interface I { }
+public struct S : I { }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "S").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_SwitchExpression()
+    {
+        var src = """
+E1 e1 = "ran";
+bool b = true;
+E2 e2 = b switch { true => e1, _ => throw null };
+e2.Print();
+
+public implicit extension E1 for string { }
+public implicit extension E2 for object { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e1");
+        Assert.Equal(ConversionKind.Identity, model.GetConversion(expr).Kind);
+
+        var switchExpr = GetSyntax<SwitchExpressionSyntax>(tree, "b switch { true => e1, _ => throw null }");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(switchExpr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_ConditionalExpression()
+    {
+        var src = """
+E1 e1 = "ran";
+bool b = true;
+E2 e2 = b ? e1 : e1;
+e2.Print();
+
+public implicit extension E1 for string { }
+public implicit extension E2 for object { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "ran").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<IdentifierNameSyntax>(tree, "e1").First();
+        Assert.Equal(ConversionKind.Identity, model.GetConversion(expr).Kind);
+
+        var condExpr = GetSyntax<ConditionalExpressionSyntax>(tree, "b ? e1 : e1");
+        Assert.Equal(ConversionKind.ImplicitReference, model.GetConversion(condExpr).Kind);
+    }
+
+    [Fact]
+    public void Conversion_CallerLine()
+    {
+        var src = """
+log();
+
+static void log([System.Runtime.CompilerServices.CallerLineNumber] E lineNumber = 0)
+{
+    System.Console.WriteLine($"Line Number: {lineNumber}");
+}
+
+public implicit extension E for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "Line Number: 1").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void TODO2_2()
+    {
+        var src = """
+public implicit extension E for E2? { } // TODO2 should be nullability warning (cannot put annotation on reference type here)
+public implicit extension E2 for Enum? { }
+public enum Enum { Zero = 0 }
+""";
+
+        // TODO2 should work
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,22): error CS1503: Argument 1: cannot convert from 'E' to 'bool'
+            // System.Console.Write(e);
+            Diagnostic(ErrorCode.ERR_BadArgType, "e").WithArguments("1", "E", "bool").WithLocation(2, 22));
+        // TODO2 execute
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<LiteralExpressionSyntax>(tree, "0").First();
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitEnumeration, conversion.Kind);
+    }
+
+    [Theory, CombinatorialData]
+    public void Conversion_ExplicitNumeric_ToExtension_Simple(bool isImplicit)
+    {
+        var keyword = isImplicit ? "implicit" : "explicit";
+        var src = $$"""
+long l = 42L;
+/*<bind>*/
+var e = (E)l;
+/*</bind>*/
+e.M();
+
+public {{keyword}} extension E for int
+{
+    public void M() { System.Console.Write(this); }
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        var verifier = CompileAndVerify(comp, expectedOutput: "42").VerifyDiagnostics();
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+{
+  // Code size       13 (0xd)
+  .maxstack  1
+  .locals init (int V_0) //e
+  IL_0000:  ldc.i4.s   42
+  IL_0002:  conv.i8
+  IL_0003:  conv.i4
+  IL_0004:  stloc.0
+  IL_0005:  ldloca.s   V_0
+  IL_0007:  call       "void E.M(ref int)"
+  IL_000c:  ret
+}
+""");
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<CastExpressionSyntax>(tree, "(E)l").Expression;
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.Identity, conversion.Kind);
+
+        //var typeInfo = model.GetTypeInfo(expr);
+        //Assert.Equal("System.Int64", typeInfo.Type.ToTestDisplayString());
+        //Assert.Equal("E", typeInfo.ConvertedType.ToTestDisplayString());
+
+        string expectedOperationTree = """
+IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDeclarationGroup, Type: null) (Syntax: 'var e = (E)l;')
+  IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration, Type: null) (Syntax: 'var e = (E)l')
+    Declarators:
+        IVariableDeclaratorOperation (Symbol: E e) (OperationKind.VariableDeclarator, Type: null) (Syntax: 'e = (E)l')
+          Initializer:
+            IVariableInitializerOperation (OperationKind.VariableInitializer, Type: null) (Syntax: '= (E)l')
+              IConversionOperation (TryCast: False, Unchecked) (OperationKind.Conversion, Type: E) (Syntax: '(E)l')
+                Conversion: CommonConversion (Exists: True, IsIdentity: False, IsNumeric: True, IsReference: False, IsUserDefined: False) (MethodSymbol: null)
+                Operand:
+                  ILocalReferenceOperation: l (OperationKind.LocalReference, Type: System.Int64) (Syntax: 'l')
+    Initializer:
+      null
+""";
+
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, DiagnosticDescription.None);
+    }
+
+    [Fact]
+    public void IsValidNullableTypeArgument()
+    {
+        var src = """
+System.Nullable<E> x = null;
+public implicit extension E for int? { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,17): error CS0453: The type 'E' must be a non-nullable value type in order to use it as parameter 'T' in the generic type or method 'Nullable<T>'
+            // System.Nullable<E> x = null;
+            Diagnostic(ErrorCode.ERR_ValConstraintNotSatisfied, "E").WithArguments("System.Nullable<T>", "T", "E").WithLocation(1, 17),
+            // (1,20): warning CS0219: The variable 'x' is assigned but its value is never used
+            // System.Nullable<E> x = null;
+            Diagnostic(ErrorCode.WRN_UnreferencedVarAssg, "x").WithArguments("x").WithLocation(1, 20));
+    }
+
+    // TODO2 test overload resolution with a ref parameter (should be okay to switch between E and underlying type)
+    // PROTOTYPE consider interpolated string conversion
+    // TODO2 allowing nullable reference type annotations on the underlying type seems problematic. Can you use an annotation when using the extension type explicitly then?
+    // TODO2 are there conversions that are missing from standard (collection expression conversion, ...)?
 }

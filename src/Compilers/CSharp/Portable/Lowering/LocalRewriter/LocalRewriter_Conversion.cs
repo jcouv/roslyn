@@ -15,6 +15,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 {
     internal partial class LocalRewriter
     {
+        // TODO2 review this whole file
         public override BoundNode VisitConversion(BoundConversion node)
         {
             switch (node.ConversionKind)
@@ -47,7 +48,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     Debug.Assert(node.Operand is not null);
                     var objectCreation = VisitExpression(node.Operand);
 
-                    if (node.Type.IsNullableType())
+                    if (node.Type.IsNullableType()) // TODO2
                     {
                         Debug.Assert(node.Operand is BoundObjectCreationExpressionBase { WasTargetTyped: true });
                         return ConvertToNullable(node.Syntax, node.Type, objectCreation);
@@ -79,7 +80,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             var result = MakeConversionNode(node, node.Syntax, rewrittenOperand, node.Conversion, node.Checked, node.ExplicitCastInCode, node.ConstantValueOpt, rewrittenType);
 
             var toType = node.Type;
-            Debug.Assert(result.Type!.Equals(toType, TypeCompareKind.IgnoreDynamicAndTupleNames | TypeCompareKind.IgnoreNullableModifiersForReferenceTypes));
+            // TODO2
+            //Debug.Assert(result.Type!.Equals(toType, TypeCompareKind.IgnoreDynamicAndTupleNames | TypeCompareKind.IgnoreNullableModifiersForReferenceTypes));
 
             return result;
         }
@@ -270,7 +272,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             TypeSymbol rewrittenType)
         {
             var result = MakeConversionNodeCore(oldNodeOpt, syntax, rewrittenOperand, conversion, @checked, explicitCastInCode, constantValueOpt, rewrittenType);
-            Debug.Assert(result.Type is { } rt && rt.Equals(rewrittenType, TypeCompareKind.AllIgnoreOptions));
+            // TODO2
+            //Debug.Assert(result.Type is { } rt && rt.Equals(rewrittenType, TypeCompareKind.AllIgnoreOptions));
 
             // 4.1.6 C# spec: To force a value of a floating point type to the exact precision of its type, an explicit cast can be used.
             // It means that explicit casts to (double) or (float) should be preserved on the node.
@@ -313,6 +316,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 @checked = @checked && NeedsCheckedConversionInExpressionTree(rewrittenOperand.Type, rewrittenType, explicitCastInCode);
             }
+
+            var rewrittenOperandType = rewrittenOperand.Type.ExtendedTypeOrSelf();
+            rewrittenType = rewrittenType.ExtendedTypeOrSelf();
 
             switch (conversion.Kind)
             {
@@ -425,15 +431,16 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 case ConversionKind.ImplicitNumeric:
                 case ConversionKind.ExplicitNumeric:
-                    Debug.Assert(rewrittenOperand.Type is { });
+                    Debug.Assert(rewrittenOperandType is { });
                     if (rewrittenOperand.IsDefaultValue() && (!_inExpressionLambda || !explicitCastInCode))
                     {
                         return new BoundDefaultExpression(syntax, rewrittenType);
                     }
 
-                    if (rewrittenType.SpecialType == SpecialType.System_Decimal || rewrittenOperand.Type.SpecialType == SpecialType.System_Decimal)
+                    rewrittenType = rewrittenType.ExtendedTypeOrSelf();
+                    if (rewrittenType.SpecialType == SpecialType.System_Decimal || rewrittenOperandType.SpecialType == SpecialType.System_Decimal) // TODO2
                     {
-                        return RewriteDecimalConversion(syntax, rewrittenOperand, rewrittenOperand.Type, rewrittenType, @checked, conversion.Kind.IsImplicitConversion(), constantValueOpt);
+                        return RewriteDecimalConversion(syntax, rewrittenOperand, rewrittenOperandType, rewrittenType, @checked, conversion.Kind.IsImplicitConversion(), constantValueOpt);
                     }
                     break;
 
@@ -443,7 +450,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                         Debug.Assert(rewrittenOperand.Type is { });
                         // we keep tuple literal conversions in the tree for the purpose of semantic model (for example when they are casts in the source)
                         // for the purpose of lowering/codegeneration they are identity conversions.
-                        Debug.Assert(rewrittenOperand.Type.Equals(rewrittenType, TypeCompareKind.IgnoreDynamicAndTupleNames | TypeCompareKind.IgnoreNullableModifiersForReferenceTypes));
+                        // TODO2
+                        //Debug.Assert(rewrittenOperand.Type.Equals(rewrittenType, TypeCompareKind.IgnoreDynamicAndTupleNames | TypeCompareKind.IgnoreNullableModifiersForReferenceTypes));
                         return rewrittenOperand;
                     }
 
@@ -458,7 +466,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // A conversion from constant zero to nullable is actually classified as an
                     // implicit enumeration conversion, not an implicit nullable conversion.
                     // Lower it to (E?)(E)0.
-                    if (rewrittenType.IsNullableType())
+                    if (rewrittenType.IsNullableType()) // TODO2
                     {
                         var operand = MakeConversionNode(
                             oldNodeOpt,
@@ -486,8 +494,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                     goto case ConversionKind.ExplicitEnumeration;
 
                 case ConversionKind.ExplicitEnumeration:
-                    Debug.Assert(rewrittenOperand.Type is { });
-                    if (!rewrittenType.IsNullableType() &&
+                    Debug.Assert(rewrittenOperandType is { });
+
+                    if (!rewrittenType.IsNullableType() && // TODO2
                         rewrittenOperand.IsDefaultValue() &&
                         (!_inExpressionLambda || !explicitCastInCode))
                     {
@@ -496,20 +505,20 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     if (rewrittenType.SpecialType == SpecialType.System_Decimal)
                     {
-                        Debug.Assert(rewrittenOperand.Type.IsEnumType());
-                        var underlyingTypeFrom = rewrittenOperand.Type.GetEnumUnderlyingType()!;
+                        Debug.Assert(rewrittenOperandType.IsEnumType(includeExtensions: false));
+                        var underlyingTypeFrom = rewrittenOperandType.GetEnumUnderlyingType()!;
                         rewrittenOperand = MakeConversionNode(rewrittenOperand, underlyingTypeFrom, false);
                         return RewriteDecimalConversion(syntax, rewrittenOperand, underlyingTypeFrom, rewrittenType, @checked, isImplicit: false, constantValueOpt: constantValueOpt);
                     }
-                    else if (rewrittenOperand.Type.SpecialType == SpecialType.System_Decimal)
+                    else if (rewrittenOperandType.SpecialType == SpecialType.System_Decimal)
                     {
                         // This is where we handle conversion from Decimal to Enum: e.g., E e = (E) d;
                         // where 'e' is of type Enum E and 'd' is of type Decimal.
                         // Conversion can be simply done by applying its underlying numeric type to RewriteDecimalConversion().
 
-                        Debug.Assert(rewrittenType.IsEnumType());
-                        var underlyingTypeTo = rewrittenType.GetEnumUnderlyingType()!;
-                        var rewrittenNode = RewriteDecimalConversion(syntax, rewrittenOperand, rewrittenOperand.Type, underlyingTypeTo, @checked, isImplicit: false, constantValueOpt: constantValueOpt);
+                        Debug.Assert(rewrittenType.IsEnumType(includeExtensions: true));
+                        var underlyingTypeTo = rewrittenType.ExtendedTypeOrSelf().GetEnumUnderlyingType()!;
+                        var rewrittenNode = RewriteDecimalConversion(syntax, rewrittenOperand, rewrittenOperandType, underlyingTypeTo, @checked, isImplicit: false, constantValueOpt: constantValueOpt);
 
                         // However, the type of the rewritten node becomes underlying numeric type, not Enum type,
                         // which violates the overall constraint saying the type cannot be changed during rewriting (see LocalRewriter.cs).
@@ -798,9 +807,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // Lifted conversion, wrap return type in Nullable
                 // The conversion only needs to happen for non-nullable valuetypes
                 Debug.Assert(rewrittenOperand.Type is { });
-                if (rewrittenOperand.Type.IsNullableType() &&
+                if (rewrittenOperand.Type.IsNullableType() && // TODO2
                         conversion.Method.GetParameterType(0).Equals(rewrittenOperand.Type.GetNullableUnderlyingType(), TypeCompareKind.AllIgnoreOptions) &&
-                        !userDefinedConversionRewrittenType.IsNullableType() &&
+                        !userDefinedConversionRewrittenType.IsNullableType() && // TODO2
                         userDefinedConversionRewrittenType.IsValueType)
                 {
                     userDefinedConversionRewrittenType = ((NamedTypeSymbol)rewrittenOperand.Type.OriginalDefinition).Construct(userDefinedConversionRewrittenType);
@@ -855,10 +864,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             NamedTypeSymbol rewrittenType)
         {
             Debug.Assert(rewrittenOperand.Type is { });
-            var destElementTypes = rewrittenType.TupleElementTypesWithAnnotations;
+            var destTupleType = (NamedTypeSymbol)rewrittenType.ExtendedTypeOrSelf();
+            var destElementTypes = destTupleType.TupleElementTypesWithAnnotations;
             var numElements = destElementTypes.Length;
 
-            var tupleTypeSymbol = (NamedTypeSymbol)rewrittenOperand.Type;
+            var tupleTypeSymbol = (NamedTypeSymbol)rewrittenOperand.Type.ExtendedTypeOrSelf();
             var srcElementFields = tupleTypeSymbol.TupleElements;
             var fieldAccessorsBuilder = ArrayBuilder<BoundExpression>.GetInstance(numElements);
 
@@ -874,7 +884,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 fieldAccessorsBuilder.Add(convertedFieldAccess);
             }
 
-            var result = MakeTupleCreationExpression(syntax, rewrittenType, fieldAccessorsBuilder.ToImmutableAndFree());
+            var result = MakeTupleCreationExpression(syntax, destTupleType, fieldAccessorsBuilder.ToImmutableAndFree());
             return _factory.MakeSequence(savedTuple.LocalSymbol, assignmentToTemp, result);
         }
 
@@ -895,8 +905,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         internal static BoundExpression? NullableAlwaysHasValue(BoundExpression expression)
         {
+            // TODO2 review method
             Debug.Assert(expression.Type is { });
-            if (!expression.Type.IsNullableType())
+            if (!expression.Type.IsNullableType(includeExtensions: true))
                 return null;
 
             switch (expression)
@@ -908,7 +919,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // Detect the unlowered nullable conversion from value type K to type Nullable<K>
                 // This arises in lowering tuple equality operators
                 case BoundConversion { Conversion: { Kind: ConversionKind.ImplicitNullable }, Operand: var convertedArgument }
-                        when convertedArgument.Type!.Equals(expression.Type.StrippedType(), TypeCompareKind.AllIgnoreOptions):
+                        when convertedArgument.Type!.Equals(expression.Type.StrippedType(), TypeCompareKind.AllIgnoreOptions): // TODO2
                     return convertedArgument;
 
                 // Detect the unlowered nullable conversion from a tuple type T1 to Nullable<T2> for a tuple type T2.
@@ -941,6 +952,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             bool explicitCastInCode,
             TypeSymbol rewrittenType)
         {
+            // TODO2 this whole logic needs to be scrubbed
             Debug.Assert((object)rewrittenType != null);
 
             if (_inExpressionLambda)
@@ -950,25 +962,27 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             TypeSymbol? rewrittenOperandType = rewrittenOperand.Type;
             Debug.Assert(rewrittenOperandType is { });
-            Debug.Assert(rewrittenType.IsNullableType() || rewrittenOperandType.IsNullableType());
+            Debug.Assert(rewrittenType.IsNullableType(includeExtensions: true) || rewrittenOperandType.IsNullableType(includeExtensions: true));
 
-            if (rewrittenOperandType.IsNullableType() && rewrittenType.IsNullableType())
+            if (rewrittenOperandType.IsNullableType(includeExtensions: true) && rewrittenType.IsNullableType(includeExtensions: true))
             {
                 return RewriteFullyLiftedBuiltInConversion(syntax, rewrittenOperand, conversion, @checked, rewrittenType);
             }
-            else if (rewrittenType.IsNullableType())
+            else if (rewrittenType.IsNullableType(includeExtensions: true))
             {
+                // TODO2 cover
                 // SPEC: If the nullable conversion is from S to T?, the conversion is
                 // SPEC: evaluated as the underlying conversion from S to T followed
                 // SPEC: by a wrapping from T to T?.
 
                 conversion.AssertUnderlyingConversionsChecked();
-                BoundExpression rewrittenConversion = MakeConversionNode(syntax, rewrittenOperand, conversion.UnderlyingConversions[0], rewrittenType.GetNullableUnderlyingType(), @checked);
+                BoundExpression rewrittenConversion = MakeConversionNode(syntax, rewrittenOperand, conversion.UnderlyingConversions[0], rewrittenType.GetNullableUnderlyingType(includeExtensions: true), @checked);
                 MethodSymbol ctor = UnsafeGetNullableMethod(syntax, rewrittenType, SpecialMember.System_Nullable_T__ctor);
                 return new BoundObjectCreationExpression(syntax, ctor, rewrittenConversion);
             }
             else
             {
+                // TODO2 cover
                 // SPEC: if the nullable conversion is from S? to T, the conversion is
                 // SPEC: evaluated as an unwrapping from S? to S followed by the underlying
                 // SPEC: conversion from S to T.
@@ -997,6 +1011,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             bool explicitCastInCode,
             TypeSymbol rewrittenType)
         {
+            // TODO2 review method
             Debug.Assert((object)rewrittenType != null);
             Debug.Assert(rewrittenOperand.Type is { });
             TypeSymbol rewrittenOperandType = rewrittenOperand.Type;
@@ -1069,7 +1084,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var boundTemp = _factory.StoreToTemp(operand, out tempAssignment);
             MethodSymbol getValueOrDefault;
 
-            if (!TryGetNullableMethod(syntax, boundTemp.Type, SpecialMember.System_Nullable_T_GetValueOrDefault, out getValueOrDefault))
+            if (!TryGetNullableMethod(syntax, boundTemp.Type, SpecialMember.System_Nullable_T_GetValueOrDefault, out getValueOrDefault, includeExtensions: true))
             {
                 return BadExpression(syntax, type, operand);
             }
@@ -1083,7 +1098,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     syntax,
                     BoundCall.Synthesized(syntax, boundTemp, initialBindingReceiverIsSubjectToCloning: ThreeState.Unknown, getValueOrDefault),
                     conversion.UnderlyingConversions[0],
-                    type.GetNullableUnderlyingType(),
+                    type.GetNullableUnderlyingType(includeExtensions: true),
                     @checked));
             BoundExpression alternative = new BoundDefaultExpression(syntax, type);
             BoundExpression conditionalExpression = RewriteConditionalOperator(

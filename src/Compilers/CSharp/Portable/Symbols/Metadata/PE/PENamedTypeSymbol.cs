@@ -1519,7 +1519,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 }
 #endif
 
-                if (IsTupleType)
+                if (GetIsTupleType())
                 {
                     int originalCount = members.Count;
                     var peMembers = members.ToImmutableAndFree();
@@ -2971,6 +2971,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
 
             internal override bool Equals(TypeSymbol t2, TypeCompareKind comparison)
             {
+                // TODO2
                 return t2 is NativeIntegerTypeSymbol nativeInteger ?
                     nativeInteger.Equals(this, comparison) :
                     base.Equals(t2, comparison);

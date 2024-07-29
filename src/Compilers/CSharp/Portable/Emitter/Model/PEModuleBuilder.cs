@@ -1010,7 +1010,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                 Debug.Assert(!needDeclaration);
                 namedTypeSymbol = AnonymousTypeManager.TranslateAnonymousTypeSymbol(namedTypeSymbol);
             }
-            else if (namedTypeSymbol.IsTupleType)
+            else if (namedTypeSymbol.GetIsTupleType())
             {
                 CheckTupleUnderlyingType(namedTypeSymbol, syntaxNodeOpt, diagnostics);
             }

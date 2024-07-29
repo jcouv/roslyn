@@ -75,14 +75,14 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         public static bool NullableNeverHasValue(this BoundExpression expr)
         {
-            Debug.Assert(expr != null);
+            Debug.Assert(expr != null); // TODO2
 
             if ((object)expr.Type == null && expr.ConstantValueOpt == ConstantValue.Null)
             {
                 return true;
             }
 
-            if ((object)expr.Type == null || !expr.Type.IsNullableType())
+            if ((object)expr.Type == null || !expr.Type.IsNullableType()) // TODO2
             {
                 return false;
             }
