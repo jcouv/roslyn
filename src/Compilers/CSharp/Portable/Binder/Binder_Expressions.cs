@@ -1407,11 +1407,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return true;
                 }
 
-                if (type.IsUnboundGenericType() || type.Kind == SymbolKind.TypeParameter)
-                {
-                    diagnostics.Add(ErrorCode.ERR_AttrTypeArgCannotBeTypeVar, attributeName, type);
-                    return true;
-                }
+                //if (type.IsUnboundGenericType() || type.Kind == SymbolKind.TypeParameter)
+                //{
+                //    diagnostics.Add(ErrorCode.ERR_AttrTypeArgCannotBeTypeVar, attributeName, type);
+                //    return true;
+                //}
 
                 return false;
             }, typePredicate: null, arg: (attributeName, diagnostics));

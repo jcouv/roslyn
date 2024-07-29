@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -60,7 +61,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             BindingDiagnosticBag diagnostics,
             bool hasErrors = false)
         {
-
             var result = createConversion(syntax, source, conversion, isCast, conversionGroupOpt, wasCompilerGenerated, destination, diagnostics, hasErrors);
 
             Debug.Assert(result is BoundConversion
@@ -88,7 +88,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                        !conversion.IsSwitchExpression &&
                        !conversion.IsCollectionExpression &&
                        !(conversion.IsTupleLiteralConversion || (conversion.IsNullable && conversion.UnderlyingConversions[0].IsTupleLiteralConversion)) &&
-                       (!conversion.IsUserDefined || filterConversion(conversion.UserDefinedFromConversion));
+                       (!conversion.IsUserDefined || filterConversion(conversion.UserDefinedFromConversion)) &&
+                       !conversion.IsExtension; // TODO2
             }
 #endif
 
@@ -128,6 +129,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                         return source;
                     }
                 }
+
+                // TODO2
+                //if (conversion.IsExtension)
+                //{
+                //    return CreateExtensionConversion(syntax, source, conversion, isCast: isCast, conversionGroupOpt ?? new ConversionGroup(conversion), destination, diagnostics);
+                //}
 
                 if (conversion.IsMethodGroup)
                 {
@@ -324,19 +331,19 @@ namespace Microsoft.CodeAnalysis.CSharp
                 {
                     Debug.Assert(conversion.UnderlyingConversions.Length == 1);
 
-                    if (destination.IsNullableType())
+                    if (destination.IsNullableType(includeExtensions: true))
                     {
-                        switch (source.Type?.IsNullableType())
+                        switch (source.Type?.IsNullableType()) // TODO2
                         {
                             case true:
                                 _ = CreateConversion(
                                         syntax,
-                                        new BoundValuePlaceholder(source.Syntax, source.Type.GetNullableUnderlyingType()),
+                                        new BoundValuePlaceholder(source.Syntax, source.Type.GetNullableUnderlyingType()), // TODO2
                                         conversion.UnderlyingConversions[0],
                                         isCast: false,
                                         conversionGroupOpt: null,
                                         wasCompilerGenerated,
-                                        destination.GetNullableUnderlyingType(),
+                                        destination.GetNullableUnderlyingType(includeExtensions: true),
                                         diagnostics);
                                 break;
 
@@ -377,7 +384,10 @@ namespace Microsoft.CodeAnalysis.CSharp
                     ImmutableArray<TypeWithAnnotations> sourceTypes;
                     ImmutableArray<TypeWithAnnotations> destTypes;
 
-                    if (source.Type?.TryGetElementTypesWithAnnotationsIfTupleType(out sourceTypes) == true &&
+                    var sourceType = source.Type.ExtendedTypeOrSelf();
+                    destination = destination.ExtendedTypeOrSelf();
+
+                    if (sourceType?.TryGetElementTypesWithAnnotationsIfTupleType(out sourceTypes) == true &&
                         destination.TryGetElementTypesWithAnnotationsIfTupleType(out destTypes) &&
                         sourceTypes.Length == destTypes.Length)
                     {
@@ -489,6 +499,34 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
         }
+
+        //private BoundExpression CreateExtensionConversion(SyntaxNode syntax, BoundExpression source, Conversion conversion, bool isCast, ConversionGroup conversionGroup, TypeSymbol destination, BindingDiagnosticBag diagnostics)
+        //{
+        //    Debug.Assert(conversion.IsExtension);
+        //    Debug.Assert(conversionGroup is not null);
+        //    Debug.Assert(conversion.IsFromExtension ^ conversion.IsToExtension);
+
+        //    BoundExpression result = source;
+        //    Conversion extensionUnderlyingConversion = conversion.ExtensionUnderlyingConversion;
+
+        //    Conversion extensionConversion = extensionUnderlyingConversion.IsImplicit ? Conversion.ImplicitExtension : Conversion.ExplicitExtension;
+        //    if (conversion.IsFromExtension)
+        //    {
+        //        Debug.Assert(source.Type is not null);
+        //        var sourceUnderlyingType = source.Type.GetExtendedTypeNoUseSiteDiagnostics(null);
+        //        result = new BoundConversion(syntax, source, extensionConversion, @checked: false, explicitCastInCode: isCast, conversionGroup, constantValueOpt: null, type: sourceUnderlyingType);
+        //    }
+
+        //    var destinationType = conversion.IsToExtension ? destination.GetExtendedTypeNoUseSiteDiagnostics(null) : destination;
+        //    result = CreateConversion(syntax, result, extensionUnderlyingConversion, isCast: isCast, conversionGroup, source.WasCompilerGenerated, destinationType, diagnostics);
+
+        //    if (conversion.IsToExtension)
+        //    {
+        //        result = new BoundConversion(syntax, result, extensionConversion, @checked: false, explicitCastInCode: isCast, conversionGroup, constantValueOpt: null, type: destination);
+        //    }
+
+        //    return result;
+        //}
 
         private static void CheckInlineArrayTypeIsSupported(SyntaxNode syntax, TypeSymbol inlineArrayType, TypeSymbol elementType, BindingDiagnosticBag diagnostics)
         {
@@ -2230,6 +2268,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(conversionWithoutNullable.IsTupleLiteralConversion);
 
             NamedTypeSymbol targetType = (NamedTypeSymbol)destinationWithoutNullable;
+            // TODO2
+            if (destinationWithoutNullable.GetExtendedTypeNoUseSiteDiagnostics(null) is NamedTypeSymbol extendedType)
+            {
+                targetType = extendedType;
+            }
+
             if (targetType.IsTupleType)
             {
                 NamedTypeSymbol.ReportTupleNamesMismatchesIfAny(targetType, sourceTuple, diagnostics);
@@ -2880,6 +2924,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             RoslynDebug.Assert(source != null);
             RoslynDebug.Assert((object)destination != null);
+
+            destination = ExtensionTypeEraser.TransformType(destination, out _);
 
             // The diagnostics bag can be null in cases where we know ahead of time that the
             // conversion will succeed without error or warning. (For example, if we have a valid

@@ -90,7 +90,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return false;
             }
 
-            return !IsNullableTypeOrTypeParameter(typeArgument);
+            return !IsNullableTypeOrTypeParameter(typeArgument, includeExtensions: true);
         }
 
         public static bool IsVoidType(this TypeSymbol type)
@@ -98,7 +98,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return type.SpecialType == SpecialType.System_Void;
         }
 
-        public static bool IsNullableTypeOrTypeParameter(this TypeSymbol? type)
+        public static bool IsNullableTypeOrTypeParameter(this TypeSymbol? type, bool includeExtensions = false) // TODO2 review and potentially remove optional parameter
         {
             if (type is null)
             {
@@ -110,7 +110,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 var constraintTypes = ((TypeParameterSymbol)type).ConstraintTypesNoUseSiteDiagnostics;
                 foreach (var constraintType in constraintTypes)
                 {
-                    if (constraintType.Type.IsNullableTypeOrTypeParameter())
+                    if (constraintType.Type.IsNullableTypeOrTypeParameter(includeExtensions))
                     {
                         return true;
                     }
@@ -118,7 +118,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return false;
             }
 
-            return type.IsNullableType();
+            return type.IsNullableType(includeExtensions);
         }
 
         /// <summary>
@@ -127,9 +127,20 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// To check whether a type is System.Nullable`1 or is a type parameter constrained to System.Nullable`1
         /// use <see cref="TypeSymbolExtensions.IsNullableTypeOrTypeParameter" /> instead.
         /// </summary>
-        public static bool IsNullableType(this TypeSymbol type)
+        public static bool IsNullableType(this TypeSymbol type, bool includeExtensions = false)
         {
-            return type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
+            // TODO2 review callers and consider removing the optional parameter
+            if (includeExtensions)
+            {
+                type = type.ExtendedTypeOrSelf();
+            }
+
+            if (type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public static bool IsValidNullableTypeArgument(this TypeSymbol type)
@@ -140,9 +151,15 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                    && !type.IsRestrictedType();
         }
 
-        public static TypeSymbol GetNullableUnderlyingType(this TypeSymbol type)
+        public static TypeSymbol GetNullableUnderlyingType(this TypeSymbol type, bool includeExtensions = false)
         {
-            return type.GetNullableUnderlyingTypeWithAnnotations().Type;
+            // TODO2 review callers
+            if (includeExtensions)
+            {
+                type = type.ExtendedTypeOrSelf();
+            }
+
+            return type.GetNullableUnderlyingTypeWithAnnotations(includeExtensions).Type;
         }
 
         public static bool IsNullableType(this TypeSymbol? type, [NotNullWhen(true)] out TypeSymbol? underlyingType)
@@ -158,18 +175,30 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return false;
         }
 
-        public static TypeWithAnnotations GetNullableUnderlyingTypeWithAnnotations(this TypeSymbol type)
+        public static TypeWithAnnotations GetNullableUnderlyingTypeWithAnnotations(this TypeSymbol type, bool includeExtensions = false) // TODO2
         {
             RoslynDebug.Assert((object)type != null);
-            RoslynDebug.Assert(IsNullableType(type));
+            RoslynDebug.Assert(IsNullableType(type, includeExtensions));
             RoslynDebug.Assert(type is NamedTypeSymbol);  //not testing Kind because it may be an ErrorType
+
+            if (includeExtensions)
+            {
+                type = type.ExtendedTypeOrSelf();
+            }
 
             return ((NamedTypeSymbol)type).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0];
         }
 
         public static TypeSymbol StrippedType(this TypeSymbol type)
         {
+            // TODO2
             return type.IsNullableType() ? type.GetNullableUnderlyingType() : type;
+        }
+
+        [return: NotNullIfNotNull(nameof(type))]
+        public static TypeSymbol? ExtendedTypeOrSelf(this TypeSymbol? type)
+        {
+            return type?.GetExtendedTypeNoUseSiteDiagnostics(null) is { } extendedType ? extendedType : type;
         }
 
         public static TypeSymbol EnumUnderlyingTypeOrSelf(this TypeSymbol type)
@@ -207,10 +236,22 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return (type is NamedTypeSymbol namedType) ? namedType.EnumUnderlyingType : null;
         }
 
-        public static bool IsEnumType(this TypeSymbol type)
+        public static bool IsEnumType(this TypeSymbol type, bool includeExtensions = false)
         {
+            // TODO2 review callers
             RoslynDebug.Assert((object)type != null);
-            return type.TypeKind == TypeKind.Enum;
+            if (type.TypeKind == TypeKind.Enum)
+            {
+                return true;
+            }
+
+            if (includeExtensions && type.TypeKind == TypeKind.Extension && type.GetExtendedTypeNoUseSiteDiagnostics(null) is { } extendedType)
+            {
+                Debug.Assert(!extendedType.IsExtension);
+                return extendedType.IsEnumType();
+            }
+
+            return false;
         }
 
         public static bool IsValidEnumType(this TypeSymbol type)

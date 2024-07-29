@@ -3926,7 +3926,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 case BoundKind.Conversion:
                     var conversion = (BoundConversion)expr;
-                    if (conversion.Conversion == Conversion.ImplicitThrow)
+                    // int? M() => throw null; // ImplicitThrow
+                    // E M() => throw null; ExtensionConversion wrapping ImplicitThrow
+                    if (conversion.Conversion == Conversion.ImplicitThrow) // TODO2
                     {
                         return CheckRefEscape(node, conversion.Operand, escapeFrom, escapeTo, checkingReceiver, diagnostics);
                     }

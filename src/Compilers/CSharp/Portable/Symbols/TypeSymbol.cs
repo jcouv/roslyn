@@ -504,12 +504,25 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// Gets corresponding primitive type code for this type declaration.
         /// </summary>
         internal Microsoft.Cci.PrimitiveTypeCode PrimitiveTypeCode
-            => TypeKind switch
+        {
+            get
             {
-                TypeKind.Pointer => Microsoft.Cci.PrimitiveTypeCode.Pointer,
-                TypeKind.FunctionPointer => Microsoft.Cci.PrimitiveTypeCode.FunctionPointer,
-                _ => SpecialTypes.GetTypeCode(SpecialType)
-            };
+                // TODO2 revie callers
+                if (this.GetExtendedTypeNoUseSiteDiagnostics(null) is { } extendedType)
+                {
+                    return extendedType.PrimitiveTypeCode;
+                }
+
+                return PrimitiveTypeCodeNoExtensions;
+            }
+        }
+
+        internal Microsoft.Cci.PrimitiveTypeCode PrimitiveTypeCodeNoExtensions => TypeKind switch
+        {
+            TypeKind.Pointer => Microsoft.Cci.PrimitiveTypeCode.Pointer,
+            TypeKind.FunctionPointer => Microsoft.Cci.PrimitiveTypeCode.FunctionPointer,
+            _ => SpecialTypes.GetTypeCode(SpecialType)
+        };
 
         #region Use-Site Diagnostics
 

@@ -133,6 +133,8 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 case ConversionKind.ImplicitPointerToVoid:
                 case ConversionKind.ExplicitPointerToPointer:
                 case ConversionKind.ImplicitPointer:
+                case ConversionKind.ImplicitExtension:
+                case ConversionKind.ExplicitExtension:
                     return; //no-op since they all have the same runtime representation
                 case ConversionKind.ExplicitPointerToInteger:
                 case ConversionKind.ExplicitIntegerToPointer:
@@ -227,7 +229,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             // turn operand into an O(operandType)
             // if the operand is already verifiably an O, we can use it as-is
             // otherwise we need to box it, so that verifier will start tracking an O
-            if (!conversion.Operand.Type.IsVerifierReference())
+            if (!conversion.Operand.Type.IsVerifierReference()) // TODO2
             {
                 EmitBox(conversion.Operand.Type, conversion.Operand.Syntax);
             }
@@ -242,7 +244,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 _builder.EmitOpCode(ILOpCode.Unbox_any);
                 EmitSymbolToken(conversion.Type, conversion.Syntax);
             }
-            else if (resultType.IsArray())
+            else if (resultType.IsArray()) // TODO2
             {
                 // need a static cast here to satisfy verifier
                 // Example: Derived[] can be used in place of Base[] for all purposes except for LDELEMA <Base> 

@@ -6,7 +6,9 @@ using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
+using Microsoft.CodeAnalysis.PooledObjects;
 using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp
@@ -50,7 +52,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         public static bool CanImplicitlyExtend(NamedTypeSymbol extension, TypeSymbol type, out AbstractTypeParameterMap? map)
         {
-            Debug.Assert(extension is not null);
+            Debug.Assert(extension.IsDefinition);
             Debug.Assert(type is not null);
             map = null;
 

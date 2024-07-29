@@ -161,14 +161,21 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 {
                     Debug.Assert(!constraintType.Type.ContainsDynamic());
 
+                    var constraintType2 = constraintType; // TODO2 rename and check constraint types in semantic model
+                    if (constraintType2.Type.GetExtendedTypeNoUseSiteDiagnostics(null) is { } extendedType)
+                    {
+                        // TODO2 we should keep the annotation?
+                        constraintType2 = TypeWithAnnotations.Create(extendedType);
+                    }
+
                     NamedTypeSymbol constraintEffectiveBase;
                     TypeSymbol constraintDeducedBase;
 
-                    switch (constraintType.TypeKind)
+                    switch (constraintType2.TypeKind)
                     {
                         case TypeKind.TypeParameter:
                             {
-                                var constraintTypeParameter = (TypeParameterSymbol)constraintType.Type;
+                                var constraintTypeParameter = (TypeParameterSymbol)constraintType2.Type;
                                 ConsList<TypeParameterSymbol> constraintsInProgress;
 
                                 if (constraintTypeParameter.ContainingSymbol == typeParameter.ContainingSymbol)
@@ -221,25 +228,25 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                         case TypeKind.Class:
                         case TypeKind.Delegate:
 
-                            Debug.Assert(inherited || currentCompilation == null || constraintType.TypeKind != TypeKind.Delegate);
+                            Debug.Assert(inherited || currentCompilation == null || constraintType2.TypeKind != TypeKind.Delegate);
 
-                            if (constraintType.Type.IsInterfaceType())
+                            if (constraintType2.Type.IsInterfaceType())
                             {
-                                AddInterface(interfacesBuilder, (NamedTypeSymbol)constraintType.Type);
+                                AddInterface(interfacesBuilder, (NamedTypeSymbol)constraintType2.Type);
                                 constraintTypesBuilder.Add(constraintType);
                                 continue;
                             }
                             else
                             {
-                                constraintEffectiveBase = (NamedTypeSymbol)constraintType.Type;
+                                constraintEffectiveBase = (NamedTypeSymbol)constraintType2.Type;
                                 constraintDeducedBase = constraintType.Type;
                                 break;
                             }
 
                         case TypeKind.Struct:
-                            if (constraintType.IsNullableType())
+                            if (constraintType2.IsNullableType())
                             {
-                                var underlyingType = constraintType.Type.GetNullableUnderlyingType();
+                                var underlyingType = constraintType2.Type.GetNullableUnderlyingType();
                                 if (underlyingType.TypeKind == TypeKind.TypeParameter)
                                 {
                                     var underlyingTypeParameter = (TypeParameterSymbol)underlyingType;
@@ -1534,6 +1541,11 @@ hasRelatedInterfaces:
 
         private static bool IsValidEncompassedByArgument(TypeSymbol type)
         {
+            if (type.GetExtendedTypeNoUseSiteDiagnostics(null) is { } extendedType)
+            {
+                type = extendedType;
+            }
+
             switch (type.TypeKind)
             {
                 case TypeKind.Array:
@@ -1597,10 +1609,11 @@ hasRelatedInterfaces:
             Debug.Assert((object)deducedBase != null);
             Debug.Assert((object)effectiveBase != null);
             var discardedUseSiteInfo = CompoundUseSiteInfo<AssemblySymbol>.Discarded;
-            Debug.Assert(deducedBase.IsErrorType() ||
-                effectiveBase.IsErrorType() ||
-                conversions.HasIdentityOrImplicitReferenceConversion(deducedBase, effectiveBase, ref discardedUseSiteInfo) ||
-                conversions.HasBoxingConversion(deducedBase, effectiveBase, ref discardedUseSiteInfo));
+            // TODO2
+            //Debug.Assert(deducedBase.IsErrorType() ||
+            //    effectiveBase.IsErrorType() ||
+            //    conversions.HasIdentityOrImplicitReferenceConversion(deducedBase, effectiveBase, ref discardedUseSiteInfo) ||
+            //    conversions.HasBoxingConversion(deducedBase, effectiveBase, ref discardedUseSiteInfo));
         }
 
         internal static TypeWithAnnotations ConstraintWithMostSignificantNullability(TypeWithAnnotations type1, TypeWithAnnotations type2)

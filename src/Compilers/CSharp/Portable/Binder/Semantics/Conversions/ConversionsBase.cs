@@ -4,6 +4,7 @@
 
 #nullable disable
 
+using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -13,6 +14,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.PooledObjects;
 using Roslyn.Utilities;
 
+// TODO2 should review all code in here
 namespace Microsoft.CodeAnalysis.CSharp
 {
     internal abstract partial class ConversionsBase
@@ -487,6 +489,12 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         public static Conversion FastClassifyConversion(TypeSymbol source, TypeSymbol target)
         {
+            // TODO2 test more cases here (extension on nullable, nullable of extension, etc)
+            // TODO2 could optimize by only doing this when has right shape
+            source = ExtensionTypeEraser.TransformType(source, out _);
+            target = ExtensionTypeEraser.TransformType(target, out _);
+
+            // TODO2 other caller of ClassifyConversion merely gets underlying type, but here we do full erasure...
             ConversionKind convKind = ConversionEasyOut.ClassifyConversion(source, target);
             if (convKind != ConversionKind.ImplicitNullable && convKind != ConversionKind.ExplicitNullable)
             {
@@ -540,6 +548,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </remarks>
         public Conversion ClassifyStandardConversion(BoundExpression sourceExpression, TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
+            // TODO2
             Debug.Assert(sourceExpression is null || Compilation is not null);
             Debug.Assert(sourceExpression != null || (object)source != null);
             Debug.Assert((object)destination != null);
@@ -595,6 +604,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ConversionKind.ImplicitPointer:
                 case ConversionKind.ImplicitPointerToVoid:
                 case ConversionKind.ImplicitTuple:
+                case ConversionKind.ImplicitExtension:
                     return true;
                 default:
                     return false;
@@ -718,6 +728,13 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return nullableConversion;
                 }
 
+                // TODO2
+                var extensionConversion = ClassifyImplicitExtensionConversion(source, destination, ref useSiteInfo);
+                if (extensionConversion.Exists)
+                {
+                    return extensionConversion;
+                }
+
                 if (source is FunctionTypeSymbol)
                 {
                     Debug.Assert(false);
@@ -752,6 +769,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 return Conversion.NoConversion;
             }
+        }
+
+        private Conversion ClassifyImplicitExtensionConversion(TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
+        {
+            // TODO2
+            return Conversion.NoConversion;
         }
 
         private Conversion ClassifyImplicitBuiltInConversionSlow(TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
@@ -813,6 +836,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return Conversion.ExplicitEnumeration;
             }
 
+            // TODO2
             var nullableConversion = ClassifyExplicitNullableConversion(source, destination, isChecked: isChecked, ref useSiteInfo, forCast);
             if (nullableConversion.Exists)
             {
@@ -1223,7 +1247,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             // SPEC: An implicit conversion exists from the null literal to any nullable type. 
-            if (destination.IsNullableType())
+            if (destination.IsNullableType(includeExtensions: true))
             {
                 // The spec defines a "null literal conversion" specifically as a conversion from
                 // null to nullable type.
@@ -1346,6 +1370,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             // range of the destination type.
             var specialSource = source.Type.GetSpecialTypeSafe();
 
+            destination = destination.ExtendedTypeOrSelf();
+
             if (specialSource == SpecialType.System_Int32)
             {
                 //if the constant value could not be computed, be generous and assume the conversion will work
@@ -1388,6 +1414,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(Compilation != null);
             Debug.Assert((object)destination != null);
 
+            var sourceType = sourceExpression.Type;
+
             // NB: need to check for explicit tuple literal conversion before checking for explicit conversion from type
             //     The same literal may have both explicit tuple conversion and explicit tuple literal conversion to the target type.
             //     They are, however, observably different conversions via the order of argument evaluations and element-wise conversions
@@ -1400,7 +1428,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
             }
 
-            var sourceType = sourceExpression.Type;
             if (sourceType is { })
             {
                 // Try using the short-circuit "fast-conversion" path.
@@ -1433,8 +1460,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             // For historical reasons we actually allow a conversion from any *numeric constant
             // zero* to be converted to any enum type, not just the literal integer zero.
 
-            bool validType = destination.IsEnumType() ||
-                destination.IsNullableType() && destination.GetNullableUnderlyingType().IsEnumType();
+            bool validType = destination.IsEnumType(includeExtensions: true) ||
+                destination.IsNullableType(includeExtensions: true) && destination.GetNullableUnderlyingType(includeExtensions: true).IsEnumType(includeExtensions: true);
 
             if (!validType)
             {
@@ -1795,6 +1822,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             var compareKind = includeNullability ?
                 TypeCompareKind.AllIgnoreOptions & ~TypeCompareKind.IgnoreNullableModifiersForReferenceTypes :
                 TypeCompareKind.AllIgnoreOptions;
+
+            // PROTOTYPE we need to revisit after confirming that EInt1 => EInt2 is not an identity conversion
+            type1 = ExtensionTypeEraser.TransformType(type1, out _);
+            type2 = ExtensionTypeEraser.TransformType(type2, out _);
             return type1.Equals(type2, compareKind);
         }
 
@@ -2013,6 +2044,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert((object)source != null);
             Debug.Assert((object)destination != null);
 
+            source = source.ExtendedTypeOrSelf();
+            destination = destination.ExtendedTypeOrSelf();
+
             if (!IsNumericType(source) || !IsNumericType(destination))
             {
                 return ConversionKind.UnsetConversionKind;
@@ -2223,13 +2257,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             // SPEC: nullable conversions exist:
             // SPEC: * An implicit conversion from S? to T?.
             // SPEC: * An implicit conversion from S to T?.
-            if (!destination.IsNullableType())
+            if (!destination.IsNullableType(includeExtensions: true))
             {
                 return Conversion.NoConversion;
             }
 
-            TypeSymbol unwrappedDestination = destination.GetNullableUnderlyingType();
-            TypeSymbol unwrappedSource = source.StrippedType();
+            TypeSymbol unwrappedDestination = destination.GetNullableUnderlyingType(includeExtensions: true);
+            TypeSymbol unwrappedSource = source.StrippedType(); // TODO2
 
             if (!unwrappedSource.IsValueType)
             {
@@ -2306,6 +2340,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(Compilation is not null);
 
             var arguments = source.Arguments;
+            destination = destination.ExtendedTypeOrSelf();
 
             // check if the type is actually compatible type for a tuple of given cardinality
             if (!destination.IsTupleTypeOfCardinality(arguments.Length))
@@ -2383,6 +2418,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             ImmutableArray<TypeWithAnnotations> sourceTypes;
             ImmutableArray<TypeWithAnnotations> destTypes;
+
+            source = source.ExtendedTypeOrSelf();
+            destination = destination.ExtendedTypeOrSelf();
 
             if (!source.TryGetElementTypesWithAnnotationsIfTupleType(out sourceTypes) ||
                 !destination.TryGetElementTypesWithAnnotationsIfTupleType(out destTypes) ||
@@ -2489,12 +2527,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert((object)source != null);
             Debug.Assert((object)destination != null);
 
-            if (HasIdentityConversionInternal(source, destination))
+            if (HasIdentityConversionInternal((TypeSymbol)source, destination))
             {
                 return true;
             }
 
-            return HasImplicitReferenceConversion(source, destination, ref useSiteInfo);
+            return HasImplicitReferenceConversion((TypeSymbol)source, destination, ref useSiteInfo);
         }
 
         private static bool HasImplicitDynamicConversionFromExpression(TypeSymbol expressionType, TypeSymbol destination)
@@ -2618,6 +2656,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             // SPEC: UNDONE: or reference conversion to a reference-type T0 and T0 has an identity conversion to T.
             // UNDONE: Is the right thing to do here to strip dynamic off and check for convertibility?
 
+            source = source.ExtendedTypeOrSelf();
+            destination = destination.ExtendedTypeOrSelf();
+            // TODO2 are we losing use-site info from extension types?
+
             // SPEC: From any reference type to object and dynamic.
             if (destination.SpecialType == SpecialType.System_Object || destination.Kind == SymbolKind.DynamicType)
             {
@@ -2696,6 +2738,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private bool HasImplicitConversionFromArray(TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
+            // TODO2 add assertion
             var s = source as ArrayTypeSymbol;
             if (s is null)
             {
@@ -2737,6 +2780,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private bool HasImplicitConversionFromDelegate(TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
+            // TODO2
             if (!source.IsDelegateType())
             {
                 return false;
@@ -3282,6 +3326,10 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             Debug.Assert((object)source != null);
             Debug.Assert((object)destination != null);
+
+            source = ExtensionTypeEraser.TransformType(source, out _);
+            destination = ExtensionTypeEraser.TransformType(destination, out _);
+            // TODO2 consider adding assertion in helper methods that extensions were already erased
 
             // Certain type parameter conversions are classified as boxing conversions.
             if ((source.TypeKind == TypeKind.TypeParameter) &&

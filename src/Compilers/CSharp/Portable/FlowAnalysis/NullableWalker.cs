@@ -8925,6 +8925,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
                     break;
 
+                case ConversionKind.ImplicitExtension:
+                case ConversionKind.ExplicitExtension:
+                    // TODO2
+                    break;
+
                 default:
                     Debug.Assert(targetType.IsValueType || targetType.IsErrorType());
                     break;

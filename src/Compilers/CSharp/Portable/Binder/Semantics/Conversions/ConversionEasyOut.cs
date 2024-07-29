@@ -2,7 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System.Diagnostics;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
+// TODO2 should review all code in here
 
 namespace Microsoft.CodeAnalysis.CSharp
 {
@@ -71,6 +73,13 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             public static ConversionKind ClassifyConversion(TypeSymbol source, TypeSymbol target)
             {
+#if DEBUG
+                // TODO2
+                //ExtensionTypeEraser.TransformType(source, out bool sourceChanged);
+                //ExtensionTypeEraser.TransformType(target, out bool targetChanged);
+                //Debug.Assert(!sourceChanged);
+                //Debug.Assert(!targetChanged);
+#endif
                 int sourceIndex = source.TypeToIndex();
                 if (sourceIndex < 0)
                 {

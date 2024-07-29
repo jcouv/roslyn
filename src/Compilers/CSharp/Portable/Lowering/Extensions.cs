@@ -82,7 +82,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return true;
             }
 
-            if ((object)expr.Type == null || !expr.Type.IsNullableType())
+            if ((object)expr.Type == null || !expr.Type.IsNullableType()) // TODO2
             {
                 return false;
             }

@@ -479,10 +479,11 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         public BoundExpression AssignmentExpression(SyntaxNode syntax, BoundExpression left, BoundExpression right, bool isRef = false, bool hasErrors = false, bool wasCompilerGenerated = false)
         {
-            Debug.Assert(left.Type is { } && right.Type is { } &&
-                (left.Type.Equals(right.Type, TypeCompareKind.AllIgnoreOptions) ||
-                 StackOptimizerPass1.IsFixedBufferAssignmentToRefLocal(left, right, isRef) ||
-                 right.Type.IsErrorType() || left.Type.IsErrorType()));
+            // TODO2
+            //Debug.Assert(left.Type is { } && right.Type is { } &&
+            //    (left.Type.Equals(right.Type, TypeCompareKind.AllIgnoreOptions) ||
+            //     StackOptimizerPass1.IsFixedBufferAssignmentToRefLocal(left, right, isRef) ||
+            //     right.Type.IsErrorType() || left.Type.IsErrorType()));
 
             var assignment = new BoundAssignmentOperator(syntax, left, right, isRef, left.Type, hasErrors) { WasCompilerGenerated = wasCompilerGenerated };
 

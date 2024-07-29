@@ -67,5 +67,8 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         InterpolatedStringHandler, // A conversion from an interpolated string literal to a type attributed with InterpolatedStringBuilderAttribute
         InlineArray, // A conversion from an inline array to Span/ReadOnlySpan
+        ImplicitExtension,
+        ExplicitExtension,
+        // TODO2
     }
 }

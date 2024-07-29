@@ -76,6 +76,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return type;
             }
 
+            if (transformedType.IsNullableType())
+            {
+                return TypeWithAnnotations.Create(transformedType, NullableAnnotation.Annotated, type.CustomModifiers);
+            }
+
             return type.WithTypeAndModifiers(transformedType, type.CustomModifiers);
         }
 

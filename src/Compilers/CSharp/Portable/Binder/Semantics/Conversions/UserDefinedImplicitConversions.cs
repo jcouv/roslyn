@@ -668,6 +668,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                 case ConversionKind.InlineArray:
                     return true;
 
+                // PROTOTYPE Added for C# 14
+                case ConversionKind.ImplicitExtension: // TODO2 confirm
+                    // TODO2 what about ExplicitExtension?
+                    return true;
+
                 default:
                     throw ExceptionUtilities.UnexpectedValue(kind);
             }

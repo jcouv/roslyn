@@ -1905,7 +1905,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             var nullableType2 = nullableType as NamedTypeSymbol;
             Debug.Assert(nullableType2 is { });
-            return UnsafeGetSpecialTypeMethod(syntax, member, compilation, diagnostics).AsMember(nullableType2);
+            Debug.Assert(nullableType2.IsNullableType(includeExtensions: true));
+            return UnsafeGetSpecialTypeMethod(syntax, member, compilation, diagnostics).AsMember((NamedTypeSymbol)nullableType2.ExtendedTypeOrSelf());
         }
 
         private bool TryGetNullableMethod(SyntaxNode syntax, TypeSymbol nullableType, SpecialMember member, out MethodSymbol result, bool isOptional = false)
@@ -2076,7 +2077,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // Don't even call this method if the expression cannot be nullable.
             Debug.Assert(
                 exprType is null ||
-                exprType.IsNullableTypeOrTypeParameter() ||
+                exprType.IsNullableTypeOrTypeParameter(includeExtensions: true) ||
                 !exprType.IsValueType ||
                 exprType.IsPointerOrFunctionPointer());
 

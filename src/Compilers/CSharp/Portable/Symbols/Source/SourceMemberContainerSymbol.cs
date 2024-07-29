@@ -1940,25 +1940,32 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             // Some erasures are unbounded. We need to detect them before we actually try to perform the erasure.
             //
+            // When erasing extension type E we should:
+            // 1. not need to erase E, and
+            // 2. any extension types involved and needing erasure should also have bounded erasure.
+            //
             // Some examples:
             // 1. extension E for E[] // unbounded: would expand to E[][]...
             //
             // 2. extension E1<T> for C<T>
-            //    extension E2 for E1<E2> // unbounded: would expand to C<C<C<...>>>
+            //    extension E2 for D<E1<E2>> // unbounded: would expand to D<C<D<C<...>>>>
             //
-            // But it is not just a matter of checking for self-reference
-            // or tracking which extension types we've already done an erasure on
-            // or tracking which types we've seen already.
-            // Some examples:
+            // 3. extension E1<T> for C
+            //    extension E2 for D<E1<E2>> // erases to D<C>, bounded
             //
-            // 1. extension E1<T> for C
-            //    extension E2 for E1<E2> // erases to C, bounded despite self-reference
+            // 4. extension E1<T> for C<T>
+            //    extension E2 for D<E1<E1<int>>> // erases to D<C<C<int>>>, bounded
             //
-            // 2. extension E1<T> for C<T>
-            //    extension E2 for C<E1<E1<int>>> // erases to C<C<C<int>>>, bounded despite erasing E1 after erasing E1
-            //
-            // 3. extension E1<T> for C<E2<(T, T)>>
+            // 5. extension E1<T> for C<E2<(T, T)>>
             //    extension E2<U> for C<E1<(U, U)>> // unbounded, involves new types at every iteration
+            //
+            // For generic types, we check the definition and the type arguments separately
+            // to keep the check itself bounded.
+            // For example, if the underlying type of `E` is `X<Y>[]`, we'll check that:
+            // 1. X<T> (unspecialized) can be emitted without unbounded erasure
+            //   (ie. if X is an extension type, then without reference to X to erase)
+            //   and without reference to E to erase
+            // 2. Y can be emitted without unbounded erasure and without reference to E to erase
             static bool foundUnboundedErasure(TypeSymbol type, ConsList<TypeSymbol> extensionsBeingErased, bool isContainer = false)
             {
                 if (type is NamedTypeSymbol)

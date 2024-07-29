@@ -137,6 +137,34 @@ namespace Microsoft.CodeAnalysis.CSharp
                 new CollectionExpressionUncommonData(collectionExpressionTypeKind, elementType, constructor, constructorUsedInExpandedForm, elementConversions));
         }
 
+        private sealed class ExtensionUncommonData : UncommonData
+        {
+            internal readonly bool IsFromExtension;
+            internal readonly Conversion Conversion;
+            internal readonly bool IsToExtension;
+
+            public ExtensionUncommonData(bool isFromExtension, Conversion conversion, bool isToExtension)
+            {
+                Debug.Assert(isFromExtension ^ isToExtension);
+
+                IsFromExtension = isFromExtension;
+                Conversion = conversion;
+                IsToExtension = isToExtension;
+            }
+        }
+
+        internal static Conversion CreateImplicitExtensionConversion(bool fromExtension, Conversion conversion, bool toExtension)
+        {
+            // TODO2 consider caching certain common/simple cases
+            return new Conversion(ConversionKind.ImplicitExtension, new ExtensionUncommonData(fromExtension, conversion, toExtension));
+        }
+
+        internal static Conversion CreateExplicitExtensionConversion(bool fromExtension, Conversion conversion, bool toExtension)
+        {
+            // TODO2 consider caching certain common/simple cases
+            return new Conversion(ConversionKind.ExplicitExtension, new ExtensionUncommonData(fromExtension, conversion, toExtension));
+        }
+
         private Conversion(
             ConversionKind kind,
             UncommonData? uncommonData = null)
@@ -295,6 +323,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal static Conversion ImplicitPointer => new Conversion(ConversionKind.ImplicitPointer);
         internal static Conversion FunctionType => new Conversion(ConversionKind.FunctionType);
         internal static Conversion InlineArray => new Conversion(ConversionKind.InlineArray);
+        internal static Conversion ImplicitExtension => new Conversion(ConversionKind.ImplicitExtension);
+        internal static Conversion ExplicitExtension => new Conversion(ConversionKind.ExplicitExtension);
 
         // trivial conversions that could be underlying in nullable conversion
         // NOTE: tuple conversions can be underlying as well, but they are not trivial 
@@ -989,6 +1019,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
+        public bool IsExtension
+        {
+            get
+            {
+                return Kind is ConversionKind.ImplicitExtension or ConversionKind.ExplicitExtension;
+            }
+        }
+
         /// <summary>
         /// Returns the method used to create the delegate for a method group conversion if <see cref="IsMethodGroup"/> is true 
         /// or the method used to perform the conversion for a user-defined conversion if <see cref="IsUserDefined"/> is true.
@@ -1119,6 +1157,26 @@ namespace Microsoft.CodeAnalysis.CSharp
                 }
 
                 return null;
+            }
+        }
+
+        internal bool IsFromExtension
+            => _uncommonData is ExtensionUncommonData { IsFromExtension: true };
+
+        internal bool IsToExtension
+            => _uncommonData is ExtensionUncommonData { IsToExtension: true };
+
+        internal Conversion ExtensionUnderlyingConversion
+        {
+            get
+            {
+                Debug.Assert(IsExtension);
+                if (_uncommonData is ExtensionUncommonData { Conversion: var conversion })
+                {
+                    return conversion;
+                }
+
+                throw ExceptionUtilities.Unreachable();
             }
         }
 
