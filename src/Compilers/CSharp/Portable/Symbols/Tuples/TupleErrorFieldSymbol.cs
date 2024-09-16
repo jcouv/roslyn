@@ -192,7 +192,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal override FieldSymbol AsMember(NamedTypeSymbol newOwner)
         {
-            Debug.Assert(newOwner.IsTupleType && newOwner.TupleElementTypesWithAnnotations.Length > TupleElementIndex);
+            Debug.Assert(newOwner.GetIsTupleType() && newOwner.TupleElementTypesWithAnnotations.Length > TupleElementIndex);
             if (ReferenceEquals(newOwner, ContainingType))
             {
                 return this;

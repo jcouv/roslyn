@@ -559,7 +559,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// <summary>
         /// Is this a symbol for a Tuple.
         /// </summary>
-        public virtual bool IsTupleType => false;
+        public virtual bool GetIsTupleType(bool includeExtensions = false) // TODO2 review all callers and users of related APIs (tuple elements, tuple fields, etc)
+        {
+            if (includeExtensions && this.GetExtendedTypeNoUseSiteDiagnostics(null) is { } extendedType)
+            {
+                Debug.Assert(!extendedType.IsExtension);
+                return extendedType.GetIsTupleType(includeExtensions: false);
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// True if the type represents a native integer. In C#, the types represented
@@ -577,7 +586,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// </summary>
         internal bool IsTupleTypeOfCardinality(int targetCardinality)
         {
-            if (IsTupleType)
+            if (GetIsTupleType())
             {
                 return TupleElementTypesWithAnnotations.Length == targetCardinality;
             }

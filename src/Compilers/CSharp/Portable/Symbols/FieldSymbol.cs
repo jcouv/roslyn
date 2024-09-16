@@ -435,7 +435,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             get
             {
                 Debug.Assert(!(this is TupleElementFieldSymbol));
-                return ContainingType.IsTupleType ? this : null;
+                return ContainingType.GetIsTupleType() ? this : null;
             }
         }
 
@@ -471,7 +471,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             {
                 // wrapped tuple fields already have this information and override this property
                 Debug.Assert(!(this is TupleElementFieldSymbol or TupleErrorFieldSymbol or Retargeting.RetargetingFieldSymbol));
-                if (!ContainingType.IsTupleType)
+                if (!ContainingType.GetIsTupleType())
                 {
                     return -1;
                 }

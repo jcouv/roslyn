@@ -51,7 +51,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             // The fields on definition of ValueTuple<...> types don't need to be wrapped
             Debug.Assert(!container.IsDefinition);
 
-            Debug.Assert(container.IsTupleType);
+            Debug.Assert(container.GetIsTupleType());
             _containingTuple = container;
             _tupleElementIndex = correspondingDefaultFieldOpt is null ? tupleElementIndex << 1 : (tupleElementIndex << 1) + 1;
             Debug.Assert(!locations.IsDefault);
@@ -106,7 +106,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             get
             {
                 NamedTypeSymbol originalContainer = ContainingType.OriginalDefinition;
-                if (!originalContainer.IsTupleType)
+                if (!originalContainer.GetIsTupleType())
                 {
                     return this;
                 }
@@ -208,7 +208,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal override FieldSymbol AsMember(NamedTypeSymbol newOwner)
         {
-            Debug.Assert(newOwner.IsTupleType);
+            Debug.Assert(newOwner.GetIsTupleType());
 
             NamedTypeSymbol newUnderlyingOwner = GetNewUnderlyingOwner(newOwner);
             return new TupleElementFieldSymbol(newOwner, _underlyingField.OriginalDefinition.AsMember(newUnderlyingOwner), TupleElementIndex, Locations, IsImplicitlyDeclared);
@@ -264,8 +264,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             // The underlying field for 'Hanna' (an 8-th named element) in a long tuple is Item1. The corresponding field is Item8.
 
-            Debug.Assert(container.IsTupleType);
-            Debug.Assert(underlyingField.ContainingType.IsTupleType);
+            Debug.Assert(container.GetIsTupleType());
+            Debug.Assert(underlyingField.ContainingType.GetIsTupleType());
             Debug.Assert(name != null);
             Debug.Assert(name != underlyingField.Name || !container.Equals(underlyingField.ContainingType, TypeCompareKind.IgnoreDynamicAndTupleNames),
                                 "fields that map directly to underlying should not be represented by " + nameof(TupleVirtualElementFieldSymbol));
@@ -329,7 +329,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal override FieldSymbol AsMember(NamedTypeSymbol newOwner)
         {
-            Debug.Assert(newOwner.IsTupleType);
+            Debug.Assert(newOwner.GetIsTupleType());
             Debug.Assert(newOwner.TupleElements.Length == this._containingTuple.TupleElements.Length);
 
             NamedTypeSymbol newUnderlyingOwner = GetNewUnderlyingOwner(newOwner);

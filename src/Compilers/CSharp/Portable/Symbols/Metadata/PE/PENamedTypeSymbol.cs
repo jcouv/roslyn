@@ -1519,7 +1519,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 }
 #endif
 
-                if (IsTupleType)
+                if (GetIsTupleType())
                 {
                     int originalCount = members.Count;
                     var peMembers = members.ToImmutableAndFree();

@@ -128,7 +128,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             get
             {
-                if (IsTupleType)
+                if (GetIsTupleType())
                 {
                     return TupleData.Locations;
                 }
@@ -141,7 +141,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             get
             {
-                if (IsTupleType)
+                if (GetIsTupleType())
                 {
                     return GetDeclaringSyntaxReferenceHelper<CSharpSyntaxNode>(TupleData.Locations);
                 }

@@ -192,7 +192,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                     return new List<string>(GetTypeMembersUnordered().Select(s => s.Name).Distinct());
                 }
 
-                if (IsTupleType)
+                if (GetIsTupleType())
                 {
                     return GetMembers().Select(s => s.Name).Distinct();
                 }
@@ -265,7 +265,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private ArrayBuilder<Symbol> AddOrWrapTupleMembersIfNecessary(ArrayBuilder<Symbol> builder)
         {
-            if (IsTupleType)
+            if (GetIsTupleType())
             {
                 var existingMembers = builder.ToImmutableAndFree();
                 var replacedFields = new HashSet<Symbol>(ReferenceEqualityComparer.Instance);
@@ -327,7 +327,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private ImmutableArray<Symbol> GetMembersWorker(string name)
         {
-            if (IsTupleType)
+            if (GetIsTupleType())
             {
                 var result = GetMembers().WhereAsArray((m, name) => m.Name == name, name);
                 cacheResult(result);

@@ -162,7 +162,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return type.GetNullableUnderlyingTypeWithAnnotations(includeExtensions).Type;
         }
 
-        public static bool IsNullableType(this TypeSymbol? type, [NotNullWhen(true)] out TypeSymbol? underlyingType)
+        public static bool IsNullableType(this TypeSymbol? type, [NotNullWhen(true)] out TypeSymbol? underlyingType) // TODO2
         {
             if (type is NamedTypeSymbol nt
                 && nt.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
@@ -628,7 +628,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         public static bool TryGetElementTypesWithAnnotationsIfTupleType(this TypeSymbol type, out ImmutableArray<TypeWithAnnotations> elementTypes)
         {
-            if (type.IsTupleType)
+            if (type.GetIsTupleType())
             {
                 elementTypes = ((NamedTypeSymbol)type).TupleElementTypesWithAnnotations;
                 return true;
@@ -1307,7 +1307,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// Return true if the type contains any tuples.
         /// </summary>
         internal static bool ContainsTuple(this TypeSymbol type) =>
-            type.VisitType((TypeSymbol t, object? _, bool _, bool _) => t.IsTupleType, null) is object;
+            type.VisitType((TypeSymbol t, object? _, bool _, bool _) => t.GetIsTupleType(), null) is object;
 
         /// <summary>
         /// Return true if the type contains any tuples with element names.

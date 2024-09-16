@@ -521,7 +521,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return tupleExpression.Arguments[i];
             }
 
-            Debug.Assert(tuple.Type is { IsTupleType: true });
+            Debug.Assert(tuple.Type is { } type2 && type2.GetIsTupleType());
 
             // Example:
             // t == GetTuple();

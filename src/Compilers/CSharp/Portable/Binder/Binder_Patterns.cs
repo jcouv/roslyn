@@ -987,7 +987,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     BindValueTupleSubpatterns(
                         positionalClause, declType, ImmutableArray<TypeWithAnnotations>.Empty, permitDesignations, ref hasErrors, patternsBuilder, diagnostics);
                 }
-                else if (declType.IsTupleType)
+                else if (declType.GetIsTupleType())
                 {
                     // It is a tuple type. Work according to its elements
                     BindValueTupleSubpatterns(positionalClause, declType, declType.TupleElementTypesWithAnnotations, permitDesignations, ref hasErrors, patternsBuilder, diagnostics);
@@ -1240,7 +1240,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             iTupleType = null;
             iTupleGetLength = iTupleGetItem = null;
-            Debug.Assert(!declType.IsTupleType);
+            Debug.Assert(!declType.GetIsTupleType());
             Debug.Assert(!IsZeroElementTupleType(declType));
 
             if (Compilation.LanguageVersion < MessageID.IDS_FeatureRecursivePatterns.RequiredVersion())
@@ -1383,7 +1383,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             // required to identify it.  When that bug is fixed we should be able to remove this if statement.
                             addSubpatternsForTuple(ImmutableArray<TypeWithAnnotations>.Empty);
                         }
-                        else if (strippedInputType.IsTupleType)
+                        else if (strippedInputType.GetIsTupleType())
                         {
                             // It is a tuple type. Work according to its elements
                             addSubpatternsForTuple(strippedInputType.TupleElementTypesWithAnnotations);

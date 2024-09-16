@@ -4978,7 +4978,7 @@ public class Unbound : Constructed<> { }
             Assert.True(((NamedTypeSymbol)substitutedNestedS).IsSerializable);
 
             var valueTupleS = comp.GetTypeByMetadataName("ValueTupleS").GetMember("M").GetTypeOrReturnType().Type;
-            Assert.True(valueTupleS.IsTupleType);
+            Assert.True(valueTupleS.GetIsTupleType());
             Assert.True(((NamedTypeSymbol)valueTupleS).IsSerializable);
 
             var constructed = comp.GetTypeByMetadataName("Constructed").BaseType();

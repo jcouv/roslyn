@@ -2274,7 +2274,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 targetType = extendedType;
             }
 
-            if (targetType.IsTupleType)
+            if (targetType.GetIsTupleType())
             {
                 NamedTypeSymbol.ReportTupleNamesMismatchesIfAny(targetType, sourceTuple, diagnostics);
 
@@ -2284,7 +2284,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // but element names has not changed and locations of their declarations 
                 // should not be confused with element locations on the target type.
 
-                if (sourceTuple.Type is NamedTypeSymbol { IsTupleType: true } sourceType)
+                if (sourceTuple.Type is NamedTypeSymbol { } sourceType && sourceType.GetIsTupleType())
                 {
                     targetType = targetType.WithTupleDataFrom(sourceType);
                 }

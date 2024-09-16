@@ -610,7 +610,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             ImmutableArray<Location> elementLocations,
             BindingDiagnosticBag nullabilityDiagnosticsOpt)
         {
-            Debug.Assert(tuple.IsTupleType);
+            Debug.Assert(tuple.GetIsTupleType());
             if (!RequiresChecking(tuple))
             {
                 return;

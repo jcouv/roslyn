@@ -3524,10 +3524,22 @@ namespace Microsoft.CodeAnalysis.CSharp
             return (original, updated) switch
             {
                 (LambdaSymbol l, NamedTypeSymbol n) _ when n.IsDelegateType() => AreLambdaAndNewDelegateSimilar(l, n),
-                (FieldSymbol { ContainingType: { IsTupleType: true }, TupleElementIndex: var oi } originalField, FieldSymbol { ContainingType: { IsTupleType: true }, TupleElementIndex: var ui } updatedField) =>
+                (FieldSymbol { } originalField, FieldSymbol { } updatedField) when tryGetTupleElementIndex(originalField, out int oi) && tryGetTupleElementIndex(updatedField, out int ui) =>
                     originalField.Type.Equals(updatedField.Type, TypeCompareKind.AllNullableIgnoreOptions | TypeCompareKind.IgnoreTupleNames) && oi == ui,
                 _ => original.Equals(updated, TypeCompareKind.AllNullableIgnoreOptions | TypeCompareKind.IgnoreTupleNames)
             };
+
+            static bool tryGetTupleElementIndex(FieldSymbol field, out int i)
+            {
+                if (field.ContainingType.GetIsTupleType())
+                {
+                    i = field.TupleElementIndex;
+                    return true;
+                }
+
+                i = -1;
+                return false;
+            }
         }
 #endif
 
@@ -3858,7 +3870,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         if (EmptyStructTypeCache.IsTrackableStructType(type))
                         {
                             var containingType = constructor?.ContainingType;
-                            if (containingType?.IsTupleType == true && !isDefaultValueTypeConstructor)
+                            if (containingType?.GetIsTupleType() == true && !isDefaultValueTypeConstructor)
                             {
                                 // new System.ValueTuple<T1, ..., TN>(e1, ..., eN)
                                 TrackNullableStateOfTupleElements(slot, containingType, arguments, argumentTypes, ((BoundObjectCreationExpression)node).ArgsToParamsOpt, useRestField: true);
@@ -8312,7 +8324,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             ImmutableArray<int> argsToParamsOpt,
             bool useRestField)
         {
-            Debug.Assert(tupleType.IsTupleType);
+            Debug.Assert(tupleType.GetIsTupleType());
             Debug.Assert(values.Length == types.Length);
             Debug.Assert(values.Length == (useRestField ? Math.Min(tupleType.TupleElements.Length, NamedTypeSymbol.ValueTupleRestPosition) : tupleType.TupleElements.Length));
 
@@ -8382,7 +8394,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(valueSlot > 0);
 
             var valueTuple = operandType as NamedTypeSymbol;
-            if (valueTuple is null || !valueTuple.IsTupleType)
+            if (valueTuple is null || !valueTuple.GetIsTupleType())
             {
                 return;
             }
@@ -8813,7 +8825,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                             return operandType;
                         }
                     }
-                    if (operandType.Type?.IsTupleType == true || conversionOperand.Kind == BoundKind.TupleLiteral)
+                    if (operandType.Type?.GetIsTupleType() == true || conversionOperand.Kind == BoundKind.TupleLiteral)
                     {
                         goto case ConversionKind.ImplicitTuple;
                     }
@@ -10251,12 +10263,12 @@ namespace Microsoft.CodeAnalysis.CSharp
                 expr = CreatePlaceholderIfNecessary(expr, rightResult.ToTypeWithAnnotations(compilation));
             }
 
-            if (expr.Type is NamedTypeSymbol { IsTupleType: true } tupleType)
+            if (expr.Type is NamedTypeSymbol { } type2 && type2.GetIsTupleType())
             {
                 // https://github.com/dotnet/roslyn/issues/33011: Should include conversion.UnderlyingConversions[i].
                 // For instance, Boxing conversions (see Deconstruction_ImplicitBoxingConversion_02) and
                 // ImplicitNullable conversions (see Deconstruction_ImplicitNullableConversion_02).
-                var fields = tupleType.TupleElements;
+                var fields = type2.TupleElements;
                 return fields.SelectAsArray((f, e) => (BoundExpression)new BoundFieldAccess(e.Syntax, e, f, constantValueOpt: null), expr);
             }
 

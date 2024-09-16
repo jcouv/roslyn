@@ -140,7 +140,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.PublicModel
             }
         }
 
-        bool ITypeSymbol.IsTupleType => UnderlyingTypeSymbol.IsTupleType;
+        bool ITypeSymbol.IsTupleType => UnderlyingTypeSymbol.GetIsTupleType();
 
         bool ITypeSymbol.IsNativeIntegerType => UnderlyingTypeSymbol.IsNativeIntegerType;
 

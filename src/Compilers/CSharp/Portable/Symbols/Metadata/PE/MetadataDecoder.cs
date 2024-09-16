@@ -537,7 +537,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 return null;
             }
 
-            Debug.Assert(!targetTypeSymbol.IsTupleType);
+            Debug.Assert(!targetTypeSymbol.GetIsTupleType());
 
             if ((object)scope != null)
             {
@@ -554,7 +554,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE
                 }
             }
 
-            if (!targetTypeSymbol.IsTupleType)
+            if (!targetTypeSymbol.GetIsTupleType())
             {
                 targetTypeSymbol = TupleTypeDecoder.DecodeTupleTypesIfApplicable(targetTypeSymbol, elementNames: default);
             }

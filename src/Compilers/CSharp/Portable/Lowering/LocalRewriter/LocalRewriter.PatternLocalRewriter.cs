@@ -549,7 +549,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     }
                 }
 
-                if (loweredInput.Type.IsTupleType &&
+                if (loweredInput.Type.GetIsTupleType() &&
                     !loweredInput.Type.OriginalDefinition.Equals(_factory.Compilation.GetWellKnownType(WellKnownType.System_ValueTuple_TRest)) &&
                     loweredInput.Syntax.Kind() == SyntaxKind.TupleExpression &&
                     loweredInput is BoundObjectCreationExpression expr &&

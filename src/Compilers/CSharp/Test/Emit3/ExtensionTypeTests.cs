@@ -74,7 +74,7 @@ public class ExtensionTypeTests : CompilingTestBase
         Assert.False(namedType.IsErrorType());
         Assert.Equal(specialType, namedType.SpecialType);
         Assert.False(namedType.IsObjectType());
-        Assert.False(namedType.IsTupleType);
+        Assert.False(namedType.GetIsTupleType());
         Assert.True(namedType.TupleElements.IsDefault);
         Assert.Empty(namedType.InterfacesNoUseSiteDiagnostics());
         Assert.Empty(namedType.AllInterfacesNoUseSiteDiagnostics); // PROTOTYPE
@@ -52018,7 +52018,6 @@ public explicit extension E for (long, object) { public void Print() { System.Co
         // Spec: For each of the predefined implicit or explicit conversions that convert
         // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
 
-        // TODO2 broken, resume here
         // - An implicit or explicit conversion from S? to T?
         var src = """
 (int, string)? t = (1, "ran");
@@ -52047,7 +52046,7 @@ public explicit extension E for (long, object)? { public void Print() { System.C
         // Spec: For each of the predefined implicit or explicit conversions that convert
         // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
 
-        // TODO2 broken
+        // TODO2 broken, resume here
         // TODO2 There may be a spec issue (implicit tuple conversion should also cover expressions of tuple type)
         // - An implicit or explicit conversion from S? to T?
         var src = """
@@ -52115,20 +52114,19 @@ public explicit extension E for (long, object) { public void Print() { System.Co
 
         var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
         comp.VerifyEmitDiagnostics(
-            // (2,7): error CS0029: Cannot implicitly convert type '(int, string)?' to 'E'
+            // (2,7): error CS0266: Cannot implicitly convert type '(int, string)?' to 'E'. An explicit conversion exists (are you missing a cast?)
             // E e = t;
-            Diagnostic(ErrorCode.ERR_NoImplicitConv, "t").WithArguments("(int, string)?", "E").WithLocation(2, 7));
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "t").WithArguments("(int, string)?", "E").WithLocation(2, 7));
 
         var tree = comp.SyntaxTrees.First();
         var model = comp.GetSemanticModel(tree);
         var expr = GetSyntax<IdentifierNameSyntax>(tree, "t");
         var conversion = model.GetConversion(expr);
-        //Assert.Equal(ConversionKind.ImplicitNullable, conversion.Kind);
-        //Assert.Equal(ConversionKind.ImplicitTupleLiteral, conversion.UnderlyingConversions[0].Kind);
-        //Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
-        //Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+        Assert.Equal(ConversionKind.ExplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ExplicitTuple, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
 
-        // TODO2
         src = """
 (int, string)? t = (1, "ran");
 E e = (E)t;
@@ -52138,11 +52136,8 @@ public explicit extension E for (long, object) { public void Print() { System.Co
 """;
 
         comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
-        comp.VerifyEmitDiagnostics(
-            // (2,7): error CS0029: Cannot implicitly convert type '(int, string)?' to 'E'
-            // E e = t;
-            Diagnostic(ErrorCode.ERR_NoImplicitConv, "t").WithArguments("(int, string)?", "E").WithLocation(2, 7));
-        // TODO2 execute
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "(1, ran)");
     }
 
     [Fact]
@@ -52158,16 +52153,9 @@ public implicit extension E for Enum { }
 public enum Enum { Zero = 0 }
 """;
 
-        // TODO2 should work
         var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
-
-        var expectedDiagnostics = new[] {
-            // (4,22): error CS1503: Argument 1: cannot convert from 'E' to 'bool'
-            // System.Console.Write(e);
-            Diagnostic(ErrorCode.ERR_BadArgType, "e").WithArguments("1", "E", "bool").WithLocation(4, 22) };
-
-        comp.VerifyEmitDiagnostics(expectedDiagnostics);
-        // TODO2 execute
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "Zero");
 
         var tree = comp.SyntaxTrees.First();
         var model = comp.GetSemanticModel(tree);
@@ -52189,7 +52177,7 @@ IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration
     null
 """;
 
-        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, expectedDiagnostics);
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, []);
     }
 
     [Fact]
@@ -52206,13 +52194,8 @@ public enum Enum { Zero = 0 }
 """;
 
         var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
-        var expectedDiagnostics = new[] {
-            // (4,22): error CS1503: Argument 1: cannot convert from 'E?' to 'bool'
-            // System.Console.Write(e);
-            Diagnostic(ErrorCode.ERR_BadArgType, "e").WithArguments("1", "E?", "bool").WithLocation(4, 22) };
-
-        comp.VerifyEmitDiagnostics(expectedDiagnostics);
-        // TODO2 execute
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "Zero");
 
         var tree = comp.SyntaxTrees.First();
         var model = comp.GetSemanticModel(tree);
@@ -52235,7 +52218,7 @@ IVariableDeclarationOperation (1 declarators) (OperationKind.VariableDeclaration
     null
 """;
 
-        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, expectedDiagnostics);
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, []);
     }
 
     [Fact]

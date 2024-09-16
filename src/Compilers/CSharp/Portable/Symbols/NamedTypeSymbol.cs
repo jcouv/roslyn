@@ -925,7 +925,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 }
             }
 
-            if (this.IsTupleType && !tupleNamesEquals(other, comparison))
+            if (this.GetIsTupleType() && !tupleNamesEquals(other, comparison))
             {
                 return false;
             }
@@ -1051,7 +1051,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             allTypeArguments.Free();
             allTypeParameters.Free();
 
-            return IsTupleType ? MergeTupleNames((NamedTypeSymbol)other, result) : result;
+            return GetIsTupleType() ? MergeTupleNames((NamedTypeSymbol)other, result) : result;
         }
 
         /// <summary>
@@ -1071,7 +1071,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             Debug.Assert(typeA.Equals(typeB, TypeCompareKind.IgnoreDynamicAndTupleNames | TypeCompareKind.IgnoreNullableModifiersForReferenceTypes));
 
             // Tuple types act as covariant when merging equivalent types.
-            bool isTuple = typeA.IsTupleType;
+            bool isTuple = typeA.GetIsTupleType();
 
             var definition = typeA.OriginalDefinition;
             bool haveChanges = false;

@@ -141,7 +141,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// returns an empty ImmutableArray. Never returns Null.</returns>
         public override ImmutableArray<Symbol> GetMembers()
         {
-            if (IsTupleType)
+            if (GetIsTupleType())
             {
                 var result = MakeSynthesizedTupleMembers(ImmutableArray<Symbol>.Empty);
                 RoslynDebug.Assert(result is object);

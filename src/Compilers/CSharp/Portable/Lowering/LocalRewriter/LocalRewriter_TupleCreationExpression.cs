@@ -42,7 +42,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private BoundExpression MakeTupleCreationExpression(SyntaxNode syntax, NamedTypeSymbol type, ImmutableArray<BoundExpression> rewrittenArguments)
         {
-            Debug.Assert(type.IsTupleType);
+            Debug.Assert(type.GetIsTupleType());
 
             ArrayBuilder<NamedTypeSymbol> underlyingTupleTypeChain = ArrayBuilder<NamedTypeSymbol>.GetInstance();
             NamedTypeSymbol.GetUnderlyingTypeChain(type, underlyingTupleTypeChain);

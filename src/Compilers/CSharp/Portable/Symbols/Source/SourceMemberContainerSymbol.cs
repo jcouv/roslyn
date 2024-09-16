@@ -1278,7 +1278,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             get
             {
-                return (IsTupleType || IsRecord || IsRecordStruct) ? GetMembers().Select(m => m.Name) : this.declaration.MemberNames;
+                return (GetIsTupleType() || IsRecord || IsRecordStruct) ? GetMembers().Select(m => m.Name) : this.declaration.MemberNames;
             }
         }
 
@@ -2940,7 +2940,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             // Most types don't have indexers.  If this is one of those types,
             // just reuse the dictionary we build for early attribute decoding.
             // For tuples, we also need to take the slow path.
-            if (!membersAndInitializers.HaveIndexers && !this.IsTupleType && _lazyEarlyAttributeDecodingMembersDictionary is object)
+            if (!membersAndInitializers.HaveIndexers && !this.GetIsTupleType() && _lazyEarlyAttributeDecodingMembersDictionary is object)
             {
                 membersByName = _lazyEarlyAttributeDecodingMembersDictionary;
             }
@@ -4956,7 +4956,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private void AddSynthesizedTupleMembersIfNecessary(MembersAndInitializersBuilder builder, DeclaredMembersAndInitializers declaredMembersAndInitializers)
         {
-            if (!this.IsTupleType)
+            if (!this.GetIsTupleType())
             {
                 return;
             }

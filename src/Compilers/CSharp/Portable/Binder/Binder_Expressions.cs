@@ -1401,7 +1401,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 if (type.IsDynamic()
                     || (typeWithAnnotations.NullableAnnotation.IsAnnotated() && !type.IsValueType)
                     || type.IsNativeIntegerWrapperType
-                    || (type.IsTupleType && !type.TupleElementNames.IsDefault))
+                    || (type.GetIsTupleType() && !type.TupleElementNames.IsDefault))
                 {
                     diagnostics.Add(ErrorCode.ERR_AttrDependentTypeNotAllowed, attributeName, type);
                     return true;

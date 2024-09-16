@@ -329,7 +329,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return expr;
             }
 
-            Debug.Assert(targetType.StrippedType().IsTupleType);
+            Debug.Assert(targetType.StrippedType().GetIsTupleType());
             return new BoundDefaultExpression(expr.Syntax, targetType);
         }
 
@@ -359,9 +359,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return -1;
             }
 
-            if (type.StrippedType() is { IsTupleType: true } tupleType)
+            if (type.StrippedType() is { } type2 && type2.GetIsTupleType())
             {
-                return tupleType.TupleElementTypesWithAnnotations.Length;
+                return type2.TupleElementTypesWithAnnotations.Length;
             }
 
             return -1;

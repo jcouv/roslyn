@@ -875,7 +875,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             private static bool AddNames(TypeSymbol type, ArrayBuilder<string?> namesBuilder)
             {
-                if (type.IsTupleType)
+                if (type.GetIsTupleType())
                 {
                     if (type.TupleElementNames.IsDefaultOrEmpty)
                     {
