@@ -597,18 +597,18 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// <summary>
         /// If this symbol represents a tuple type, get the types of the tuple's elements.
         /// </summary>
-        public virtual ImmutableArray<TypeWithAnnotations> TupleElementTypesWithAnnotations => default(ImmutableArray<TypeWithAnnotations>);
+        public virtual ImmutableArray<TypeWithAnnotations> TupleElementTypesWithAnnotations => default(ImmutableArray<TypeWithAnnotations>); // TODO2 review callers
 
         /// <summary>
         /// If this symbol represents a tuple type, get the names of the tuple's elements.
         /// </summary>
-        public virtual ImmutableArray<string> TupleElementNames => default(ImmutableArray<string>);
+        public virtual ImmutableArray<string> TupleElementNames => default(ImmutableArray<string>); // TODO2 review callers
 
         /// <summary>
         /// If this symbol represents a tuple type, get the fields for the tuple's elements.
         /// Otherwise, returns default.
         /// </summary>
-        public virtual ImmutableArray<FieldSymbol> TupleElements => default(ImmutableArray<FieldSymbol>);
+        public virtual ImmutableArray<FieldSymbol> TupleElements => default(ImmutableArray<FieldSymbol>); // TODO2 review callers
 
 #nullable enable
         /// <summary>

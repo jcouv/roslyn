@@ -1909,8 +1909,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             return UnsafeGetSpecialTypeMethod(syntax, member, compilation, diagnostics).AsMember((NamedTypeSymbol)nullableType2.ExtendedTypeOrSelf());
         }
 
-        private bool TryGetNullableMethod(SyntaxNode syntax, TypeSymbol nullableType, SpecialMember member, out MethodSymbol result, bool isOptional = false)
+        private bool TryGetNullableMethod(SyntaxNode syntax, TypeSymbol nullableType, SpecialMember member, out MethodSymbol result, bool isOptional = false, bool includeExtensions = false) // TODO2 review callers
         {
+            if (includeExtensions)
+            {
+                nullableType = nullableType.ExtendedTypeOrSelf();
+            }
+
             var nullableType2 = (NamedTypeSymbol)nullableType;
             if (TryGetSpecialTypeMethod(syntax, member, out result, isOptional))
             {

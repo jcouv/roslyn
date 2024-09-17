@@ -2263,7 +2263,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             TypeSymbol unwrappedDestination = destination.GetNullableUnderlyingType(includeExtensions: true);
-            TypeSymbol unwrappedSource = source.StrippedType(); // TODO2
+            TypeSymbol unwrappedSource = source.StrippedType(includeExtensions: true); // TODO2
 
             if (!unwrappedSource.IsValueType)
             {

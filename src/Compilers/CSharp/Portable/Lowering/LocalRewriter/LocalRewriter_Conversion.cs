@@ -863,7 +863,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var destElementTypes = destTupleType.TupleElementTypesWithAnnotations;
             var numElements = destElementTypes.Length;
 
-            var tupleTypeSymbol = (NamedTypeSymbol)rewrittenOperand.Type;
+            var tupleTypeSymbol = (NamedTypeSymbol)rewrittenOperand.Type.ExtendedTypeOrSelf();
             var srcElementFields = tupleTypeSymbol.TupleElements;
             var fieldAccessorsBuilder = ArrayBuilder<BoundExpression>.GetInstance(numElements);
 
@@ -970,7 +970,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // SPEC: by a wrapping from T to T?.
 
                 conversion.AssertUnderlyingConversionsChecked();
-                BoundExpression rewrittenConversion = MakeConversionNode(syntax, rewrittenOperand, conversion.UnderlyingConversions[0], rewrittenType.GetNullableUnderlyingType(), @checked);
+                BoundExpression rewrittenConversion = MakeConversionNode(syntax, rewrittenOperand, conversion.UnderlyingConversions[0], rewrittenType.GetNullableUnderlyingType(includeExtensions: true), @checked);
                 MethodSymbol ctor = UnsafeGetNullableMethod(syntax, rewrittenType, SpecialMember.System_Nullable_T__ctor);
                 return new BoundObjectCreationExpression(syntax, ctor, rewrittenConversion);
             }
@@ -1077,7 +1077,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var boundTemp = _factory.StoreToTemp(operand, out tempAssignment);
             MethodSymbol getValueOrDefault;
 
-            if (!TryGetNullableMethod(syntax, boundTemp.Type, SpecialMember.System_Nullable_T_GetValueOrDefault, out getValueOrDefault))
+            if (!TryGetNullableMethod(syntax, boundTemp.Type, SpecialMember.System_Nullable_T_GetValueOrDefault, out getValueOrDefault, includeExtensions: true))
             {
                 return BadExpression(syntax, type, operand);
             }

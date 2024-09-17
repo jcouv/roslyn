@@ -52065,7 +52065,96 @@ public explicit extension E for (int, string) { public void Print() { System.Con
         var expr = GetSyntax<IdentifierNameSyntax>(tree, "t");
         var conversion = model.GetConversion(expr);
         Assert.Equal(ConversionKind.ImplicitNullable, conversion.Kind);
-        Assert.Equal(ConversionKind.ImplicitTupleLiteral, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitTuple, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitNullable_ImplicitTuple_FromNullableToNullable_FromExtensionOfNullable()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // - An implicit or explicit conversion from S? to T?
+        var src = """
+E e = (1, "ran");
+(long, object)? t = e;
+System.Console.Write(t.Value);
+
+public explicit extension E for (int, string)? { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ImplicitTuple, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitNullable_ImplicitTuple_FromNullableToNullable_FromExtensionOfNullable_ToExtensionOfNullable()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // TODO2 resume here
+        // TODO2 this is weird
+        // - An implicit or explicit conversion from S? to T?
+        var src = """
+E1 e1 = (1, "ran");
+E2 e2 = e1;
+e2.Print();
+
+public explicit extension E1 for (int, string)? { }
+public explicit extension E2 for (long, object)? { public void Print() { System.Console.Write(this.Value); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e1");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ImplicitTuple, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitNullable_ImplicitTuple_FromNullableToNullable_FromExtensionOfNullable_ToExtension()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // TODO2 this is weird too
+        // - An implicit or explicit conversion from S? to T?
+        var src = """
+E1 e1 = (1, "ran");
+E2? e2 = e1;
+e2.Value.Print();
+
+public explicit extension E1 for (int, string)? { }
+public explicit extension E2 for (long, object) { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e1");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ImplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ImplicitTuple, conversion.UnderlyingConversions[0].Kind);
         Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
         Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
     }

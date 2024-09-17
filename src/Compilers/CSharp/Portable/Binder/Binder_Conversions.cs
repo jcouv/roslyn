@@ -333,12 +333,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     if (destination.IsNullableType(includeExtensions: true))
                     {
-                        switch (source.Type?.IsNullableType()) // TODO2
+                        switch (source.Type?.IsNullableType(includeExtensions: true))
                         {
                             case true:
                                 _ = CreateConversion(
                                         syntax,
-                                        new BoundValuePlaceholder(source.Syntax, source.Type.GetNullableUnderlyingType()), // TODO2
+                                        new BoundValuePlaceholder(source.Syntax, source.Type.GetNullableUnderlyingType(includeExtensions: true)), // TODO2
                                         conversion.UnderlyingConversions[0],
                                         isCast: false,
                                         conversionGroupOpt: null,
@@ -355,7 +355,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                                         isCast: false,
                                         conversionGroupOpt: null,
                                         wasCompilerGenerated,
-                                        destination.GetNullableUnderlyingType(),
+                                        destination.GetNullableUnderlyingType(includeExtensions: true),
                                         diagnostics);
                                 break;
                         }

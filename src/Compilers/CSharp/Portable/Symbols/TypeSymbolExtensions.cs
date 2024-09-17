@@ -189,10 +189,15 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return ((NamedTypeSymbol)type).TypeArgumentsWithAnnotationsNoUseSiteDiagnostics[0];
         }
 
-        public static TypeSymbol StrippedType(this TypeSymbol type)
+        public static TypeSymbol StrippedType(this TypeSymbol type, bool includeExtensions = false)
         {
             // TODO2
-            return type.IsNullableType() ? type.GetNullableUnderlyingType() : type;
+            if (includeExtensions)
+            {
+                type = type.ExtendedTypeOrSelf();
+            }
+
+            return type.IsNullableType(includeExtensions: false) ? type.GetNullableUnderlyingType(includeExtensions) : type;
         }
 
         [return: NotNullIfNotNull(nameof(type))]
