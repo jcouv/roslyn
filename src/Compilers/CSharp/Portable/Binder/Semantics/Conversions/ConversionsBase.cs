@@ -929,7 +929,6 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             return impliedExplicitConversion;
         }
-        // TODO2 resume here
 
 #nullable enable
         /// <summary>
@@ -1135,6 +1134,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     break;
             }
 
+            // TODO2
             // Neither Span<T>, nor ReadOnlySpan<T> can be wrapped into a Nullable<T>, therefore, there is no point to check for an attempt to convert to Nullable types here. 
             if (!IsAttributeArgumentBinding && !IsParameterDefaultValueBinding && // These checks prevent cycles caused by attribute binding when HasInlineArrayAttribute check triggers that.
                 source?.HasInlineArrayAttribute(out _) == true &&
@@ -1150,6 +1150,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
 #nullable enable
+        // TODO2 resume here
         private Conversion GetImplicitCollectionExpressionConversion(BoundUnconvertedCollectionExpression collectionExpression, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
             var collectionExpressionConversion = GetCollectionExpressionConversion(collectionExpression, destination, ref useSiteInfo);
@@ -1653,6 +1654,8 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal static CollectionExpressionTypeKind GetCollectionExpressionTypeKind(CSharpCompilation compilation, TypeSymbol destination, out TypeWithAnnotations elementType)
         {
             Debug.Assert(compilation is { });
+
+            destination = destination.ExtendedTypeOrSelf();
 
             if (destination is ArrayTypeSymbol arrayType)
             {

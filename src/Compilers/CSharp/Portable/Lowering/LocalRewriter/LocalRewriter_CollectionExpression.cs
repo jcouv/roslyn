@@ -251,6 +251,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             var elements = node.Elements;
             MethodSymbol? spanConstructor = null;
 
+            collectionType = collectionType.ExtendedTypeOrSelf();
+
             var arrayType = collectionType as ArrayTypeSymbol;
             if (arrayType is null)
             {

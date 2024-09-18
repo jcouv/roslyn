@@ -52412,6 +52412,80 @@ public class C
     }
 
     [Fact]
+    public void Conversion_ImplicitCollection_ToExtensionOfCollection()
+    {
+        var src = """
+E e = [42];
+e.Print();
+
+public explicit extension E for int[] { public void Print() { System.Console.Write(((int[])this)[0]); } } // TODO2
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: "42");
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<CollectionExpressionSyntax>(tree, "[42]");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.CollectionExpression, conversion.Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitCollection_ToExtensionCollection()
+    {
+        var src = """
+E e = [1];
+
+public explicit extension E for object 
+{
+    // TODO2 can an extension implement required APIs to become a collection type?
+}
+""";
+
+        // TODO2 should pass
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'C' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = c;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "c").WithArguments("C", "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "c");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitUserDefined, conversion.Kind);
+        Assert.Equal(ConversionKind.Identity, conversion.UserDefinedFromConversion.Kind);
+        Assert.Equal(ConversionKind.ExplicitNullable, conversion.UserDefinedToConversion.Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitCollection_ToExtensionOfNullable()
+    {
+        var src = """
+E e = [1];
+
+public explicit extension E for Collection? { }
+// TODO2
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'C' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = c;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "c").WithArguments("C", "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "c");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitUserDefined, conversion.Kind);
+        Assert.Equal(ConversionKind.Identity, conversion.UserDefinedFromConversion.Kind);
+        Assert.Equal(ConversionKind.ExplicitNullable, conversion.UserDefinedToConversion.Kind);
+    }
+
+    [Fact]
     public void Conversion_HasImplicitEnumerationConversion()
     {
         var src = """
