@@ -51984,7 +51984,7 @@ public explicit extension E for (long, object) { public void Print() { System.Co
     }
 
     [Fact]
-    public void Conversion_ImplicitNullable_ImplicitTuple_FromNullableToNullable_ToExtension()
+    public void Conversion_ImplicitNullable_ImplicitTuple_FromNullableToNullable_ToNullableOfExtension()
     {
         // Spec: For each of the predefined implicit or explicit conversions that convert
         // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
@@ -52041,12 +52041,11 @@ public explicit extension E for (long, object)? { public void Print() { System.C
     }
 
     [Fact]
-    public void Conversion_ImplicitNullable_ImplicitTuple_FromNullableToNullable_FromExtension()
+    public void Conversion_ImplicitNullable_ImplicitTuple_FromNullableToNullable_FromNullableOfExtension()
     {
         // Spec: For each of the predefined implicit or explicit conversions that convert
         // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
 
-        // TODO2 broken, resume here
         // TODO2 There may be a spec issue (implicit tuple conversion should also cover expressions of tuple type)
         // - An implicit or explicit conversion from S? to T?
         var src = """
@@ -52104,7 +52103,6 @@ public explicit extension E for (int, string)? { }
         // Spec: For each of the predefined implicit or explicit conversions that convert
         // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
 
-        // TODO2 resume here
         // TODO2 this is weird
         // - An implicit or explicit conversion from S? to T?
         var src = """
@@ -52130,7 +52128,7 @@ public explicit extension E2 for (long, object)? { public void Print() { System.
     }
 
     [Fact]
-    public void Conversion_ImplicitNullable_ImplicitTuple_FromNullableToNullable_FromExtensionOfNullable_ToExtension()
+    public void Conversion_ImplicitNullable_ImplicitTuple_FromNullableToNullable_FromExtensionOfNullable_ToNullableOfExtension()
     {
         // Spec: For each of the predefined implicit or explicit conversions that convert
         // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
@@ -52157,6 +52155,96 @@ public explicit extension E2 for (long, object) { public void Print() { System.C
         Assert.Equal(ConversionKind.ImplicitTuple, conversion.UnderlyingConversions[0].Kind);
         Assert.Equal(ConversionKind.ImplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
         Assert.Equal(ConversionKind.ImplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+    }
+
+    [Fact]
+    public void Conversion_ExplicitNullable_ExplicitTuple_FromNullableToNullable_FromExtensionOfNullable_ToNullableOfExtension()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // - An implicit or explicit conversion from S? to T?
+        var src = """
+E1 e1 = (1, "ran");
+E2? e2 = e1;
+e2.Value.Print();
+
+public explicit extension E1 for (long, object)? { }
+public explicit extension E2 for (int, string) { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,10): error CS0266: Cannot implicitly convert type 'E1' to 'E2?'. An explicit conversion exists (are you missing a cast?)
+            // E2? e2 = e1;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e1").WithArguments("E1", "E2?").WithLocation(2, 10));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e1");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ExplicitTuple, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ExplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ExplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+
+        src = """
+E1 e1 = (1, "ran");
+E2? e2 = (E2?)e1;
+e2.Value.Print();
+
+public explicit extension E1 for (long, object)? { }
+public explicit extension E2 for (int, string) { public void Print() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_ExplicitNullable_ExplicitTuple_FromNullableToNullable_FromNullableOfExtension_ToExtensionOfNullable()
+    {
+        // Spec: For each of the predefined implicit or explicit conversions that convert
+        // from a non-nullable value type S to a non-nullable value type T, the following nullable conversions exist:
+
+        // - An implicit or explicit conversion from S? to T?
+        var src = """
+E1? e1 = (1, "ran");
+E2 e2 = e1;
+e2.Print();
+
+public explicit extension E1 for (long, object) { }
+public explicit extension E2 for (int, string)? { public void Print() { System.Console.Write(this); } }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,9): error CS0266: Cannot implicitly convert type 'E1?' to 'E2'. An explicit conversion exists (are you missing a cast?)
+            // E2 e2 = e1;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e1").WithArguments("E1?", "E2").WithLocation(2, 9));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e1");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitNullable, conversion.Kind);
+        Assert.Equal(ConversionKind.ExplicitTuple, conversion.UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ExplicitNumeric, conversion.UnderlyingConversions[0].UnderlyingConversions[0].Kind);
+        Assert.Equal(ConversionKind.ExplicitReference, conversion.UnderlyingConversions[0].UnderlyingConversions[1].Kind);
+
+        src = """
+E1? e1 = (1, "ran");
+E2 e2 = (E2)e1;
+e2.Print();
+
+public explicit extension E1 for (long, object) { }
+public explicit extension E2 for (int, string)? { public void Print() { System.Console.Write(this); } }
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: """(1, ran)""").VerifyDiagnostics();
     }
 
     [Fact]
@@ -52227,6 +52315,100 @@ public explicit extension E for (long, object) { public void Print() { System.Co
         comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
         comp.VerifyEmitDiagnostics();
         CompileAndVerify(comp, expectedOutput: "(1, ran)");
+    }
+
+    [Fact]
+    public void Conversion_ExplicitStandard_FromNullableToNullable_FromExtensionOfNullable()
+    {
+        var src = """
+E e = 42;
+C c = e;
+
+public explicit extension E for long? { }
+public class C
+{
+    public int? field;
+    public static implicit operator C(int? x) => new C() { field = x };
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'E' to 'C'. An explicit conversion exists (are you missing a cast?)
+            // C c = e;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "e").WithArguments("E", "C").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "e");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitUserDefined, conversion.Kind);
+        Assert.Equal(ConversionKind.ExplicitNullable, conversion.UserDefinedFromConversion.Kind);
+        Assert.Equal(ConversionKind.Identity, conversion.UserDefinedToConversion.Kind);
+
+        src = """
+E e = 42;
+C c = (C)e;
+System.Console.Write(c.field);
+
+public explicit extension E for long? { }
+public class C
+{
+    public int? field;
+    public static implicit operator C(int? x) => new C() { field = x };
+}
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: """42""").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_ExplicitStandard_FromNullableToNullable_ToExtensionOfNullable()
+    {
+        var src = """
+C c = new C() { field = 42 };
+E e = c;
+
+public explicit extension E for int? { }
+public class C
+{
+    public long? field;
+    public static implicit operator long?(C x) => x.field;
+}
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (2,7): error CS0266: Cannot implicitly convert type 'C' to 'E'. An explicit conversion exists (are you missing a cast?)
+            // E e = c;
+            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "c").WithArguments("C", "E").WithLocation(2, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<IdentifierNameSyntax>(tree, "c");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.ExplicitUserDefined, conversion.Kind);
+        Assert.Equal(ConversionKind.Identity, conversion.UserDefinedFromConversion.Kind);
+        Assert.Equal(ConversionKind.ExplicitNullable, conversion.UserDefinedToConversion.Kind);
+
+        src = """
+C c = new C() { field = 42 };
+E e = (E)c;
+System.Console.Write(e);
+
+public explicit extension E for int? { }
+public class C
+{
+    public long? field;
+    public static implicit operator long?(C x) => x.field;
+}
+""";
+
+        comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: """42""").VerifyDiagnostics();
     }
 
     [Fact]

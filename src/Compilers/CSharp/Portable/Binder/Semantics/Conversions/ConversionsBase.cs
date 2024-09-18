@@ -548,7 +548,6 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </remarks>
         public Conversion ClassifyStandardConversion(BoundExpression sourceExpression, TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
-            // TODO2
             Debug.Assert(sourceExpression is null || Compilation is not null);
             Debug.Assert(sourceExpression != null || (object)source != null);
             Debug.Assert((object)destination != null);
@@ -728,13 +727,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return nullableConversion;
                 }
 
-                // TODO2
-                var extensionConversion = ClassifyImplicitExtensionConversion(source, destination, ref useSiteInfo);
-                if (extensionConversion.Exists)
-                {
-                    return extensionConversion;
-                }
-
                 if (source is FunctionTypeSymbol)
                 {
                     Debug.Assert(false);
@@ -769,12 +761,6 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 return Conversion.NoConversion;
             }
-        }
-
-        private Conversion ClassifyImplicitExtensionConversion(TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
-        {
-            // TODO2
-            return Conversion.NoConversion;
         }
 
         private Conversion ClassifyImplicitBuiltInConversionSlow(TypeSymbol source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
@@ -836,7 +822,6 @@ namespace Microsoft.CodeAnalysis.CSharp
                 return Conversion.ExplicitEnumeration;
             }
 
-            // TODO2
             var nullableConversion = ClassifyExplicitNullableConversion(source, destination, isChecked: isChecked, ref useSiteInfo, forCast);
             if (nullableConversion.Exists)
             {
@@ -926,11 +911,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                     break;
 
                 case ConversionKind.ImplicitNullable:
-                    var strippedSource = source.StrippedType();
-                    var strippedDestination = destination.StrippedType();
+                    var strippedSource = source.StrippedType(includeExtensions: true);
+                    var strippedDestination = destination.StrippedType(includeExtensions: true);
                     var underlyingConversion = DeriveStandardExplicitFromOppositeStandardImplicitConversion(strippedSource, strippedDestination, ref useSiteInfo);
 
-                    // the opposite underlying conversion may not exist 
+                    // the opposite underlying conversion may not exist
                     // for example if underlying conversion is implicit tuple
                     impliedExplicitConversion = underlyingConversion.Exists ?
                         Conversion.MakeNullableConversion(ConversionKind.ExplicitNullable, underlyingConversion) :
@@ -944,6 +929,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             return impliedExplicitConversion;
         }
+        // TODO2 resume here
 
 #nullable enable
         /// <summary>
@@ -2458,13 +2444,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             // SPEC: An explicit conversion from S to T?.
             // SPEC: An explicit conversion from S? to T.
 
-            if (!source.IsNullableType() && !destination.IsNullableType())
+            if (!source.IsNullableType(includeExtensions: true) && !destination.IsNullableType(includeExtensions: true))
             {
                 return Conversion.NoConversion;
             }
 
-            TypeSymbol unwrappedSource = source.StrippedType();
-            TypeSymbol unwrappedDestination = destination.StrippedType();
+            TypeSymbol unwrappedSource = source.StrippedType(includeExtensions: true);
+            TypeSymbol unwrappedDestination = destination.StrippedType(includeExtensions: true);
 
             if (HasIdentityConversionInternal(unwrappedSource, unwrappedDestination))
             {

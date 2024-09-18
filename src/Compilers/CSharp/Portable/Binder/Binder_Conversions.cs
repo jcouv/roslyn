@@ -363,11 +363,11 @@ namespace Microsoft.CodeAnalysis.CSharp
                         conversion.UnderlyingConversions[0].AssertUnderlyingConversionsChecked();
                         conversion.MarkUnderlyingConversionsChecked();
                     }
-                    else if (source.Type?.IsNullableType() == true)
+                    else if (source.Type?.IsNullableType(includeExtensions: true) == true)
                     {
                         _ = CreateConversion(
                                 syntax,
-                                new BoundValuePlaceholder(source.Syntax, source.Type.GetNullableUnderlyingType()),
+                                new BoundValuePlaceholder(source.Syntax, source.Type.GetNullableUnderlyingType(includeExtensions: true)),
                                 conversion.UnderlyingConversions[0],
                                 isCast: false,
                                 conversionGroupOpt: null,
