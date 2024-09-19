@@ -50053,20 +50053,18 @@ public implicit extension E2 for int { }
 """;
 
         var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
-        var verifier = CompileAndVerify(comp, expectedOutput: "False").VerifyDiagnostics(); // TODO2 ILVerify problem
-        // Unexpected type on the stack. { Offset = 0x1, Found = Nullobjref 'NullReference', Expected = value '[netstandard]System.Nullable`1<int32>' }
-        // TODO2 there should be an initobj
+        var verifier = CompileAndVerify(comp, expectedOutput: "False").VerifyDiagnostics();
         verifier.VerifyIL("<top-level-statements-entry-point>", """
-{
-  // Code size       15 (0xf)
+ {
+  // Code size       21 (0x15)
   .maxstack  1
   .locals init (int? V_0) //e1
-  IL_0000:  ldnull
-  IL_0001:  stloc.0
-  IL_0002:  ldloca.s   V_0
-  IL_0004:  call       "bool E2?.HasValue.get"
-  IL_0009:  call       "void System.Console.Write(bool)"
-  IL_000e:  ret
+  IL_0000:  ldloca.s   V_0
+  IL_0002:  initobj    "int?"
+  IL_0008:  ldloca.s   V_0
+  IL_000a:  call       "bool E2?.HasValue.get"
+  IL_000f:  call       "void System.Console.Write(bool)"
+  IL_0014:  ret
 }
 """);
 

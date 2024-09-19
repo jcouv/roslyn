@@ -48,7 +48,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     Debug.Assert(node.Operand is not null);
                     var objectCreation = VisitExpression(node.Operand);
 
-                    if (node.Type.IsNullableType())
+                    if (node.Type.IsNullableType()) // TODO2
                     {
                         Debug.Assert(node.Operand is BoundObjectCreationExpressionBase { WasTargetTyped: true });
                         return ConvertToNullable(node.Syntax, node.Type, objectCreation);
@@ -462,7 +462,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // A conversion from constant zero to nullable is actually classified as an
                     // implicit enumeration conversion, not an implicit nullable conversion.
                     // Lower it to (E?)(E)0.
-                    if (rewrittenType.IsNullableType())
+                    if (rewrittenType.IsNullableType()) // TODO2
                     {
                         var operand = MakeConversionNode(
                             oldNodeOpt,
@@ -491,7 +491,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 case ConversionKind.ExplicitEnumeration:
                     Debug.Assert(rewrittenOperand.Type is { });
-                    if (!rewrittenType.IsNullableType() &&
+                    if (!rewrittenType.IsNullableType() && // TODO2
                         rewrittenOperand.IsDefaultValue() &&
                         (!_inExpressionLambda || !explicitCastInCode))
                     {
@@ -802,9 +802,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // Lifted conversion, wrap return type in Nullable
                 // The conversion only needs to happen for non-nullable valuetypes
                 Debug.Assert(rewrittenOperand.Type is { });
-                if (rewrittenOperand.Type.IsNullableType() &&
+                if (rewrittenOperand.Type.IsNullableType() && // TODO2
                         conversion.Method.GetParameterType(0).Equals(rewrittenOperand.Type.GetNullableUnderlyingType(), TypeCompareKind.AllIgnoreOptions) &&
-                        !userDefinedConversionRewrittenType.IsNullableType() &&
+                        !userDefinedConversionRewrittenType.IsNullableType() && // TODO2
                         userDefinedConversionRewrittenType.IsValueType)
                 {
                     userDefinedConversionRewrittenType = ((NamedTypeSymbol)rewrittenOperand.Type.OriginalDefinition).Construct(userDefinedConversionRewrittenType);
@@ -900,6 +900,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         internal static BoundExpression? NullableAlwaysHasValue(BoundExpression expression)
         {
+            // TODO2 review method
             Debug.Assert(expression.Type is { });
             if (!expression.Type.IsNullableType(includeExtensions: true))
                 return null;
@@ -913,7 +914,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // Detect the unlowered nullable conversion from value type K to type Nullable<K>
                 // This arises in lowering tuple equality operators
                 case BoundConversion { Conversion: { Kind: ConversionKind.ImplicitNullable }, Operand: var convertedArgument }
-                        when convertedArgument.Type!.Equals(expression.Type.StrippedType(), TypeCompareKind.AllIgnoreOptions):
+                        when convertedArgument.Type!.Equals(expression.Type.StrippedType(), TypeCompareKind.AllIgnoreOptions): // TODO2
                     return convertedArgument;
 
                 // Detect the unlowered nullable conversion from a tuple type T1 to Nullable<T2> for a tuple type T2.
@@ -1005,6 +1006,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             bool explicitCastInCode,
             TypeSymbol rewrittenType)
         {
+            // TODO2 review method
             Debug.Assert((object)rewrittenType != null);
             Debug.Assert(rewrittenOperand.Type is { });
             TypeSymbol rewrittenOperandType = rewrittenOperand.Type;

@@ -51,7 +51,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
                 if ((object)expression.Type == null ||
                     (expression.Type.SpecialType != SpecialType.System_Decimal &&
-                     !expression.Type.IsNullableType()))
+                     !expression.Type.IsNullableType())) // TODO2
                 {
                     EmitConstantExpression(expression.Type, constantValue, used, expression.Syntax);
                     return;
