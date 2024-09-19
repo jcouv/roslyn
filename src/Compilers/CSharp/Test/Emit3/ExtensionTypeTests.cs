@@ -52454,6 +52454,195 @@ public class C
     }
 
     [Fact]
+    public void Conversion_ImplicitUserDefined_OnExtendedType()
+    {
+        var src = """
+E e = 42;
+
+public class C
+{
+    public static implicit operator C(int i) => new C();
+}
+public explicit extension E for C { }
+""";
+
+        // PROTOTYPE handle user-defined conversions
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,7): error CS0029: Cannot implicitly convert type 'int' to 'E'
+            // E e = 42;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "42").WithArguments("int", "E").WithLocation(1, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<LiteralExpressionSyntax>(tree, "42");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.NoConversion, conversion.Kind);
+    }
+
+    [Fact]
+    public void Conversion_ImplicitUserDefined_OnExtensionType()
+    {
+        var src = """
+E e = 42;
+
+public class C { }
+public explicit extension E for C
+{
+    public static implicit operator E(int i) => new C();
+}
+""";
+
+        // PROTOTYPE handle user-defined conversions
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,7): error CS0029: Cannot implicitly convert type 'int' to 'E'
+            // E e = 42;
+            Diagnostic(ErrorCode.ERR_NoImplicitConv, "42").WithArguments("int", "E").WithLocation(1, 7));
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntax<LiteralExpressionSyntax>(tree, "42");
+        var conversion = model.GetConversion(expr);
+        Assert.Equal(ConversionKind.NoConversion, conversion.Kind);
+    }
+
+    [Fact]
+    public void Conversion_AnonymousFunction()
+    {
+        var src = """
+E e = () => { System.Console.Write("ran"); };
+e();
+System.Action a = e;
+a();
+
+public explicit extension E for System.Action { }
+""";
+
+        // PROTOTYPE handle anonymous function conversions
+        // PROTOTYPE allow invocation of delegates
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,10): error CS1660: Cannot convert lambda expression to type 'E' because it is not a delegate type
+            // E e = () => { System.Console.Write("ran"); };
+            Diagnostic(ErrorCode.ERR_AnonMethToNonDel, "=>").WithArguments("lambda expression", "E").WithLocation(1, 10),
+            // (2,1): error CS0149: Method name expected
+            // e();
+            Diagnostic(ErrorCode.ERR_MethodNameExpected, "e").WithLocation(2, 1));
+    }
+
+    [Fact]
+    public void Conversion_AnonymousFunction_ToExtensionOfExpressionTree()
+    {
+        var src = """
+E e = () => { System.Console.Write("ran"); };
+
+public explicit extension E for System.Linq.Expressions.Expression<System.Action> { }
+""";
+
+        // PROTOTYPE handle anonymous function conversions
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,10): error CS1660: Cannot convert lambda expression to type 'E' because it is not a delegate type
+            // E e = () => { System.Console.Write("ran"); };
+            Diagnostic(ErrorCode.ERR_AnonMethToNonDel, "=>").WithArguments("lambda expression", "E").WithLocation(1, 10));
+    }
+
+    [Fact]
+    public void Conversion_AnonymousFunction_ToExpressionTreeOfExtension()
+    {
+        var src = """
+System.Linq.Expressions.Expression<E> e = () => { System.Console.Write("ran"); };
+
+public explicit extension E for System.Action { }
+""";
+
+        // PROTOTYPE handle anonymous function conversions
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,46): error CS0835: Cannot convert lambda to an expression tree whose type argument 'E' is not a delegate type
+            // System.Linq.Expressions.Expression<E> e = () => { System.Console.Write("ran"); };
+            Diagnostic(ErrorCode.ERR_ExpressionTreeMustHaveDelegate, "=>").WithArguments("E").WithLocation(1, 46));
+    }
+
+    [Fact]
+    public void Conversion_MethodGroup()
+    {
+        var src = """
+E e = () => local;
+System.Action a = e;
+a();
+
+void local() { System.Console.Write("ran"); }
+
+public explicit extension E for System.Action { }
+""";
+
+        // PROTOTYPE handle method group conversions
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        comp.VerifyEmitDiagnostics(
+            // (1,10): error CS1660: Cannot convert lambda expression to type 'E' because it is not a delegate type
+            // E e = () => local;
+            Diagnostic(ErrorCode.ERR_AnonMethToNonDel, "=>").WithArguments("lambda expression", "E").WithLocation(1, 10));
+    }
+
+    [Fact]
+    public void Conversion_DefaultLiteral_ValueType()
+    {
+        var src = """
+E e = default;
+System.Console.Write(e);
+
+public explicit extension E for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "0").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_DefaultLiteral_ValueType_TypeParameter()
+    {
+        var src = """
+E<int> e = default;
+System.Console.Write(e);
+
+public explicit extension E<T> for T where T : struct { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "0").VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void Conversion_DefaultLiteral_ReferenceType()
+    {
+        var src = """
+E e = default;
+System.Console.Write(e == null);
+
+public explicit extension E for object { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "True").VerifyDiagnostics(); ;
+    }
+
+    [Fact]
+    public void Conversion_DefaultLiteral_ReferenceType_TypeParameter()
+    {
+        var src = """
+E<object> e = default;
+System.Console.Write(e == null);
+
+public explicit extension E<T> for T where T : class { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        CompileAndVerify(comp, expectedOutput: "True").VerifyDiagnostics(); ;
+    }
+
+    [Fact]
     public void Conversion_ImplicitCollection_ToExtensionOfArray()
     {
         var src = """
