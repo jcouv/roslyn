@@ -50003,29 +50003,19 @@ public implicit extension E<T> for T where T : struct { }
     public void Conversion_NullLiteralConversion_NullableOfExtension()
     {
         // Spec: An implicit conversion exists from the null literal to any reference type or nullable value type. 
-        // TODO2
+        // TODO2 crashes
         var src = """
 /*<bind>*/
 E? e1 = null;
 /*</bind>*/
-//local(e1);
 
-//E? e2 = 42;
-//local(e2);
-
-//static void local(E? e)
-//{
-//    System.Console.Write((e is null, e is 42));
-//}
+System.Console.Write(e1.HasValue);
 
 public implicit extension E for int { }
 """;
 
         var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
-        CompileAndVerify(comp/*, expectedOutput: "True"*/).VerifyDiagnostics(
-            // (2,4): warning CS0219: The variable 'e1' is assigned but its value is never used
-            // E? e1 = null;
-            Diagnostic(ErrorCode.WRN_UnreferencedVarAssg, "e1").WithArguments("e1").WithLocation(2, 4));
+        CompileAndVerify(comp, expectedOutput: "False").VerifyDiagnostics();
 
         var tree = comp.SyntaxTrees.First();
         var model = comp.GetSemanticModel(tree);
@@ -50047,17 +50037,71 @@ IVariableDeclarationGroupOperation (1 declarations) (OperationKind.VariableDecla
       null
 """;
 
-        DiagnosticDescription[] expected = new[]
-        {
-            // (2,4): warning CS0219: The variable 'e1' is assigned but its value is never used
-            // E? e1 = null;
-            Diagnostic(ErrorCode.WRN_UnreferencedVarAssg, "e1").WithArguments("e1").WithLocation(2, 4)
-        };
-        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, expected);
+        VerifyOperationTreeAndDiagnosticsForTest<LocalDeclarationStatementSyntax>(src, expectedOperationTree, []);
     }
 
     [Fact]
-    public void Conversion_NullLiteralConversion_ExtendedTypeIsNullable()
+    public void Conversion_NullLiteralConversion_ExtensionOfNullableOfExtension()
+    {
+        // Spec: An implicit conversion exists from the null literal to any reference type or nullable value type. 
+        var src = """
+E1 e1 = null;
+System.Console.Write(e1.HasValue);
+
+public implicit extension E1 for E2? { }
+public implicit extension E2 for int { }
+""";
+
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        var verifier = CompileAndVerify(comp, expectedOutput: "False").VerifyDiagnostics(); // TODO2 ILVerify problem
+        // Unexpected type on the stack. { Offset = 0x1, Found = Nullobjref 'NullReference', Expected = value '[netstandard]System.Nullable`1<int32>' }
+        // TODO2 there should be an initobj
+        verifier.VerifyIL("<top-level-statements-entry-point>", """
+{
+  // Code size       15 (0xf)
+  .maxstack  1
+  .locals init (int? V_0) //e1
+  IL_0000:  ldnull
+  IL_0001:  stloc.0
+  IL_0002:  ldloca.s   V_0
+  IL_0004:  call       "bool E2?.HasValue.get"
+  IL_0009:  call       "void System.Console.Write(bool)"
+  IL_000e:  ret
+}
+""");
+
+        var tree = comp.SyntaxTrees.First();
+        var model = comp.GetSemanticModel(tree);
+        var expr = GetSyntaxes<LiteralExpressionSyntax>(tree, "null").First();
+        Assert.Equal(ConversionKind.NullLiteral, model.GetConversion(expr).Kind);
+    }
+
+    [Fact]
+    public void TODO2_PatternOnNullableOfExtension()
+    {
+        // PROTOTYPE handle patterns on nullable of extensions
+        var src = """
+static void local(E? e)
+{
+    System.Console.Write((e is null, e is 42));
+}
+
+public implicit extension E for int { }
+""";
+
+        Assert.ThrowsAny<InvalidOperationException>(() =>
+        {
+            var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+            CompileAndVerify(comp).VerifyDiagnostics(
+                // (2,4): warning CS0219: The variable 'e1' is assigned but its value is never used
+                // E? e1 = null;
+                Diagnostic(ErrorCode.WRN_UnreferencedVarAssg, "e1").WithArguments("e1").WithLocation(2, 4));
+        }
+        );
+    }
+
+    [Fact]
+    public void Conversion_NullLiteralConversion_ExtensionOfNullable()
     {
         // Spec: An implicit conversion exists from the null literal to any reference type or nullable value type. 
         var src = """
@@ -52412,77 +52456,70 @@ public class C
     }
 
     [Fact]
-    public void Conversion_ImplicitCollection_ToExtensionOfCollection()
+    public void Conversion_ImplicitCollection_ToExtensionOfArray()
     {
         var src = """
 E e = [42];
-e.Print();
 
-public explicit extension E for int[] { public void Print() { System.Console.Write(((int[])this)[0]); } } // TODO2
+public explicit extension E for int[] { }
 """;
 
+        // PROTOTYPE handle collection expression conversions
         var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
-        comp.VerifyEmitDiagnostics();
-        CompileAndVerify(comp, expectedOutput: "42");
+        comp.VerifyEmitDiagnostics(
+            // (1,7): error CS9174: Cannot initialize type 'E' with a collection expression because the type is not constructible.
+            // E e = [42];
+            Diagnostic(ErrorCode.ERR_CollectionExpressionTargetTypeNotConstructible, "[42]").WithArguments("E").WithLocation(1, 7));
 
         var tree = comp.SyntaxTrees.First();
         var model = comp.GetSemanticModel(tree);
         var expr = GetSyntax<CollectionExpressionSyntax>(tree, "[42]");
         var conversion = model.GetConversion(expr);
-        Assert.Equal(ConversionKind.CollectionExpression, conversion.Kind);
+        Assert.Equal(ConversionKind.NoConversion, conversion.Kind);
     }
 
     [Fact]
-    public void Conversion_ImplicitCollection_ToExtensionCollection()
+    public void Conversion_ImplicitCollection_ToExtensionOfCollectionType()
     {
         var src = """
-E e = [1];
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
-public explicit extension E for object 
+E<int> e = [42];
+
+[CollectionBuilder(typeof(MyCollectionBuilder), nameof(MyCollectionBuilder.Create))]
+public struct MyCollection<T> : IEnumerable<T>
 {
-    // TODO2 can an extension implement required APIs to become a collection type?
+    private readonly List<T> _list;
+    public MyCollection(List<T> list) { _list = list; }
+    public IEnumerator<T> GetEnumerator() => _list.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
-""";
-
-        // TODO2 should pass
-        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
-        comp.VerifyEmitDiagnostics(
-            // (2,7): error CS0266: Cannot implicitly convert type 'C' to 'E'. An explicit conversion exists (are you missing a cast?)
-            // E e = c;
-            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "c").WithArguments("C", "E").WithLocation(2, 7));
-
-        var tree = comp.SyntaxTrees.First();
-        var model = comp.GetSemanticModel(tree);
-        var expr = GetSyntax<IdentifierNameSyntax>(tree, "c");
-        var conversion = model.GetConversion(expr);
-        Assert.Equal(ConversionKind.ExplicitUserDefined, conversion.Kind);
-        Assert.Equal(ConversionKind.Identity, conversion.UserDefinedFromConversion.Kind);
-        Assert.Equal(ConversionKind.ExplicitNullable, conversion.UserDefinedToConversion.Kind);
-    }
-
-    [Fact]
-    public void Conversion_ImplicitCollection_ToExtensionOfNullable()
+public class MyCollectionBuilder
+{
+    public static MyCollection<T> Create<T>(ReadOnlySpan<T> items)
     {
-        var src = """
-E e = [1];
+        return new MyCollection<T>(new List<T>(items.ToArray()));
+    }
+}
 
-public explicit extension E for Collection? { }
-// TODO2
+public explicit extension E<T> for MyCollection<T> { }
 """;
 
-        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition]);
+        // PROTOTYPE handle collection expression conversions
+        var comp = CreateCompilation([src, ExtensionErasureAttributeDefinition], targetFramework: TargetFramework.Net80);
         comp.VerifyEmitDiagnostics(
-            // (2,7): error CS0266: Cannot implicitly convert type 'C' to 'E'. An explicit conversion exists (are you missing a cast?)
-            // E e = c;
-            Diagnostic(ErrorCode.ERR_NoImplicitConvCast, "c").WithArguments("C", "E").WithLocation(2, 7));
+            // (6,12): error CS9174: Cannot initialize type 'E<int>' with a collection expression because the type is not constructible.
+            // E<int> e = [42];
+            Diagnostic(ErrorCode.ERR_CollectionExpressionTargetTypeNotConstructible, "[42]").WithArguments("E<int>").WithLocation(6, 12));
 
         var tree = comp.SyntaxTrees.First();
         var model = comp.GetSemanticModel(tree);
-        var expr = GetSyntax<IdentifierNameSyntax>(tree, "c");
+        var expr = GetSyntax<CollectionExpressionSyntax>(tree, "[42]");
         var conversion = model.GetConversion(expr);
-        Assert.Equal(ConversionKind.ExplicitUserDefined, conversion.Kind);
-        Assert.Equal(ConversionKind.Identity, conversion.UserDefinedFromConversion.Kind);
-        Assert.Equal(ConversionKind.ExplicitNullable, conversion.UserDefinedToConversion.Kind);
+        Assert.Equal(ConversionKind.NoConversion, conversion.Kind);
     }
 
     [Fact]

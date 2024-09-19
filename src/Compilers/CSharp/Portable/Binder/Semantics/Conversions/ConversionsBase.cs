@@ -1150,9 +1150,9 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 
 #nullable enable
-        // TODO2 resume here
         private Conversion GetImplicitCollectionExpressionConversion(BoundUnconvertedCollectionExpression collectionExpression, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
+            // PROTOTYPE handle collection expression conversions
             var collectionExpressionConversion = GetCollectionExpressionConversion(collectionExpression, destination, ref useSiteInfo);
             if (collectionExpressionConversion.Exists)
             {
@@ -1176,6 +1176,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         }
 #nullable disable
 
+        // TODO2 resume here
         private Conversion GetSwitchExpressionConversion(BoundExpression source, TypeSymbol destination, ref CompoundUseSiteInfo<AssemblySymbol> useSiteInfo)
         {
             Debug.Assert(Compilation is not null);
@@ -1654,8 +1655,6 @@ namespace Microsoft.CodeAnalysis.CSharp
         internal static CollectionExpressionTypeKind GetCollectionExpressionTypeKind(CSharpCompilation compilation, TypeSymbol destination, out TypeWithAnnotations elementType)
         {
             Debug.Assert(compilation is { });
-
-            destination = destination.ExtendedTypeOrSelf();
 
             if (destination is ArrayTypeSymbol arrayType)
             {
