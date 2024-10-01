@@ -8666,5 +8666,60 @@ class C
             comp2.VerifyEmitDiagnostics(); // Indirectly calling IsMetadataVirtual on S.DisposeAsync (a read which causes the lock to be set)
             comp1.VerifyEmitDiagnostics(); // Would call EnsureMetadataVirtual on S.DisposeAsync and would therefore assert if S was not already ForceCompleted
         }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/72820")]
+        public void TODO2()
+        {
+            // TODO2 skip on desktop
+            var src = """
+using System.Threading;
+using System.Threading.Tasks;
+
+await Test(new S1());
+
+static async Task Test(S1 s1)
+{
+    await foreach (var i in s1)
+    {
+        System.Console.Write(i);
+    }
+}
+
+struct S1
+{
+    public S2 GetAsyncEnumerator(CancellationToken token = default)
+    {
+        return new S2();
+    }
+}
+
+struct S2
+{
+    bool stop;
+
+    public ValueTask DisposeAsync()
+    {
+        System.Console.Write("D");
+        return ValueTask.CompletedTask;
+    }
+
+    public int Current => 123;
+    public async ValueTask<bool> MoveNextAsync()
+    {
+        await Task.Yield();
+        if (!stop)
+        {
+            stop = true;
+            return true;
+        }
+
+        return false;
+    }
+}
+""";
+            var comp = CreateCompilation(src, targetFramework: TargetFramework.Net80);
+            comp.VerifyEmitDiagnostics();
+            CompileAndVerify(comp, expectedOutput: "");
+        }
     }
 }
