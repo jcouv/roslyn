@@ -8721,5 +8721,40 @@ struct S2
             comp.VerifyEmitDiagnostics();
             CompileAndVerify(comp, expectedOutput: "");
         }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/72820")]
+        public void TODO2_2()
+        {
+            var src = """
+using System;
+using System.Threading.Tasks;
+
+S2 s = new S2();
+var b = await s.MoveNextAsync();
+Console.Write(b);
+var b2 = await s.MoveNextAsync();
+Console.Write(b2);
+
+struct S2
+{
+    bool stop;
+
+    public async ValueTask<bool> MoveNextAsync()
+    {
+        await Task.Yield();
+        if (!stop)
+        {
+            stop = true;
+            return true;
+        }
+
+        return false;
+    }
+}
+""";
+            var comp = CreateCompilation(src, targetFramework: TargetFramework.Net80);
+            comp.VerifyEmitDiagnostics();
+            CompileAndVerify(comp, expectedOutput: "TrueTrue");
+        }
     }
 }
