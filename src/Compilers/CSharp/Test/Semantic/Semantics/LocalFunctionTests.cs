@@ -10588,5 +10588,53 @@ class C(string p)
                 //         [A(p)] void F() { }
                 Diagnostic(ErrorCode.WRN_UnreferencedLocalFunction, "F").WithArguments("F").WithLocation(13, 21));
         }
+
+        [Fact]
+        public void ContainingSymbol_LocalFunction()
+        {
+            var source = """
+public class C
+{
+    public void M()
+    {
+        local();
+        void local() { }
+    }
+}
+""";
+            var comp = CreateCompilation([source]);
+            comp.VerifyDiagnostics();
+
+            var tree = comp.SyntaxTrees.Single();
+            var model = comp.GetSemanticModel(tree);
+            var invocation = GetSyntax<InvocationExpressionSyntax>(tree, "local()");
+            var symbol = model.GetSymbolInfo(invocation).Symbol;
+            Assert.Equal("void local()", symbol.ToTestDisplayString());
+            Assert.Equal("void C.M()", symbol.ContainingSymbol.ToTestDisplayString());
+        }
+
+        [Fact]
+        public void ContainingSymbol_ConstructedLocalFunction()
+        {
+            var source = """
+public class C
+{
+    public void M()
+    {
+        local(new C());
+        void local<T>(T t) { }
+    }
+}
+""";
+            var comp = CreateCompilation([source]);
+            comp.VerifyDiagnostics();
+
+            var tree = comp.SyntaxTrees.Single();
+            var model = comp.GetSemanticModel(tree);
+            var invocation = GetSyntax<InvocationExpressionSyntax>(tree, "local(new C())");
+            var symbol = model.GetSymbolInfo(invocation).Symbol;
+            Assert.Equal("void local<C>(C t)", symbol.ToTestDisplayString());
+            Assert.Equal("C", symbol.ContainingSymbol.ToTestDisplayString()); // TODO2
+        }
     }
 }
