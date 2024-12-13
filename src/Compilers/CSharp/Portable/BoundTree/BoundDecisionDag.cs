@@ -224,6 +224,70 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             return resultBuilder.ToStringAndFree();
         }
+
+        // TODO2
+
+        /// <summary>
+        /// Starting with `this` state, produce a Mermaid graph description of the state tables.
+        /// </summary>
+        internal string DumpGraph()
+        {
+            var allStates = this.TopologicallySortedNodes;
+
+            var resultBuilder = PooledStringBuilder.GetInstance();
+            var builder = resultBuilder.Builder;
+
+            builder.AppendLine("stateDiagram-v2");
+            builder.AppendLine("%% paste this into https://mermaid.live/");
+            builder.AppendLine($"    [*] --> 0");
+
+            // TODO2 need to sanitize syntax: newlines, colons, angled brackets, equals
+            foreach (BoundDecisionDagNode state in allStates)
+            {
+                switch (state)
+                {
+                    case BoundTestDecisionDagNode node:
+                        builder.AppendLine($"    {state.Id}: [{state.Id}] {node.Test.GetDebuggerDisplay()}");
+
+                        if (node.WhenTrue is not null)
+                            builder.AppendLine($"    {state.Id} --> {node.WhenTrue.Id}: true");
+
+                        if (node.WhenFalse is not null)
+                            builder.AppendLine($"    {state.Id} --> {node.WhenFalse.Id}: false");
+
+                        break;
+                    case BoundEvaluationDecisionDagNode node:
+                        builder.AppendLine($"    {state.Id}: [{state.Id}] {node.Evaluation.GetDebuggerDisplay()}");
+                        if (node.Next is not null)
+                            builder.AppendLine($"    {state.Id} --> {node.Next.Id}");
+
+                        break;
+                    case BoundWhenDecisionDagNode node:
+                        builder.AppendLine($"    {state.Id}: [{state.Id}] when {(node.WhenExpression is not null ? node.WhenExpression.Syntax : "true")}");
+
+                        if (node.WhenTrue is not null)
+                            builder.AppendLine($"    {state.Id} --> {node.WhenTrue.Id}: true");
+
+                        if (node.WhenFalse is not null)
+                            builder.AppendLine($"    {state.Id} --> {node.WhenFalse.Id}: false");
+
+                        break;
+                    case BoundLeafDecisionDagNode node:
+                        var leafDescription = node.Label is GeneratedLabelSymbol generated
+                            ? $"leaf {generated.Name.Trim('<', '>')} '{node.Syntax}'"
+                            : $"leaf '{node.Label.Name.Trim('<', '>')}'";
+
+                        builder.AppendLine($"    {state.Id}: [{state.Id}] {leafDescription}");
+
+                        break;
+                    default:
+                        builder.Append(base.GetDebuggerDisplay());
+                        break;
+                }
+            }
+
+            return resultBuilder.ToStringAndFree();
+        }
 #endif
     }
 }
