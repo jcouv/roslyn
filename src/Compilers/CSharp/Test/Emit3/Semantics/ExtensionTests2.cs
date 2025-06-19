@@ -5545,5 +5545,261 @@ static class E
             // /// <see cref="E.M(string)"/>
             Diagnostic(ErrorCode.WRN_BadXMLRef, "E.M(string)").WithArguments("M(string)").WithLocation(1, 16));
     }
+
+    static readonly string reflectTypeParametersHelper = """
+using System;
+using System.Reflection;
+
+Type nestedType = typeof(Top<>.Nested);
+Console.WriteLine($"Nested type: {nestedType}");
+Console.WriteLine($"Is generic: {nestedType.IsGenericType}");
+
+Type[] typeParams = nestedType.GetGenericArguments();
+Console.WriteLine($"Generic arguments: {typeParams.Length}");
+
+foreach (Type tParam in typeParams)
+{
+    Console.WriteLine($" - Name: {tParam.Name}");
+    Console.WriteLine($"   Declaring type: {tParam.DeclaringType}");
+    Console.WriteLine($"   Position: {tParam.GenericParameterPosition}");
+
+    // Print special constraint flags
+    var attrs = tParam.GenericParameterAttributes;
+    var variance = attrs & GenericParameterAttributes.VarianceMask;
+    var constraints = attrs & GenericParameterAttributes.SpecialConstraintMask;
+
+    Console.WriteLine($"   Variance: {variance}");
+    Console.WriteLine($"   Special Constraints: {constraints}");
+
+    if ((constraints & GenericParameterAttributes.ReferenceTypeConstraint) != 0)
+        Console.WriteLine("     - class constraint");
+    if ((constraints & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0)
+        Console.WriteLine("     - struct constraint");
+    if ((constraints & GenericParameterAttributes.DefaultConstructorConstraint) != 0)
+        Console.WriteLine("     - new() constraint");
+
+    // Print any interface/base class constraints
+    Type[] constraintTypes = tParam.GetGenericParameterConstraints();
+    foreach (Type c in constraintTypes)
+    {
+        Console.WriteLine($"     - Must be assignable to: {c}");
+    }
+}
+""";
+
+    private const string IsUnmanagedAttributeIL = @"
+.assembly extern mscorlib
+{
+  .publickeytoken = (B7 7A 5C 56 19 34 E0 89 )
+  .ver 4:0:0:0
+}
+.assembly Test
+{
+  .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilationRelaxationsAttribute::.ctor(int32) = ( 01 00 08 00 00 00 00 00 ) 
+  .custom instance void [mscorlib]System.Runtime.CompilerServices.RuntimeCompatibilityAttribute::.ctor() = ( 01 00 01 00 54 02 16 57 72 61 70 4E 6F 6E 45 78 63 65 70 74 69 6F 6E 54 68 72 6F 77 73 01 )
+  .hash algorithm 0x00008004
+  .ver 0:0:0:0
+}
+.module Test.dll
+.imagebase 0x10000000
+.file alignment 0x00000200
+.stackreserve 0x00100000
+.subsystem 0x0003
+.corflags 0x00000001
+
+.class private auto ansi sealed beforefieldinit Microsoft.CodeAnalysis.EmbeddedAttribute
+       extends [mscorlib]System.Attribute
+{
+  .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void Microsoft.CodeAnalysis.EmbeddedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .method public hidebysig specialname rtspecialname 
+          instance void  .ctor() cil managed
+  {
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  call       instance void [mscorlib]System.Attribute::.ctor()
+    IL_0006:  nop
+    IL_0007:  ret
+  }
+}
+
+.class private auto ansi sealed beforefieldinit System.Runtime.CompilerServices.IsUnmanagedAttribute
+       extends [mscorlib]System.Attribute
+{
+  .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void Microsoft.CodeAnalysis.EmbeddedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .method public hidebysig specialname rtspecialname 
+          instance void  .ctor() cil managed
+  {
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  call       instance void [mscorlib]System.Attribute::.ctor()
+    IL_0006:  nop
+    IL_0007:  ret
+  }
+}
+";
+
+    [Fact]
+    public void TODO2_01()
+    {
+        var ilSrc = """
+.class public auto ansi beforefieldinit Top`1<T>
+    extends System.Object
+{
+    .class nested public auto ansi beforefieldinit Nested<U>
+        extends System.Object
+    {
+        .method public hidebysig static !U Id ( !U t ) cil managed 
+        {
+            IL_0000: ldarg.0
+            IL_0001: ret
+        }
+        .method public hidebysig specialname rtspecialname instance void .ctor () cil managed 
+        {
+            IL_0000: ldarg.0
+            IL_0001: call instance void System.Object::.ctor()
+            IL_0006: ret
+        }
+    }
+    .method public hidebysig specialname rtspecialname instance void .ctor () cil managed 
+    {
+        IL_0000: ldarg.0
+        IL_0001: call instance void System.Object::.ctor()
+        IL_0006: ret
+    }
+}
+""";
+
+        var comp = CreateCompilationWithIL(reflectTypeParametersHelper, ilSrc);
+        comp.VerifyEmitDiagnostics();
+        CompileAndVerify(comp, expectedOutput: """
+Nested type: Top`1+Nested[U]
+Is generic: True
+Generic arguments: 1
+ - Name: U
+   Declaring type: Top`1+Nested[U]
+   Position: 0
+   Variance: None
+   Special Constraints: None
+""");
+    }
+
+    [Fact]
+    public void TODO2_02()
+    {
+        var ilSrc = IsUnmanagedAttributeIL + """
+.class public auto ansi beforefieldinit Top`1<valuetype .ctor (class System.ValueType modreq(System.Runtime.InteropServices.UnmanagedType)) T>
+    extends System.Object
+{
+    .param type T
+    .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00)
+
+    .class nested public auto ansi beforefieldinit Nested<valuetype .ctor (class System.ValueType modreq(System.Runtime.InteropServices.UnmanagedType)) U>
+        extends System.Object
+    {
+        .param type U
+        .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00)
+
+        .method public hidebysig static !U Id ( !U t ) cil managed 
+        {
+            IL_0000: ldarg.0
+            IL_0001: ret
+        }
+        .method public hidebysig specialname rtspecialname instance void .ctor () cil managed 
+        {
+            IL_0000: ldarg.0
+            IL_0001: call instance void System.Object::.ctor()
+            IL_0006: ret
+        }
+    }
+    .method public hidebysig specialname rtspecialname instance void .ctor () cil managed 
+    {
+        IL_0000: ldarg.0
+        IL_0001: call instance void System.Object::.ctor()
+        IL_0006: ret
+    }
+}
+
+.class public auto ansi beforefieldinit System.Runtime.InteropServices.UnmanagedType
+    extends System.Object
+{
+    .method public hidebysig specialname rtspecialname instance void .ctor () cil managed 
+    {
+        IL_0000: ldarg.0
+        IL_0001: call instance void System.Object::.ctor()
+        IL_0006: nop
+        IL_0007: ret
+    }
+}
+""";
+
+        var comp = CreateCompilationWithIL(reflectTypeParametersHelper, ilSrc, appendDefaultHeader: false);
+        CompileAndVerify(comp, expectedOutput: """
+Nested type: Top`1+Nested[U]
+Is generic: True
+Generic arguments: 1
+ - Name: U
+   Declaring type: Top`1+Nested[U]
+   Position: 0
+   Variance: None
+   Special Constraints: NotNullableValueTypeConstraint, DefaultConstructorConstraint
+     - struct constraint
+     - new() constraint
+     - Must be assignable to: System.ValueType
+""");
+
+        ilSrc = IsUnmanagedAttributeIL + """
+.class public auto ansi beforefieldinit Top`1<valuetype .ctor (class System.ValueType modreq(System.Runtime.InteropServices.UnmanagedType)) T>
+    extends System.Object
+{
+    //.param type T
+    //.custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00)
+
+    .class nested public auto ansi beforefieldinit Nested<valuetype .ctor (class System.ValueType modreq(System.Runtime.InteropServices.UnmanagedType)) U>
+        extends System.Object
+    {
+        .param type U
+        .custom instance void System.Runtime.CompilerServices.IsUnmanagedAttribute::.ctor() = ( 01 00 00 00)
+
+        .method public hidebysig static !U Id ( !U t ) cil managed 
+        {
+            IL_0000: ldarg.0
+            IL_0001: ret
+        }
+        .method public hidebysig specialname rtspecialname instance void .ctor () cil managed 
+        {
+            IL_0000: ldarg.0
+            IL_0001: call instance void System.Object::.ctor()
+            IL_0006: ret
+        }
+    }
+    .method public hidebysig specialname rtspecialname instance void .ctor () cil managed 
+    {
+        IL_0000: ldarg.0
+        IL_0001: call instance void System.Object::.ctor()
+        IL_0006: ret
+    }
+}
+
+.class public auto ansi beforefieldinit System.Runtime.InteropServices.UnmanagedType
+    extends System.Object
+{
+    .method public hidebysig specialname rtspecialname instance void .ctor () cil managed 
+    {
+        IL_0000: ldarg.0
+        IL_0001: call instance void System.Object::.ctor()
+        IL_0006: nop
+        IL_0007: ret
+    }
+}
+""";
+
+        comp = CreateCompilationWithIL(reflectTypeParametersHelper, ilSrc, appendDefaultHeader: false);
+        comp.VerifyEmitDiagnostics(
+            // (4,32): error CS0648: 'Top<T>.Nested' is a type not supported by the language
+            // Type nestedType = typeof(Top<>.Nested);
+            Diagnostic(ErrorCode.ERR_BogusType, "Nested").WithArguments("Top<T>.Nested").WithLocation(4, 32));
+    }
 }
 
