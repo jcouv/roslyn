@@ -13,6 +13,7 @@ namespace Microsoft.CodeAnalysis
     {
         private static readonly ImmutableArray<MemberDescriptor> s_descriptors;
 
+        // Use ExtSentinel to refer to WellKnownType values above 255
         static WellKnownMembers()
         {
             byte[] initializationBytes = new byte[]
@@ -552,6 +553,14 @@ namespace Microsoft.CodeAnalysis
                 0,                                                                                                          // Arity
                     0,                                                                                                      // Method Signature
                     (byte)SignatureTypeCode.TypeHandle, (byte)SpecialType.System_Void, // Return Type
+
+                // System_Diagnostics_DebuggerTypeProxyAttribute__ctor
+                (byte)MemberFlags.Constructor,                                                                              // Flags
+                (byte)WellKnownType.ExtSentinel, (byte)(WellKnownType.System_Diagnostics_DebuggerTypeProxyAttribute - WellKnownType.ExtSentinel), // DeclaringTypeId
+                0,                                                                                                          // Arity
+                    1,                                                                                                      // Method Signature
+                    (byte)SignatureTypeCode.TypeHandle, (byte)SpecialType.System_Void, // Return Type
+                    (byte)SignatureTypeCode.TypeHandle, (byte)InternalSpecialType.System_Type,
 
                 // System_Diagnostics_DebuggableAttribute__ctorDebuggingModes
                 (byte)MemberFlags.Constructor,                                                                              // Flags
@@ -5284,6 +5293,7 @@ namespace Microsoft.CodeAnalysis
                 ".ctor",                                    // System_Diagnostics_DebuggerHiddenAttribute__ctor
                 ".ctor",                                    // System_Diagnostics_DebuggerBrowsableAttribute__ctor
                 ".ctor",                                    // System_Diagnostics_DebuggerStepThroughAttribute__ctor
+                ".ctor",                                    // System_Diagnostics_DebuggerTypeProxyAttribute__ctor
                 ".ctor",                                    // System_Diagnostics_DebuggableAttribute__ctorDebuggingModes
                 "Default",                                  // System_Diagnostics_DebuggableAttribute_DebuggingModes__Default
                 "DisableOptimizations",                     // System_Diagnostics_DebuggableAttribute_DebuggingModes__DisableOptimizations
@@ -5871,6 +5881,7 @@ namespace Microsoft.CodeAnalysis
                 case WellKnownMember.System_Diagnostics_DebuggerHiddenAttribute__ctor:
                 case WellKnownMember.System_Diagnostics_DebuggerDisplayAttribute__ctor:
                 case WellKnownMember.System_Diagnostics_DebuggerStepThroughAttribute__ctor:
+                case WellKnownMember.System_Diagnostics_DebuggerTypeProxyAttribute__ctor:
                 case WellKnownMember.System_Diagnostics_DebuggerNonUserCodeAttribute__ctor:
                 case WellKnownMember.System_STAThreadAttribute__ctor:
                 case WellKnownMember.System_Runtime_CompilerServices_AsyncStateMachineAttribute__ctor:

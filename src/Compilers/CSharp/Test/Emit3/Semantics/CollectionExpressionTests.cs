@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Symbols.Retargeting;
@@ -15793,28 +15794,101 @@ namespace System
                 }
                 """;
 
-            CompileAndVerify(
-                source,
-                symbolValidator: module =>
-                {
-                    var globalNamespace = module.GlobalNamespace;
-                    verifyCompilerGeneratedType(globalNamespace.GetTypeMember("<>z__ReadOnlySingleElementList"));
-                    verifyCompilerGeneratedType(globalNamespace.GetTypeMember("<>z__ReadOnlyArray"));
-                    verifyCompilerGeneratedType(globalNamespace.GetTypeMember("<>z__ReadOnlyList"));
-                },
+            CompileAndVerify(source, symbolValidator: verify,
                 expectedOutput: """
-                    <>z__ReadOnlySingleElementList`1: System.Runtime.CompilerServices.CompilerGeneratedAttribute, 
-                    <>z__ReadOnlyArray`1: System.Runtime.CompilerServices.CompilerGeneratedAttribute, 
-                    <>z__ReadOnlyList`1: System.Runtime.CompilerServices.CompilerGeneratedAttribute, 
-
+                    <>z__ReadOnlySingleElementList`1: System.Runtime.CompilerServices.CompilerGeneratedAttribute, System.Diagnostics.DebuggerDisplayAttribute, 
+                    <>z__ReadOnlyArray`1: System.Runtime.CompilerServices.CompilerGeneratedAttribute, System.Diagnostics.DebuggerDisplayAttribute, 
+                    <>z__ReadOnlyList`1: System.Runtime.CompilerServices.CompilerGeneratedAttribute, System.Diagnostics.DebuggerDisplayAttribute,
                     """);
 
-            static void verifyCompilerGeneratedType(NamedTypeSymbol type)
+            static void verify(ModuleSymbol module)
             {
-                Assert.Collection(type.GetAttributes(),
-                    a => Assert.Equal("System.Runtime.CompilerServices.CompilerGeneratedAttribute", a.AttributeClass?.ToTestDisplayString()));
-                Assert.DoesNotContain(type.GetMembers(),
-                    m => m.GetAttributes().Any(a => a.AttributeClass?.ToTestDisplayString() == "System.Runtime.CompilerServices.CompilerGeneratedAttribute"));
+                var globalNamespace = module.GlobalNamespace;
+                foreach (var name in new[] { "<>z__ReadOnlySingleElementList", "<>z__ReadOnlyArray", "<>z__ReadOnlyList" })
+                {
+                    AssertEx.SetEqual(globalNamespace.GetTypeMember(name).GetAttributes().ToStrings(), [
+                        "System.Runtime.CompilerServices.CompilerGeneratedAttribute",
+                        """System.Diagnostics.DebuggerDisplayAttribute("Count = {Count}")"""]);
+                }
+            }
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/78651")]
+        public void SynthesizedCollections_DebuggerAttributes()
+        {
+            string source = """
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        IEnumerable<int> x = [1];
+        IEnumerable<int> y = [2, 3];
+        IEnumerable<int> z = [.. x];
+    }
+}
+""";
+
+            CompileAndVerify([source, ICollectionDebugViewDefinition], symbolValidator: verify).VerifyDiagnostics();
+
+            static void verify(ModuleSymbol module)
+            {
+                var globalNamespace = module.GlobalNamespace;
+                foreach (var name in new[] { "<>z__ReadOnlySingleElementList", "<>z__ReadOnlyArray", "<>z__ReadOnlyList" })
+                {
+                    AssertEx.SetEqual(globalNamespace.GetTypeMember(name).GetAttributes().ToStrings(), [
+                        "System.Runtime.CompilerServices.CompilerGeneratedAttribute",
+                        """System.Diagnostics.DebuggerDisplayAttribute("Count = {Count}")""" ,
+                        "System.Diagnostics.DebuggerTypeProxyAttribute(typeof(System.Collections.Generic.ICollectionDebugView<>))"]);
+                }
+            }
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/78651")]
+        public void SynthesizedCollections_DebuggerAttributes_MissingTypes()
+        {
+            string source = """
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        IEnumerable<int> x = [1];
+        IEnumerable<int> y = [2, 3];
+        IEnumerable<int> z = [.. x];
+    }
+}
+""";
+
+            validateTypeMissing(WellKnownType.System_Diagnostics_DebuggerTypeProxyAttribute,
+                "System.Runtime.CompilerServices.CompilerGeneratedAttribute",
+                """System.Diagnostics.DebuggerDisplayAttribute("Count = {Count}")""");
+
+            validateTypeMissing(WellKnownType.System_Collections_Generic_ICollectionDebugView_T,
+                "System.Runtime.CompilerServices.CompilerGeneratedAttribute",
+                """System.Diagnostics.DebuggerDisplayAttribute("Count = {Count}")""");
+
+            validateTypeMissing(WellKnownType.System_Diagnostics_DebuggerDisplayAttribute,
+                "System.Runtime.CompilerServices.CompilerGeneratedAttribute",
+                "System.Diagnostics.DebuggerTypeProxyAttribute(typeof(System.Collections.Generic.ICollectionDebugView<>))");
+
+            void validateTypeMissing(WellKnownType missing, params string[] expectedAttributes)
+            {
+                var comp = CreateCompilation([source, ICollectionDebugViewDefinition]);
+                comp.MakeTypeMissing(missing);
+                CompileAndVerify(comp, symbolValidator: (m) => verify(m, expectedAttributes)).VerifyDiagnostics();
+            }
+
+            static void verify(ModuleSymbol module, string[] expectedAttributes)
+            {
+                var globalNamespace = module.GlobalNamespace;
+
+                foreach (var name in new[] { "<>z__ReadOnlySingleElementList", "<>z__ReadOnlyArray", "<>z__ReadOnlyList" })
+                {
+                    AssertEx.SetEqual(globalNamespace.GetTypeMember(name).GetAttributes().ToStrings(), expectedAttributes);
+                }
             }
         }
 

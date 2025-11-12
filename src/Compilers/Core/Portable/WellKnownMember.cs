@@ -88,6 +88,7 @@ namespace Microsoft.CodeAnalysis
         System_Diagnostics_DebuggerHiddenAttribute__ctor,
         System_Diagnostics_DebuggerBrowsableAttribute__ctor,
         System_Diagnostics_DebuggerStepThroughAttribute__ctor,
+        System_Diagnostics_DebuggerTypeProxyAttribute__ctor,
         System_Diagnostics_DebuggableAttribute__ctorDebuggingModes,
         System_Diagnostics_DebuggableAttribute_DebuggingModes__Default,
         System_Diagnostics_DebuggableAttribute_DebuggingModes__DisableOptimizations,

@@ -916,6 +916,33 @@ namespace System.Runtime.CompilerServices
 }
 """;
 
+        // See https://github.com/dotnet/runtime/issues/121543
+        internal static readonly string ICollectionDebugViewDefinition = """
+namespace System.Collections.Generic
+{
+    public sealed class ICollectionDebugView<T>
+    {
+        private readonly ICollection<T> _collection;
+
+        public ICollectionDebugView(ICollection<T> collection)
+        {
+            _collection = collection ?? throw new ArgumentNullException(nameof(collection));
+        }
+
+        [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
+        public T[] Items
+        {
+            get
+            {
+                var items = new T[_collection.Count];
+                _collection.CopyTo(items, 0);
+                return items;
+            }
+        }
+    }
+}
+""";
+
         #region A string containing expression-tree dumping utilities
         protected static readonly string ExpressionTestLibrary = """
 using System;

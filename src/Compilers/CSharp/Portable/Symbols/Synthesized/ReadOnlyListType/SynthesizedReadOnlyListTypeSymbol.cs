@@ -930,6 +930,32 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             base.AddSynthesizedAttributes(moduleBuilder, ref attributes);
             AddSynthesizedAttribute(ref attributes, DeclaringCompilation.TrySynthesizeAttribute(WellKnownMember.System_Runtime_CompilerServices_CompilerGeneratedAttribute__ctor));
+
+            var compilation = DeclaringCompilation;
+
+            // Add [DebuggerDisplay("Count = {Count}")] if available
+            var debuggerDisplayAttribute = compilation.TrySynthesizeAttribute(
+                WellKnownMember.System_Diagnostics_DebuggerDisplayAttribute__ctor,
+                arguments: [new TypedConstant(compilation.GetSpecialType(SpecialType.System_String), TypedConstantKind.Primitive, "Count = {Count}")],
+                isOptionalUse: true);
+
+            AddSynthesizedAttribute(ref attributes, debuggerDisplayAttribute);
+
+            // Add [DebuggerTypeProxy(typeof(ICollectionDebugView<>))] if available
+            var debuggerTypeProxyType = compilation.GetWellKnownType(WellKnownType.System_Collections_Generic_ICollectionDebugView_T);
+            if (!debuggerTypeProxyType.IsErrorType())
+            {
+                var systemType = compilation.GetWellKnownType(WellKnownType.System_Type);
+                if (!systemType.IsErrorType())
+                {
+                    var debuggerTypeProxyAttribute = compilation.TrySynthesizeAttribute(
+                        WellKnownMember.System_Diagnostics_DebuggerTypeProxyAttribute__ctor,
+                        arguments: [new TypedConstant(systemType, TypedConstantKind.Type, debuggerTypeProxyType.AsUnboundGenericType())],
+                        isOptionalUse: true);
+
+                    AddSynthesizedAttribute(ref attributes, debuggerTypeProxyAttribute);
+                }
+            }
         }
 
         internal override bool HasCollectionBuilderAttribute(out TypeSymbol? builderType, out string? methodName)

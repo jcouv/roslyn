@@ -11,6 +11,7 @@ namespace Microsoft.CodeAnalysis
     /// <summary>
     /// Ids of well known runtime types.
     /// Values should not intersect with SpecialType enum!
+    /// It is much easier to add new types to the end of the list, or at least after the ExtSentinel marker.
     /// </summary>
     /// <remarks></remarks>
     internal enum WellKnownType
@@ -305,6 +306,7 @@ namespace Microsoft.CodeAnalysis
         System_InvalidOperationException,
         System_Runtime_CompilerServices_SwitchExpressionException,
         System_Collections_Generic_IEqualityComparer_T,
+        System_Collections_Generic_ICollectionDebugView_T,
         System_Runtime_CompilerServices_NativeIntegerAttribute,
 
         System_Runtime_CompilerServices_IsExternalInit,
@@ -374,6 +376,8 @@ namespace Microsoft.CodeAnalysis
         System_Runtime_CompilerServices_InlineArray14,
         System_Runtime_CompilerServices_InlineArray15,
         System_Runtime_CompilerServices_InlineArray16,
+
+        System_Diagnostics_DebuggerTypeProxyAttribute,
 
         NextAvailable,
         // Remember to update MissingSpecialMember.AllWellKnownTypes and WellKnownTypeValidationTests.AllWellKnownTypes tests when making changes here
@@ -672,6 +676,7 @@ namespace Microsoft.CodeAnalysis
             "System.InvalidOperationException",
             "System.Runtime.CompilerServices.SwitchExpressionException",
             "System.Collections.Generic.IEqualityComparer`1",
+            "System.Collections.Generic.ICollectionDebugView`1",
 
             "System.Runtime.CompilerServices.NativeIntegerAttribute",
             "System.Runtime.CompilerServices.IsExternalInit",
@@ -735,6 +740,8 @@ namespace Microsoft.CodeAnalysis
             "System.Runtime.CompilerServices.InlineArray14`1",
             "System.Runtime.CompilerServices.InlineArray15`1",
             "System.Runtime.CompilerServices.InlineArray16`1",
+
+            "System.Diagnostics.DebuggerTypeProxyAttribute",
         };
 
         private static readonly Dictionary<string, WellKnownType> s_nameToTypeIdMap = new Dictionary<string, WellKnownType>((int)Count);
