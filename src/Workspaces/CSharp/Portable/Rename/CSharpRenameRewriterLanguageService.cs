@@ -225,24 +225,26 @@ internal sealed class CSharpRenameConflictLanguageService() : AbstractRenameRewr
             }
 
             var isRenameLocation = IsRenameLocation(token);
-
-            // if this is a reference location, or the identifier token's name could possibly
-            // be a conflict, we need to process this token
-            var isOldText = token.ValueText == _originalText;
-            var tokenNeedsConflictCheck =
-                isRenameLocation ||
-                token.ValueText == _replacementText ||
-                isOldText ||
-                _possibleNameConflicts.Contains(token.ValueText) ||
-                IsPossiblyDestructorConflict(token) ||
-                IsPropertyAccessorNameConflict(token);
-
-            if (tokenNeedsConflictCheck)
+            if (isRenameLocation)
             {
-                newToken = RenameAndAnnotate(token, newToken, isRenameLocation, isOldText);
-                if (!_isProcessingComplexifiedSpans)
+                // if this is a reference location, or the identifier token's name could possibly
+                // be a conflict, we need to process this token
+                var isOldText = token.ValueText == _originalText;
+                var tokenNeedsConflictCheck =
+                    token.ValueText == _replacementText ||
+                    isOldText ||
+                    _possibleNameConflicts.Contains(token.ValueText) ||
+                    _renameLocations[token.Span].IsRenamableAccessor ||
+                    IsPossiblyDestructorConflict(token) ||
+                    IsPropertyAccessorNameConflict(token);
+
+                if (tokenNeedsConflictCheck)
                 {
-                    _invocationExpressionsNeedingConflictChecks.AddRange(token.GetAncestors<InvocationExpressionSyntax>());
+                    newToken = RenameAndAnnotate(token, newToken, isRenameLocation, isOldText);
+                    if (!_isProcessingComplexifiedSpans)
+                    {
+                        _invocationExpressionsNeedingConflictChecks.AddRange(token.GetAncestors<InvocationExpressionSyntax>());
+                    }
                 }
             }
 

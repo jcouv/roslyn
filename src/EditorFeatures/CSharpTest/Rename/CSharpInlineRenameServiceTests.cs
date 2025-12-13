@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Editor.UnitTests;
 using Microsoft.CodeAnalysis.Rename;
 using Microsoft.CodeAnalysis.Shared.Extensions;
@@ -121,5 +122,60 @@ public sealed class CSharpInlineRenameServiceTests
 
         // Verify that rename is allowed (not error)
         Assert.True(inlineRenameInfo.CanRename, "Anonymous type member should be renameable");
+    }
+
+    [Fact]
+    public async Task VerifyExtensionPropertyDisambiguationRenameIsBlocked()
+    {
+        var markup = """
+            _ = E.get_$$P(42);
+
+            static class E
+            {
+                extension(int i)
+                {
+                    public int P { get => 0; set { } }
+                }
+            }
+            """;
+
+        using var workspace = TestWorkspace.CreateCSharp(markup, composition: EditorTestCompositions.EditorFeatures);
+
+        var documentId = workspace.Documents.Single().Id;
+        var document = workspace.CurrentSolution.GetRequiredDocument(documentId);
+        var inlineRenameService = document.GetRequiredLanguageService<IEditorInlineRenameService>();
+        MarkupTestFile.GetPosition(markup, out _, out int cursorPosition);
+
+        var inlineRenameInfo = await inlineRenameService.GetRenameInfoAsync(document, cursorPosition, CancellationToken.None).ConfigureAwait(false);
+        Assert.False(inlineRenameInfo.CanRename);
+    }
+
+    [Fact]
+    public async Task VerifyExtensionOperatorDisambiguationRenameIsBlocked()
+    {
+        var markup = """
+            C c = new C();
+            _ = E.$$op_Addition(c, c);
+
+            static class E
+            {
+                extension(C)
+                {
+                    public static C operator +(C c1, C c2) => throw null;
+                }
+            }
+
+            class C { }
+            """;
+
+        using var workspace = TestWorkspace.CreateCSharp(markup, composition: EditorTestCompositions.EditorFeatures);
+
+        var documentId = workspace.Documents.Single().Id;
+        var document = workspace.CurrentSolution.GetRequiredDocument(documentId);
+        var inlineRenameService = document.GetRequiredLanguageService<IEditorInlineRenameService>();
+        MarkupTestFile.GetPosition(markup, out _, out int cursorPosition);
+
+        var inlineRenameInfo = await inlineRenameService.GetRenameInfoAsync(document, cursorPosition, CancellationToken.None).ConfigureAwait(false);
+        Assert.False(inlineRenameInfo.CanRename);
     }
 }

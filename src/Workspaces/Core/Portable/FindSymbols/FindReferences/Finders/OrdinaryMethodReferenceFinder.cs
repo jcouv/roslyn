@@ -43,9 +43,8 @@ internal sealed class OrdinaryMethodReferenceFinder : AbstractMethodOrPropertyOr
         return new(result.ToImmutableAndClear());
     }
 
-    private static void CascadeFromExtensionImplementation(IMethodSymbol symbol, ArrayBuilder<ISymbol> result)
+    internal static IMethodSymbol? GetCorrespondingExtensionBlockMember(IMethodSymbol symbol)
     {
-        // If the given symbol is an implementation method of an extension member, cascade to the extension member itself
         var containingType = symbol.ContainingType;
         if (symbol is not { IsStatic: true, IsImplicitlyDeclared: true, ContainingType.MightContainExtensionMethods: true })
             return;
@@ -68,10 +67,19 @@ internal sealed class OrdinaryMethodReferenceFinder : AbstractMethodOrPropertyOr
                     if (!Equals(associated, symbol))
                         continue;
 
-                    result.Add(method);
-                    return;
+                    return method;
                 }
             }
+        }
+
+        return null;
+    }
+
+    private static void CascadeFromExtensionImplementation(IMethodSymbol symbol, ArrayBuilder<ISymbol> result)
+    {
+        if (GetCorrespondingExtensionBlockMember(symbol) is { } extensionMethodSymbol)
+        {
+            result.Add(extensionMethodSymbol);
         }
     }
 

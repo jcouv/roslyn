@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.FindSymbols;
+using Microsoft.CodeAnalysis.FindSymbols.Finders;
 using Microsoft.CodeAnalysis.Host;
 using Microsoft.CodeAnalysis.LanguageService;
 using Microsoft.CodeAnalysis.PooledObjects;
@@ -141,6 +142,22 @@ internal sealed partial class SymbolicRenameLocations
             return result != null;
         }
 
+        private static bool IsExtensionPropertyImplementationAccessorMethod(ISymbol symbol)
+        {
+            if (symbol is not IMethodSymbol { Name: var name } methodSymbol)
+            {
+                return false;
+            }
+
+            if (!name.StartsWith("get_", StringComparison.Ordinal) &&
+                !name.StartsWith("set_", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            return OrdinaryMethodReferenceFinder.GetCorrespondingExtensionBlockMember(methodSymbol) is not null;
+        }
+
         private static string TrimNameToAfterLastDot(string name)
         {
             var position = name.LastIndexOf('.');
@@ -161,7 +178,7 @@ internal sealed partial class SymbolicRenameLocations
         public static async Task<ImmutableArray<RenameLocation>> GetRenamableDefinitionLocationsAsync(
             ISymbol referencedSymbol, ISymbol originalSymbol, Solution solution, CancellationToken cancellationToken)
         {
-            var shouldIncludeSymbol = await ShouldIncludeSymbolAsync(referencedSymbol, originalSymbol, solution, false, cancellationToken).ConfigureAwait(false);
+            var shouldIncludeSymbol = await ShouldIncludeSymbolAsync(referencedSymbol, originalSymbol, solution, considerSymbolReferences: false, cancellationToken).ConfigureAwait(false);
             if (!shouldIncludeSymbol)
             {
                 return [];
@@ -250,7 +267,7 @@ internal sealed partial class SymbolicRenameLocations
             if (location.Document is SourceGeneratedDocument && !location.Document.IsRazorSourceGeneratedDocument())
                 return [];
 
-            var shouldIncludeSymbol = await ShouldIncludeSymbolAsync(referencedSymbol, originalSymbol, solution, true, cancellationToken).ConfigureAwait(false);
+            var shouldIncludeSymbol = await ShouldIncludeSymbolAsync(referencedSymbol, originalSymbol, solution, considerSymbolReferences: true, cancellationToken).ConfigureAwait(false);
             if (!shouldIncludeSymbol)
                 return [];
 
@@ -310,12 +327,15 @@ internal sealed partial class SymbolicRenameLocations
                 else
                 {
                     // The simple case, so just the single location and we're done
+                    var isRenamableAccessor = await IsPropertyAccessorOrAnOverrideAsync(referencedSymbol, solution, cancellationToken).ConfigureAwait(false)
+                        || IsExtensionPropertyImplementationAccessorMethod(referencedSymbol);
+
                     results.Add(new RenameLocation(
                         location.Location,
                         location.Document.Id,
                         isWrittenTo: location.IsWrittenTo,
                         candidateReason: location.CandidateReason,
-                        isRenamableAccessor: await IsPropertyAccessorOrAnOverrideAsync(referencedSymbol, solution, cancellationToken).ConfigureAwait(false)));
+                        isRenamableAccessor: isRenamableAccessor));
                 }
             }
 
