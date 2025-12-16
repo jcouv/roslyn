@@ -111,6 +111,41 @@ class C
         End Sub
 
         <Theory, CombinatorialData>
+        Public Sub RenameProperty_FromDefinition_Simple(host As RenameTestHost)
+            Dim workspaceXml =
+                <Workspace>
+                    <Project Language="C#" CommonReferences="true" LanguageVersion="14.0">
+                        <Document>
+static class E
+{
+    extension(string s)
+    {
+        public int {|def:$$P|}
+        {
+            get => 0;
+            set { }
+        }
+    }
+}
+
+class C
+{
+    void Test()
+    {
+        _ = E.{|getter:get_P|}("");
+    }
+}
+                        </Document>
+                    </Project>
+                </Workspace>
+
+            Using result = RenameEngineResult.Create(_outputHelper, workspaceXml, host:=host, renameTo:="Q")
+                result.AssertLabeledSpansAre("def", replacement:="Q", type:=RelatedLocationType.NoConflict)
+                result.AssertLabeledSpansAre("getter", replacement:="get_Q", type:=RelatedLocationType.NoConflict)
+            End Using
+        End Sub
+
+        <Theory, CombinatorialData>
         Public Sub RenameProperty_FromDefinition(host As RenameTestHost)
             Dim workspaceXml =
                 <Workspace>
@@ -195,6 +230,43 @@ class C
         End Sub
 
         <Theory, CombinatorialData>
+        Public Sub RenameProperty_FromDefinition_ToConflictingName_Simple(host As RenameTestHost)
+            ' TODO2
+            Dim workspaceXml =
+                <Workspace>
+                    <Project Language="C#" CommonReferences="true" LanguageVersion="14.0">
+                        <Document>
+static class E
+{
+    extension(string s)
+    {
+        public int {|def:$$P|}
+        {
+            get => 0;
+            set { }
+        }
+    }
+    public static void get_Q(this string s) { }
+}
+
+class C
+{
+    void Test()
+    {
+        _ = E.{|getter:get_P|}("");
+    }
+}
+                        </Document>
+                    </Project>
+                </Workspace>
+
+            Using result = RenameEngineResult.Create(_outputHelper, workspaceXml, host:=host, renameTo:="Q")
+                result.AssertLabeledSpansAre("def", replacement:="Q", type:=RelatedLocationType.NoConflict)
+                result.AssertLabeledSpansAre("getter", replacement:="get_Q", type:=RelatedLocationType.UnresolvableConflict)
+            End Using
+        End Sub
+
+        <Theory, CombinatorialData>
         Public Sub RenameProperty_FromDefinition_ToConflictingName(host As RenameTestHost)
             ' TODO2
             Dim workspaceXml =
@@ -233,8 +305,8 @@ class C
                 result.AssertLabeledSpansAre("def", replacement:="Q", type:=RelatedLocationType.NoConflict)
                 result.AssertLabeledSpansAre("read", replacement:="Q", type:=RelatedLocationType.NoConflict)
                 result.AssertLabeledSpansAre("write", replacement:="Q", type:=RelatedLocationType.NoConflict)
-                result.AssertLabeledSpansAre("getter", replacement:="get_Q", type:=RelatedLocationType.NoConflict)
-                result.AssertLabeledSpansAre("setter", replacement:="set_Q", type:=RelatedLocationType.NoConflict)
+                result.AssertLabeledSpansAre("getter", replacement:="get_Q", type:=RelatedLocationType.UnresolvableConflict)
+                result.AssertLabeledSpansAre("setter", replacement:="set_Q", type:=RelatedLocationType.UnresolvableConflict)
             End Using
         End Sub
 

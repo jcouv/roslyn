@@ -230,11 +230,13 @@ internal sealed class CSharpRenameConflictLanguageService() : AbstractRenameRewr
                 // if this is a reference location, or the identifier token's name could possibly
                 // be a conflict, we need to process this token
                 var isOldText = token.ValueText == _originalText;
+                var isExtensionPropertyAccessorImplementation = IsExtensionPropertyAccessorImplementation(token);
+
                 var tokenNeedsConflictCheck =
                     token.ValueText == _replacementText ||
                     isOldText ||
+                    isExtensionPropertyAccessorImplementation ||
                     _possibleNameConflicts.Contains(token.ValueText) ||
-                    _renameLocations[token.Span].IsRenamableAccessor ||
                     IsPossiblyDestructorConflict(token) ||
                     IsPropertyAccessorNameConflict(token);
 
@@ -249,6 +251,20 @@ internal sealed class CSharpRenameConflictLanguageService() : AbstractRenameRewr
             }
 
             return newToken;
+
+            bool IsExtensionPropertyAccessorImplementation(SyntaxToken token)
+            {
+                // TODO2
+                if (token.ValueText != "get_" + _originalText && token.ValueText != "set_" + _originalText)
+                {
+                    return false;
+                }
+
+                var isExtensionPropertyAccessorImplementation =
+                    (!_isProcessingComplexifiedSpans && _renameLocations[token.Span].IsRenamableAccessor);
+
+                return isExtensionPropertyAccessorImplementation;
+            }
         }
 
         private bool IsPropertyAccessorNameConflict(SyntaxToken token)
