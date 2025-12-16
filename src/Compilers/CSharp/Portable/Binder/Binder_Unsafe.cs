@@ -23,7 +23,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private void ReportDiagnosticsIfUnsafeMemberAccess(BindingDiagnosticBag diagnostics, Symbol symbol, SyntaxNode node)
         {
-            if (symbol.CallerUnsafeMode != CallerUnsafeMode.None)
+            if (this.Compilation.SourceModule.UseUpdatedMemorySafetyRules && symbol.CallerUnsafeMode != CallerUnsafeMode.None) // TODO2
             {
                 ReportUnsafeIfNotAllowed(node, diagnostics, disallowedUnder: MemorySafetyRules.Updated,
                     customErrorCode: symbol.ContainingModule.UseUpdatedMemorySafetyRules

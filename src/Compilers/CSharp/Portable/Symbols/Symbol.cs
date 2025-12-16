@@ -1863,12 +1863,6 @@ namespace Microsoft.CodeAnalysis.CSharp
         None,
 
         /// <summary>
-        /// The member is implicitly considered unsafe because it contains pointers in its signature.
-        /// This member should not have the <see cref="AttributeDescription.RequiresUnsafeAttribute"/> emitted.
-        /// </summary>
-        Implicit,
-
-        /// <summary>
         /// The member is explicitly marked as <see langword="unsafe"/> under the updated memory safety rules.
         /// This member should have the <see cref="AttributeDescription.RequiresUnsafeAttribute"/> emitted.
         /// </summary>

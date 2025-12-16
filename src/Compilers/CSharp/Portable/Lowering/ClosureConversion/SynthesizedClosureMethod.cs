@@ -121,7 +121,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 moduleBuilder.EnsureIsReadOnlyAttributeExists();
             }
 
-            if (CallerUnsafeMode == CallerUnsafeMode.Explicit)
+            if (CallerUnsafeMode != CallerUnsafeMode.None)
             {
                 moduleBuilder.EnsureRequiresUnsafeAttributeExists();
             }

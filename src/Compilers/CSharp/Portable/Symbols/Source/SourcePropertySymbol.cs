@@ -838,7 +838,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 }
 
                 return this.HasParameterContainingPointerType() || Type.ContainsPointerOrFunctionPointer()
-                    ? CallerUnsafeMode.Implicit : CallerUnsafeMode.None;
+                    ? CallerUnsafeMode.Explicit : CallerUnsafeMode.None;
             }
         }
 

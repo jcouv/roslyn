@@ -212,7 +212,7 @@ public sealed class UnsafeEvolutionTests : CompilingTestBase
                 ? CallerUnsafeMode.None
                 : expectedAttributeInMetadata
                 ? CallerUnsafeMode.Explicit
-                : CallerUnsafeMode.Implicit;
+                : CallerUnsafeMode.Explicit;
             Assert.True(expectedUnsafeMode == symbol.CallerUnsafeMode, $"Expected '{symbol.ToTestDisplayString()}' to have {nameof(CallerUnsafeMode)}.{expectedUnsafeMode} (got {symbol.CallerUnsafeMode})");
 
             Assert.True(seenSymbols.Add(symbol), $"Symbol '{symbol.ToTestDisplayString()}' specified multiple times.");
