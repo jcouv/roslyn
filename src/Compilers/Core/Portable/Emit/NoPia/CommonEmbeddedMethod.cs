@@ -174,6 +174,9 @@ namespace Microsoft.CodeAnalysis.Emit.NoPia
                 public DebugId MethodId => default(DebugId);
 
                 public bool IsPrimaryConstructor => false;
+
+                public ImmutableArray<LocalFunctionScope> LocalFunctionScopes =>
+                    ImmutableArray<LocalFunctionScope>.Empty;
             }
 
             IEnumerable<Cci.IGenericMethodParameter> Cci.IMethodDefinition.GenericParameters => _typeParameters;

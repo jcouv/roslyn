@@ -504,6 +504,12 @@ namespace Microsoft.Cci
         /// True if this is a body of a Primary Constructor.
         /// </summary>
         bool IsPrimaryConstructor { get; }
+
+        /// <summary>
+        /// Debug information about local functions declared in this method.
+        /// Empty if the method contains no local functions.
+        /// </summary>
+        ImmutableArray<LocalFunctionScope> LocalFunctionScopes { get; }
     }
 
     /// <summary>

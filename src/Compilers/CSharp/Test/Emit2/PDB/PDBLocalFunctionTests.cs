@@ -4,7 +4,16 @@
 
 #nullable disable
 
+using System.Collections.Immutable;
+using System.IO;
+using System.Linq;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+using System.Reflection.PortableExecutable;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
+using Microsoft.CodeAnalysis.Debugging;
+using Microsoft.CodeAnalysis.Emit;
+using Microsoft.CodeAnalysis.PooledObjects;
 using Microsoft.CodeAnalysis.Test.Utilities;
 using Roslyn.Test.Utilities;
 using Xunit;
@@ -13,6 +22,54 @@ namespace Microsoft.CodeAnalysis.CSharp.UnitTests.PDB
 {
     public class PDBLocalFunctionTests : CSharpPDBTestBase
     {
+        /// <summary>
+        /// Reads the LocalFunctionMap custom debug information for the given method.
+        /// </summary>
+        private static ImmutableArray<(string name, string loweredMethodName, int startOffset, int length)>
+            ReadLocalFunctionMap(Compilation compilation, string containingMethodName)
+        {
+            var pdbStream = new MemoryStream();
+            var peBlob = compilation.EmitToArray(
+                EmitOptions.Default.WithDebugInformationFormat(DebugInformationFormat.PortablePdb),
+                pdbStream: pdbStream);
+
+            using var peReader = new PEReader(peBlob);
+            using var pdbMetadata = new PinnedMetadata(pdbStream.ToImmutable());
+
+            var mdReader = peReader.GetMetadataReader();
+            var pdbReader = pdbMetadata.Reader;
+
+            var methodHandle = mdReader.MethodDefinitions
+                .Single(m => mdReader.GetString(mdReader.GetMethodDefinition(m).Name) == containingMethodName);
+
+            var cdiHandle = pdbReader.GetCustomDebugInformation(methodHandle)
+                .SingleOrDefault(h => pdbReader.GetGuid(pdbReader.GetCustomDebugInformation(h).Kind) == PortableCustomDebugInfoKinds.LocalFunctionScopes);
+
+            if (cdiHandle.IsNil)
+            {
+                return default;
+            }
+
+            var cdi = pdbReader.GetCustomDebugInformation(cdiHandle);
+            var blobReader = pdbReader.GetBlobReader(cdi.Value);
+            var entries = ArrayBuilder<(string name, string loweredMethodName, int startOffset, int length)>.GetInstance();
+            while (blobReader.RemainingBytes > 0)
+            {
+                var name = blobReader.ReadSerializedString();
+                Assert.NotNull(name);
+                var rid = blobReader.ReadCompressedInteger();
+                var startOffset = blobReader.ReadUInt32();
+                var length = blobReader.ReadUInt32();
+                var loweredHandle = MetadataTokens.MethodDefinitionHandle(rid);
+                var loweredDef = mdReader.GetMethodDefinition(loweredHandle);
+                var loweredMethodName = mdReader.GetString(loweredDef.Name);
+                Assert.Contains($"g__{name}", loweredMethodName);
+                entries.Add((name, loweredMethodName, (int)startOffset, (int)length));
+            }
+
+            return entries.ToImmutableAndFree();
+        }
+
         [Fact]
         public void ClosuresInCtor()
         {
@@ -469,6 +526,526 @@ class C
   </methods>
 </symbols>
 ");
+        }
+
+        [Fact]
+        public void LocalFunctionScopes_01()
+        {
+            var source = """
+class C
+{
+    void F(int x)
+    {
+        int G(int y) { return y + 1; }
+        int z = G(x);
+    }
+}
+""";
+
+            var verifier = CompileAndVerify(source, options: TestOptions.DebugDll);
+            verifier.VerifyIL("C.F", """
+{
+  // Code size       10 (0xa)
+  .maxstack  1
+  .locals init (int V_0) //z
+  IL_0000:  nop
+  IL_0001:  nop
+  IL_0002:  ldarg.1
+  IL_0003:  call       "int C.<F>g__G|0_0(int)"
+  IL_0008:  stloc.0
+  IL_0009:  ret
+}
+""");
+
+            var entries = ReadLocalFunctionMap(verifier.Compilation, "F");
+            var entry = Assert.Single(entries);
+            Assert.Equal("G", entry.name);
+            Assert.Equal("<F>g__G|0_0", entry.loweredMethodName);
+            Assert.Equal(0x0, entry.startOffset);
+            Assert.Equal(0x9, entry.startOffset + entry.length - 1); // inclusive end
+        }
+
+        [Fact]
+        public void LocalFunctionScopes_02()
+        {
+            // multiple local functions
+            var source = """
+class C
+{
+    void F()
+    {
+        int G() => 1;
+        int H() => 2;
+        int I() => 3;
+        _ = G() + H() + I();
+    }
+}
+""";
+
+            var verifier = CompileAndVerify(source, options: TestOptions.DebugDll);
+            verifier.VerifyIL("C.F", """
+{
+  // Code size       23 (0x17)
+  .maxstack  1
+  IL_0000:  nop
+  IL_0001:  nop
+  IL_0002:  nop
+  IL_0003:  nop
+  IL_0004:  call       "int C.<F>g__G|0_0()"
+  IL_0009:  pop
+  IL_000a:  call       "int C.<F>g__H|0_1()"
+  IL_000f:  pop
+  IL_0010:  call       "int C.<F>g__I|0_2()"
+  IL_0015:  pop
+  IL_0016:  ret
+}
+""");
+
+            var entries = ReadLocalFunctionMap(verifier.Compilation, "F");
+            Assert.Equal(3, entries.Length);
+
+            Assert.Equal("G", entries[0].name);
+            Assert.Equal("<F>g__G|0_0", entries[0].loweredMethodName);
+            Assert.Equal(0x0, entries[0].startOffset);
+            Assert.Equal(0x16, entries[0].startOffset + entries[0].length - 1); // inclusive end
+
+            Assert.Equal("H", entries[1].name);
+            Assert.Equal("<F>g__H|0_1", entries[1].loweredMethodName);
+            Assert.Equal(0x0, entries[1].startOffset);
+            Assert.Equal(0x16, entries[1].startOffset + entries[1].length - 1); // inclusive end
+
+            Assert.Equal("I", entries[2].name);
+            Assert.Equal("<F>g__I|0_2", entries[2].loweredMethodName);
+            Assert.Equal(0x0, entries[2].startOffset);
+            Assert.Equal(0x16, entries[2].startOffset + entries[2].length - 1); // inclusive end
+        }
+
+        [Fact]
+        public void LocalFunctionScopes_03()
+        {
+            // with captures
+            var source = """
+class C
+{
+    void F(int x)
+    {
+        int y = 10;
+        int G() => x + y;
+        _ = G();
+    }
+}
+""";
+
+            var verifier = CompileAndVerify(source, options: TestOptions.DebugDll);
+            verifier.VerifyIL("C.F", """
+{
+  // Code size       28 (0x1c)
+  .maxstack  2
+  .locals init (C.<>c__DisplayClass0_0 V_0) //CS$<>8__locals0
+  IL_0000:  ldloca.s   V_0
+  IL_0002:  ldarg.1
+  IL_0003:  stfld      "int C.<>c__DisplayClass0_0.x"
+  IL_0008:  nop
+  IL_0009:  ldloca.s   V_0
+  IL_000b:  ldc.i4.s   10
+  IL_000d:  stfld      "int C.<>c__DisplayClass0_0.y"
+  IL_0012:  nop
+  IL_0013:  ldloca.s   V_0
+  IL_0015:  call       "int C.<F>g__G|0_0(ref C.<>c__DisplayClass0_0)"
+  IL_001a:  pop
+  IL_001b:  ret
+}
+""");
+
+            var entries = ReadLocalFunctionMap(verifier.Compilation, "F");
+            var entry = Assert.Single(entries);
+            Assert.Equal("G", entry.name);
+            Assert.Equal("<F>g__G|0_0", entry.loweredMethodName);
+            Assert.Equal(0x0, entry.startOffset);
+            Assert.Equal(0x1b, entry.startOffset + entry.length - 1); // inclusive end
+        }
+
+        [Fact]
+        public void LocalFunctionScopes_04()
+        {
+            // no local function
+            var source = """
+class C
+{
+    void F(int x)
+    {
+        int z = x + 1;
+    }
+}
+""";
+
+            var verifier = CompileAndVerify(source, options: TestOptions.DebugDll);
+            Assert.True(ReadLocalFunctionMap(verifier.Compilation, "F").IsDefault);
+        }
+
+        [Fact]
+        public void LocalFunctionScopes_05()
+        {
+            // generic local function
+            var source = """
+class C
+{
+    void F()
+    {
+        T G<T>(T x) => x;
+        _ = G(42);
+    }
+}
+""";
+
+            var verifier = CompileAndVerify(source, options: TestOptions.DebugDll);
+            verifier.VerifyIL("C.F", """
+{
+  // Code size       11 (0xb)
+  .maxstack  1
+  IL_0000:  nop
+  IL_0001:  nop
+  IL_0002:  ldc.i4.s   42
+  IL_0004:  call       "int C.<F>g__G|0_0<int>(int)"
+  IL_0009:  pop
+  IL_000a:  ret
+}
+""");
+
+            var entries = ReadLocalFunctionMap(verifier.Compilation, "F");
+            var entry = Assert.Single(entries);
+            Assert.Equal("G", entry.name);
+            Assert.Equal("<F>g__G|0_0", entry.loweredMethodName);
+            Assert.Equal(0x0, entry.startOffset);
+            Assert.Equal(0xa, entry.startOffset + entry.length - 1); // inclusive end
+        }
+
+        [Fact]
+        public void LocalFunctionScopes_06()
+        {
+            // windows PDB
+            var source = """
+class C
+{
+    void F()
+    {
+        int G() => 1;
+        _ = G();
+    }
+}
+""";
+
+            var c = CreateCompilation(source, options: TestOptions.DebugDll);
+            c.VerifyDiagnostics();
+
+            var pdbStream = new MemoryStream();
+            c.EmitToArray(EmitOptions.Default.WithDebugInformationFormat(DebugInformationFormat.Pdb), pdbStream: pdbStream);
+
+            // The LocalFunctionMap is only emitted to Portable PDBs.
+            // We just verify the compilation succeeds without errors.
+        }
+
+        [Fact]
+        public void LocalFunctionScopes_07()
+        {
+            // nested local function
+            var source = """
+class C
+{
+    void F()
+    {
+        int G()
+        {
+            int Inner() => 42;
+            return Inner();
+        }
+        _ = G();
+    }
+}
+""";
+
+            var verifier = CompileAndVerify(source, options: TestOptions.DebugDll);
+
+            // F's body only sees G (Inner is inside G's body, not F's)
+            verifier.VerifyIL("C.F", """
+{
+  // Code size        9 (0x9)
+  .maxstack  1
+  IL_0000:  nop
+  IL_0001:  nop
+  IL_0002:  call       "int C.<F>g__G|0_0()"
+  IL_0007:  pop
+  IL_0008:  ret
+}
+""");
+
+            var outerEntries = ReadLocalFunctionMap(verifier.Compilation, "F");
+            var outerEntry = Assert.Single(outerEntries);
+            Assert.Equal("G", outerEntry.name);
+            Assert.Equal("<F>g__G|0_0", outerEntry.loweredMethodName);
+            Assert.Equal(0x0, outerEntry.startOffset);
+            Assert.Equal(0x8, outerEntry.startOffset + outerEntry.length - 1); // inclusive end
+
+            // G's lowered method body sees Inner
+            verifier.VerifyIL("C.<F>g__G|0_0", """
+{
+  // Code size       12 (0xc)
+  .maxstack  1
+  .locals init (int V_0)
+  IL_0000:  nop
+  IL_0001:  nop
+  IL_0002:  call       "int C.<F>g__Inner|0_1()"
+  IL_0007:  stloc.0
+  IL_0008:  br.s       IL_000a
+  IL_000a:  ldloc.0
+  IL_000b:  ret
+}
+""");
+
+            var innerEntries = ReadLocalFunctionMap(verifier.Compilation, "<F>g__G|0_0");
+            var innerEntry = Assert.Single(innerEntries);
+            Assert.Equal("Inner", innerEntry.name);
+            Assert.Equal("<F>g__Inner|0_1", innerEntry.loweredMethodName);
+            Assert.Equal(0x0, innerEntry.startOffset);
+            Assert.Equal(0xb, innerEntry.startOffset + innerEntry.length - 1); // inclusive end
+        }
+
+        [Fact]
+        public void LocalFunctionScopes_08()
+        {
+            // async
+            var source = """
+class C
+{
+    async System.Threading.Tasks.Task F(int x)
+    {
+        int G() => x + 1;
+        await System.Threading.Tasks.Task.Yield();
+        _ = G();
+    }
+}
+""";
+
+            var verifier = CompileAndVerify(source, options: TestOptions.DebugDll);
+
+            Assert.True(ReadLocalFunctionMap(verifier.Compilation, "F").IsDefault);
+
+            var entries = ReadLocalFunctionMap(verifier.Compilation, "MoveNext");
+            var entry = Assert.Single(entries);
+            Assert.Equal("G", entry.name);
+            Assert.Contains("g__G", entry.loweredMethodName);
+            Assert.True(entry.length > 0);
+        }
+
+        [Fact]
+        public void LocalFunctionScopes_09()
+        {
+            // iterator
+            var source = """
+class C
+{
+    System.Collections.Generic.IEnumerable<int> F(int x)
+    {
+        int G() => x + 1;
+        yield return G();
+        yield return G() + 1;
+    }
+}
+""";
+
+            var verifier = CompileAndVerify(source, options: TestOptions.DebugDll);
+
+            Assert.True(ReadLocalFunctionMap(verifier.Compilation, "F").IsDefault);
+
+            var entries = ReadLocalFunctionMap(verifier.Compilation, "MoveNext");
+            var entry = Assert.Single(entries);
+            Assert.Equal("G", entry.name);
+            Assert.Contains("g__G", entry.loweredMethodName);
+            Assert.True(entry.length > 0);
+        }
+
+        [Fact]
+        public void LocalFunctionScopes_10()
+        {
+            // async with runtime-async
+            var source = """
+class C
+{
+    async System.Threading.Tasks.Task F(int x)
+    {
+        int G() => x + 1;
+        await System.Threading.Tasks.Task.Yield();
+        _ = G();
+    }
+}
+""";
+
+            var comp = CreateRuntimeAsyncCompilation(source, TestOptions.DebugDll);
+
+            var entries = ReadLocalFunctionMap(comp, "F");
+            var entry = Assert.Single(entries);
+            Assert.Equal("G", entry.name);
+            Assert.Contains("g__G", entry.loweredMethodName);
+            Assert.True(entry.length > 0);
+        }
+
+        [Fact]
+        public void LocalFunctionScopes_11()
+        {
+            // async-iterator
+            var source = """
+class C
+{
+    async System.Collections.Generic.IAsyncEnumerable<int> F(int x)
+    {
+        int G() => x + 1;
+        await System.Threading.Tasks.Task.Yield();
+        yield return G();
+        yield return G() + 1;
+    }
+}
+""";
+
+            var verifier = CompileAndVerify(source, targetFramework: TargetFramework.Net80, options: TestOptions.DebugDll, verify: Verification.Skipped);
+
+            Assert.True(ReadLocalFunctionMap(verifier.Compilation, "F").IsDefault);
+
+            var entries = ReadLocalFunctionMap(verifier.Compilation, "MoveNext");
+            var entry = Assert.Single(entries);
+            Assert.Equal("G", entry.name);
+            Assert.Contains("g__G", entry.loweredMethodName);
+            Assert.True(entry.length > 0);
+        }
+
+        [Fact]
+        public void LocalFunctionScopes_12()
+        {
+            // async-iterator with runtime-async
+            var source = """
+class C
+{
+    async System.Collections.Generic.IAsyncEnumerable<int> F(int x)
+    {
+        int G() => x + 1;
+        await System.Threading.Tasks.Task.Yield();
+        yield return G();
+        yield return G() + 1;
+    }
+}
+""";
+
+            var comp = CreateRuntimeAsyncCompilation(source, TestOptions.DebugDll);
+
+            Assert.True(ReadLocalFunctionMap(comp, "F").IsDefault);
+
+            var entries = ReadLocalFunctionMap(comp, "MoveNext");
+            var entry = Assert.Single(entries);
+            Assert.Equal("G", entry.name);
+            Assert.Contains("g__G", entry.loweredMethodName);
+            Assert.True(entry.length > 0);
+        }
+
+        [Fact]
+        public void LocalFunctionScopes_13()
+        {
+            // top-level statement
+            var source = """
+int G() => 42;
+_ = G();
+""";
+
+            var verifier = CompileAndVerify(source, options: TestOptions.DebugExe);
+
+            var entries = ReadLocalFunctionMap(verifier.Compilation, "<Main>$");
+            var entry = Assert.Single(entries);
+            Assert.Equal("G", entry.name);
+            Assert.Contains("g__G", entry.loweredMethodName);
+            Assert.True(entry.length > 0);
+        }
+
+        [Fact]
+        public void LocalFunctionScopes_14()
+        {
+            // local function inside a lambda
+            var source = """
+class C
+{
+    void F()
+    {
+        System.Action a = () =>
+        {
+            int G() => 42;
+            _ = G();
+        };
+        a();
+    }
+}
+""";
+
+            var verifier = CompileAndVerify(source, options: TestOptions.DebugDll);
+
+            Assert.True(ReadLocalFunctionMap(verifier.Compilation, "F").IsDefault);
+
+            // The lambda's lowered method body sees G
+            var entries = ReadLocalFunctionMap(verifier.Compilation, "<F>b__0_0");
+            var entry = Assert.Single(entries);
+            Assert.Equal("G", entry.name);
+            Assert.Contains("g__G", entry.loweredMethodName);
+            Assert.True(entry.length > 0);
+        }
+
+        [Fact]
+        public void LocalFunctionScopes_15()
+        {
+            // local function scoped to if-block
+            var source = """
+class C
+{
+    void F(int x)
+    {
+        if (x > 0)
+        {
+            int G(int y) { return y + 1; }
+            _ = G(x);
+        }
+        System.Console.Write(x);
+    }
+}
+""";
+
+            var verifier = CompileAndVerify(source, options: TestOptions.DebugDll);
+            verifier.VerifyIL("C.F", """
+{
+  // Code size       27 (0x1b)
+  .maxstack  2
+  .locals init (bool V_0)
+  IL_0000:  nop
+  IL_0001:  ldarg.1
+  IL_0002:  ldc.i4.0
+  IL_0003:  cgt
+  IL_0005:  stloc.0
+  IL_0006:  ldloc.0
+  IL_0007:  brfalse.s  IL_0013
+  IL_0009:  nop
+  IL_000a:  nop
+  IL_000b:  ldarg.1
+  IL_000c:  call       "int C.<F>g__G|0_0(int)"
+  IL_0011:  pop
+  IL_0012:  nop
+  IL_0013:  ldarg.1
+  IL_0014:  call       "void System.Console.Write(int)"
+  IL_0019:  nop
+  IL_001a:  ret
+}
+""");
+
+            var entries = ReadLocalFunctionMap(verifier.Compilation, "F");
+            var entry = Assert.Single(entries);
+            Assert.Equal("G", entry.name);
+            Assert.Equal("<F>g__G|0_0", entry.loweredMethodName);
+            // G's scope is the if-block, not the entire method.
+            Assert.Equal(0x9, entry.startOffset);
+            Assert.Equal(0x13, entry.startOffset + entry.length); // exclusive end
         }
     }
 }

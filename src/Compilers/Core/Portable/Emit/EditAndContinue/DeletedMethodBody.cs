@@ -63,6 +63,8 @@ namespace Microsoft.CodeAnalysis.Emit.EditAndContinue
 
         public bool IsPrimaryConstructor => false;
 
+        public ImmutableArray<LocalFunctionScope> LocalFunctionScopes => ImmutableArray<LocalFunctionScope>.Empty;
+
 #nullable enable
         public static ImmutableArray<byte> GetIL(EmitContext context, RuntimeRudeEdit? rudeEdit, bool isLambdaOrLocalFunction)
         {

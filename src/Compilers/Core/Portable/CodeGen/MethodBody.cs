@@ -31,6 +31,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
         private readonly ImmutableArray<StateMachineHoistedLocalScope> _stateMachineHoistedLocalScopes;
         private readonly bool _hasDynamicLocalVariables;
         private readonly StateMachineMoveNextBodyDebugInfo? _stateMachineMoveNextDebugInfoOpt;
+        private readonly ImmutableArray<LocalFunctionScope> _localFunctionScopes;
 
         // Debug information emitted to Debug PDBs supporting EnC:
         private readonly DebugId _methodId;
@@ -72,7 +73,8 @@ namespace Microsoft.CodeAnalysis.CodeGen
             StateMachineStatesDebugInfo stateMachineStatesDebugInfo,
             StateMachineMoveNextBodyDebugInfo? stateMachineMoveNextDebugInfoOpt,
             ImmutableArray<SourceSpan> codeCoverageSpans,
-            bool isPrimaryConstructor)
+            bool isPrimaryConstructor,
+            ImmutableArray<LocalFunctionScope> localFunctionScopes)
         {
             Debug.Assert(!locals.IsDefault);
             Debug.Assert(!exceptionHandlers.IsDefault);
@@ -101,6 +103,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
             _codeCoverageSpans = codeCoverageSpans;
             _sequencePoints = GetSequencePoints(sequencePoints, debugDocumentProvider);
             _isPrimaryConstructor = isPrimaryConstructor;
+            _localFunctionScopes = localFunctionScopes;
         }
 
         private static ImmutableArray<Cci.SequencePoint> GetSequencePoints(SequencePointList? sequencePoints, DebugDocumentProvider? debugDocumentProvider)
@@ -174,5 +177,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
         public bool HasStackalloc { get; }
 
         public bool IsPrimaryConstructor => _isPrimaryConstructor;
+
+        public ImmutableArray<LocalFunctionScope> LocalFunctionScopes => _localFunctionScopes;
     }
 }

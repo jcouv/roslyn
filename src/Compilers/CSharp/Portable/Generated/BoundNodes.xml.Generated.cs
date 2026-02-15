@@ -107,6 +107,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         Block,
         Scope,
         StateMachineScope,
+        LocalFunctionsScope,
         LocalDeclaration,
         MultipleLocalDeclarations,
         UsingLocalDeclarations,
@@ -3441,6 +3442,37 @@ namespace Microsoft.CodeAnalysis.CSharp
             if (fields != this.Fields || statement != this.Statement)
             {
                 var result = new BoundStateMachineScope(this.Syntax, fields, statement, this.HasErrors);
+                result.CopyAttributes(this);
+                return result;
+            }
+            return this;
+        }
+    }
+
+    internal sealed partial class BoundLocalFunctionsScope : BoundStatement
+    {
+        public BoundLocalFunctionsScope(SyntaxNode syntax, ImmutableArray<LocalFunctionScopeInfo> localFunctions, BoundBlock block, bool hasErrors = false)
+            : base(BoundKind.LocalFunctionsScope, syntax, hasErrors || block.HasErrors())
+        {
+
+            RoslynDebug.Assert(!localFunctions.IsDefault, "Field 'localFunctions' cannot be null (use Null=\"allow\" in BoundNodes.xml to remove this check)");
+            RoslynDebug.Assert(block is object, "Field 'block' cannot be null (make the type nullable in BoundNodes.xml to remove this check)");
+
+            this.LocalFunctions = localFunctions;
+            this.Block = block;
+        }
+
+        public ImmutableArray<LocalFunctionScopeInfo> LocalFunctions { get; }
+        public BoundBlock Block { get; }
+
+        [DebuggerStepThrough]
+        public override BoundNode? Accept(BoundTreeVisitor visitor) => visitor.VisitLocalFunctionsScope(this);
+
+        public BoundLocalFunctionsScope Update(ImmutableArray<LocalFunctionScopeInfo> localFunctions, BoundBlock block)
+        {
+            if (localFunctions != this.LocalFunctions || block != this.Block)
+            {
+                var result = new BoundLocalFunctionsScope(this.Syntax, localFunctions, block, this.HasErrors);
                 result.CopyAttributes(this);
                 return result;
             }
@@ -9146,6 +9178,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     return VisitScope((BoundScope)node, arg);
                 case BoundKind.StateMachineScope:
                     return VisitStateMachineScope((BoundStateMachineScope)node, arg);
+                case BoundKind.LocalFunctionsScope:
+                    return VisitLocalFunctionsScope((BoundLocalFunctionsScope)node, arg);
                 case BoundKind.LocalDeclaration:
                     return VisitLocalDeclaration((BoundLocalDeclaration)node, arg);
                 case BoundKind.MultipleLocalDeclarations:
@@ -9535,6 +9569,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public virtual R VisitBlock(BoundBlock node, A arg) => this.DefaultVisit(node, arg);
         public virtual R VisitScope(BoundScope node, A arg) => this.DefaultVisit(node, arg);
         public virtual R VisitStateMachineScope(BoundStateMachineScope node, A arg) => this.DefaultVisit(node, arg);
+        public virtual R VisitLocalFunctionsScope(BoundLocalFunctionsScope node, A arg) => this.DefaultVisit(node, arg);
         public virtual R VisitLocalDeclaration(BoundLocalDeclaration node, A arg) => this.DefaultVisit(node, arg);
         public virtual R VisitMultipleLocalDeclarations(BoundMultipleLocalDeclarations node, A arg) => this.DefaultVisit(node, arg);
         public virtual R VisitUsingLocalDeclarations(BoundUsingLocalDeclarations node, A arg) => this.DefaultVisit(node, arg);
@@ -9773,6 +9808,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         public virtual BoundNode? VisitBlock(BoundBlock node) => this.DefaultVisit(node);
         public virtual BoundNode? VisitScope(BoundScope node) => this.DefaultVisit(node);
         public virtual BoundNode? VisitStateMachineScope(BoundStateMachineScope node) => this.DefaultVisit(node);
+        public virtual BoundNode? VisitLocalFunctionsScope(BoundLocalFunctionsScope node) => this.DefaultVisit(node);
         public virtual BoundNode? VisitLocalDeclaration(BoundLocalDeclaration node) => this.DefaultVisit(node);
         public virtual BoundNode? VisitMultipleLocalDeclarations(BoundMultipleLocalDeclarations node) => this.DefaultVisit(node);
         public virtual BoundNode? VisitUsingLocalDeclarations(BoundUsingLocalDeclarations node) => this.DefaultVisit(node);
@@ -10238,6 +10274,11 @@ namespace Microsoft.CodeAnalysis.CSharp
         public override BoundNode? VisitStateMachineScope(BoundStateMachineScope node)
         {
             this.Visit(node.Statement);
+            return null;
+        }
+        public override BoundNode? VisitLocalFunctionsScope(BoundLocalFunctionsScope node)
+        {
+            this.Visit(node.Block);
             return null;
         }
         public override BoundNode? VisitLocalDeclaration(BoundLocalDeclaration node)
@@ -11508,6 +11549,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             ImmutableArray<StateMachineFieldSymbol> fields = this.VisitSymbols<StateMachineFieldSymbol>(node.Fields);
             BoundStatement statement = (BoundStatement)this.Visit(node.Statement);
             return node.Update(fields, statement);
+        }
+        public override BoundNode? VisitLocalFunctionsScope(BoundLocalFunctionsScope node)
+        {
+            BoundBlock block = (BoundBlock)this.Visit(node.Block);
+            return node.Update(node.LocalFunctions, block);
         }
         public override BoundNode? VisitLocalDeclaration(BoundLocalDeclaration node)
         {
@@ -16049,6 +16095,13 @@ namespace Microsoft.CodeAnalysis.CSharp
         {
             new TreeDumperNode("fields", node.Fields, null),
             new TreeDumperNode("statement", null, new TreeDumperNode[] { Visit(node.Statement, null) }),
+            new TreeDumperNode("hasErrors", node.HasErrors, null)
+        }
+        );
+        public override TreeDumperNode VisitLocalFunctionsScope(BoundLocalFunctionsScope node, object? arg) => new TreeDumperNode("localFunctionsScope", null, new TreeDumperNode[]
+        {
+            new TreeDumperNode("localFunctions", node.LocalFunctions, null),
+            new TreeDumperNode("block", null, new TreeDumperNode[] { Visit(node.Block, null) }),
             new TreeDumperNode("hasErrors", node.HasErrors, null)
         }
         );

@@ -166,6 +166,19 @@ namespace Microsoft.CodeAnalysis.CodeGen
                 scope.AddUserHoistedLocal(slotIndex);
             }
 
+            internal void AddLocalFunction(string name, Cci.IMethodDefinition loweredMethod)
+            {
+                var scope = (LocalScopeInfo)CurrentScope;
+                scope.AddLocalFunction(name, loweredMethod);
+            }
+
+            internal ImmutableArray<LocalFunctionScope> GetLocalFunctionScopes()
+            {
+                var result = ArrayBuilder<LocalFunctionScope>.GetInstance();
+                _rootScope.GetLocalFunctionScopes(result);
+                return result.ToImmutableAndFree();
+            }
+
             internal void FreeBasicBlocks()
             {
                 _rootScope.FreeBasicBlocks();
@@ -298,6 +311,31 @@ namespace Microsoft.CodeAnalysis.CodeGen
             }
 
             /// <summary>
+            /// Recursively collects local functions with their IL scope ranges.
+            /// </summary>
+            internal abstract ScopeBounds GetLocalFunctionScopes(ArrayBuilder<LocalFunctionScope> result);
+
+            protected static ScopeBounds GetLocalFunctionScopesFromNestedScopes<TScopeInfo>(
+                ArrayBuilder<LocalFunctionScope> result,
+                ImmutableArray<TScopeInfo>.Builder scopes)
+                where TScopeInfo : ScopeInfo
+            {
+                Debug.Assert(scopes.Count > 0);
+
+                int begin = int.MaxValue;
+                int end = 0;
+
+                foreach (var scope in scopes)
+                {
+                    ScopeBounds bounds = scope.GetLocalFunctionScopes(result);
+                    begin = Math.Min(begin, bounds.Begin);
+                    end = Math.Max(end, bounds.End);
+                }
+
+                return new ScopeBounds(begin, end);
+            }
+
+            /// <summary>
             /// Free any basic blocks owned by this scope or sub-scopes.
             /// </summary>
             public abstract void FreeBasicBlocks();
@@ -314,6 +352,7 @@ namespace Microsoft.CodeAnalysis.CodeGen
             private ImmutableArray<LocalDefinition>.Builder _localVariables;
             private ImmutableArray<LocalConstantDefinition>.Builder _localConstants;
             private ImmutableArray<int>.Builder _stateMachineUserHoistedLocalSlotIndices;
+            private ImmutableArray<(string Name, Cci.IMethodDefinition LoweredMethod)>.Builder _localFunctions;
 
             // Nested scopes and blocks are not relevant for PDB. 
             // We need these only to figure scope bounds.
@@ -369,6 +408,12 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
                 Debug.Assert(slotIndex >= 0);
                 _stateMachineUserHoistedLocalSlotIndices.Add(slotIndex);
+            }
+
+            internal void AddLocalFunction(string name, Cci.IMethodDefinition loweredMethod)
+            {
+                _localFunctions ??= ImmutableArray.CreateBuilder<(string Name, Cci.IMethodDefinition LoweredMethod)>(1);
+                _localFunctions.Add((name, loweredMethod));
             }
 
             internal override bool ContainsLocal(LocalDefinition local)
@@ -511,6 +556,44 @@ namespace Microsoft.CodeAnalysis.CodeGen
                         }
 
                         result[slotIndex] = newScope;
+                    }
+                }
+
+                return new ScopeBounds(begin, end);
+            }
+
+            internal override ScopeBounds GetLocalFunctionScopes(ArrayBuilder<LocalFunctionScope> result)
+            {
+                int begin = int.MaxValue;
+                int end = 0;
+
+                if (Blocks != null)
+                {
+                    for (int i = 0; i < Blocks.Count; i++)
+                    {
+                        var block = Blocks[i];
+
+                        if (block.Reachability != Reachability.NotReachable)
+                        {
+                            begin = Math.Min(begin, block.Start);
+                            end = Math.Max(end, block.Start + block.TotalSize);
+                        }
+                    }
+                }
+
+                if (_nestedScopes != null)
+                {
+                    ScopeBounds nestedBounds = GetLocalFunctionScopesFromNestedScopes(result, _nestedScopes);
+                    begin = Math.Min(begin, nestedBounds.Begin);
+                    end = Math.Max(end, nestedBounds.End);
+                }
+
+                // we are not interested in scopes with no local functions or no code in them.
+                if (_localFunctions != null && end > begin)
+                {
+                    foreach (var (name, loweredMethod) in _localFunctions)
+                    {
+                        result.Add(new LocalFunctionScope(name, loweredMethod, begin, length: end - begin));
                     }
                 }
 
@@ -816,6 +899,9 @@ namespace Microsoft.CodeAnalysis.CodeGen
 
             internal override ScopeBounds GetHoistedLocalScopes(ArrayBuilder<StateMachineHoistedLocalScope> result)
                 => GetHoistedLocalScopes(result, _handlers);
+
+            internal override ScopeBounds GetLocalFunctionScopes(ArrayBuilder<LocalFunctionScope> result)
+                => GetLocalFunctionScopesFromNestedScopes(result, _handlers);
 
             private static ScopeBounds GetBounds(ExceptionHandlerScope scope)
             {

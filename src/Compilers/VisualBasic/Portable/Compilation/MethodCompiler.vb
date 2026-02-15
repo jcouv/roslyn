@@ -1726,7 +1726,8 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
                                       stateMachineStatesDebugInfo:=StateMachineStatesDebugInfo.Create(variableSlotAllocatorOpt, stateMachineStateDebugInfos),
                                       stateMachineMoveNextDebugInfoOpt:=moveNextBodyDebugInfoOpt,
                                       codeCoverageSpans:=codeCoverageSpans,
-                                      isPrimaryConstructor:=False)
+                                      isPrimaryConstructor:=False,
+                                      localFunctionScopes:=ImmutableArray(Of LocalFunctionScope).Empty)
             Finally
                 ' Free resources used by the basic blocks in the builder.
                 builder.FreeBasicBlocks()

@@ -1464,7 +1464,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     StateMachineStatesDebugInfo.Create(variableSlotAllocator: null, ImmutableArray<StateMachineStateDebugInfo>.Empty),
                     stateMachineMoveNextDebugInfoOpt: null,
                     codeCoverageSpans: ImmutableArray<SourceSpan>.Empty,
-                    isPrimaryConstructor: false));
+                    isPrimaryConstructor: false,
+                    localFunctionScopes: ImmutableArray<LocalFunctionScope>.Empty));
         }
 #nullable disable
         private static MethodSymbol GetSymbolForEmittedBody(MethodSymbol methodSymbol)
@@ -1759,6 +1760,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 // We will only save the IL builders when running tests.
                 moduleBuilder.TestData?.SetMethodILBuilder(methodBodyParentSymbol, builder.GetSnapshot());
 
+                ImmutableArray<LocalFunctionScope> localFunctionScopes = builder.GetLocalFunctionScopes();
+
                 return new MethodBody(
                     builder.RealizedIL,
                     builder.MaxStack,
@@ -1783,7 +1786,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     StateMachineStatesDebugInfo.Create(variableSlotAllocatorOpt, stateMachineStateDebugInfos),
                     moveNextBodyDebugInfoOpt,
                     codeCoverageSpans,
-                    isPrimaryConstructor: method is SynthesizedPrimaryConstructor);
+                    isPrimaryConstructor: method is SynthesizedPrimaryConstructor,
+                    localFunctionScopes);
             }
             finally
             {

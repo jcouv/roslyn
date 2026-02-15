@@ -1321,6 +1321,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             return null;
         }
 
+        public override BoundNode VisitLocalFunctionsScope(BoundLocalFunctionsScope node)
+        {
+            VisitBlock(node.Block);
+            return null;
+        }
+
         public override BoundNode VisitExpressionStatement(BoundExpressionStatement node)
         {
             VisitRvalue(node.Expression);

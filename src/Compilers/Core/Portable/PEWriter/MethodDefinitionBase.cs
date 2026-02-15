@@ -170,6 +170,8 @@ internal abstract class MethodDefinitionBase : IMethodDefinition, IMethodBody
 
     public bool IsPrimaryConstructor => false;
 
+    public ImmutableArray<LocalFunctionScope> LocalFunctionScopes => ImmutableArray<LocalFunctionScope>.Empty;
+
     public sealed override bool Equals(object obj)
     {
         // It is not supported to rely on default equality of these Cci objects, an explicit way to compare and hash them should be used.

@@ -24,5 +24,6 @@ namespace Microsoft.CodeAnalysis.Debugging
         public static readonly Guid CompilationOptions = new("B5FEEC05-8CD0-4A83-96DA-466284BB4BD8");
         public static readonly Guid TypeDefinitionDocuments = new("932E74BC-DBA9-4478-8D46-0F32A7BAB3D3");
         public static readonly Guid PrimaryConstructorInformationBlob = new("9D40ACE1-C703-4D0E-BF41-7243060A8FB5");
+        public static readonly Guid LocalFunctionScopes = new("B3B43B60-4710-4E55-A214-B177A1BFEF02");
     }
 }

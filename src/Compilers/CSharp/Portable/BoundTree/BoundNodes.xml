@@ -40,6 +40,7 @@
   <ValueType Name="AccessorKind" />
   <ValueType Name="SafeContext" />
   <ValueType Name="InConversionGroupFlags" />
+  <ValueType Name="LocalFunctionScopeInfo" />
 
   <AbstractNode Name="BoundInitializer" Base="BoundNode"/>
 
@@ -1074,6 +1075,16 @@
   <Node Name="BoundStateMachineScope" Base="BoundStatement">
     <Field Name="Fields" Type="ImmutableArray&lt;StateMachineFieldSymbol&gt;"/>
     <Field Name="Statement" Type="BoundStatement" Null="disallow"/>
+  </Node>
+
+  <!--
+  BoundLocalFunctionsScope represents the scope of one or more local functions.
+  It wraps the content of the declaring block and carries debug info for each local function.
+  It is used to emit debugging information for the EE about local functions and their scopes.
+  -->
+  <Node Name="BoundLocalFunctionsScope" Base="BoundStatement">
+    <Field Name="LocalFunctions" Type="ImmutableArray&lt;LocalFunctionScopeInfo&gt;"/>
+    <Field Name="Block" Type="BoundBlock" Null="disallow"/>
   </Node>
   
   <!--

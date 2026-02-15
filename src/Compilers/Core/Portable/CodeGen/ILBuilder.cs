@@ -230,6 +230,14 @@ namespace Microsoft.CodeAnalysis.CodeGen
             return _scopeManager.GetHoistedLocalScopes();
         }
 
+        internal ImmutableArray<LocalFunctionScope> GetLocalFunctionScopes()
+            => _scopeManager.GetLocalFunctionScopes();
+
+        internal void AddLocalFunctionToScope(string name, Cci.IMethodDefinition loweredMethod)
+        {
+            _scopeManager.AddLocalFunction(name, loweredMethod);
+        }
+
         internal void FreeBasicBlocks()
         {
             _scopeManager.FreeBasicBlocks();

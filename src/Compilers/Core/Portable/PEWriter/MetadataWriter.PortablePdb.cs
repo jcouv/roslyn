@@ -15,6 +15,7 @@ using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeGen;
 using Microsoft.CodeAnalysis.Debugging;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.PooledObjects;
@@ -150,6 +151,8 @@ namespace Microsoft.Cci
                 }
 
                 SerializeStateMachineLocalScopes(bodyOpt, methodHandle);
+
+                SerializeLocalFunctionScopes(bodyOpt, methodHandle);
             }
 
             // Emit EnC info for all methods even if they do not have sequence points.
@@ -616,6 +619,30 @@ namespace Microsoft.Cci
             _debugMetadataOpt.AddCustomDebugInformation(
                 parent: method,
                 kind: _debugMetadataOpt.GetOrAddGuid(PortableCustomDebugInfoKinds.StateMachineHoistedLocalScopes),
+                value: _debugMetadataOpt.GetOrAddBlob(writer));
+        }
+
+        private void SerializeLocalFunctionScopes(IMethodBody methodBody, MethodDefinitionHandle method)
+        {
+            ImmutableArray<LocalFunctionScope> localFunctionScopes = methodBody.LocalFunctionScopes;
+            if (localFunctionScopes.IsDefaultOrEmpty)
+            {
+                return;
+            }
+
+            var writer = new BlobBuilder();
+
+            foreach (var localFunction in localFunctionScopes)
+            {
+                writer.WriteSerializedString(localFunction.Name);
+                writer.WriteCompressedInteger(MetadataTokens.GetRowNumber(GetMethodDefinitionHandle(localFunction.LoweredMethod)));
+                writer.WriteUInt32((uint)localFunction.StartOffset);
+                writer.WriteUInt32((uint)localFunction.Length);
+            }
+
+            _debugMetadataOpt.AddCustomDebugInformation(
+                parent: method,
+                kind: _debugMetadataOpt.GetOrAddGuid(PortableCustomDebugInfoKinds.LocalFunctionScopes),
                 value: _debugMetadataOpt.GetOrAddBlob(writer));
         }
 

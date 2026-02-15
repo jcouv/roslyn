@@ -96,6 +96,10 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                     EmitStateMachineScope((BoundStateMachineScope)statement);
                     break;
 
+                case BoundKind.LocalFunctionsScope:
+                    EmitLocalFunctionsScope((BoundLocalFunctionsScope)statement);
+                    break;
+
                 case BoundKind.NoOpStatement:
                     EmitNoOpStatement((BoundNoOpStatement)statement);
                     break;
@@ -833,6 +837,20 @@ oneMoreTime:
             }
 
             EmitStatement(scope.Statement);
+            _builder.CloseLocalScope();
+        }
+
+        private void EmitLocalFunctionsScope(BoundLocalFunctionsScope scope)
+        {
+            _builder.OpenLocalScope();
+
+            foreach (var localFunction in scope.LocalFunctions)
+            {
+                _builder.AddLocalFunctionToScope(localFunction.Name, localFunction.Method.GetCciAdapter());
+            }
+
+            EmitBlock(scope.Block);
+
             _builder.CloseLocalScope();
         }
 

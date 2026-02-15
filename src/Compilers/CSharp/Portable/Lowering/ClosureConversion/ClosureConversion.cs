@@ -105,6 +105,10 @@ namespace Microsoft.CodeAnalysis.CSharp
         private readonly ArrayBuilder<EncLambdaInfo> _lambdaDebugInfoBuilder;
         private readonly ArrayBuilder<LambdaRuntimeRudeEditInfo> _lambdaRuntimeRudeEditsBuilder;
 
+        // Local functions in the current block.
+        // Will be recorded in a BoundLocalFunctionScope wrapping the rewritten block.
+        private ArrayBuilder<LocalFunctionScopeInfo> _currentBlockLocalFunctions;
+
         // ID dispenser for field names of frame references
         private int _synthesizedFieldNameIdDispenser;
 
@@ -1179,6 +1183,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             InsertAndFreePrologue(newStatements, prologue);
 
+            var savedBlockLocalFunctions = _currentBlockLocalFunctions;
+            _currentBlockLocalFunctions = null;
+
             foreach (var statement in node.Statements)
             {
                 var replacement = (BoundStatement)this.Visit(statement);
@@ -1197,7 +1204,23 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             // TODO: we may not need to update if there was nothing to rewrite.
-            return node.Update(newLocals.ToImmutableAndFree(), node.LocalFunctions, node.HasUnsafeModifier, newInstrumentation, newStatements.ToImmutableAndFree());
+            var result = node.Update(newLocals.ToImmutableAndFree(), node.LocalFunctions, node.HasUnsafeModifier, newInstrumentation, newStatements.ToImmutableAndFree());
+
+            BoundBlock finalResult;
+            if (_currentBlockLocalFunctions != null)
+            {
+                finalResult = new BoundBlock(
+                    result.Syntax,
+                    ImmutableArray<LocalSymbol>.Empty,
+                    [new BoundLocalFunctionsScope(result.Syntax, _currentBlockLocalFunctions.ToImmutableAndFree(), result)]);
+            }
+            else
+            {
+                finalResult = result;
+            }
+
+            _currentBlockLocalFunctions = savedBlockLocalFunctions;
+            return finalResult;
         }
 
         public override BoundNode VisitScope(BoundScope node)
@@ -1428,7 +1451,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundNode lambdaScope;
             DebugId topLevelMethodId;
             DebugId lambdaId;
-            RewriteLambdaOrLocalFunction(
+            SynthesizedClosureMethod synthesizedMethod = RewriteLambdaOrLocalFunction(
                 node,
                 out closureKind,
                 out translatedLambdaContainer,
@@ -1436,6 +1459,9 @@ namespace Microsoft.CodeAnalysis.CSharp
                 out lambdaScope,
                 out topLevelMethodId,
                 out lambdaId);
+
+            _currentBlockLocalFunctions ??= ArrayBuilder<LocalFunctionScopeInfo>.GetInstance();
+            _currentBlockLocalFunctions.Add(new LocalFunctionScopeInfo(node.Symbol.Name, synthesizedMethod));
 
             return new BoundNoOpStatement(node.Syntax, NoOpStatementFlavor.Default);
         }
