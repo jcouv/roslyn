@@ -61,7 +61,7 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
                 reuseSpan = ILSpan.MaxValue;
             }
 
-            ReadMethodCustomDebugInformation(reader, methodHandle, out var hoistedLocalScopes, out var defaultNamespace, out bool isPrimaryConstructor);
+            ReadMethodCustomDebugInformation(reader, methodHandle, out var hoistedLocalScopes, out var defaultNamespace, out bool isPrimaryConstructor, out var localFunctions);
 
             var documentHandle = reader.GetMethodDebugInformation(methodHandle).Document;
             string? documentName = null;
@@ -82,7 +82,8 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
                 localConstants,
                 reuseSpan,
                 documentName,
-                isPrimaryConstructor: isPrimaryConstructor);
+                isPrimaryConstructor: isPrimaryConstructor,
+                localFunctions: localFunctions);
         }
 
         /// <summary>
@@ -387,7 +388,8 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
             MethodDefinitionHandle methodHandle,
             out ImmutableArray<HoistedLocalScopeRecord> hoistedLocalScopes,
             out string defaultNamespace,
-            out bool isPrimaryConstructor)
+            out bool isPrimaryConstructor,
+            out ImmutableArray<LocalFunctionInfo> localFunctions)
         {
             hoistedLocalScopes = reader.TryGetCustomDebugInformation(methodHandle, PortableCustomDebugInfoKinds.StateMachineHoistedLocalScopes, out var info)
                 ? DecodeHoistedLocalScopes(reader.GetBlobReader(info.Value))
@@ -399,6 +401,10 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
                 : "";
 
             isPrimaryConstructor = reader.TryGetCustomDebugInformation(methodHandle, PortableCustomDebugInfoKinds.PrimaryConstructorInformationBlob, out _);
+
+            localFunctions = reader.TryGetCustomDebugInformation(methodHandle, PortableCustomDebugInfoKinds.LocalFunctionScopes, out info)
+                ? DecodeLocalFunctionScopes(reader.GetBlobReader(info.Value))
+                : [];
         }
 
         /// <exception cref="BadImageFormatException">Invalid data format.</exception>
@@ -472,6 +478,26 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
         private static string DecodeDefaultNamespace(BlobReader reader)
         {
             return reader.ReadUTF8(reader.Length);
+        }
+
+        /// <exception cref="BadImageFormatException">Invalid data format.</exception>
+        private static ImmutableArray<LocalFunctionInfo> DecodeLocalFunctionScopes(BlobReader reader)
+        {
+            var result = ArrayBuilder<LocalFunctionInfo>.GetInstance();
+
+            while (reader.RemainingBytes > 0)
+            {
+                var name = reader.ReadSerializedString();
+                Debug.Assert(name is not null);
+                var rid = reader.ReadCompressedInteger();
+                var startOffset = (int)reader.ReadUInt32();
+                var length = (int)reader.ReadUInt32();
+
+                var token = MetadataTokens.GetToken(MetadataTokens.MethodDefinitionHandle(rid));
+                result.Add(new LocalFunctionInfo(name!, token, startOffset, length));
+            }
+
+            return result.ToImmutableAndFree();
         }
     }
 }

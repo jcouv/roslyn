@@ -51,6 +51,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             TypeMap typeMap;
             ImmutableArray<TypeParameterSymbol> typeParameters;
 
+            // TODO2 review this
             var lambdaFrame = ContainingType as SynthesizedClosureEnvironment;
             switch (closureKind)
             {

@@ -667,6 +667,11 @@
         <target state="translated">Um literal padrão 'default' não é válido como um padrão. Use outro literal (por exemplo, '0' ou 'null') conforme o necessário. Para corresponder a tudo, use um padrão de descarte '_'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_DelegateConversionOfLocalFunctionInDebugger">
+        <source>Converting a local function '{0}' to a delegate is not supported during debugging (consider using a lambda)</source>
+        <target state="new">Converting a local function '{0}' to a delegate is not supported during debugging (consider using a lambda)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_DesignatorBeforePropertyPattern">
         <source>A variable designator must come after a property pattern.</source>
         <target state="translated">Um designador de variável deve vir após um padrão de propriedade.</target>

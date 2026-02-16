@@ -25,7 +25,8 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
             localConstants: ImmutableArray<TLocalSymbol>.Empty,
             reuseSpan: ILSpan.MaxValue,
             containingDocumentName: null,
-            isPrimaryConstructor: false);
+            isPrimaryConstructor: false,
+            localFunctions: []);
 
         /// <summary>
         /// Hoisted local variable scopes.
@@ -44,6 +45,7 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
         public readonly ILSpan ReuseSpan;
         public readonly string? ContainingDocumentName;
         public readonly bool IsPrimaryConstructor;
+        public readonly ImmutableArray<LocalFunctionInfo> LocalFunctions; // C# only.
 
         public MethodDebugInfo(
             ImmutableArray<HoistedLocalScopeRecord> hoistedLocalScopeRecords,
@@ -56,7 +58,8 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
             ImmutableArray<TLocalSymbol> localConstants,
             ILSpan reuseSpan,
             string? containingDocumentName,
-            bool isPrimaryConstructor)
+            bool isPrimaryConstructor,
+            ImmutableArray<LocalFunctionInfo> localFunctions)
         {
             RoslynDebug.Assert(!importRecordGroups.IsDefault);
             RoslynDebug.Assert(!externAliasRecords.IsDefault);
@@ -77,6 +80,7 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
 
             ContainingDocumentName = containingDocumentName;
             IsPrimaryConstructor = isPrimaryConstructor;
+            LocalFunctions = localFunctions;
         }
 
         public ImmutableSortedSet<int> GetInScopeHoistedLocalIndices(int ilOffset, ref ILSpan methodContextReuseSpan)
@@ -107,6 +111,29 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
             var result = scopesBuilder.ToImmutableSortedSet();
             scopesBuilder.Free();
             return result;
+        }
+
+        /// <summary>
+        /// Returns the local functions whose scope contains <paramref name="ilOffset"/>.
+        /// </summary>
+        public ImmutableArray<LocalFunctionInfo> GetInScopeLocalFunctions(int ilOffset)
+        {
+            if (LocalFunctions.IsDefaultOrEmpty)
+            {
+                return [];
+            }
+
+            var builder = ArrayBuilder<LocalFunctionInfo>.GetInstance();
+            foreach (var info in LocalFunctions)
+            {
+                var delta = ilOffset - info.StartOffset;
+                if (0 <= delta && delta < info.Length)
+                {
+                    builder.Add(info);
+                }
+            }
+
+            return builder.ToImmutableAndFree();
         }
     }
 }

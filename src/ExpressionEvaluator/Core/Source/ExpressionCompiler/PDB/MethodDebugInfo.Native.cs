@@ -184,7 +184,8 @@ namespace Microsoft.CodeAnalysis.ExpressionEvaluator
                     constantsBuilder.ToImmutableAndFree(),
                     reuseSpan,
                     containingDocumentName: null,
-                    isPrimaryConstructor: false);
+                    isPrimaryConstructor: false,
+                    localFunctions: []);
             }
             catch (InvalidOperationException)
             {

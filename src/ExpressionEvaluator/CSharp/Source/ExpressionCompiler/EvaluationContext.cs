@@ -37,6 +37,7 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
         private readonly MethodSymbol? _currentSourceMethod;
         private readonly ImmutableArray<LocalSymbol> _locals;
         private readonly ImmutableSortedSet<int> _inScopeHoistedLocalSlots;
+        private readonly ImmutableArray<LocalFunctionInfo> _inScopeLocalFunctions;
         private readonly MethodDebugInfo<TypeSymbol, LocalSymbol> _methodDebugInfo;
 
         private EvaluationContext(
@@ -46,6 +47,7 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
             MethodSymbol? currentSourceMethod,
             ImmutableArray<LocalSymbol> locals,
             ImmutableSortedSet<int> inScopeHoistedLocalSlots,
+            ImmutableArray<LocalFunctionInfo> inScopeLocalFunctions,
             MethodDebugInfo<TypeSymbol, LocalSymbol> methodDebugInfo)
         {
             RoslynDebug.AssertNotNull(inScopeHoistedLocalSlots);
@@ -57,6 +59,7 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
             _currentSourceMethod = currentSourceMethod;
             _locals = locals;
             _inScopeHoistedLocalSlots = inScopeHoistedLocalSlots;
+            _inScopeLocalFunctions = inScopeLocalFunctions;
             _methodDebugInfo = methodDebugInfo;
         }
 
@@ -88,6 +91,7 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
                 currentSourceMethod: null,
                 locals: default,
                 inScopeHoistedLocalSlots: ImmutableSortedSet<int>.Empty,
+                inScopeLocalFunctions: [],
                 methodDebugInfo: MethodDebugInfo<TypeSymbol, LocalSymbol>.None);
         }
 
@@ -181,6 +185,7 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
                 debugInfo.TupleLocalMap);
 
             var inScopeHoistedLocals = debugInfo.GetInScopeHoistedLocalIndices(ilOffset, ref reuseSpan);
+            var inScopeLocalFunctions = debugInfo.GetInScopeLocalFunctions(ilOffset);
 
             localsBuilder.AddRange(debugInfo.LocalConstants);
 
@@ -191,6 +196,7 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
                 currentSourceMethod,
                 localsBuilder.ToImmutableAndFree(),
                 inScopeHoistedLocals,
+                inScopeLocalFunctions,
                 debugInfo);
         }
 
@@ -202,6 +208,7 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
                 _currentSourceMethod,
                 _locals,
                 _inScopeHoistedLocalSlots,
+                _inScopeLocalFunctions,
                 _methodDebugInfo);
         }
 

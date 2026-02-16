@@ -667,6 +667,11 @@
         <target state="translated">既定のリテラル 'default' はパターンとして無効です。必要に応じて別のリテラル (例: '0' または 'null') をご使用ください。すべてと一致させるには、破棄パターン '_' をご使用ください。</target>
         <note />
       </trans-unit>
+      <trans-unit id="ERR_DelegateConversionOfLocalFunctionInDebugger">
+        <source>Converting a local function '{0}' to a delegate is not supported during debugging (consider using a lambda)</source>
+        <target state="new">Converting a local function '{0}' to a delegate is not supported during debugging (consider using a lambda)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ERR_DesignatorBeforePropertyPattern">
         <source>A variable designator must come after a property pattern.</source>
         <target state="translated">変数指定子は、プロパティ パターンの後に指定する必要があります。</target>

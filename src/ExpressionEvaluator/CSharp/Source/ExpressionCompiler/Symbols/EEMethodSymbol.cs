@@ -660,6 +660,14 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
                         return;
                     }
 
+                    // Rewrite calls to local functions to supply hidden display class arguments.
+                    body = (BoundStatement)LocalFunctionCallRewriter.Rewrite(this, diagnostics.DiagnosticBag, body);
+
+                    if (diagnostics.HasAnyErrors())
+                    {
+                        return;
+                    }
+
                     if (sawLambdas || sawLocalFunctions)
                     {
                         var closureDebugInfoBuilder = ArrayBuilder<EncClosureInfo>.GetInstance();

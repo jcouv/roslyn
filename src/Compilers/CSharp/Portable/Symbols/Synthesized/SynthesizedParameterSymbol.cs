@@ -363,7 +363,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             Debug.Assert(isParams || !refCustomModifiers.IsEmpty || baseParameterForAttributes is object || defaultValue is not null || hasUnscopedRefAttribute);
             Debug.Assert(baseParameterForAttributes is null || baseParameterForAttributes.ExplicitDefaultConstantValue == defaultValue);
             Debug.Assert(baseParameterForAttributes is null || baseParameterForAttributes.RefKind == refKind);
-            Debug.Assert(!isParams || container is SynthesizedDelegateInvokeMethod or SynthesizedClosureMethod,
+            Debug.Assert(!isParams || container is SynthesizedDelegateInvokeMethod or SynthesizedClosureMethod
+                || (container is MethodSymbol { MethodKind: MethodKind.LocalFunction }), // TODO2 review this
                 "If this fails, make sure we don't synthesize ParamsArrayAttribute for symbols we don't intend to.");
 
             _refCustomModifiers = refCustomModifiers;

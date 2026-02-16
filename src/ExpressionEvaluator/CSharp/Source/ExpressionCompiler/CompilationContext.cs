@@ -8,6 +8,8 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 using Microsoft.CodeAnalysis.CodeGen;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
@@ -49,6 +51,12 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
         private readonly bool _methodNotType;
 
         /// <summary>
+        /// Local function method symbols that are in scope at the current IL offset,
+        /// paired with their original source names.
+        /// </summary>
+        private readonly ImmutableArray<(string Name, MethodSymbol Method)> _inScopeLocalFunctions;
+
+        /// <summary>
         /// Create a context to compile expressions within a method scope.
         /// </summary>
         internal CompilationContext(
@@ -57,6 +65,7 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
             MethodSymbol? currentSourceMethod,
             ImmutableArray<LocalSymbol> locals,
             ImmutableSortedSet<int> inScopeHoistedLocalSlots,
+            ImmutableArray<LocalFunctionInfo> inScopeLocalFunctions,
             MethodDebugInfo<TypeSymbol, LocalSymbol> methodDebugInfo)
         {
             _currentFrame = currentFrame;
@@ -118,6 +127,8 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
             Debug.Assert(
                 (GetThisProxy(_displayClassVariables) != null) ==
                 _displayClassVariables.Values.Any(v => v.Kind == DisplayClassVariableKind.This));
+
+            _inScopeLocalFunctions = GetLocalFunctionMethodSymbols(currentFrame, inScopeLocalFunctions);
         }
 
         internal bool IsInFieldKeywordContext()
@@ -1015,6 +1026,11 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
 
             if (methodNotType)
             {
+                if (!_inScopeLocalFunctions.IsEmpty)
+                {
+                    binder = new EELocalFunctionBinder(_inScopeLocalFunctions, binder);
+                }
+
                 binder = new SimpleLocalScopeBinder(method.LocalsForBindingInside, binder);
             }
 
@@ -1369,6 +1385,35 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
             }
 
             return parameterNamesInOrder.ToImmutableAndFree();
+        }
+
+        /// <summary>
+        /// Resolves local function debug info to method symbols by looking up
+        /// each lowered method token in the containing PE module.
+        /// </summary>
+        private static ImmutableArray<(string Name, MethodSymbol Method)> GetLocalFunctionMethodSymbols(
+            MethodSymbol currentFrame,
+            ImmutableArray<LocalFunctionInfo> localFunctions)
+        {
+            if (localFunctions.IsDefaultOrEmpty)
+            {
+                return [];
+            }
+
+            var module = (PEModuleSymbol)currentFrame.ContainingModule;
+            var reader = module.Module.MetadataReader;
+            var builder = ArrayBuilder<(string, MethodSymbol)>.GetInstance(localFunctions.Length);
+
+            foreach (var info in localFunctions)
+            {
+                var methodHandle = (MethodDefinitionHandle)MetadataTokens.EntityHandle(info.LoweredMethodToken);
+                var typeHandle = reader.GetMethodDefinition(methodHandle).GetDeclaringType();
+                var type = (PENamedTypeSymbol)new MetadataDecoder(module).GetTypeOfToken(typeHandle);
+                var method = (PEMethodSymbol)new MetadataDecoder(module, type).GetMethodSymbolForMethodDefOrMemberRef(methodHandle, type);
+                builder.Add((info.Name, new EELocalFunctionMethodSymbol(method, info.Name)));
+            }
+
+            return builder.ToImmutableAndFree();
         }
 
         /// <summary>
