@@ -97,3 +97,9 @@ var methodSymbol = typeSymbol.GetMembers("MyMethod").Single();
 ```
 
 Symbol equality is complex due to generics and substitution - always test with multiple generic scenarios.
+
+## Key Conventions
+
+- Use nullability assertions rather than nullability warning suppressions (with `!`). Suppressions are allowed within assertions.
+- Prefer raw string literals moving forward.
+- Prefer to `#nullable enable` new code files.

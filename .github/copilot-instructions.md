@@ -85,6 +85,7 @@ var symbolInfo = semanticModel.GetSymbolInfo(expression);
 - Test failures often indicate MEF composition issues - check export attributes
 - VSIX deployment targets multiple architectures - ensure platform-specific assets are handled
 - ServiceHub components require special deployment considerations for .NET Core vs Framework
+- Leave TODO2 comments for the user to resolve (those are comments blocked by CI and must be resolved before submitting a PR)
 
 ## Essential Files for Context
 
