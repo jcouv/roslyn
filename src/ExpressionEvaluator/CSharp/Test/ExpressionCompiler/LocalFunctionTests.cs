@@ -1919,6 +1919,82 @@ class C
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/60358")]
         public void LocalFunction_38()
         {
+            // TODO2: Local function using containing method's type parameter.
+            // The EELocalFunctionMethodSymbol exposes the alpha-renamed type parameter
+            // but the EE context doesn't have the mapping, so type inference fails.
+            var source = """
+class C
+{
+    void F<T>(T x)
+    {
+        T G() { return x; }
+        _ = G(); /*BREAK*/
+    }
+}
+""";
+            var compilation0 = CreateCompilation(source, options: TestOptions.DebugDll);
+            WithRuntimeInstance(compilation0, runtime =>
+            {
+                var context = CreateMethodContext(runtime, "C.F", atLineNumber: LineOf(source, "BREAK"));
+                var testData = new CompilationTestData();
+                context.CompileExpression("G()", out var error, testData);
+                Assert.Contains("CS0411", error);
+            }, targetDebugFormat: DebugInformationFormat.PortablePdb);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/60358")]
+        public void LocalFunction_39()
+        {
+            // TODO2: Local function with its own type parameter plus containing method's type parameter.
+            // The EELocalFunctionMethodSymbol exposes all alpha-renamed type parameters,
+            // so the user-visible arity is wrong (2 instead of 1).
+            var source = """
+class C
+{
+    void F<T>(T x)
+    {
+        U G<U>(T a, U b) { _ = a; return b; }
+        _ = G(x, 42); /*BREAK*/
+    }
+}
+""";
+            var compilation0 = CreateCompilation(source, options: TestOptions.DebugDll);
+            WithRuntimeInstance(compilation0, runtime =>
+            {
+                var context = CreateMethodContext(runtime, "C.F", atLineNumber: LineOf(source, "BREAK"));
+                var testData = new CompilationTestData();
+                context.CompileExpression("""G<string>(x, "hello")""", out var error, testData);
+                Assert.Contains("CS0305", error);
+            }, targetDebugFormat: DebugInformationFormat.PortablePdb);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/60358")]
+        public void LocalFunction_40()
+        {
+            // TODO2: Local function in a generic class, using class type parameter.
+            // Crashes with "Unexpected type parameter T owned by C<T>".
+            var source = """
+class C<T>
+{
+    void F(T x)
+    {
+        T G() { return x; }
+        _ = G(); /*BREAK*/
+    }
+}
+""";
+            var compilation0 = CreateCompilation(source, options: TestOptions.DebugDll);
+            WithRuntimeInstance(compilation0, runtime =>
+            {
+                var context = CreateMethodContext(runtime, "C.F", atLineNumber: LineOf(source, "BREAK"));
+                var testData = new CompilationTestData();
+                Assert.ThrowsAny<System.Exception>(() => context.CompileExpression("G()", out var error, testData));
+            }, targetDebugFormat: DebugInformationFormat.PortablePdb);
+        }
+
+        [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/60358")]
+        public void LocalFunction_41()
+        {
             // static local function (no captures allowed)
             var source = """
 class C
@@ -1941,7 +2017,7 @@ class C
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/60358")]
-        public void LocalFunction_39()
+        public void LocalFunction_42()
         {
             // TODO2: Local function capturing from an async method (state machine hoisted locals).
             // The display class is a field on the state machine struct, not a local/parameter
@@ -1964,12 +2040,16 @@ class C
             {
                 var context = CreateMethodContext(runtime, "C.<F>d__0.MoveNext", atLineNumber: LineOf(source, "BREAK"));
                 var testData = new CompilationTestData();
-                Assert.ThrowsAny<System.Exception>(() => context.CompileExpression("G()", out var error, testData));
+                context.CompileExpression("G()", out var error, testData);
+                // TODO2: G is not found as a local function because the local function map
+                // is emitted on the original method (C.F), not on the state machine's MoveNext.
+                // Need to propagate local function info to state machine methods.
+                Assert.Null(error);
             }, targetDebugFormat: DebugInformationFormat.PortablePdb);
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/60358")]
-        public void LocalFunction_40()
+        public void LocalFunction_43()
         {
             // scoped ref parameter
             var source = """
@@ -2004,7 +2084,7 @@ class C
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/60358")]
-        public void LocalFunction_41()
+        public void LocalFunction_44()
         {
             // scoped in parameter
             var source = """
@@ -2046,7 +2126,7 @@ class C
         }
 
         [Fact, WorkItem("https://github.com/dotnet/roslyn/issues/60358")]
-        public void LocalFunction_42()
+        public void LocalFunction_45()
         {
             // scoped ReadOnlySpan parameter
             var source = """
