@@ -346,3 +346,43 @@ The following scenarios should be tested (building on the existing `LocalFunctio
 18. Verify backward/forward compatibility with old PDBs
 19. Verify Windows PDB graceful degradation (feature simply unavailable)
 20. Verify EnC scenarios (add/remove/modify local functions between edits)
+
+## Known limitations
+
+### Generic local functions with inherited type parameters
+
+When a local function is declared inside a generic method (or a method inside a generic class), the lowered PE method inherits type parameters from containing scopes via closure conversion's `TypeMap.ConcatMethodTypeParameters`. For example:
+
+```csharp
+void F<T>(T x)
+{
+    T G() { return x; }        // lowered as C.<F>g__G|0_0<T>()
+    U H<U>(T a, U b) { ... }   // lowered as C.<F>g__H|0_1<T, U>()
+}
+```
+
+The `EELocalFunctionMethodSymbol` currently exposes **all** PE method type parameters as the local function's own `TypeParameters`. This causes:
+
+| Scenario | Failure | Root cause |
+|---|---|---|
+| `G()` — no source type params, containing method is generic | CS0411 (can't infer type args) | Symbol has arity 1 but source `G` has arity 0. Binder can't infer `T`. |
+| `H<string>(x, "hello")` — local function + containing method type params | CS0305 (wrong number of type args) | Symbol has arity 2 but source `H<U>` has arity 1. |
+| `G()` inside generic class `C<T>` | Crash: "Unexpected type parameter T owned by C\<T\>" | `ConcatMethodTypeParameters` only walks methods, so class type params aren't on the PE method — but the `EETypeParameterSymbol` encounters a class-owned type parameter during substitution. |
+
+#### Root cause
+
+The `EELocalFunctionMethodSymbol` needs to partition the PE method's type parameters into:
+- **Inherited** (from containing methods) — should be invisible to the user
+- **Own** (declared on the local function itself) — should be the symbol's `TypeParameters`
+
+The natural approach is to compute `sourceArity = peMethod.Arity - containingFrame.Arity`, which gives the correct count. However, the return type and parameter types of the local function reference the inherited type parameters. To substitute them correctly, the `TypeMap` needs to map inherited PE type params to the EE method's alpha-renamed type parameters — but the `EELocalFunctionMethodSymbol` is constructed **before** the `EEMethodSymbol` exists (in `CompilationContext`'s constructor, line 131), creating a chicken-and-egg problem.
+
+#### Options considered
+
+- **Option A: Restructure initialization order** — Move `GetLocalFunctionMethodSymbols` to run after `EEMethodSymbol` is created, then pass the EE method's type parameters to the `EELocalFunctionMethodSymbol` constructor. Requires refactoring the `CompilationContext`/`EEMethodSymbol` initialization flow.
+
+- **Option B: Two-phase initialization** — Create `EELocalFunctionMethodSymbol` with a lazy/deferred type map that gets filled in when `EEMethodSymbol` becomes available.
+
+- **Option C: Store source arity in PDB** — Extend `LocalFunctionScope` to include the original source arity. Cleanest long-term but requires a PDB format addition and backward compatibility handling.
+
+This is tracked by the TODO2 comments in tests `LocalFunction_38`, `LocalFunction_39`, and `LocalFunction_40`.

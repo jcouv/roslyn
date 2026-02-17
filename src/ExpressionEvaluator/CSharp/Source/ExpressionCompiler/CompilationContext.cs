@@ -1410,6 +1410,11 @@ namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator
                 var typeHandle = reader.GetMethodDefinition(methodHandle).GetDeclaringType();
                 var type = (PENamedTypeSymbol)new MetadataDecoder(module).GetTypeOfToken(typeHandle);
                 var method = (PEMethodSymbol)new MetadataDecoder(module, type).GetMethodSymbolForMethodDefOrMemberRef(methodHandle, type);
+
+                // TODO2 review
+                // The lowered method's type parameters include both the local function's own
+                // type parameters and inherited type parameters from containing methods.
+                // The containing frame's method type parameters tell us which are inherited.
                 builder.Add((info.Name, new EELocalFunctionMethodSymbol(method, info.Name)));
             }
 
