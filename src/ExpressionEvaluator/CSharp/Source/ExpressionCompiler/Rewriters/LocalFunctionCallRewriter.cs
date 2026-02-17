@@ -10,9 +10,8 @@ using Microsoft.CodeAnalysis.PooledObjects;
 namespace Microsoft.CodeAnalysis.CSharp.ExpressionEvaluator;
 
 /// <summary>
-/// Rewrites calls to <see cref="EELocalFunctionMethodSymbol"/> to target
-/// the underlying <see cref="Symbols.Metadata.PE.PEMethodSymbol"/>, supplying
-/// the hidden display class arguments that were filtered from the user-facing signature.
+/// Rewrites calls to <see cref="EELocalFunctionMethodSymbol"/> to target the underlying PE method,
+/// supplying the hidden display class arguments that were filtered from the user-facing signature.
 /// </summary>
 internal sealed class LocalFunctionCallRewriter : BoundTreeRewriterWithStackGuardWithoutRecursionOnTheLeftOfBinaryOperator
 {
@@ -35,54 +34,27 @@ internal sealed class LocalFunctionCallRewriter : BoundTreeRewriterWithStackGuar
     {
         var visited = (BoundCall)base.VisitCall(node)!;
 
-        if (visited.Method is not EELocalFunctionMethodSymbol localFunc || localFunc.HiddenParameters.IsEmpty)
+        if (visited.Method is not EELocalFunctionMethodSymbol localFunc
+            || localFunc.HiddenParameters.IsEmpty)
         {
             return visited;
         }
 
         MethodSymbol underlyingMethod = localFunc.UnderlyingMethod;
-        BoundExpression? receiverOpt = visited.ReceiverOpt;
 
-        // Build the hidden arguments by finding the display class instance
-        // in the EE method's locals that matches each hidden parameter's type.
-        var hiddenArgs = ArrayBuilder<BoundExpression>.GetInstance(localFunc.HiddenParameters.Length);
-        foreach (var hiddenParam in localFunc.HiddenParameters)
+        if (!buildArgs(visited, localFunc, _eeMethod, out BoundExpression? receiverOpt, out ImmutableArray<BoundExpression> newArgs))
         {
-            BoundExpression? displayClassExpr = FindDisplayClassInstance(visited.Syntax, hiddenParam);
-            if (displayClassExpr == null)
-            {
-                // If we can't find the display class instance, bail out and
-                // return the original node — binding will report an error downstream.
-                hiddenArgs.Free();
-                return visited;
-            }
-
-            hiddenArgs.Add(displayClassExpr);
+            return visited;
         }
 
-        // For non-static underlying methods, the last hidden parameter
-        // (the synthetic `this`) becomes the receiver, not an argument.
-        if (!underlyingMethod.IsStatic)
-        {
-            Debug.Assert(hiddenArgs.Count >= 1);
-            receiverOpt = hiddenArgs.Last();
-            hiddenArgs.RemoveLast();
-        }
-
-        // Build new arguments: user-provided args first, then hidden display class args.
-        var newArgs = ArrayBuilder<BoundExpression>.GetInstance(visited.Arguments.Length + hiddenArgs.Count);
-        newArgs.AddRange(visited.Arguments);
-        newArgs.AddRange(hiddenArgs);
-        hiddenArgs.Free();
-
-        var newRefKinds = buildRefKinds(underlyingMethod, newArgs);
-        var newArgNames = buildArgNames(visited, localFunc, underlyingMethod, newArgs);
+        ImmutableArray<RefKind> newRefKinds = buildRefKinds(underlyingMethod, newArgs.Length);
+        ImmutableArray<string?> newArgNames = buildArgNames(visited.ArgumentNamesOpt, newArgs.Length);
 
         return visited.Update(
             receiverOpt,
             initialBindingReceiverIsSubjectToCloning: ThreeState.Unknown,
             underlyingMethod,
-            newArgs.ToImmutableAndFree(),
+            newArgs,
             newArgNames,
             newRefKinds,
             visited.IsDelegateCall,
@@ -93,10 +65,58 @@ internal sealed class LocalFunctionCallRewriter : BoundTreeRewriterWithStackGuar
             visited.ResultKind,
             visited.Type);
 
-        // Build new refkinds: match the underlying method's parameter ref kinds.
-        static ImmutableArray<RefKind> buildRefKinds(MethodSymbol underlyingMethod, ArrayBuilder<BoundExpression> newArgs)
+        static bool buildArgs(
+            BoundCall visited,
+            EELocalFunctionMethodSymbol localFunc,
+            EEMethodSymbol eeMethod,
+            out BoundExpression? receiverOpt,
+            out ImmutableArray<BoundExpression> newArgs)
         {
-            var newRefKindsBuilder = ArrayBuilder<RefKind>.GetInstance(newArgs.Count);
+            MethodSymbol underlyingMethod = localFunc.UnderlyingMethod;
+            receiverOpt = visited.ReceiverOpt;
+
+            // Build the hidden arguments by finding the display class instance
+            // in the EE method's locals that matches each hidden parameter's type.
+            var hiddenArgs = ArrayBuilder<BoundExpression>.GetInstance(localFunc.HiddenParameters.Length);
+            foreach (var hiddenParam in localFunc.HiddenParameters)
+            {
+                BoundExpression? displayClassInstance = findDisplayClassInstance(hiddenParam, eeMethod, visited.Syntax);
+                if (displayClassInstance is null)
+                {
+                    // TODO2 can we hit this? should we produce an error?
+                    // If we can't find the display class instance, bail out and
+                    // return the original node — binding will report an error downstream.
+                    hiddenArgs.Free();
+
+                    newArgs = default;
+                    return false;
+                }
+
+                hiddenArgs.Add(displayClassInstance);
+            }
+
+            // TODO2 review comment
+            // For non-static underlying methods, the last hidden parameter
+            // (the synthetic `this`) becomes the receiver, not an argument.
+            if (!underlyingMethod.IsStatic)
+            {
+                Debug.Assert(hiddenArgs.Count >= 1);
+                receiverOpt = hiddenArgs.Last();
+                hiddenArgs.RemoveLast();
+            }
+
+            var newArgsBuilder = ArrayBuilder<BoundExpression>.GetInstance(visited.Arguments.Length + hiddenArgs.Count);
+            newArgsBuilder.AddRange(visited.Arguments);
+            newArgsBuilder.AddRange(hiddenArgs);
+            hiddenArgs.Free();
+
+            newArgs = newArgsBuilder.ToImmutableAndFree();
+            return true;
+        }
+
+        static ImmutableArray<RefKind> buildRefKinds(MethodSymbol underlyingMethod, int newArgCount)
+        {
+            var newRefKindsBuilder = ArrayBuilder<RefKind>.GetInstance(newArgCount);
             foreach (var param in underlyingMethod.Parameters)
             {
                 newRefKindsBuilder.Add(param.RefKind);
@@ -105,26 +125,43 @@ internal sealed class LocalFunctionCallRewriter : BoundTreeRewriterWithStackGuar
             return newRefKindsBuilder.ToImmutableAndFree();
         }
 
-        // Build new argument names (preserve user's names, then none for hidden args).
-        static ImmutableArray<string?> buildArgNames(BoundCall visited, EELocalFunctionMethodSymbol localFunc, MethodSymbol underlyingMethod, ArrayBuilder<BoundExpression> newArgs)
+        static ImmutableArray<string?> buildArgNames(ImmutableArray<string?> argNames, int newArgCount)
         {
-            if (visited.ArgumentNamesOpt.IsDefault)
+            if (argNames.IsDefault)
             {
                 return default;
             }
 
-            int hiddenArgCount = !underlyingMethod.IsStatic
-                ? localFunc.HiddenParameters.Length - 1
-                : localFunc.HiddenParameters.Length;
-
-            var names = ArrayBuilder<string?>.GetInstance(newArgs.Count);
-            names.AddRange(visited.ArgumentNamesOpt);
-            for (int i = 0; i < hiddenArgCount; i++)
-            {
-                names.Add(null);
-            }
+            var names = ArrayBuilder<string?>.GetInstance(newArgCount);
+            names.AddRange(argNames);
+            names.AddMany(null, newArgCount - argNames.Length);
 
             return names.ToImmutableAndFree();
+        }
+
+        // Finds the display class instance in the EE method's locals or parameters
+        // that matches the given hidden parameter's type.
+        static BoundExpression? findDisplayClassInstance(ParameterSymbol hiddenParam, EEMethodSymbol eeMethod, SyntaxNode syntax)
+        {
+            var targetType = hiddenParam.Type;
+
+            foreach (var local in eeMethod.Locals)
+            {
+                if (TypeSymbol.Equals(local.Type, targetType, TypeCompareKind.ConsiderEverything))
+                {
+                    return new BoundLocal(syntax, local, constantValueOpt: null, type: local.Type) { WasCompilerGenerated = true };
+                }
+            }
+
+            foreach (var param in eeMethod.Parameters)
+            {
+                if (TypeSymbol.Equals(param.Type, targetType, TypeCompareKind.ConsiderEverything))
+                {
+                    return new BoundParameter(syntax, param) { WasCompilerGenerated = true };
+                }
+            }
+
+            return null;
         }
     }
 
@@ -137,56 +174,22 @@ internal sealed class LocalFunctionCallRewriter : BoundTreeRewriterWithStackGuar
             return visited;
         }
 
-        // TODO2 review
+        // Non-capturing local functions are static methods with a matching signature
         var underlyingMethod = localFunc.UnderlyingMethod;
-
-        // Non-capturing local functions are static methods with a matching signature —
-        // swap the method symbol to the underlying method and the delegate creation works.
         if (localFunc.HiddenParameters.IsEmpty && underlyingMethod.IsStatic)
         {
             return visited.Update(visited.Argument, underlyingMethod, visited.IsExtensionMethod, visited.WasTargetTyped, visited.Type);
         }
 
-        // TODO2 review comment
-        // Capturing local functions cannot be used as delegate targets in the debugger.
-        // In normal compilation, ClosureConversion transforms them into instance methods
-        // on the display class (or static methods with extra display class parameters).
-        // Neither form can be used directly as a delegate target in the EE without
-        // synthesizing a wrapper, which is not yet implemented.
+        // Capturing local functions cannot be used as delegate targets in the debugger yet.
+        // They are transformed into either instance methods on a display class
+        // or static methods with hidden display class parameters.
+        // Neither form can be used directly as a delegate target.
         _diagnostics.Add(new CSDiagnostic(
             new CSDiagnosticInfo(ErrorCode.ERR_DelegateConversionOfLocalFunctionInDebugger, localFunc.Name),
             visited.Syntax.Location));
+
         return visited;
-    }
-
-    /// <summary>
-    /// Finds the display class instance in the EE method's locals or parameters
-    /// that matches the given hidden parameter's type.
-    /// </summary>
-    private BoundExpression? FindDisplayClassInstance(SyntaxNode syntax, ParameterSymbol hiddenParam)
-    {
-        var targetType = hiddenParam.Type;
-
-        // Search in locals (display class locals from the original frame).
-        foreach (var local in _eeMethod.Locals)
-        {
-            if (TypeSymbol.Equals(local.Type, targetType, TypeCompareKind.ConsiderEverything))
-            {
-                return new BoundLocal(syntax, local, constantValueOpt: null, type: local.Type) { WasCompilerGenerated = true };
-            }
-        }
-
-        // Search in parameters (display class passed as parameter to the frame method).
-        foreach (var param in _eeMethod.Parameters)
-        {
-            if (TypeSymbol.Equals(param.Type, targetType, TypeCompareKind.ConsiderEverything))
-            {
-                return new BoundParameter(syntax, param) { WasCompilerGenerated = true };
-            }
-        }
-
-        Debug.Fail($"Could not find display class instance for type {targetType}");
-        return null;
     }
 }
 
