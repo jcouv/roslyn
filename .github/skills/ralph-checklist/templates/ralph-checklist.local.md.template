@@ -1,0 +1,21 @@
+---
+started_at: "<REPLACE WITH UTC TIMESTAMP>"
+loop_status: "active"
+---
+
+Work on this checklist, which is located at <PATH TO TRACKER FILE>.
+
+Process exactly one unchecked item with the following steps:
+1. Pick the first unchecked item in the checklist below (first `- [ ]` item).
+2. Confirm the current item is the correct scope before changing anything. Use the narrowest reproduction or verification step that matches the item instead of expanding to broader suites or folders unless needed.
+3. Work on that item using the per-item instructions below.
+4. Create a commit named after the item.
+5. Mark that checklist item as completed (`- [x]`). If there was a problem, still mark the item as completed, but add a comment noting the problem.
+6. If all items are complete, set `loop_status: "completed"` before finishing.
+7. If you need to stop because you are blocked or hit an unrecoverable problem, set `loop_status` to `"blocked: <short explanation>"` or `"failed: <short explanation>"`.
+
+# Per-item instructions
+<PER-ITEM INSTRUCTIONS>
+
+# Checklist of items
+<CHECKLIST OF ITEMS>
