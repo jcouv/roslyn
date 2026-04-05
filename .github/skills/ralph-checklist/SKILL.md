@@ -12,7 +12,8 @@ This skill uses a bundled file-based C# launcher to process a tracker checklist.
 There are four steps:
 1. identify the task scope and the repeated per-item instructions the user wants.
 2. create the tracker markdown file from the bundled template `templates/ralph-checklist.local.md.template`, replacing the placeholders with task-specific details.
-3. run the bundled C# checklist runner `tools/ralph-checklist.cs` with the tracker file path, which will repeatedly invoke Copilot with a prompt pointing at the tracker file until the tracker timestamp stops changing.
+3. ensure the tracker instructions explicitly require each worker invocation to advance the checklist in that same file by checking the attempted item, adding any blocker note, and updating `loop_status` when appropriate.
+4. run the bundled C# checklist runner `tools/ralph-checklist.cs` with the tracker file path, which will repeatedly invoke Copilot with a prompt pointing at that file until the tracker timestamp stops changing.
 
 # Scope discovery
 
@@ -25,7 +26,7 @@ A tracker created with this skill should use one markdown file built from the bu
 
 That tracker file contains exactly these three parts:
 
-1. General instructions that tell the agent to pick the first unchecked item, work on it, create a commit, and update the checklist in the same file.
+1. General instructions that tell the agent to pick the first unchecked item, work on it, create a commit, and advance the checklist in the same file before finishing that iteration.
 2. Per-item instructions describing what should be done for each checklist item.
 3. A markdown checklist where each work item starts as `- [ ]`.
 
@@ -47,6 +48,7 @@ When preparing the tracker file, replace these values at minimum:
 ## Checklist rules
 
 - The user prompt should let you determine the checklist items. For example, if the user wants to fix failing tests, look at the failing tests (by running the smallest set that the user mentioned) and create a checklist item for each one.
+- Advancing the checklist is mandatory for every attempted item. After the worker has worked an item, it must edit the tracker file in that same iteration by checking the item, adding any blocker note directly below it when needed, and updating `loop_status` if all work is complete or the run is blocked/failed.
 - Every work item must start as `- [ ] <item>`.
 - Once the worker has run on an item in the loop, mark it as `- [x] <item>` whether that attempt succeeded or not. This keeps the loop moving forward through the checklist instead of getting stuck retrying the same item.
 - If the attempt did not fully succeed, keep the item checked and add a short plain-markdown note immediately below it describing the failure or blocker.
@@ -83,6 +85,7 @@ Use the bundled file-based C# program at `tools/ralph-checklist.cs` to launch Co
 
 - `dotnet run --file .github/skills/ralph-checklist/tools/ralph-checklist.cs -- <tracker.md>` repeatedly launches `copilot -p` with the prompt `Follow instructions in <absolute-path-to-tracker.md>`.
 - The runner stops when the tracker frontmatter changes `loop_status` away from `active` or when there is no progress (the tracker's last-write timestamp does not change after a Copilot invocation).
+- Because the runner treats an unchanged tracker file as no progress, each worker pass must write back to the tracker file after attempting an item, even when the item was blocked or failed.
 - Extra arguments after the document path are forwarded to `copilot` unchanged.
 
 Use this tool as the entrypoint after the tracker file is prepared. The tracker markdown file carries the instructions and checklist; the runner simply points Copilot at that file.
