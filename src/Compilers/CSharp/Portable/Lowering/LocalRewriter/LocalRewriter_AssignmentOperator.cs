@@ -276,8 +276,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
-        private bool IsExtensionPropertyWithByValPossiblyStructReceiverWhichHasHomeAndCanChangeValueBetweenReads(BoundExpression rewrittenReceiver, PropertySymbol property)
+        private bool NeedsLateExtensionReceiverRead(BoundExpression rewrittenReceiver, PropertySymbol property)
         {
+            // A by-value extension receiver is lowered as an ordinary argument, so for mutable
+            // struct receivers we cannot rely on the usual instance-receiver behavior that keeps
+            // operating on the receiver's location. If the receiver has a stable home and can
+            // change between reads, we preserve that home first and delay reading the receiver's
+            // value until as late as possible, so the extension call observes the updated value.
             return CanChangeValueBetweenReads(rewrittenReceiver, localsMayBeAssignedOrCaptured: true, structThisCanChangeValueBetweenReads: true) &&
                    IsExtensionBlockMemberWithByValPossiblyStructReceiver(property) &&
                    CodeGen.CodeGenerator.HasHome(rewrittenReceiver,
@@ -323,7 +328,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             if (rewrittenReceiver is not null &&
                 assignmentKind is not (AssignmentKind.CompoundAssignment or AssignmentKind.NullCoalescingAssignment or AssignmentKind.Deconstruction or AssignmentKind.IncrementDecrement) &&
-                IsExtensionPropertyWithByValPossiblyStructReceiverWhichHasHomeAndCanChangeValueBetweenReads(rewrittenReceiver, property) &&
+                NeedsLateExtensionReceiverRead(rewrittenReceiver, property) &&
                 (arguments.Length != 0 || !IsSafeForReordering(rewrittenRight, RefKind.None)))
             {
                 // The receiver has location, but extension property/indexer takes receiver by value.

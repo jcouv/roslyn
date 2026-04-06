@@ -163,7 +163,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                 bool needSpecialExtensionPropertyReceiverReadOrder = false;
                 ArrayBuilder<BoundExpression>? storesOpt = null;
 
-                if (IsExtensionPropertyWithByValPossiblyStructReceiverWhichHasHomeAndCanChangeValueBetweenReads(rewrittenReceiver, indexer))
+                if (NeedsLateExtensionReceiverRead(rewrittenReceiver, indexer))
                 {
                     // The receiver has location, but extension indexer takes receiver by value.
                     // This means that we need to ensure that the receiver value is read after
@@ -498,14 +498,14 @@ namespace Microsoft.CodeAnalysis.CSharp
             var argumentType = node.Argument.Type;
             if (Binder.IsWellKnownSystemIndex(argumentType, _compilation))
             {
-                return VisitIndexPatternIndexerAccess(node, isLeftOfAssignment: isLeftOfAssignment);
+                return VisitIndexPatternIndexerAccess(node, isLeftOfAssignment: isLeftOfAssignment); // TODO2
             }
             else
             {
                 Debug.Assert(Binder.IsWellKnownSystemRange(argumentType, _compilation));
                 Debug.Assert(!isLeftOfAssignment || node.IndexerOrSliceAccess.GetRefKind() == RefKind.Ref);
 
-                return VisitRangePatternIndexerAccess(node);
+                return VisitRangePatternIndexerAccess(node); // TODO2 how does this method relate to GetUnderlyingIndexerOrSliceAccess?
             }
         }
 
@@ -546,6 +546,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             BoundExpression makeOffsetInput = DetermineMakePatternIndexOffsetExpressionStrategy(node.Argument, out PatternIndexOffsetLoweringStrategy strategy);
 
             var receiver = VisitExpression(node.Receiver);
+            PropertySymbol? underlyingIndexerOpt = (node.IndexerOrSliceAccess as BoundIndexerAccess)?.Indexer;
 
             // Do not capture receiver if we're in an initializer
             if (!cacheAllArgumentsOnly)
@@ -568,7 +569,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         !CodeGenerator.ReceiverIsKnownToReferToTempIfReferenceType(receiverLocal) &&
                         ((isLeftOfAssignment && !isRegularAssignment) ||
                          !CodeGenerator.IsSafeToDereferenceReceiverRefAfterEvaluatingArguments(ImmutableArray.Create(makeOffsetInput))))
-                    {
+                    { // TODO2 test this branch
                         BoundAssignmentOperator? extraRefInitialization;
                         ReferToTempIfReferenceTypeReceiver(receiverLocal, ref receiverStore, out extraRefInitialization, locals);
 
@@ -631,14 +632,15 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // callers do the caching instead
                     // Tracked by https://github.com/dotnet/roslyn/issues/71056
                     AddPlaceholderReplacement(argumentPlaceholder, integerArgument);
-                    // https://github.com/dotnet/roslyn/issues/78829 - PROTOTYPE Do we need to do something special for recievers of extension indexers here?
+
+                    ImmutableArray<RefKind> argumentRefKindsOpt = indexerAccess.ArgumentRefKindsOpt;
                     ImmutableArray<BoundExpression> rewrittenArguments = VisitArgumentsAndCaptureReceiverIfNeeded(
                         ref receiver,
                         forceReceiverCapturing: false,
                         indexerAccess.Arguments,
                         indexerAccess.Indexer,
                         indexerAccess.ArgsToParamsOpt,
-                        indexerAccess.ArgumentRefKindsOpt,
+                        argumentRefKindsOpt,
                         storesOpt: null,
                         ref locals!);
 
@@ -646,7 +648,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     rewrittenIndexerAccess = indexerAccess.Update(
                         receiver, initialBindingReceiverIsSubjectToCloning: ThreeState.Unknown, indexerAccess.Indexer, rewrittenArguments,
-                        indexerAccess.ArgumentNamesOpt, indexerAccess.ArgumentRefKindsOpt,
+                        indexerAccess.ArgumentNamesOpt, argumentRefKindsOpt,
                         indexerAccess.Expanded,
                         indexerAccess.AccessorKind,
                         indexerAccess.ArgsToParamsOpt,
@@ -882,7 +884,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                         argumentsBuilder.Add(rewrittenRangeArg);
                     }
 
-                    if (!CodeGenerator.IsSafeToDereferenceReceiverRefAfterEvaluatingArguments(argumentsBuilder.ToImmutableAndFree()))
+                    if (!CodeGenerator.IsSafeToDereferenceReceiverRefAfterEvaluatingArguments(argumentsBuilder.ToImmutableAndFree())) // TODO2
                     {
                         BoundAssignmentOperator? extraRefInitialization;
                         ReferToTempIfReferenceTypeReceiver(receiverLocal, ref receiverStore, out extraRefInitialization, localsBuilder);

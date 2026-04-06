@@ -21630,6 +21630,29 @@ class Program
             //         default(S1)[0] = 1;
             Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[0]").WithLocation(15, 9)
             );
+
+        var src3 = """
+static class E
+{
+    extension(S1 x)
+    {
+        public ref int this[int i] { get => 0; }
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[0] = 1;
+    }
+}
+""";
+        // TODO2 execute
+        var comp3 = CreateCompilation(src3);
+        comp3.VerifyEmitDiagnostics();
     }
 
     [Theory]

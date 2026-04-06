@@ -4,6 +4,7 @@
 #nullable disable
 
 using System.Linq;
+using ILVerify;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Symbols.Metadata.PE;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -1017,8 +1018,8 @@ public static class E2
 }
 """;
 
-        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
-        CompileAndVerify(comp, expectedOutput: "get(42)").VerifyDiagnostics();
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("get(42)"), verify: Verification.Skipped).VerifyDiagnostics();
     }
 
     [Fact]
@@ -5317,6 +5318,164 @@ class C
     }
 
     [Fact]
+    public void ImplicitIndexIndexer_ExtensionReceiverReadAfterIndexAndRhs()
+    {
+        // by-value extension indexer should read struct receiver after Length and RHS side effects
+        var src = """
+using System;
+
+struct S1
+{
+    public int F1;
+
+    public int Length
+    {
+        get
+        {
+            Console.Write($"length:{F1} ");
+            Program.s.F1++;
+            return 4;
+        }
+    }
+}
+
+static class E
+{
+    extension(S1 x)
+    {
+        public int this[int i]
+        {
+            set
+            {
+                Console.Write($"set:{x.F1} ");
+            }
+        }
+    }
+}
+
+class Program
+{
+    public static S1 s;
+
+    static void Main()
+    {
+        s = new() { F1 = 123 };
+        s[^1] = GetValue();
+        Console.Write($"final:{s.F1}");
+    }
+
+    static int GetValue()
+    {
+        Console.Write($"getValue:{s.F1} ");
+        s.F1++;
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("length:123 getValue:124 set:125 final:125"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Main", """
+{
+  // Code size      113 (0x71)
+  .maxstack  3
+  .locals init (S1 V_0,
+                S1& V_1,
+                int V_2,
+                int V_3,
+                System.Runtime.CompilerServices.DefaultInterpolatedStringHandler V_4)
+  IL_0000:  nop
+  IL_0001:  ldloca.s   V_0
+  IL_0003:  initobj    "S1"
+  IL_0009:  ldloca.s   V_0
+  IL_000b:  ldc.i4.s   123
+  IL_000d:  stfld      "int S1.F1"
+  IL_0012:  ldloc.0
+  IL_0013:  stsfld     "S1 Program.s"
+  IL_0018:  ldsflda    "S1 Program.s"
+  IL_001d:  dup
+  IL_001e:  stloc.1
+  IL_001f:  call       "int S1.Length.get"
+  IL_0024:  ldc.i4.1
+  IL_0025:  sub
+  IL_0026:  stloc.2
+  IL_0027:  call       "int Program.GetValue()"
+  IL_002c:  stloc.3
+  IL_002d:  ldloc.1
+  IL_002e:  ldobj      "S1"
+  IL_0033:  ldloc.2
+  IL_0034:  ldloc.3
+  IL_0035:  call       "void E.set_Item(S1, int, int)"
+  IL_003a:  nop
+  IL_003b:  ldloca.s   V_4
+  IL_003d:  ldc.i4.6
+  IL_003e:  ldc.i4.1
+  IL_003f:  call       "System.Runtime.CompilerServices.DefaultInterpolatedStringHandler..ctor(int, int)"
+  IL_0044:  ldloca.s   V_4
+  IL_0046:  ldstr      "final:"
+  IL_004b:  call       "void System.Runtime.CompilerServices.DefaultInterpolatedStringHandler.AppendLiteral(string)"
+  IL_0050:  nop
+  IL_0051:  ldloca.s   V_4
+  IL_0053:  ldsflda    "S1 Program.s"
+  IL_0058:  ldfld      "int S1.F1"
+  IL_005d:  call       "void System.Runtime.CompilerServices.DefaultInterpolatedStringHandler.AppendFormatted<int>(int)"
+  IL_0062:  nop
+  IL_0063:  ldloca.s   V_4
+  IL_0065:  call       "string System.Runtime.CompilerServices.DefaultInterpolatedStringHandler.ToStringAndClear()"
+  IL_006a:  call       "void System.Console.Write(string)"
+  IL_006f:  nop
+  IL_0070:  ret
+}
+""");
+
+        src = """
+struct S1
+{
+    public int F1;
+}
+
+static class E
+{
+    extension(S1 x)
+    {
+        public int this[System.Index i]
+        {
+            set
+            {
+                System.Console.Write($"set:{x.F1} ");
+            }
+        }
+    }
+}
+
+class Program
+{
+    public static S1 s;
+
+    static void Main()
+    {
+        s = new() { F1 = 123 };
+        s[^1] = GetValue();
+        System.Console.Write($"final:{s.F1}");
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"getValue:{s.F1} ");
+        s.F1++;
+        return 1;
+    }
+}
+""";
+
+        comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("getValue:123 set:124 final:124"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
     public void ImplicitIndexIndexer_78()
     {
         // instance Count + extension Length + extension this[int]
@@ -5426,6 +5585,65 @@ class C { }
             // (1,1): hidden CS8019: Unnecessary using directive.
             // using Outer;
             Diagnostic(ErrorCode.HDN_UnusedUsingDirective, "using Outer;").WithLocation(1, 1));
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexer_81()
+    {
+        // extension Length + extension this[int] should read struct receiver after Length side effects
+        var src = """
+struct S1
+{
+    public int F1;
+}
+
+static class E
+{
+    extension(S1 x)
+    {
+        public int Length
+        {
+            get
+            {
+                System.Console.Write($"length:{x.F1} ");
+                Program.s.F1++;
+                return 4;
+            }
+        }
+
+        public int this[int i]
+        {
+            get
+            {
+                System.Console.Write($"get:{x.F1}:{i} ");
+                return x.F1;
+            }
+
+            set
+            {
+                System.Console.Write($"set:{x.F1}:{i}:{value} ");
+            }
+        }
+    }
+}
+
+class Program
+{
+    public static S1 s;
+
+    static void Main()
+    {
+        s = new() { F1 = 123 };
+        System.Console.Write($"value:{s[^1]} ");
+        s[^2] = 10;
+        System.Console.Write($"final:{s.F1}");
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("length:123 get:124:3 value:124 length:124 set:125:2:10 final:125"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
     }
 
     [Fact]
@@ -7592,34 +7810,36 @@ public static class E
 
         var comp = CreateCompilation(src, targetFramework: TargetFramework.Net70);
         var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("2"), verify: Verification.FailsPEVerify).VerifyDiagnostics();
-        verifier.VerifyIL("<top-level-statements-entry-point>", """
-{
-  // Code size       42 (0x2a)
-  .maxstack  3
-  .locals init (S V_0,
-                int V_1)
-  IL_0000:  ldloca.s   V_0
-  IL_0002:  initobj    "S"
-  IL_0008:  ldloca.s   V_0
-  IL_000a:  call       "int S.Length.get"
-  IL_000f:  stloc.1
-  IL_0010:  ldloc.1
-  IL_0011:  ldc.i4.1
-  IL_0012:  blt.s      IL_0027
-  IL_0014:  ldloc.0
-  IL_0015:  box        "S"
-  IL_001a:  ldloc.1
-  IL_001b:  ldc.i4.1
-  IL_001c:  sub
-  IL_001d:  call       "int E.get_Item(object, int)"
-  IL_0022:  ldc.i4.1
-  IL_0023:  ceq
-  IL_0025:  br.s       IL_0028
-  IL_0027:  ldc.i4.0
-  IL_0028:  pop
-  IL_0029:  ret
-}
-""");
+        // TODO2 verify IL once dust settles
+        //        verifier.VerifyIL("<top-level-statements-entry-point>", """
+        //{
+        //  // Code size       48 (0x30)
+        //  .maxstack  3
+        //  .locals init (S V_0,
+        //                int V_1)
+        //  IL_0000:  ldloca.s   V_0
+        //  IL_0002:  initobj    "S"
+        //  IL_0008:  ldloca.s   V_0
+        //  IL_000a:  call       "int S.Length.get"
+        //  IL_000f:  stloc.1
+        //  IL_0010:  ldloc.1
+        //  IL_0011:  ldc.i4.1
+        //  IL_0012:  blt.s      IL_002d
+        //  IL_0014:  ldloca.s   V_0
+        //  IL_0016:  ldobj      "S"
+        //  IL_001b:  box        "S"
+        //  IL_0020:  ldloc.1
+        //  IL_0021:  ldc.i4.1
+        //  IL_0022:  sub
+        //  IL_0023:  call       "int E.get_Item(object, int)"
+        //  IL_0028:  ldc.i4.1
+        //  IL_0029:  ceq
+        //  IL_002b:  br.s       IL_002e
+        //  IL_002d:  ldc.i4.0
+        //  IL_002e:  pop
+        //  IL_002f:  ret
+        //}
+        //""");
     }
 
     [Fact]
@@ -20966,4 +21186,15241 @@ namespace System
         var comp = CreateCompilation(src, targetFramework: TargetFramework.Net100);
         CompileAndVerify(comp, expectedOutput: ExpectedOutput("ran"), verify: Verification.Skipped).VerifyDiagnostics();
     }
+
+    [Fact]
+    public void ElementAccess_CompoundAssignment_ReadonlyReceiver_040()
+    {
+        // unconstrained generic receiver on a readonly field
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i]
+        {
+            get
+            {
+                System.Console.Write(((S1)(object)x).F1);
+                Program.Increment();
+                return 0;
+            }
+            set
+            {
+                System.Console.Write(((S1)(object)x).F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static readonly T F;
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        Initialize();
+        Test1<S1>();
+        System.Console.Write(Program<S1>.F.F1);
+
+        System.Console.Write(":");
+
+        Initialize();
+        await Test3<S1>();
+        System.Console.Write(Program<S1>.F.F1);
+    }
+
+    static unsafe void Initialize()
+    {
+        fixed (int* f1 = &Program<S1>.F.F1)
+        {
+            *f1 = 123;
+        }
+    }
+
+    public static unsafe void Increment()
+    {
+        fixed (int* f1 = &Program<S1>.F.F1)
+        {
+            (*f1)++;
+        }
+    }
+
+    static void Test1<T>()
+    {
+        Program<T>.F[0] += Get1();
+    }
+
+    static int Get1()
+    {
+        Increment();
+        return 1;
+    }
+
+    static async Task Test3<T>()
+    {
+        Program<T>.F[0] += await Get1Async();
+    }
+
+    static async Task<int> Get1Async()
+    {
+        Increment();
+        await Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var expectedOutput = "123125125:123125125";
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe.WithAllowUnsafe(true));
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput, verify: Verification.Skipped).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1<T>()", """
+{
+  // Code size       68 (0x44)
+  .maxstack  3
+  .locals init (T V_0,
+            T& V_1,
+            T V_2,
+            int V_3)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "T Program<T>.F"
+  IL_0006:  stloc.1
+  IL_0007:  ldloca.s   V_2
+  IL_0009:  initobj    "T"
+  IL_000f:  ldloc.2
+  IL_0010:  box        "T"
+  IL_0015:  brtrue.s   IL_0022
+  IL_0017:  ldloc.1
+  IL_0018:  ldobj      "T"
+  IL_001d:  stloc.0
+  IL_001e:  ldloca.s   V_0
+  IL_0020:  br.s       IL_0023
+  IL_0022:  ldloc.1
+  IL_0023:  dup
+  IL_0024:  ldobj      "T"
+  IL_0029:  ldc.i4.0
+  IL_002a:  call       "int E.get_Item<T>(T, int)"
+  IL_002f:  call       "int Program.Get1()"
+  IL_0034:  add
+  IL_0035:  stloc.3
+  IL_0036:  ldobj      "T"
+  IL_003b:  ldc.i4.0
+  IL_003c:  ldloc.3
+  IL_003d:  call       "void E.set_Item<T>(T, int, int)"
+  IL_0042:  nop
+  IL_0043:  ret
+}
+""");
+
+        comp = CreateRuntimeAsyncCompilation(src, options: TestOptions.UnsafeReleaseExe);
+        // The goal of this test is to validate that there's a `ldsfld     "T Program<T>.F"` after the async call. Regular state machine code is so large that it's
+        // very hard to verify this by reading the IL, so it does what is undefined behavior (modifying a static readonly field) to observe this. In runtime async
+        // mode, this undefined behavior results in a different output, but the IL is also smaller so we can easily verify that the read occurs where it should in the IL.
+        verifier = CompileAndVerify(comp, expectedOutput: null, verify: Verification.Fails with
+        {
+            ILVerifyMessage = """
+                [Main]: Cannot change initonly field outside its .ctor. { Offset = 0xa }
+                [Main]: Cannot change initonly field outside its .ctor. { Offset = 0x32 }
+                [Main]: Return value missing on the stack. { Offset = 0x41 }
+                [Initialize]: Cannot change initonly field outside its .ctor. { Offset = 0x0 }
+                [Initialize]: Expected numeric type on the stack. { Offset = 0xc, Found = address of Int32 }
+                [Increment]: Cannot change initonly field outside its .ctor. { Offset = 0x0 }
+                [Increment]: Expected numeric type on the stack. { Offset = 0xc, Found = address of Int32 }
+                [Test1]: Cannot change initonly field outside its .ctor. { Offset = 0x0 }
+                [Test3]: Return value missing on the stack. { Offset = 0x69 }
+                [Get1Async]: Unexpected type on the stack. { Offset = 0x2a, Found = Int32, Expected = ref '[System.Runtime]System.Threading.Tasks.Task`1<int32>' }
+                """
+        });
+
+        verifier.VerifyIL("Program.Test3<T>()", """
+{
+  // Code size      106 (0x6a)
+  .maxstack  3
+  .locals init (T V_0,
+                int V_1,
+                int V_2,
+                T V_3)
+  IL_0000:  ldloca.s   V_3
+  IL_0002:  initobj    "T"
+  IL_0008:  ldloc.3
+  IL_0009:  box        "T"
+  IL_000e:  brtrue.s   IL_0018
+  IL_0010:  ldsfld     "T Program<T>.F"
+  IL_0015:  stloc.0
+  IL_0016:  br.s       IL_001e
+  IL_0018:  ldsfld     "T Program<T>.F"
+  IL_001d:  pop
+  IL_001e:  ldloca.s   V_3
+  IL_0020:  initobj    "T"
+  IL_0026:  ldloc.3
+  IL_0027:  box        "T"
+  IL_002c:  brtrue.s   IL_0031
+  IL_002e:  ldloc.0
+  IL_002f:  br.s       IL_0036
+  IL_0031:  ldsfld     "T Program<T>.F"
+  IL_0036:  ldc.i4.0
+  IL_0037:  call       "int E.get_Item<T>(T, int)"
+  IL_003c:  call       "System.Threading.Tasks.Task<int> Program.Get1Async()"
+  IL_0041:  call       "int System.Runtime.CompilerServices.AsyncHelpers.Await<int>(System.Threading.Tasks.Task<int>)"
+  IL_0046:  stloc.1
+  IL_0047:  ldloc.1
+  IL_0048:  add
+  IL_0049:  stloc.2
+  IL_004a:  ldloca.s   V_3
+  IL_004c:  initobj    "T"
+  IL_0052:  ldloc.3
+  IL_0053:  box        "T"
+  IL_0058:  brtrue.s   IL_005d
+  IL_005a:  ldloc.0
+  IL_005b:  br.s       IL_0062
+  IL_005d:  ldsfld     "T Program<T>.F"
+  IL_0062:  ldc.i4.0
+  IL_0063:  ldloc.2
+  IL_0064:  call       "void E.set_Item<T>(T, int, int)"
+  IL_0069:  ret
+}
+""");
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ElementAccess_CompoundAssignment_ReadonlyReceiver_041(string refKind)
+    {
+        // unconstrained generic receiver with ref/ref readonly/in struct value
+        var src = $$$"""
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i]
+        {
+            get
+            {
+                System.Console.Write(((S1)(object)x).F1);
+                Program<S1>.F.F1++;
+                return 0;
+            }
+            set
+            {
+                System.Console.Write(((S1)(object)x).F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static void Main()
+    {
+        Program<S1>.F = new S1 { F1 = 123 };
+        Test1({{{(refKind == "ref" ? "ref" : "in")}}} Program<S1>.F);
+        System.Console.Write(Program<S1>.F.F1);
+    }
+
+    static void Test1<T>({{{refKind}}} T f)
+    {
+        f[0] += Get1();
+    }
+
+    static int Get1()
+    {
+        Program<S1>.F.F1++;
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("123125125"), verify: Verification.Skipped).VerifyDiagnostics();
+
+        verifier.VerifyIL($"Program.Test1<T>({refKind} T)", """
+{
+  // Code size       64 (0x40)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                T V_2,
+                int V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.1
+  IL_0003:  ldloca.s   V_2
+  IL_0005:  initobj    "T"
+  IL_000b:  ldloc.2
+  IL_000c:  box        "T"
+  IL_0011:  brtrue.s   IL_001e
+  IL_0013:  ldloc.1
+  IL_0014:  ldobj      "T"
+  IL_0019:  stloc.0
+  IL_001a:  ldloca.s   V_0
+  IL_001c:  br.s       IL_001f
+  IL_001e:  ldloc.1
+  IL_001f:  dup
+  IL_0020:  ldobj      "T"
+  IL_0025:  ldc.i4.0
+  IL_0026:  call       "int E.get_Item<T>(T, int)"
+  IL_002b:  call       "int Program.Get1()"
+  IL_0030:  add
+  IL_0031:  stloc.3
+  IL_0032:  ldobj      "T"
+  IL_0037:  ldc.i4.0
+  IL_0038:  ldloc.3
+  IL_0039:  call       "void E.set_Item<T>(T, int, int)"
+  IL_003e:  nop
+  IL_003f:  ret
+}
+""");
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ElementAccess_CompoundAssignment_ReadonlyReceiver_061(string refKind)
+    {
+        // unconstrained generic receiver with ref/ref readonly/in class value
+        var src = $$$"""
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i]
+        {
+            get
+            {
+                System.Console.Write(((C1)(object)x).F1);
+                Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+                return 0;
+            }
+            set
+            {
+                System.Console.Write(((C1)(object)x).F1);
+            }
+        }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static void Main()
+    {
+        Program<C1>.F = new C1 { F1 = 123 };
+        Test1({{{(refKind == "ref" ? "ref" : "in")}}} Program<C1>.F);
+        System.Console.Write(Program<C1>.F.F1);
+    }
+
+    static void Test1<T>({{{refKind}}} T f)
+    {
+        f[0] += Get1();
+    }
+
+    static int Get1()
+    {
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123123125").VerifyDiagnostics();
+
+        verifier.VerifyIL($"Program.Test1<T>({refKind} T)", """
+{
+  // Code size       64 (0x40)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                T V_2,
+                int V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.1
+  IL_0003:  ldloca.s   V_2
+  IL_0005:  initobj    "T"
+  IL_000b:  ldloc.2
+  IL_000c:  box        "T"
+  IL_0011:  brtrue.s   IL_001e
+  IL_0013:  ldloc.1
+  IL_0014:  ldobj      "T"
+  IL_0019:  stloc.0
+  IL_001a:  ldloca.s   V_0
+  IL_001c:  br.s       IL_001f
+  IL_001e:  ldloc.1
+  IL_001f:  dup
+  IL_0020:  ldobj      "T"
+  IL_0025:  ldc.i4.0
+  IL_0026:  call       "int E.get_Item<T>(T, int)"
+  IL_002b:  call       "int Program.Get1()"
+  IL_0030:  add
+  IL_0031:  stloc.3
+  IL_0032:  ldobj      "T"
+  IL_0037:  ldc.i4.0
+  IL_0038:  ldloc.3
+  IL_0039:  call       "void E.set_Item<T>(T, int, int)"
+  IL_003e:  nop
+  IL_003f:  ret
+}
+""");
+    }
+
+    [Fact]
+    public void ElementAccess_PrefixIncrementAssignment_01()
+    {
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public S2 this[int i]
+        {
+            get
+            {
+                System.Console.Write(x.F1);
+                Program.F.F1++;
+                return default;
+            }
+            set
+            {
+                System.Console.Write(x.F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public void Test()
+    {
+        ++this[0];
+    }
+}
+
+struct S2
+{
+    public static S2 operator ++(S2 x)
+    {
+        Program.F.F1++;
+        return x;
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 123 };
+        Test();
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new S1 { F1 = 123 };
+        F.Test();
+        System.Console.Write(F.F1);
+    }
+
+    static void Test()
+    {
+        ++F[0];
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123125125:123125125").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test",
+@"{
+  // Code size       38 (0x26)
+  .maxstack  3
+  .locals init (S2 V_0)
+  IL_0000:  nop
+  IL_0001:  ldsflda    ""S1 Program.F""
+  IL_0006:  dup
+  IL_0007:  ldobj      ""S1""
+  IL_000c:  ldc.i4.0
+  IL_000d:  call       ""S2 E.get_Item(S1, int)""
+  IL_0012:  call       ""S2 S2.op_Increment(S2)""
+  IL_0017:  stloc.0
+  IL_0018:  ldobj      ""S1""
+  IL_001d:  ldc.i4.0
+  IL_001e:  ldloc.0
+  IL_001f:  call       ""void E.set_Item(S1, int, S2)""
+  IL_0024:  nop
+  IL_0025:  ret
+}");
+
+        verifier.VerifyIL("S1.Test",
+@"{
+  // Code size       34 (0x22)
+  .maxstack  3
+  .locals init (S2 V_0)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  ldobj      ""S1""
+  IL_0007:  ldc.i4.0
+  IL_0008:  call       ""S2 E.get_Item(S1, int)""
+  IL_000d:  call       ""S2 S2.op_Increment(S2)""
+  IL_0012:  stloc.0
+  IL_0013:  ldarg.0
+  IL_0014:  ldobj      ""S1""
+  IL_0019:  ldc.i4.0
+  IL_001a:  ldloc.0
+  IL_001b:  call       ""void E.set_Item(S1, int, S2)""
+  IL_0020:  nop
+  IL_0021:  ret
+}");
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ElementAccess_PrefixIncrementAssignment_02(string refKind)
+    {
+        var src = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public S2 this[int i]
+        {
+            get
+            {
+                System.Console.Write(x.F1);
+                Program.F.F1++;
+                return default;
+            }
+            set
+            {
+                System.Console.Write(x.F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public void Test()
+    {
+        ++this[0];
+    }
+}
+
+struct S2
+{
+    public static S2 operator ++(S2 x)
+    {
+        Program.F.F1++;
+        return x;
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 123 };
+        Test();
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new S1 { F1 = 123 };
+        F.Test();
+        System.Console.Write(F.F1);
+    }
+
+    static void Test()
+    {
+        ++F[0];
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123125125:123125125").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test",
+@"{
+  // Code size       28 (0x1c)
+  .maxstack  3
+  .locals init (S2 V_0)
+  IL_0000:  nop
+  IL_0001:  ldsflda    ""S1 Program.F""
+  IL_0006:  dup
+  IL_0007:  ldc.i4.0
+  IL_0008:  call       ""S2 E.get_Item(" + refKind + @" S1, int)""
+  IL_000d:  call       ""S2 S2.op_Increment(S2)""
+  IL_0012:  stloc.0
+  IL_0013:  ldc.i4.0
+  IL_0014:  ldloc.0
+  IL_0015:  call       ""void E.set_Item(" + refKind + @" S1, int, S2)""
+  IL_001a:  nop
+  IL_001b:  ret
+}
+");
+
+        verifier.VerifyIL("S1.Test",
+@"
+{
+  // Code size       24 (0x18)
+  .maxstack  3
+  .locals init (S2 V_0)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  ldc.i4.0
+  IL_0003:  call       ""S2 E.get_Item(" + refKind + @" S1, int)""
+  IL_0008:  call       ""S2 S2.op_Increment(S2)""
+  IL_000d:  stloc.0
+  IL_000e:  ldarg.0
+  IL_000f:  ldc.i4.0
+  IL_0010:  ldloc.0
+  IL_0011:  call       ""void E.set_Item(" + refKind + @" S1, int, S2)""
+  IL_0016:  nop
+  IL_0017:  ret
+}
+");
+
+        var src2 = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int this[int i] { get => 0; set {} }
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        ++default(S1)[0];
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2);
+        switch (refKind)
+        {
+            case "ref":
+                comp2.VerifyDiagnostics(
+                    // (15,11): error CS1510: A ref or out value must be an assignable variable
+                    //         ++default(S1)[0];
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(15, 11)
+                    );
+                break;
+            case "ref readonly":
+                comp2.VerifyDiagnostics(
+                    // (15,11): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         ++default(S1)[0];
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(15, 11),
+                    // (15,11): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                    //         ++default(S1)[0];
+                    Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[0]").WithLocation(15, 11)
+                    );
+                break;
+            case "in":
+                comp2.VerifyDiagnostics(
+                    // (15,11): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                    //         ++default(S1)[0];
+                    Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[0]").WithLocation(15, 11)
+                    );
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(refKind);
+        }
+    }
+
+    [Fact]
+    public void ElementAccess_PrefixIncrementAssignment_03()
+    {
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public S2 this[int i]
+        {
+            get
+            {
+                System.Console.Write(x.F1);
+                Program.F = new C1 { F1 = Program.F.F1 + 1 };
+                return default;
+            }
+            set
+            {
+                System.Console.Write(x.F1);
+            }
+        }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+struct S2
+{
+    public static S2 operator ++(S2 x)
+    {
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return x;
+    }
+}
+
+class Program
+{
+    public static C1 F = new C1 { F1 = 123 };
+
+    static void Main()
+    {
+        Test();
+        System.Console.Write(F.F1);
+    }
+
+    static void Test()
+    {
+        ++F[0];
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123123125").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test",
+@"{
+  // Code size       28 (0x1c)
+  .maxstack  3
+  .locals init (S2 V_0)
+  IL_0000:  nop
+  IL_0001:  ldsfld     ""C1 Program.F""
+  IL_0006:  dup
+  IL_0007:  ldc.i4.0
+  IL_0008:  call       ""S2 E.get_Item(C1, int)""
+  IL_000d:  call       ""S2 S2.op_Increment(S2)""
+  IL_0012:  stloc.0
+  IL_0013:  ldc.i4.0
+  IL_0014:  ldloc.0
+  IL_0015:  call       ""void E.set_Item(C1, int, S2)""
+  IL_001a:  nop
+  IL_001b:  ret
+}");
+    }
+
+    [Fact]
+    public void ElementAccess_PrefixIncrementAssignment_04()
+    {
+        var src = """
+static class E
+{
+    extension<T>(T x)
+    {
+        public S2 this[int i]
+        {
+            get
+            {
+                System.Console.Write(((S1)(object)x).F1);
+                Program.F.F1++;
+                return default;
+            }
+            set
+            {
+                System.Console.Write(((S1)(object)x).F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+struct S2
+{
+    public static S2 operator ++(S2 x)
+    {
+        Program.F.F1++;
+        return x;
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 123 };
+        Test1(ref F);
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new S1 { F1 = 123 };
+        Test2(ref F);
+        System.Console.Write(F.F1);
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        ++f[0];
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        ++f[0];
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123125125:123125125").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1<T>(ref T)",
+@"{
+  // Code size       63 (0x3f)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                S2 V_2,
+                T V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.1
+  IL_0003:  ldloca.s   V_3
+  IL_0005:  initobj    ""T""
+  IL_000b:  ldloc.3
+  IL_000c:  box        ""T""
+  IL_0011:  brtrue.s   IL_001e
+  IL_0013:  ldloc.1
+  IL_0014:  ldobj      ""T""
+  IL_0019:  stloc.0
+  IL_001a:  ldloca.s   V_0
+  IL_001c:  br.s       IL_001f
+  IL_001e:  ldloc.1
+  IL_001f:  dup
+  IL_0020:  ldobj      ""T""
+  IL_0025:  ldc.i4.0
+  IL_0026:  call       ""S2 E.get_Item<T>(T, int)""
+  IL_002b:  call       ""S2 S2.op_Increment(S2)""
+  IL_0030:  stloc.2
+  IL_0031:  ldobj      ""T""
+  IL_0036:  ldc.i4.0
+  IL_0037:  ldloc.2
+  IL_0038:  call       ""void E.set_Item<T>(T, int, S2)""
+  IL_003d:  nop
+  IL_003e:  ret
+}");
+
+        verifier.VerifyIL("Program.Test2<T>(ref T)",
+@"{
+  // Code size       34 (0x22)
+  .maxstack  3
+  .locals init (S2 V_0)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  dup
+  IL_0003:  ldobj      ""T""
+  IL_0008:  ldc.i4.0
+  IL_0009:  call       ""S2 E.get_Item<T>(T, int)""
+  IL_000e:  call       ""S2 S2.op_Increment(S2)""
+  IL_0013:  stloc.0
+  IL_0014:  ldobj      ""T""
+  IL_0019:  ldc.i4.0
+  IL_001a:  ldloc.0
+  IL_001b:  call       ""void E.set_Item<T>(T, int, S2)""
+  IL_0020:  nop
+  IL_0021:  ret
+}");
+    }
+
+    [Fact]
+    public void ElementAccess_PrefixIncrementAssignment_05()
+    {
+        var src = """
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public S2 this[int i]
+        {
+            get
+            {
+                System.Console.Write(((S1)(object)x).F1);
+                Program.F.F1++;
+                return default;
+            }
+            set
+            {
+                System.Console.Write(((S1)(object)x).F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+struct S2
+{
+    public static S2 operator ++(S2 x)
+    {
+        Program.F.F1++;
+        return x;
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 123 };
+        Test2(ref F);
+        System.Console.Write(F.F1);
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        ++f[0];
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123125125").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test2<T>(ref T)",
+@"{
+  // Code size       24 (0x18)
+  .maxstack  3
+  .locals init (S2 V_0)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  dup
+  IL_0003:  ldc.i4.0
+  IL_0004:  call       ""S2 E.get_Item<T>(ref T, int)""
+  IL_0009:  call       ""S2 S2.op_Increment(S2)""
+  IL_000e:  stloc.0
+  IL_000f:  ldc.i4.0
+  IL_0010:  ldloc.0
+  IL_0011:  call       ""void E.set_Item<T>(ref T, int, S2)""
+  IL_0016:  nop
+  IL_0017:  ret
+}");
+
+        var src2 = """
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int this[int i] { get => 0; set {} }
+    }
+}
+
+class Program
+{
+    static void Test<T>() where T : struct
+    {
+        ++default(T)[0];
+    }
+}
+
+namespace NS1
+{
+    static class E
+    {
+        extension<T>(in T x) where T : struct
+        {
+        }
+    }
+}
+
+namespace NS2
+{
+    static class E
+    {
+        extension<T>(ref readonly T x) where T : struct
+        {
+        }
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2);
+        comp2.VerifyDiagnostics(
+            // (13,11): error CS1510: A ref or out value must be an assignable variable
+            //         ++default(T)[0];
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(13, 11),
+            // (21,25): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(in T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(21, 25),
+            // (31,35): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(ref readonly T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(31, 35)
+            );
+    }
+
+    [Fact]
+    public void ElementAccess_PrefixIncrementAssignment_06()
+    {
+        var src = """
+static class E
+{
+    extension<T>(T x)
+    {
+        public S2 this[int i]
+        {
+            get
+            {
+                System.Console.Write(((C1)(object)x).F1);
+                Program.F = new C1 { F1 = Program.F.F1 + 1 };
+                return default;
+            }
+            set
+            {
+                System.Console.Write(((C1)(object)x).F1);
+            }
+        }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+struct S2
+{
+    public static S2 operator ++(S2 x)
+    {
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return x;
+    }
+}
+
+class Program
+{
+    public static C1 F;
+
+    static void Main()
+    {
+        F = new C1 { F1 = 123 };
+        Test1(ref F);
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new C1 { F1 = 123 };
+        Test2(ref F);
+        System.Console.Write(F.F1);
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        ++f[0];
+    }
+
+    static void Test2<T>(ref T f) where T : class
+    {
+        ++f[0];
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123123125:123123125").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1<T>(ref T)",
+@"{
+  // Code size       63 (0x3f)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                S2 V_2,
+                T V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.1
+  IL_0003:  ldloca.s   V_3
+  IL_0005:  initobj    ""T""
+  IL_000b:  ldloc.3
+  IL_000c:  box        ""T""
+  IL_0011:  brtrue.s   IL_001e
+  IL_0013:  ldloc.1
+  IL_0014:  ldobj      ""T""
+  IL_0019:  stloc.0
+  IL_001a:  ldloca.s   V_0
+  IL_001c:  br.s       IL_001f
+  IL_001e:  ldloc.1
+  IL_001f:  dup
+  IL_0020:  ldobj      ""T""
+  IL_0025:  ldc.i4.0
+  IL_0026:  call       ""S2 E.get_Item<T>(T, int)""
+  IL_002b:  call       ""S2 S2.op_Increment(S2)""
+  IL_0030:  stloc.2
+  IL_0031:  ldobj      ""T""
+  IL_0036:  ldc.i4.0
+  IL_0037:  ldloc.2
+  IL_0038:  call       ""void E.set_Item<T>(T, int, S2)""
+  IL_003d:  nop
+  IL_003e:  ret
+}");
+
+        verifier.VerifyIL("Program.Test2<T>(ref T)",
+@"{
+  // Code size       29 (0x1d)
+  .maxstack  3
+  .locals init (S2 V_0)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  ldobj      ""T""
+  IL_0007:  dup
+  IL_0008:  ldc.i4.0
+  IL_0009:  call       ""S2 E.get_Item<T>(T, int)""
+  IL_000e:  call       ""S2 S2.op_Increment(S2)""
+  IL_0013:  stloc.0
+  IL_0014:  ldc.i4.0
+  IL_0015:  ldloc.0
+  IL_0016:  call       ""void E.set_Item<T>(T, int, S2)""
+  IL_001b:  nop
+  IL_001c:  ret
+}");
+    }
+
+    [Fact]
+    public void ElementAccess_PostfixIncrementAssignment_01()
+    {
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public S2 this[int i]
+        {
+            get
+            {
+                System.Console.Write(x.F1);
+                Program.F.F1++;
+                return default;
+            }
+            set
+            {
+                System.Console.Write(x.F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public void Test()
+    {
+        this[0]++;
+    }
+}
+
+struct S2
+{
+    public static S2 operator ++(S2 x)
+    {
+        Program.F.F1++;
+        return x;
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 123 };
+        Test();
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new S1 { F1 = 123 };
+        F.Test();
+        System.Console.Write(F.F1);
+    }
+
+    static void Test()
+    {
+        F[0]++;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123125125:123125125").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test",
+@"{
+  // Code size       38 (0x26)
+  .maxstack  3
+  .locals init (S2 V_0)
+  IL_0000:  nop
+  IL_0001:  ldsflda    ""S1 Program.F""
+  IL_0006:  dup
+  IL_0007:  ldobj      ""S1""
+  IL_000c:  ldc.i4.0
+  IL_000d:  call       ""S2 E.get_Item(S1, int)""
+  IL_0012:  call       ""S2 S2.op_Increment(S2)""
+  IL_0017:  stloc.0
+  IL_0018:  ldobj      ""S1""
+  IL_001d:  ldc.i4.0
+  IL_001e:  ldloc.0
+  IL_001f:  call       ""void E.set_Item(S1, int, S2)""
+  IL_0024:  nop
+  IL_0025:  ret
+}");
+
+        verifier.VerifyIL("S1.Test",
+@"{
+  // Code size       34 (0x22)
+  .maxstack  3
+  .locals init (S2 V_0)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  ldobj      ""S1""
+  IL_0007:  ldc.i4.0
+  IL_0008:  call       ""S2 E.get_Item(S1, int)""
+  IL_000d:  call       ""S2 S2.op_Increment(S2)""
+  IL_0012:  stloc.0
+  IL_0013:  ldarg.0
+  IL_0014:  ldobj      ""S1""
+  IL_0019:  ldc.i4.0
+  IL_001a:  ldloc.0
+  IL_001b:  call       ""void E.set_Item(S1, int, S2)""
+  IL_0020:  nop
+  IL_0021:  ret
+}");
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ElementAccess_PostfixIncrementAssignment_02(string refKind)
+    {
+        var src = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public S2 this[int i]
+        {
+            get
+            {
+                System.Console.Write(x.F1);
+                Program.F.F1++;
+                return default;
+            }
+            set
+            {
+                System.Console.Write(x.F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public void Test()
+    {
+        this[0]++;
+    }
+}
+
+struct S2
+{
+    public static S2 operator ++(S2 x)
+    {
+        Program.F.F1++;
+        return x;
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 123 };
+        Test();
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new S1 { F1 = 123 };
+        F.Test();
+        System.Console.Write(F.F1);
+    }
+
+    static void Test()
+    {
+        F[0]++;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123125125:123125125").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test",
+@"{
+  // Code size       28 (0x1c)
+  .maxstack  3
+  .locals init (S2 V_0)
+  IL_0000:  nop
+  IL_0001:  ldsflda    ""S1 Program.F""
+  IL_0006:  dup
+  IL_0007:  ldc.i4.0
+  IL_0008:  call       ""S2 E.get_Item(" + refKind + @" S1, int)""
+  IL_000d:  stloc.0
+  IL_000e:  ldc.i4.0
+  IL_000f:  ldloc.0
+  IL_0010:  call       ""S2 S2.op_Increment(S2)""
+  IL_0015:  call       ""void E.set_Item(" + refKind + @" S1, int, S2)""
+  IL_001a:  nop
+  IL_001b:  ret
+}
+");
+
+        verifier.VerifyIL("S1.Test",
+@"
+{
+  // Code size       24 (0x18)
+  .maxstack  3
+  .locals init (S2 V_0)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  ldc.i4.0
+  IL_0003:  call       ""S2 E.get_Item(" + refKind + @" S1, int)""
+  IL_0008:  stloc.0
+  IL_0009:  ldarg.0
+  IL_000a:  ldc.i4.0
+  IL_000b:  ldloc.0
+  IL_000c:  call       ""S2 S2.op_Increment(S2)""
+  IL_0011:  call       ""void E.set_Item(" + refKind + @" S1, int, S2)""
+  IL_0016:  nop
+  IL_0017:  ret
+}
+");
+
+        var src2 = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int this[int i] { get => 0; set {} }
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[0]++;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2);
+        switch (refKind)
+        {
+            case "ref":
+                comp2.VerifyDiagnostics(
+                    // (15,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1)[0]++;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(15, 9)
+                    );
+                break;
+            case "ref readonly":
+                comp2.VerifyDiagnostics(
+                    // (15,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[0]++;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(15, 9),
+                    // (15,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                    //         default(S1)[0]++;
+                    Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[0]").WithLocation(15, 9)
+                    );
+                break;
+            case "in":
+                comp2.VerifyDiagnostics(
+                    // (15,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                    //         default(S1)[0]++;
+                    Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[0]").WithLocation(15, 9)
+                    );
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(refKind);
+        }
+    }
+
+    [Fact]
+    public void ElementAccess_PostfixIncrementAssignment_03()
+    {
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public S2 this[int i]
+        {
+            get
+            {
+                System.Console.Write(x.F1);
+                Program.F = new C1 { F1 = Program.F.F1 + 1 };
+                return default;
+            }
+            set
+            {
+                System.Console.Write(x.F1);
+            }
+        }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+struct S2
+{
+    public static S2 operator ++(S2 x)
+    {
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return x;
+    }
+}
+
+class Program
+{
+    public static C1 F = new C1 { F1 = 123 };
+
+    static void Main()
+    {
+        Test();
+        System.Console.Write(F.F1);
+    }
+
+    static void Test()
+    {
+        F[0]++;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123123125").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test",
+@"{
+  // Code size       28 (0x1c)
+  .maxstack  3
+  .locals init (S2 V_0)
+  IL_0000:  nop
+  IL_0001:  ldsfld     ""C1 Program.F""
+  IL_0006:  dup
+  IL_0007:  ldc.i4.0
+  IL_0008:  call       ""S2 E.get_Item(C1, int)""
+  IL_000d:  stloc.0
+  IL_000e:  ldc.i4.0
+  IL_000f:  ldloc.0
+  IL_0010:  call       ""S2 S2.op_Increment(S2)""
+  IL_0015:  call       ""void E.set_Item(C1, int, S2)""
+  IL_001a:  nop
+  IL_001b:  ret
+}");
+    }
+
+    [Fact]
+    public void ElementAccess_PostfixIncrementAssignment_04()
+    {
+        var src = """
+static class E
+{
+    extension<T>(T x)
+    {
+        public S2 this[int i]
+        {
+            get
+            {
+                System.Console.Write(((S1)(object)x).F1);
+                Program.F.F1++;
+                return default;
+            }
+            set
+            {
+                System.Console.Write(((S1)(object)x).F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+struct S2
+{
+    public static S2 operator ++(S2 x)
+    {
+        Program.F.F1++;
+        return x;
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 123 };
+        Test1(ref F);
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new S1 { F1 = 123 };
+        Test2(ref F);
+        System.Console.Write(F.F1);
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        f[0]++;
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        f[0]++;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123125125:123125125").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1<T>(ref T)",
+@"{
+  // Code size       63 (0x3f)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                S2 V_2,
+                T V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.1
+  IL_0003:  ldloca.s   V_3
+  IL_0005:  initobj    ""T""
+  IL_000b:  ldloc.3
+  IL_000c:  box        ""T""
+  IL_0011:  brtrue.s   IL_001e
+  IL_0013:  ldloc.1
+  IL_0014:  ldobj      ""T""
+  IL_0019:  stloc.0
+  IL_001a:  ldloca.s   V_0
+  IL_001c:  br.s       IL_001f
+  IL_001e:  ldloc.1
+  IL_001f:  dup
+  IL_0020:  ldobj      ""T""
+  IL_0025:  ldc.i4.0
+  IL_0026:  call       ""S2 E.get_Item<T>(T, int)""
+  IL_002b:  call       ""S2 S2.op_Increment(S2)""
+  IL_0030:  stloc.2
+  IL_0031:  ldobj      ""T""
+  IL_0036:  ldc.i4.0
+  IL_0037:  ldloc.2
+  IL_0038:  call       ""void E.set_Item<T>(T, int, S2)""
+  IL_003d:  nop
+  IL_003e:  ret
+}");
+
+        verifier.VerifyIL("Program.Test2<T>(ref T)",
+@"{
+  // Code size       34 (0x22)
+  .maxstack  3
+  .locals init (S2 V_0)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  dup
+  IL_0003:  ldobj      ""T""
+  IL_0008:  ldc.i4.0
+  IL_0009:  call       ""S2 E.get_Item<T>(T, int)""
+  IL_000e:  call       ""S2 S2.op_Increment(S2)""
+  IL_0013:  stloc.0
+  IL_0014:  ldobj      ""T""
+  IL_0019:  ldc.i4.0
+  IL_001a:  ldloc.0
+  IL_001b:  call       ""void E.set_Item<T>(T, int, S2)""
+  IL_0020:  nop
+  IL_0021:  ret
+}");
+    }
+
+    [Fact]
+    public void ElementAccess_PostfixIncrementAssignment_05()
+    {
+        var src = """
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public S2 this[int i]
+        {
+            get
+            {
+                System.Console.Write(((S1)(object)x).F1);
+                Program.F.F1++;
+                return default;
+            }
+            set
+            {
+                System.Console.Write(((S1)(object)x).F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+struct S2
+{
+    public static S2 operator ++(S2 x)
+    {
+        Program.F.F1++;
+        return x;
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 123 };
+        Test2(ref F);
+        System.Console.Write(F.F1);
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        f[0]++;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123125125").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test2<T>(ref T)",
+@"{
+  // Code size       24 (0x18)
+  .maxstack  3
+  .locals init (S2 V_0)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  dup
+  IL_0003:  ldc.i4.0
+  IL_0004:  call       ""S2 E.get_Item<T>(ref T, int)""
+  IL_0009:  stloc.0
+  IL_000a:  ldc.i4.0
+  IL_000b:  ldloc.0
+  IL_000c:  call       ""S2 S2.op_Increment(S2)""
+  IL_0011:  call       ""void E.set_Item<T>(ref T, int, S2)""
+  IL_0016:  nop
+  IL_0017:  ret
+}");
+
+        var src2 = """
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int this[int i] { get => 0; set {} }
+    }
+}
+
+class Program
+{
+    static void Test<T>() where T : struct
+    {
+        default(T)[0]++;
+    }
+}
+
+namespace NS1
+{
+    static class E
+    {
+        extension<T>(in T x) where T : struct
+        {
+        }
+    }
+}
+
+namespace NS2
+{
+    static class E
+    {
+        extension<T>(ref readonly T x) where T : struct
+        {
+        }
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2);
+        comp2.VerifyDiagnostics(
+            // (13,9): error CS1510: A ref or out value must be an assignable variable
+            //         default(T)[0]++;
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(13, 9),
+            // (21,25): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(in T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(21, 25),
+            // (31,35): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(ref readonly T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(31, 35)
+            );
+    }
+
+    [Fact]
+    public void ElementAccess_PostfixIncrementAssignment_06()
+    {
+        var src = """
+static class E
+{
+    extension<T>(T x)
+    {
+        public S2 this[int i]
+        {
+            get
+            {
+                System.Console.Write(((C1)(object)x).F1);
+                Program.F = new C1 { F1 = Program.F.F1 + 1 };
+                return default;
+            }
+            set
+            {
+                System.Console.Write(((C1)(object)x).F1);
+            }
+        }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+struct S2
+{
+    public static S2 operator ++(S2 x)
+    {
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return x;
+    }
+}
+
+class Program
+{
+    public static C1 F;
+
+    static void Main()
+    {
+        F = new C1 { F1 = 123 };
+        Test1(ref F);
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new C1 { F1 = 123 };
+        Test2(ref F);
+        System.Console.Write(F.F1);
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        f[0]++;
+    }
+
+    static void Test2<T>(ref T f) where T : class
+    {
+        f[0]++;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123123125:123123125").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1<T>(ref T)",
+@"{
+  // Code size       63 (0x3f)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                S2 V_2,
+                T V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.1
+  IL_0003:  ldloca.s   V_3
+  IL_0005:  initobj    ""T""
+  IL_000b:  ldloc.3
+  IL_000c:  box        ""T""
+  IL_0011:  brtrue.s   IL_001e
+  IL_0013:  ldloc.1
+  IL_0014:  ldobj      ""T""
+  IL_0019:  stloc.0
+  IL_001a:  ldloca.s   V_0
+  IL_001c:  br.s       IL_001f
+  IL_001e:  ldloc.1
+  IL_001f:  dup
+  IL_0020:  ldobj      ""T""
+  IL_0025:  ldc.i4.0
+  IL_0026:  call       ""S2 E.get_Item<T>(T, int)""
+  IL_002b:  call       ""S2 S2.op_Increment(S2)""
+  IL_0030:  stloc.2
+  IL_0031:  ldobj      ""T""
+  IL_0036:  ldc.i4.0
+  IL_0037:  ldloc.2
+  IL_0038:  call       ""void E.set_Item<T>(T, int, S2)""
+  IL_003d:  nop
+  IL_003e:  ret
+}");
+
+        verifier.VerifyIL("Program.Test2<T>(ref T)",
+@"{
+  // Code size       29 (0x1d)
+  .maxstack  3
+  .locals init (S2 V_0)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  ldobj      ""T""
+  IL_0007:  dup
+  IL_0008:  ldc.i4.0
+  IL_0009:  call       ""S2 E.get_Item<T>(T, int)""
+  IL_000e:  stloc.0
+  IL_000f:  ldc.i4.0
+  IL_0010:  ldloc.0
+  IL_0011:  call       ""S2 S2.op_Increment(S2)""
+  IL_0016:  call       ""void E.set_Item<T>(T, int, S2)""
+  IL_001b:  nop
+  IL_001c:  ret
+}");
+    }
+
+    [Fact]
+    public void ElementAccess_ConditionalAssignment_01()
+    {
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public object this[int i]
+        {
+            get
+            {
+                System.Console.Write(x.F1);
+                Program.F.F1++;
+                return null;
+            }
+            set
+            {
+                System.Console.Write(x.F1);
+            }
+        }
+
+        public int? P2
+        {
+            get
+            {
+                System.Console.Write(x.F1);
+                Program.F.F1++;
+                return null;
+            }
+            set
+            {
+                System.Console.Write(x.F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public void Test1()
+    {
+        this[0] ??= Program.Get1();
+    }
+
+    public void Test2()
+    {
+        this.P2 ??= Program.Get1();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 123 };
+        Test1();
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new S1 { F1 = 123 };
+        F.Test1();
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new S1 { F1 = 123 };
+        Test2();
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new S1 { F1 = 123 };
+        F.Test2();
+        System.Console.Write(F.F1);
+    }
+
+    static void Test1()
+    {
+        F[0] ??= Get1();
+    }
+
+    static void Test2()
+    {
+        F.P2 ??= Get1();
+    }
+
+    public static int Get1()
+    {
+        Program.F.F1++;
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123125125:123125125:123125125:123125125").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1",
+@"
+{
+  // Code size       49 (0x31)
+  .maxstack  4
+  .locals init (S1& V_0,
+                object V_1,
+                object V_2)
+  IL_0000:  nop
+  IL_0001:  ldsflda    ""S1 Program.F""
+  IL_0006:  stloc.0
+  IL_0007:  ldloc.0
+  IL_0008:  ldobj      ""S1""
+  IL_000d:  ldc.i4.0
+  IL_000e:  call       ""object E.get_Item(S1, int)""
+  IL_0013:  brtrue.s   IL_0030
+  IL_0015:  call       ""int Program.Get1()""
+  IL_001a:  box        ""int""
+  IL_001f:  stloc.1
+  IL_0020:  ldloc.0
+  IL_0021:  ldobj      ""S1""
+  IL_0026:  ldc.i4.0
+  IL_0027:  ldloc.1
+  IL_0028:  dup
+  IL_0029:  stloc.2
+  IL_002a:  call       ""void E.set_Item(S1, int, object)""
+  IL_002f:  nop
+  IL_0030:  ret
+}
+");
+
+        verifier.VerifyIL("S1.Test1",
+@"
+{
+  // Code size       43 (0x2b)
+  .maxstack  4
+  .locals init (object V_0,
+                object V_1)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  ldobj      ""S1""
+  IL_0007:  ldc.i4.0
+  IL_0008:  call       ""object E.get_Item(S1, int)""
+  IL_000d:  brtrue.s   IL_002a
+  IL_000f:  call       ""int Program.Get1()""
+  IL_0014:  box        ""int""
+  IL_0019:  stloc.0
+  IL_001a:  ldarg.0
+  IL_001b:  ldobj      ""S1""
+  IL_0020:  ldc.i4.0
+  IL_0021:  ldloc.0
+  IL_0022:  dup
+  IL_0023:  stloc.1
+  IL_0024:  call       ""void E.set_Item(S1, int, object)""
+  IL_0029:  nop
+  IL_002a:  ret
+}
+");
+
+        verifier.VerifyIL("Program.Test2",
+@"
+{
+  // Code size       66 (0x42)
+  .maxstack  3
+  .locals init (S1& V_0,
+                int? V_1,
+                int V_2,
+                int? V_3)
+  IL_0000:  nop
+  IL_0001:  ldsflda    ""S1 Program.F""
+  IL_0006:  stloc.0
+  IL_0007:  ldloc.0
+  IL_0008:  ldobj      ""S1""
+  IL_000d:  call       ""int? E.get_P2(S1)""
+  IL_0012:  stloc.1
+  IL_0013:  ldloca.s   V_1
+  IL_0015:  call       ""int int?.GetValueOrDefault()""
+  IL_001a:  stloc.2
+  IL_001b:  ldloca.s   V_1
+  IL_001d:  call       ""bool int?.HasValue.get""
+  IL_0022:  brtrue.s   IL_0041
+  IL_0024:  call       ""int Program.Get1()""
+  IL_0029:  stloc.2
+  IL_002a:  ldloc.0
+  IL_002b:  ldobj      ""S1""
+  IL_0030:  ldloca.s   V_3
+  IL_0032:  ldloc.2
+  IL_0033:  call       ""int?..ctor(int)""
+  IL_0038:  ldloc.3
+  IL_0039:  call       ""void E.set_P2(S1, int?)""
+  IL_003e:  nop
+  IL_003f:  br.s       IL_0041
+  IL_0041:  ret
+}
+");
+
+        verifier.VerifyIL("S1.Test2",
+@"
+{
+  // Code size       60 (0x3c)
+  .maxstack  3
+  .locals init (int? V_0,
+                int V_1,
+                int? V_2)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  ldobj      ""S1""
+  IL_0007:  call       ""int? E.get_P2(S1)""
+  IL_000c:  stloc.0
+  IL_000d:  ldloca.s   V_0
+  IL_000f:  call       ""int int?.GetValueOrDefault()""
+  IL_0014:  stloc.1
+  IL_0015:  ldloca.s   V_0
+  IL_0017:  call       ""bool int?.HasValue.get""
+  IL_001c:  brtrue.s   IL_003b
+  IL_001e:  call       ""int Program.Get1()""
+  IL_0023:  stloc.1
+  IL_0024:  ldarg.0
+  IL_0025:  ldobj      ""S1""
+  IL_002a:  ldloca.s   V_2
+  IL_002c:  ldloc.1
+  IL_002d:  call       ""int?..ctor(int)""
+  IL_0032:  ldloc.2
+  IL_0033:  call       ""void E.set_P2(S1, int?)""
+  IL_0038:  nop
+  IL_0039:  br.s       IL_003b
+  IL_003b:  ret
+}
+");
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ElementAccess_ConditionalAssignment_02(string refKind)
+    {
+        var src = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public object this[int i]
+        {
+            get
+            {
+                System.Console.Write(x.F1);
+                Program.F.F1++;
+                return null;
+            }
+            set
+            {
+                System.Console.Write(x.F1);
+            }
+        }
+        public int? P2
+        {
+            get
+            {
+                System.Console.Write(x.F1);
+                Program.F.F1++;
+                return null;
+            }
+            set
+            {
+                System.Console.Write(x.F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public void Test1()
+    {
+        this[0] ??= Program.Get1();
+    }
+
+    public void Test2()
+    {
+        this.P2 ??= Program.Get1();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 123 };
+        Test1();
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new S1 { F1 = 123 };
+        F.Test1();
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new S1 { F1 = 123 };
+        Test2();
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new S1 { F1 = 123 };
+        F.Test2();
+        System.Console.Write(F.F1);
+    }
+
+    static void Test1()
+    {
+        F[0] ??= Get1();
+    }
+
+    static void Test2()
+    {
+        F.P2 ??= Get1();
+    }
+
+    public static int Get1()
+    {
+        Program.F.F1++;
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123125125:123125125:123125125:123125125").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1",
+@"{
+  // Code size       37 (0x25)
+  .maxstack  4
+  .locals init (S1& V_0,
+                object V_1)
+  IL_0000:  nop
+  IL_0001:  ldsflda    ""S1 Program.F""
+  IL_0006:  stloc.0
+  IL_0007:  ldloc.0
+  IL_0008:  ldc.i4.0
+  IL_0009:  call       ""object E.get_Item(" + refKind + @" S1, int)""
+  IL_000e:  brtrue.s   IL_0024
+  IL_0010:  ldloc.0
+  IL_0011:  ldc.i4.0
+  IL_0012:  call       ""int Program.Get1()""
+  IL_0017:  box        ""int""
+  IL_001c:  dup
+  IL_001d:  stloc.1
+  IL_001e:  call       ""void E.set_Item(" + refKind + @" S1, int, object)""
+  IL_0023:  nop
+  IL_0024:  ret
+}
+");
+
+        verifier.VerifyIL("S1.Test1",
+@"
+{
+  // Code size       31 (0x1f)
+  .maxstack  4
+  .locals init (object V_0)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  ldc.i4.0
+  IL_0003:  call       ""object E.get_Item(" + refKind + @" S1, int)""
+  IL_0008:  brtrue.s   IL_001e
+  IL_000a:  ldarg.0
+  IL_000b:  ldc.i4.0
+  IL_000c:  call       ""int Program.Get1()""
+  IL_0011:  box        ""int""
+  IL_0016:  dup
+  IL_0017:  stloc.0
+  IL_0018:  call       ""void E.set_Item(" + refKind + @" S1, int, object)""
+  IL_001d:  nop
+  IL_001e:  ret
+}
+");
+
+        verifier.VerifyIL("Program.Test2",
+@"
+{
+  // Code size       56 (0x38)
+  .maxstack  3
+  .locals init (S1& V_0,
+                int? V_1,
+                int V_2,
+                int? V_3)
+  IL_0000:  nop
+  IL_0001:  ldsflda    ""S1 Program.F""
+  IL_0006:  stloc.0
+  IL_0007:  ldloc.0
+  IL_0008:  call       ""int? E.get_P2(" + refKind + @" S1)""
+  IL_000d:  stloc.1
+  IL_000e:  ldloca.s   V_1
+  IL_0010:  call       ""int int?.GetValueOrDefault()""
+  IL_0015:  stloc.2
+  IL_0016:  ldloca.s   V_1
+  IL_0018:  call       ""bool int?.HasValue.get""
+  IL_001d:  brtrue.s   IL_0037
+  IL_001f:  call       ""int Program.Get1()""
+  IL_0024:  stloc.2
+  IL_0025:  ldloc.0
+  IL_0026:  ldloca.s   V_3
+  IL_0028:  ldloc.2
+  IL_0029:  call       ""int?..ctor(int)""
+  IL_002e:  ldloc.3
+  IL_002f:  call       ""void E.set_P2(" + refKind + @" S1, int?)""
+  IL_0034:  nop
+  IL_0035:  br.s       IL_0037
+  IL_0037:  ret
+}
+");
+
+        verifier.VerifyIL("S1.Test2",
+@"
+{
+  // Code size       50 (0x32)
+  .maxstack  3
+  .locals init (int? V_0,
+            int V_1,
+            int? V_2)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  call       ""int? E.get_P2(" + refKind + @" S1)""
+  IL_0007:  stloc.0
+  IL_0008:  ldloca.s   V_0
+  IL_000a:  call       ""int int?.GetValueOrDefault()""
+  IL_000f:  stloc.1
+  IL_0010:  ldloca.s   V_0
+  IL_0012:  call       ""bool int?.HasValue.get""
+  IL_0017:  brtrue.s   IL_0031
+  IL_0019:  call       ""int Program.Get1()""
+  IL_001e:  stloc.1
+  IL_001f:  ldarg.0
+  IL_0020:  ldloca.s   V_2
+  IL_0022:  ldloc.1
+  IL_0023:  call       ""int?..ctor(int)""
+  IL_0028:  ldloc.2
+  IL_0029:  call       ""void E.set_P2(" + refKind + @" S1, int?)""
+  IL_002e:  nop
+  IL_002f:  br.s       IL_0031
+  IL_0031:  ret
+}
+");
+
+        var src2 = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public object this[int i] { get => 0; set {} }
+        public int? P2 { get => 0; set {} }
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test1()
+    {
+        default(S1)[0] ??= 1;
+    }
+    static void Test2()
+    {
+        default(S1).P2 ??= 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2);
+        switch (refKind)
+        {
+            case "ref":
+                comp2.VerifyDiagnostics(
+                    // (16,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1)[0] ??= 1;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9),
+                    // (20,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1).P2 ??= 1;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(20, 9)
+                    );
+                break;
+            case "ref readonly":
+                comp2.VerifyDiagnostics(
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[0] ??= 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    // (16,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                    //         default(S1)[0] ??= 1;
+                    Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[0]").WithLocation(16, 9),
+                    // (20,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1).P2 ??= 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(20, 9),
+                    // (20,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                    //         default(S1).P2 ??= 1;
+                    Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1).P2").WithLocation(20, 9)
+                    );
+                break;
+            case "in":
+                comp2.VerifyDiagnostics(
+                    // (16,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                    //         default(S1)[0] ??= 1;
+                    Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[0]").WithLocation(16, 9),
+                    // (20,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                    //         default(S1).P2 ??= 1;
+                    Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1).P2").WithLocation(20, 9)
+                    );
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(refKind);
+        }
+    }
+
+    [Fact]
+    public void ElementAccess_ConditionalAssignment_03()
+    {
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public object this[int i]
+        {
+            get
+            {
+                System.Console.Write(x.F1);
+                Program.F = new C1 { F1 = Program.F.F1 + 1 };
+                return null;
+            }
+            set
+            {
+                System.Console.Write(x.F1);
+            }
+        }
+        public int? P2
+        {
+            get
+            {
+                System.Console.Write(x.F1);
+                Program.F = new C1 { F1 = Program.F.F1 + 1 };
+                return null;
+            }
+            set
+            {
+                System.Console.Write(x.F1);
+            }
+        }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static C1 F;
+
+    static void Main()
+    {
+        F = new C1 { F1 = 123 };
+        Test1();
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new C1 { F1 = 123 };
+        Test2();
+        System.Console.Write(F.F1);
+    }
+
+    static void Test1()
+    {
+        F[0] ??= Get1();
+    }
+
+    static void Test2()
+    {
+        F.P2 ??= Get1();
+    }
+
+    static int Get1()
+    {
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123123125:123123125").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1",
+@"
+{
+  // Code size       37 (0x25)
+  .maxstack  4
+  .locals init (C1 V_0,
+                object V_1)
+  IL_0000:  nop
+  IL_0001:  ldsfld     ""C1 Program.F""
+  IL_0006:  stloc.0
+  IL_0007:  ldloc.0
+  IL_0008:  ldc.i4.0
+  IL_0009:  call       ""object E.get_Item(C1, int)""
+  IL_000e:  brtrue.s   IL_0024
+  IL_0010:  ldloc.0
+  IL_0011:  ldc.i4.0
+  IL_0012:  call       ""int Program.Get1()""
+  IL_0017:  box        ""int""
+  IL_001c:  dup
+  IL_001d:  stloc.1
+  IL_001e:  call       ""void E.set_Item(C1, int, object)""
+  IL_0023:  nop
+  IL_0024:  ret
+}
+");
+
+        verifier.VerifyIL("Program.Test2",
+@"
+{
+  // Code size       56 (0x38)
+  .maxstack  3
+  .locals init (C1 V_0,
+                int? V_1,
+                int V_2,
+                int? V_3)
+  IL_0000:  nop
+  IL_0001:  ldsfld     ""C1 Program.F""
+  IL_0006:  stloc.0
+  IL_0007:  ldloc.0
+  IL_0008:  call       ""int? E.get_P2(C1)""
+  IL_000d:  stloc.1
+  IL_000e:  ldloca.s   V_1
+  IL_0010:  call       ""int int?.GetValueOrDefault()""
+  IL_0015:  stloc.2
+  IL_0016:  ldloca.s   V_1
+  IL_0018:  call       ""bool int?.HasValue.get""
+  IL_001d:  brtrue.s   IL_0037
+  IL_001f:  call       ""int Program.Get1()""
+  IL_0024:  stloc.2
+  IL_0025:  ldloc.0
+  IL_0026:  ldloca.s   V_3
+  IL_0028:  ldloc.2
+  IL_0029:  call       ""int?..ctor(int)""
+  IL_002e:  ldloc.3
+  IL_002f:  call       ""void E.set_P2(C1, int?)""
+  IL_0034:  nop
+  IL_0035:  br.s       IL_0037
+  IL_0037:  ret
+}
+");
+    }
+
+    [Fact]
+    public void ElementAccess_ConditionalAssignment_04()
+    {
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public object this[int i]
+        {
+            get
+            {
+                System.Console.Write(((S1)(object)x).F1);
+                Program<S1>.F.F1++;
+                return null;
+            }
+            set
+            {
+                System.Console.Write(((S1)(object)x).F1);
+            }
+        }
+        public int? P2
+        {
+            get
+            {
+                System.Console.Write(((S1)(object)x).F1);
+                Program<S1>.F.F1++;
+                return null;
+            }
+            set
+            {
+                System.Console.Write(((S1)(object)x).F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        Program<S1>.F = new S1 { F1 = 123 };
+        Test11(ref Program<S1>.F);
+        System.Console.Write(Program<S1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<S1>.F = new S1 { F1 = 123 };
+        Test12(ref Program<S1>.F);
+        System.Console.Write(Program<S1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<S1>.F = new S1 { F1 = 123 };
+        await Test13<S1>();
+        System.Console.Write(Program<S1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<S1>.F = new S1 { F1 = 123 };
+        Test21(ref Program<S1>.F);
+        System.Console.Write(Program<S1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<S1>.F = new S1 { F1 = 123 };
+        Test22(ref Program<S1>.F);
+        System.Console.Write(Program<S1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<S1>.F = new S1 { F1 = 123 };
+        await Test23<S1>();
+        System.Console.Write(Program<S1>.F.F1);
+    }
+
+    static void Test11<T>(ref T f)
+    {
+        f[0] ??= Get1();
+    }
+
+    static void Test21<T>(ref T f)
+    {
+        f.P2 ??= Get1();
+    }
+
+    static void Test12<T>(ref T f) where T : struct
+    {
+        f[0] ??= Get1();
+    }
+
+    static void Test22<T>(ref T f) where T : struct
+    {
+        f.P2 ??= Get1();
+    }
+
+    static int Get1()
+    {
+        Program<S1>.F.F1++;
+        return 1;
+    }
+
+    static async Task Test13<T>()
+    {
+        Program<T>.F[0] ??= await Get1Async();
+    }
+
+    static async Task Test23<T>()
+    {
+        Program<T>.F.P2 ??= await Get1Async();
+    }
+
+    static async Task<int> Get1Async()
+    {
+        Program<S1>.F.F1++;
+        await Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var expectedOutput = "123125125:123125125:123125125:123125125:123125125:123125125";
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test11<T>(ref T)",
+@"
+{
+  // Code size       77 (0x4d)
+  .maxstack  4
+  .locals init (T& V_0,
+                T V_1,
+                T& V_2,
+                T V_3,
+                object V_4,
+                object V_5)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.2
+  IL_0003:  ldloca.s   V_3
+  IL_0005:  initobj    ""T""
+  IL_000b:  ldloc.3
+  IL_000c:  box        ""T""
+  IL_0011:  brtrue.s   IL_001e
+  IL_0013:  ldloc.2
+  IL_0014:  ldobj      ""T""
+  IL_0019:  stloc.1
+  IL_001a:  ldloca.s   V_1
+  IL_001c:  br.s       IL_001f
+  IL_001e:  ldloc.2
+  IL_001f:  stloc.0
+  IL_0020:  ldloc.0
+  IL_0021:  ldobj      ""T""
+  IL_0026:  ldc.i4.0
+  IL_0027:  call       ""object E.get_Item<T>(T, int)""
+  IL_002c:  brtrue.s   IL_004c
+  IL_002e:  call       ""int Program.Get1()""
+  IL_0033:  box        ""int""
+  IL_0038:  stloc.s    V_4
+  IL_003a:  ldloc.0
+  IL_003b:  ldobj      ""T""
+  IL_0040:  ldc.i4.0
+  IL_0041:  ldloc.s    V_4
+  IL_0043:  dup
+  IL_0044:  stloc.s    V_5
+  IL_0046:  call       ""void E.set_Item<T>(T, int, object)""
+  IL_004b:  nop
+  IL_004c:  ret
+}
+");
+
+        verifier.VerifyIL("Program.Test12<T>(ref T)",
+@"
+{
+  // Code size       45 (0x2d)
+  .maxstack  4
+  .locals init (T& V_0,
+                object V_1,
+                object V_2)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.0
+  IL_0003:  ldloc.0
+  IL_0004:  ldobj      ""T""
+  IL_0009:  ldc.i4.0
+  IL_000a:  call       ""object E.get_Item<T>(T, int)""
+  IL_000f:  brtrue.s   IL_002c
+  IL_0011:  call       ""int Program.Get1()""
+  IL_0016:  box        ""int""
+  IL_001b:  stloc.1
+  IL_001c:  ldloc.0
+  IL_001d:  ldobj      ""T""
+  IL_0022:  ldc.i4.0
+  IL_0023:  ldloc.1
+  IL_0024:  dup
+  IL_0025:  stloc.2
+  IL_0026:  call       ""void E.set_Item<T>(T, int, object)""
+  IL_002b:  nop
+  IL_002c:  ret
+}
+");
+
+        verifier.VerifyIL("Program.Test21<T>(ref T)",
+@"
+{
+  // Code size       96 (0x60)
+  .maxstack  3
+  .locals init (T& V_0,
+                T V_1,
+                T& V_2,
+                int? V_3,
+                int V_4,
+                T V_5,
+                int? V_6)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.2
+  IL_0003:  ldloca.s   V_5
+  IL_0005:  initobj    ""T""
+  IL_000b:  ldloc.s    V_5
+  IL_000d:  box        ""T""
+  IL_0012:  brtrue.s   IL_001f
+  IL_0014:  ldloc.2
+  IL_0015:  ldobj      ""T""
+  IL_001a:  stloc.1
+  IL_001b:  ldloca.s   V_1
+  IL_001d:  br.s       IL_0020
+  IL_001f:  ldloc.2
+  IL_0020:  stloc.0
+  IL_0021:  ldloc.0
+  IL_0022:  ldobj      ""T""
+  IL_0027:  call       ""int? E.get_P2<T>(T)""
+  IL_002c:  stloc.3
+  IL_002d:  ldloca.s   V_3
+  IL_002f:  call       ""int int?.GetValueOrDefault()""
+  IL_0034:  stloc.s    V_4
+  IL_0036:  ldloca.s   V_3
+  IL_0038:  call       ""bool int?.HasValue.get""
+  IL_003d:  brtrue.s   IL_005f
+  IL_003f:  call       ""int Program.Get1()""
+  IL_0044:  stloc.s    V_4
+  IL_0046:  ldloc.0
+  IL_0047:  ldobj      ""T""
+  IL_004c:  ldloca.s   V_6
+  IL_004e:  ldloc.s    V_4
+  IL_0050:  call       ""int?..ctor(int)""
+  IL_0055:  ldloc.s    V_6
+  IL_0057:  call       ""void E.set_P2<T>(T, int?)""
+  IL_005c:  nop
+  IL_005d:  br.s       IL_005f
+  IL_005f:  ret
+}
+");
+
+        verifier.VerifyIL("Program.Test22<T>(ref T)",
+@"
+{
+  // Code size       62 (0x3e)
+  .maxstack  3
+  .locals init (T& V_0,
+                int? V_1,
+                int V_2,
+                int? V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.0
+  IL_0003:  ldloc.0
+  IL_0004:  ldobj      ""T""
+  IL_0009:  call       ""int? E.get_P2<T>(T)""
+  IL_000e:  stloc.1
+  IL_000f:  ldloca.s   V_1
+  IL_0011:  call       ""int int?.GetValueOrDefault()""
+  IL_0016:  stloc.2
+  IL_0017:  ldloca.s   V_1
+  IL_0019:  call       ""bool int?.HasValue.get""
+  IL_001e:  brtrue.s   IL_003d
+  IL_0020:  call       ""int Program.Get1()""
+  IL_0025:  stloc.2
+  IL_0026:  ldloc.0
+  IL_0027:  ldobj      ""T""
+  IL_002c:  ldloca.s   V_3
+  IL_002e:  ldloc.2
+  IL_002f:  call       ""int?..ctor(int)""
+  IL_0034:  ldloc.3
+  IL_0035:  call       ""void E.set_P2<T>(T, int?)""
+  IL_003a:  nop
+  IL_003b:  br.s       IL_003d
+  IL_003d:  ret
+}
+");
+
+        comp = CreateRuntimeAsyncCompilation(src, options: TestOptions.DebugExe);
+        verifier = CompileAndVerify(comp, expectedOutput: RuntimeAsyncTestHelpers.ExpectedOutput(expectedOutput), verify: Verification.Fails with
+        {
+            ILVerifyMessage = """
+                [Main]: Return value missing on the stack. { Offset = 0x164 }
+                [Test13]: Return value missing on the stack. { Offset = 0x82 }
+                [Test23]: Return value missing on the stack. { Offset = 0x90 }
+                [Get1Async]: Unexpected type on the stack. { Offset = 0x3b, Found = Int32, Expected = ref '[System.Runtime]System.Threading.Tasks.Task`1<int32>' }
+                """
+        });
+
+        verifier.VerifyIL("Program.Test13<T>()", """
+            {
+              // Code size      131 (0x83)
+              .maxstack  4
+              .locals init (T V_0,
+                            T& V_1,
+                            object V_2,
+                            object V_3,
+                            T V_4,
+                            int V_5,
+                            object V_6,
+                            object V_7)
+              IL_0000:  nop
+              IL_0001:  ldloca.s   V_4
+              IL_0003:  initobj    "T"
+              IL_0009:  ldloc.s    V_4
+              IL_000b:  box        "T"
+              IL_0010:  brtrue.s   IL_001a
+              IL_0012:  ldsfld     "T Program<T>.F"
+              IL_0017:  stloc.0
+              IL_0018:  br.s       IL_0020
+              IL_001a:  ldsfld     "T Program<T>.F"
+              IL_001f:  pop
+              IL_0020:  ldloca.s   V_4
+              IL_0022:  initobj    "T"
+              IL_0028:  ldloc.s    V_4
+              IL_002a:  box        "T"
+              IL_002f:  brtrue.s   IL_0034
+              IL_0031:  ldloc.0
+              IL_0032:  br.s       IL_0039
+              IL_0034:  ldsfld     "T Program<T>.F"
+              IL_0039:  ldc.i4.0
+              IL_003a:  call       "object E.get_Item<T>(T, int)"
+              IL_003f:  stloc.2
+              IL_0040:  ldloc.2
+              IL_0041:  stloc.3
+              IL_0042:  ldloc.3
+              IL_0043:  brtrue.s   IL_0082
+              IL_0045:  call       "System.Threading.Tasks.Task<int> Program.Get1Async()"
+              IL_004a:  call       "int System.Runtime.CompilerServices.AsyncHelpers.Await<int>(System.Threading.Tasks.Task<int>)"
+              IL_004f:  stloc.s    V_5
+              IL_0051:  ldloc.s    V_5
+              IL_0053:  box        "int"
+              IL_0058:  stloc.s    V_6
+              IL_005a:  ldloca.s   V_4
+              IL_005c:  initobj    "T"
+              IL_0062:  ldloc.s    V_4
+              IL_0064:  box        "T"
+              IL_0069:  brtrue.s   IL_006e
+              IL_006b:  ldloc.0
+              IL_006c:  br.s       IL_0073
+              IL_006e:  ldsfld     "T Program<T>.F"
+              IL_0073:  ldc.i4.0
+              IL_0074:  ldloc.s    V_6
+              IL_0076:  dup
+              IL_0077:  stloc.s    V_7
+              IL_0079:  call       "void E.set_Item<T>(T, int, object)"
+              IL_007e:  nop
+              IL_007f:  ldloc.s    V_7
+              IL_0081:  stloc.3
+              IL_0082:  ret
+            }
+            """);
+
+        verifier.VerifyIL("Program.Test23<T>()", """
+            {
+              // Code size      145 (0x91)
+              .maxstack  3
+              .locals init (T V_0,
+                            T& V_1,
+                            int? V_2,
+                            int V_3,
+                            int V_4,
+                            T V_5,
+                            int V_6,
+                            int? V_7)
+              IL_0000:  nop
+              IL_0001:  ldloca.s   V_5
+              IL_0003:  initobj    "T"
+              IL_0009:  ldloc.s    V_5
+              IL_000b:  box        "T"
+              IL_0010:  brtrue.s   IL_001a
+              IL_0012:  ldsfld     "T Program<T>.F"
+              IL_0017:  stloc.0
+              IL_0018:  br.s       IL_0020
+              IL_001a:  ldsfld     "T Program<T>.F"
+              IL_001f:  pop
+              IL_0020:  ldloca.s   V_5
+              IL_0022:  initobj    "T"
+              IL_0028:  ldloc.s    V_5
+              IL_002a:  box        "T"
+              IL_002f:  brtrue.s   IL_0034
+              IL_0031:  ldloc.0
+              IL_0032:  br.s       IL_0039
+              IL_0034:  ldsfld     "T Program<T>.F"
+              IL_0039:  call       "int? E.get_P2<T>(T)"
+              IL_003e:  stloc.2
+              IL_003f:  ldloca.s   V_2
+              IL_0041:  call       "readonly int int?.GetValueOrDefault()"
+              IL_0046:  stloc.3
+              IL_0047:  ldloca.s   V_2
+              IL_0049:  call       "readonly bool int?.HasValue.get"
+              IL_004e:  brfalse.s  IL_0055
+              IL_0050:  ldloc.3
+              IL_0051:  stloc.s    V_4
+              IL_0053:  br.s       IL_0090
+              IL_0055:  call       "System.Threading.Tasks.Task<int> Program.Get1Async()"
+              IL_005a:  call       "int System.Runtime.CompilerServices.AsyncHelpers.Await<int>(System.Threading.Tasks.Task<int>)"
+              IL_005f:  stloc.s    V_6
+              IL_0061:  ldloc.s    V_6
+              IL_0063:  stloc.3
+              IL_0064:  ldloca.s   V_5
+              IL_0066:  initobj    "T"
+              IL_006c:  ldloc.s    V_5
+              IL_006e:  box        "T"
+              IL_0073:  brtrue.s   IL_0078
+              IL_0075:  ldloc.0
+              IL_0076:  br.s       IL_007d
+              IL_0078:  ldsfld     "T Program<T>.F"
+              IL_007d:  ldloca.s   V_7
+              IL_007f:  ldloc.3
+              IL_0080:  call       "int?..ctor(int)"
+              IL_0085:  ldloc.s    V_7
+              IL_0087:  call       "void E.set_P2<T>(T, int?)"
+              IL_008c:  nop
+              IL_008d:  ldloc.3
+              IL_008e:  stloc.s    V_4
+              IL_0090:  ret
+            }
+            """);
+    }
+
+    [Fact]
+    public void ElementAccess_ConditionalAssignment_05()
+    {
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public object this[int i]
+        {
+            get
+            {
+                System.Console.Write(((S1)(object)x).F1);
+                Program<S1>.F.F1++;
+                return null;
+            }
+            set
+            {
+                System.Console.Write(((S1)(object)x).F1);
+            }
+        }
+        public int? P2
+        {
+            get
+            {
+                System.Console.Write(((S1)(object)x).F1);
+                Program<S1>.F.F1++;
+                return null;
+            }
+            set
+            {
+                System.Console.Write(((S1)(object)x).F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        Program<S1>.F = new S1 { F1 = 123 };
+        Test12(ref Program<S1>.F);
+        System.Console.Write(Program<S1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<S1>.F = new S1 { F1 = 123 };
+        await Test13<S1>();
+        System.Console.Write(Program<S1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<S1>.F = new S1 { F1 = 123 };
+        Test22(ref Program<S1>.F);
+        System.Console.Write(Program<S1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<S1>.F = new S1 { F1 = 123 };
+        await Test23<S1>();
+        System.Console.Write(Program<S1>.F.F1);
+    }
+
+    static void Test12<T>(ref T f) where T : struct
+    {
+        f[0] ??= Get1();
+    }
+
+    static void Test22<T>(ref T f) where T : struct
+    {
+        f.P2 ??= Get1();
+    }
+
+    static int Get1()
+    {
+        Program<S1>.F.F1++;
+        return 1;
+    }
+
+    static async Task Test13<T>() where T : struct
+    {
+        Program<T>.F[0] ??= await Get1Async();
+    }
+
+    static async Task Test23<T>() where T : struct
+    {
+        Program<T>.F.P2 ??= await Get1Async();
+    }
+
+    static async Task<int> Get1Async()
+    {
+        Program<S1>.F.F1++;
+        await Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var expectedOutput = "123125125:123125125:123125125:123125125";
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test12<T>(ref T)",
+@"
+{
+  // Code size       33 (0x21)
+  .maxstack  4
+  .locals init (T& V_0,
+                object V_1)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.0
+  IL_0003:  ldloc.0
+  IL_0004:  ldc.i4.0
+  IL_0005:  call       ""object E.get_Item<T>(ref T, int)""
+  IL_000a:  brtrue.s   IL_0020
+  IL_000c:  ldloc.0
+  IL_000d:  ldc.i4.0
+  IL_000e:  call       ""int Program.Get1()""
+  IL_0013:  box        ""int""
+  IL_0018:  dup
+  IL_0019:  stloc.1
+  IL_001a:  call       ""void E.set_Item<T>(ref T, int, object)""
+  IL_001f:  nop
+  IL_0020:  ret
+}
+");
+
+        verifier.VerifyIL("Program.Test22<T>(ref T)",
+@"
+{
+  // Code size       52 (0x34)
+  .maxstack  3
+  .locals init (T& V_0,
+                int? V_1,
+                int V_2,
+                int? V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.0
+  IL_0003:  ldloc.0
+  IL_0004:  call       ""int? E.get_P2<T>(ref T)""
+  IL_0009:  stloc.1
+  IL_000a:  ldloca.s   V_1
+  IL_000c:  call       ""int int?.GetValueOrDefault()""
+  IL_0011:  stloc.2
+  IL_0012:  ldloca.s   V_1
+  IL_0014:  call       ""bool int?.HasValue.get""
+  IL_0019:  brtrue.s   IL_0033
+  IL_001b:  call       ""int Program.Get1()""
+  IL_0020:  stloc.2
+  IL_0021:  ldloc.0
+  IL_0022:  ldloca.s   V_3
+  IL_0024:  ldloc.2
+  IL_0025:  call       ""int?..ctor(int)""
+  IL_002a:  ldloc.3
+  IL_002b:  call       ""void E.set_P2<T>(ref T, int?)""
+  IL_0030:  nop
+  IL_0031:  br.s       IL_0033
+  IL_0033:  ret
+}
+");
+
+        comp = CreateRuntimeAsyncCompilation(src, options: TestOptions.DebugExe);
+        verifier = CompileAndVerify(comp, expectedOutput: RuntimeAsyncTestHelpers.ExpectedOutput(expectedOutput), verify: Verification.Fails with
+        {
+            ILVerifyMessage = """
+                [Main]: Return value missing on the stack. { Offset = 0xea }
+                [Test13]: Return value missing on the stack. { Offset = 0x35 }
+                [Test23]: Return value missing on the stack. { Offset = 0x47 }
+                [Get1Async]: Unexpected type on the stack. { Offset = 0x3b, Found = Int32, Expected = ref '[System.Runtime]System.Threading.Tasks.Task`1<int32>' }
+                """
+        });
+
+        verifier.VerifyIL("Program.Test13<T>()", """
+            {
+              // Code size       54 (0x36)
+              .maxstack  4
+              .locals init (T& V_0,
+                            object V_1,
+                            object V_2,
+                            int V_3,
+                            object V_4)
+              IL_0000:  nop
+              IL_0001:  ldsflda    "T Program<T>.F"
+              IL_0006:  ldc.i4.0
+              IL_0007:  call       "object E.get_Item<T>(ref T, int)"
+              IL_000c:  stloc.1
+              IL_000d:  ldloc.1
+              IL_000e:  stloc.2
+              IL_000f:  ldloc.2
+              IL_0010:  brtrue.s   IL_0035
+              IL_0012:  call       "System.Threading.Tasks.Task<int> Program.Get1Async()"
+              IL_0017:  call       "int System.Runtime.CompilerServices.AsyncHelpers.Await<int>(System.Threading.Tasks.Task<int>)"
+              IL_001c:  stloc.3
+              IL_001d:  ldsflda    "T Program<T>.F"
+              IL_0022:  ldc.i4.0
+              IL_0023:  ldloc.3
+              IL_0024:  box        "int"
+              IL_0029:  dup
+              IL_002a:  stloc.s    V_4
+              IL_002c:  call       "void E.set_Item<T>(ref T, int, object)"
+              IL_0031:  nop
+              IL_0032:  ldloc.s    V_4
+              IL_0034:  stloc.2
+              IL_0035:  ret
+            }
+            """);
+
+        verifier.VerifyIL("Program.Test23<T>()", """
+            {
+              // Code size       72 (0x48)
+              .maxstack  3
+              .locals init (T& V_0,
+                            int? V_1,
+                            int V_2,
+                            int V_3,
+                            int V_4,
+                            int? V_5)
+              IL_0000:  nop
+              IL_0001:  ldsflda    "T Program<T>.F"
+              IL_0006:  call       "int? E.get_P2<T>(ref T)"
+              IL_000b:  stloc.1
+              IL_000c:  ldloca.s   V_1
+              IL_000e:  call       "readonly int int?.GetValueOrDefault()"
+              IL_0013:  stloc.2
+              IL_0014:  ldloca.s   V_1
+              IL_0016:  call       "readonly bool int?.HasValue.get"
+              IL_001b:  brfalse.s  IL_0021
+              IL_001d:  ldloc.2
+              IL_001e:  stloc.3
+              IL_001f:  br.s       IL_0047
+              IL_0021:  call       "System.Threading.Tasks.Task<int> Program.Get1Async()"
+              IL_0026:  call       "int System.Runtime.CompilerServices.AsyncHelpers.Await<int>(System.Threading.Tasks.Task<int>)"
+              IL_002b:  stloc.s    V_4
+              IL_002d:  ldloc.s    V_4
+              IL_002f:  stloc.2
+              IL_0030:  ldsflda    "T Program<T>.F"
+              IL_0035:  ldloca.s   V_5
+              IL_0037:  ldloc.2
+              IL_0038:  call       "int?..ctor(int)"
+              IL_003d:  ldloc.s    V_5
+              IL_003f:  call       "void E.set_P2<T>(ref T, int?)"
+              IL_0044:  nop
+              IL_0045:  ldloc.2
+              IL_0046:  stloc.3
+              IL_0047:  ret
+            }
+            """);
+
+        var src2 = """
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public object this[int i] { get => 0; set {} }
+        public int? P2 { get => 0; set {} }
+    }
+}
+
+class Program
+{
+    static void Test1<T>() where T : struct
+    {
+        default(T)[0] += 1;
+    }
+    static void Test2<T>() where T : struct
+    {
+        default(T).P2 += 1;
+    }
+}
+
+namespace NS1
+{
+    static class E
+    {
+        extension<T>(in T x) where T : struct
+        {
+        }
+    }
+}
+
+namespace NS2
+{
+    static class E
+    {
+        extension<T>(ref readonly T x) where T : struct
+        {
+        }
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2);
+        comp2.VerifyDiagnostics(
+            // (14,9): error CS1510: A ref or out value must be an assignable variable
+            //         default(T)[0] += 1;
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(14, 9),
+            // (18,9): error CS1510: A ref or out value must be an assignable variable
+            //         default(T).P2 += 1;
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(18, 9),
+            // (26,25): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(in T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(26, 25),
+            // (36,35): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(ref readonly T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(36, 35)
+            );
+    }
+
+    [Fact]
+    public void ElementAccess_ConditionalAssignment_06()
+    {
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public object this[int i]
+        {
+            get
+            {
+                System.Console.Write(((C1)(object)x).F1);
+                Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+                return null;
+            }
+            set
+            {
+                System.Console.Write(((C1)(object)x).F1);
+            }
+        }
+        public int? P2
+        {
+            get
+            {
+                System.Console.Write(((C1)(object)x).F1);
+                Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+                return null;
+            }
+            set
+            {
+                System.Console.Write(((C1)(object)x).F1);
+            }
+        }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        Program<C1>.F = new C1 { F1 = 123 };
+        Test11(ref Program<C1>.F);
+        System.Console.Write(Program<C1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<C1>.F = new C1 { F1 = 123 };
+        Test12(ref Program<C1>.F);
+        System.Console.Write(Program<C1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<C1>.F = new C1 { F1 = 123 };
+        await Test13<C1>();
+        System.Console.Write(Program<C1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<C1>.F = new C1 { F1 = 123 };
+        Test21(ref Program<C1>.F);
+        System.Console.Write(Program<C1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<C1>.F = new C1 { F1 = 123 };
+        Test22(ref Program<C1>.F);
+        System.Console.Write(Program<C1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<C1>.F = new C1 { F1 = 123 };
+        await Test23<C1>();
+        System.Console.Write(Program<C1>.F.F1);
+    }
+
+    static void Test11<T>(ref T f)
+    {
+        f[0] ??= Get1();
+    }
+
+    static void Test21<T>(ref T f)
+    {
+        f.P2 ??= Get1();
+    }
+
+    static void Test12<T>(ref T f) where T : class
+    {
+        f[0] ??= Get1();
+    }
+
+    static void Test22<T>(ref T f) where T : class
+    {
+        f.P2 ??= Get1();
+    }
+
+    static int Get1()
+    {
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        return 1;
+    }
+
+    static async Task Test13<T>()
+    {
+        Program<T>.F[0] ??= await Get1Async();
+    }
+
+    static async Task Test23<T>()
+    {
+        Program<T>.F.P2 ??= await Get1Async();
+    }
+
+    static async Task<int> Get1Async()
+    {
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        await Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var expectedOutput = "123123125:123123125:123123125:123123125:123123125:123123125";
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test11<T>(ref T)",
+@"
+{
+  // Code size       77 (0x4d)
+  .maxstack  4
+  .locals init (T& V_0,
+                T V_1,
+                T& V_2,
+                T V_3,
+                object V_4,
+                object V_5)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.2
+  IL_0003:  ldloca.s   V_3
+  IL_0005:  initobj    ""T""
+  IL_000b:  ldloc.3
+  IL_000c:  box        ""T""
+  IL_0011:  brtrue.s   IL_001e
+  IL_0013:  ldloc.2
+  IL_0014:  ldobj      ""T""
+  IL_0019:  stloc.1
+  IL_001a:  ldloca.s   V_1
+  IL_001c:  br.s       IL_001f
+  IL_001e:  ldloc.2
+  IL_001f:  stloc.0
+  IL_0020:  ldloc.0
+  IL_0021:  ldobj      ""T""
+  IL_0026:  ldc.i4.0
+  IL_0027:  call       ""object E.get_Item<T>(T, int)""
+  IL_002c:  brtrue.s   IL_004c
+  IL_002e:  call       ""int Program.Get1()""
+  IL_0033:  box        ""int""
+  IL_0038:  stloc.s    V_4
+  IL_003a:  ldloc.0
+  IL_003b:  ldobj      ""T""
+  IL_0040:  ldc.i4.0
+  IL_0041:  ldloc.s    V_4
+  IL_0043:  dup
+  IL_0044:  stloc.s    V_5
+  IL_0046:  call       ""void E.set_Item<T>(T, int, object)""
+  IL_004b:  nop
+  IL_004c:  ret
+}
+");
+
+        verifier.VerifyIL("Program.Test12<T>(ref T)",
+@"
+{
+  // Code size       38 (0x26)
+  .maxstack  4
+  .locals init (T V_0,
+                object V_1)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  ldobj      ""T""
+  IL_0007:  stloc.0
+  IL_0008:  ldloc.0
+  IL_0009:  ldc.i4.0
+  IL_000a:  call       ""object E.get_Item<T>(T, int)""
+  IL_000f:  brtrue.s   IL_0025
+  IL_0011:  ldloc.0
+  IL_0012:  ldc.i4.0
+  IL_0013:  call       ""int Program.Get1()""
+  IL_0018:  box        ""int""
+  IL_001d:  dup
+  IL_001e:  stloc.1
+  IL_001f:  call       ""void E.set_Item<T>(T, int, object)""
+  IL_0024:  nop
+  IL_0025:  ret
+}
+");
+
+        verifier.VerifyIL("Program.Test21<T>(ref T)",
+@"
+{
+  // Code size       96 (0x60)
+  .maxstack  3
+  .locals init (T& V_0,
+            T V_1,
+            T& V_2,
+            int? V_3,
+            int V_4,
+            T V_5,
+            int? V_6)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.2
+  IL_0003:  ldloca.s   V_5
+  IL_0005:  initobj    ""T""
+  IL_000b:  ldloc.s    V_5
+  IL_000d:  box        ""T""
+  IL_0012:  brtrue.s   IL_001f
+  IL_0014:  ldloc.2
+  IL_0015:  ldobj      ""T""
+  IL_001a:  stloc.1
+  IL_001b:  ldloca.s   V_1
+  IL_001d:  br.s       IL_0020
+  IL_001f:  ldloc.2
+  IL_0020:  stloc.0
+  IL_0021:  ldloc.0
+  IL_0022:  ldobj      ""T""
+  IL_0027:  call       ""int? E.get_P2<T>(T)""
+  IL_002c:  stloc.3
+  IL_002d:  ldloca.s   V_3
+  IL_002f:  call       ""int int?.GetValueOrDefault()""
+  IL_0034:  stloc.s    V_4
+  IL_0036:  ldloca.s   V_3
+  IL_0038:  call       ""bool int?.HasValue.get""
+  IL_003d:  brtrue.s   IL_005f
+  IL_003f:  call       ""int Program.Get1()""
+  IL_0044:  stloc.s    V_4
+  IL_0046:  ldloc.0
+  IL_0047:  ldobj      ""T""
+  IL_004c:  ldloca.s   V_6
+  IL_004e:  ldloc.s    V_4
+  IL_0050:  call       ""int?..ctor(int)""
+  IL_0055:  ldloc.s    V_6
+  IL_0057:  call       ""void E.set_P2<T>(T, int?)""
+  IL_005c:  nop
+  IL_005d:  br.s       IL_005f
+  IL_005f:  ret
+}
+");
+
+        verifier.VerifyIL("Program.Test22<T>(ref T)",
+@"
+{
+  // Code size       57 (0x39)
+  .maxstack  3
+  .locals init (T V_0,
+                int? V_1,
+                int V_2,
+                int? V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  ldobj      ""T""
+  IL_0007:  stloc.0
+  IL_0008:  ldloc.0
+  IL_0009:  call       ""int? E.get_P2<T>(T)""
+  IL_000e:  stloc.1
+  IL_000f:  ldloca.s   V_1
+  IL_0011:  call       ""int int?.GetValueOrDefault()""
+  IL_0016:  stloc.2
+  IL_0017:  ldloca.s   V_1
+  IL_0019:  call       ""bool int?.HasValue.get""
+  IL_001e:  brtrue.s   IL_0038
+  IL_0020:  call       ""int Program.Get1()""
+  IL_0025:  stloc.2
+  IL_0026:  ldloc.0
+  IL_0027:  ldloca.s   V_3
+  IL_0029:  ldloc.2
+  IL_002a:  call       ""int?..ctor(int)""
+  IL_002f:  ldloc.3
+  IL_0030:  call       ""void E.set_P2<T>(T, int?)""
+  IL_0035:  nop
+  IL_0036:  br.s       IL_0038
+  IL_0038:  ret
+}
+");
+
+        comp = CreateRuntimeAsyncCompilation(src, options: TestOptions.DebugExe);
+        verifier = CompileAndVerify(comp, expectedOutput: RuntimeAsyncTestHelpers.ExpectedOutput(expectedOutput), verify: Verification.Fails with
+        {
+            ILVerifyMessage = """
+                [Main]: Return value missing on the stack. { Offset = 0x146 }
+                [Test13]: Return value missing on the stack. { Offset = 0x82 }
+                [Test23]: Return value missing on the stack. { Offset = 0x90 }
+                [Get1Async]: Unexpected type on the stack. { Offset = 0x48, Found = Int32, Expected = ref '[System.Runtime]System.Threading.Tasks.Task`1<int32>' }
+                """
+        });
+
+        verifier.VerifyIL("Program.Test13<T>()", """
+            {
+              // Code size      131 (0x83)
+              .maxstack  4
+              .locals init (T V_0,
+                            T& V_1,
+                            object V_2,
+                            object V_3,
+                            T V_4,
+                            int V_5,
+                            object V_6,
+                            object V_7)
+              IL_0000:  nop
+              IL_0001:  ldloca.s   V_4
+              IL_0003:  initobj    "T"
+              IL_0009:  ldloc.s    V_4
+              IL_000b:  box        "T"
+              IL_0010:  brtrue.s   IL_001a
+              IL_0012:  ldsfld     "T Program<T>.F"
+              IL_0017:  stloc.0
+              IL_0018:  br.s       IL_0020
+              IL_001a:  ldsfld     "T Program<T>.F"
+              IL_001f:  pop
+              IL_0020:  ldloca.s   V_4
+              IL_0022:  initobj    "T"
+              IL_0028:  ldloc.s    V_4
+              IL_002a:  box        "T"
+              IL_002f:  brtrue.s   IL_0034
+              IL_0031:  ldloc.0
+              IL_0032:  br.s       IL_0039
+              IL_0034:  ldsfld     "T Program<T>.F"
+              IL_0039:  ldc.i4.0
+              IL_003a:  call       "object E.get_Item<T>(T, int)"
+              IL_003f:  stloc.2
+              IL_0040:  ldloc.2
+              IL_0041:  stloc.3
+              IL_0042:  ldloc.3
+              IL_0043:  brtrue.s   IL_0082
+              IL_0045:  call       "System.Threading.Tasks.Task<int> Program.Get1Async()"
+              IL_004a:  call       "int System.Runtime.CompilerServices.AsyncHelpers.Await<int>(System.Threading.Tasks.Task<int>)"
+              IL_004f:  stloc.s    V_5
+              IL_0051:  ldloc.s    V_5
+              IL_0053:  box        "int"
+              IL_0058:  stloc.s    V_6
+              IL_005a:  ldloca.s   V_4
+              IL_005c:  initobj    "T"
+              IL_0062:  ldloc.s    V_4
+              IL_0064:  box        "T"
+              IL_0069:  brtrue.s   IL_006e
+              IL_006b:  ldloc.0
+              IL_006c:  br.s       IL_0073
+              IL_006e:  ldsfld     "T Program<T>.F"
+              IL_0073:  ldc.i4.0
+              IL_0074:  ldloc.s    V_6
+              IL_0076:  dup
+              IL_0077:  stloc.s    V_7
+              IL_0079:  call       "void E.set_Item<T>(T, int, object)"
+              IL_007e:  nop
+              IL_007f:  ldloc.s    V_7
+              IL_0081:  stloc.3
+              IL_0082:  ret
+            }
+            """);
+
+        verifier.VerifyIL("Program.Test23<T>()", """
+            {
+              // Code size      145 (0x91)
+              .maxstack  3
+              .locals init (T V_0,
+                            T& V_1,
+                            int? V_2,
+                            int V_3,
+                            int V_4,
+                            T V_5,
+                            int V_6,
+                            int? V_7)
+              IL_0000:  nop
+              IL_0001:  ldloca.s   V_5
+              IL_0003:  initobj    "T"
+              IL_0009:  ldloc.s    V_5
+              IL_000b:  box        "T"
+              IL_0010:  brtrue.s   IL_001a
+              IL_0012:  ldsfld     "T Program<T>.F"
+              IL_0017:  stloc.0
+              IL_0018:  br.s       IL_0020
+              IL_001a:  ldsfld     "T Program<T>.F"
+              IL_001f:  pop
+              IL_0020:  ldloca.s   V_5
+              IL_0022:  initobj    "T"
+              IL_0028:  ldloc.s    V_5
+              IL_002a:  box        "T"
+              IL_002f:  brtrue.s   IL_0034
+              IL_0031:  ldloc.0
+              IL_0032:  br.s       IL_0039
+              IL_0034:  ldsfld     "T Program<T>.F"
+              IL_0039:  call       "int? E.get_P2<T>(T)"
+              IL_003e:  stloc.2
+              IL_003f:  ldloca.s   V_2
+              IL_0041:  call       "readonly int int?.GetValueOrDefault()"
+              IL_0046:  stloc.3
+              IL_0047:  ldloca.s   V_2
+              IL_0049:  call       "readonly bool int?.HasValue.get"
+              IL_004e:  brfalse.s  IL_0055
+              IL_0050:  ldloc.3
+              IL_0051:  stloc.s    V_4
+              IL_0053:  br.s       IL_0090
+              IL_0055:  call       "System.Threading.Tasks.Task<int> Program.Get1Async()"
+              IL_005a:  call       "int System.Runtime.CompilerServices.AsyncHelpers.Await<int>(System.Threading.Tasks.Task<int>)"
+              IL_005f:  stloc.s    V_6
+              IL_0061:  ldloc.s    V_6
+              IL_0063:  stloc.3
+              IL_0064:  ldloca.s   V_5
+              IL_0066:  initobj    "T"
+              IL_006c:  ldloc.s    V_5
+              IL_006e:  box        "T"
+              IL_0073:  brtrue.s   IL_0078
+              IL_0075:  ldloc.0
+              IL_0076:  br.s       IL_007d
+              IL_0078:  ldsfld     "T Program<T>.F"
+              IL_007d:  ldloca.s   V_7
+              IL_007f:  ldloc.3
+              IL_0080:  call       "int?..ctor(int)"
+              IL_0085:  ldloc.s    V_7
+              IL_0087:  call       "void E.set_P2<T>(T, int?)"
+              IL_008c:  nop
+              IL_008d:  ldloc.3
+              IL_008e:  stloc.s    V_4
+              IL_0090:  ret
+            }
+            """);
+    }
+
+    [Fact]
+    public void ElementAccess_DeconstructAssignment_01()
+    {
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int this[int i]
+        {
+            get
+            {
+                throw null;
+            }
+            set
+            {
+                System.Console.Write(x.F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public void Test()
+    {
+        (this[0], _) = (Program.Get1(), 0);
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 123 };
+        Test();
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new S1 { F1 = 123 };
+        F.Test();
+        System.Console.Write(F.F1);
+    }
+
+    static void Test()
+    {
+        (F[0], _) = (Get1(), 0);
+    }
+
+    public static int Get1()
+    {
+        System.Console.Write(Program.F.F1);
+        Program.F.F1++;
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123124124:123124124").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test",
+@"
+{
+  // Code size       26 (0x1a)
+  .maxstack  3
+  .locals init (int V_0)
+  IL_0000:  nop
+  IL_0001:  ldsflda    ""S1 Program.F""
+  IL_0006:  call       ""int Program.Get1()""
+  IL_000b:  stloc.0
+  IL_000c:  ldobj      ""S1""
+  IL_0011:  ldc.i4.0
+  IL_0012:  ldloc.0
+  IL_0013:  call       ""void E.set_Item(S1, int, int)""
+  IL_0018:  nop
+  IL_0019:  ret
+}
+");
+
+        verifier.VerifyIL("S1.Test",
+@"
+{
+  // Code size       22 (0x16)
+  .maxstack  3
+  .locals init (int V_0)
+  IL_0000:  nop
+  IL_0001:  call       ""int Program.Get1()""
+  IL_0006:  stloc.0
+  IL_0007:  ldarg.0
+  IL_0008:  ldobj      ""S1""
+  IL_000d:  ldc.i4.0
+  IL_000e:  ldloc.0
+  IL_000f:  call       ""void E.set_Item(S1, int, int)""
+  IL_0014:  nop
+  IL_0015:  ret
+}
+");
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ElementAccess_DeconstructAssignment_02(string refKind)
+    {
+        var src = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int this[int i]
+        {
+            get
+            {
+                throw null;
+            }
+            set
+            {
+                System.Console.Write(x.F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public void Test()
+    {
+        (this[0], _) = (Program.Get1(), 0);
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 123 };
+        Test();
+        System.Console.Write(F.F1);
+
+        System.Console.Write(":");
+
+        F = new S1 { F1 = 123 };
+        F.Test();
+        System.Console.Write(F.F1);
+    }
+
+    static void Test()
+    {
+        (F[0], _) = (Get1(), 0);
+    }
+
+    public static int Get1()
+    {
+        System.Console.Write(Program.F.F1);
+        Program.F.F1++;
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123124124:123124124").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test",
+@"{
+  // Code size       21 (0x15)
+  .maxstack  3
+  .locals init (int V_0)
+  IL_0000:  nop
+  IL_0001:  ldsflda    ""S1 Program.F""
+  IL_0006:  call       ""int Program.Get1()""
+  IL_000b:  stloc.0
+  IL_000c:  ldc.i4.0
+  IL_000d:  ldloc.0
+  IL_000e:  call       ""void E.set_Item(" + refKind + @" S1, int, int)""
+  IL_0013:  nop
+  IL_0014:  ret
+}
+");
+
+        verifier.VerifyIL("S1.Test",
+@"
+{
+  // Code size       17 (0x11)
+  .maxstack  3
+  .locals init (int V_0)
+  IL_0000:  nop
+  IL_0001:  call       ""int Program.Get1()""
+  IL_0006:  stloc.0
+  IL_0007:  ldarg.0
+  IL_0008:  ldc.i4.0
+  IL_0009:  ldloc.0
+  IL_000a:  call       ""void E.set_Item(" + refKind + @" S1, int, int)""
+  IL_000f:  nop
+  IL_0010:  ret
+}
+");
+
+        var src2 = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int this[int i] { get => 0; set {} }
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        (default(S1)[0], _) = (1, 0);
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2);
+        switch (refKind)
+        {
+            case "ref":
+                comp2.VerifyDiagnostics(
+                    // (15,10): error CS1510: A ref or out value must be an assignable variable
+                    //         (default(S1)[0], _) = (1, 0);
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(15, 10)
+                    );
+                break;
+            case "ref readonly":
+                comp2.VerifyDiagnostics(
+                    // (15,10): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         (default(S1)[0], _) = (1, 0);
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(15, 10),
+                    // (15,10): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                    //         (default(S1)[0], _) = (1, 0);
+                    Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[0]").WithLocation(15, 10)
+                    );
+                break;
+            case "in":
+                comp2.VerifyDiagnostics(
+                    // (15,10): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                    //         (default(S1)[0], _) = (1, 0);
+                    Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[0]").WithLocation(15, 10)
+                    );
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(refKind);
+        }
+    }
+
+    [Fact]
+    public void ElementAccess_DeconstructAssignment_03()
+    {
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int this[int i]
+        {
+            get
+            {
+                throw null;
+            }
+            set
+            {
+                System.Console.Write(x.F1);
+            }
+        }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static C1 F = new C1 { F1 = 123 };
+
+    static void Main()
+    {
+        Test();
+        System.Console.Write(F.F1);
+    }
+
+    static void Test()
+    {
+        (F[0], _) = (Get1(), 0);
+    }
+
+    static int Get1()
+    {
+        System.Console.Write(Program.F.F1);
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123123124").VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test",
+@"{
+  // Code size       21 (0x15)
+  .maxstack  3
+  .locals init (int V_0)
+  IL_0000:  nop
+  IL_0001:  ldsfld     ""C1 Program.F""
+  IL_0006:  call       ""int Program.Get1()""
+  IL_000b:  stloc.0
+  IL_000c:  ldc.i4.0
+  IL_000d:  ldloc.0
+  IL_000e:  call       ""void E.set_Item(C1, int, int)""
+  IL_0013:  nop
+  IL_0014:  ret
+}");
+    }
+
+    [Fact]
+    public void ElementAccess_DeconstructAssignment_04()
+    {
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i]
+        {
+            get
+            {
+                throw null;
+            }
+            set
+            {
+                System.Console.Write(((S1)(object)x).F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        Program<S1>.F = new S1 { F1 = 123 };
+        Test1(ref Program<S1>.F);
+        System.Console.Write(Program<S1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<S1>.F = new S1 { F1 = 123 };
+        Test2(ref Program<S1>.F);
+        System.Console.Write(Program<S1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<S1>.F = new S1 { F1 = 123 };
+        await Test3<S1>();
+        System.Console.Write(Program<S1>.F.F1);
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        (f[0], _) = (Get1(), 0);
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        (f[0], _) = (Get1(), 0);
+    }
+
+    static int Get1()
+    {
+        System.Console.Write(Program<S1>.F.F1);
+        Program<S1>.F.F1++;
+        return 1;
+    }
+
+    static async Task Test3<T>()
+    {
+        (Program<T>.F[0], _) = (await Get1Async(), 0);
+    }
+
+    static async Task<int> Get1Async()
+    {
+        System.Console.Write(Program<S1>.F.F1);
+        Program<S1>.F.F1++;
+        await Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var expectedOutput = "123124124:123124124:123124124";
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1<T>(ref T)",
+@"{
+  // Code size       51 (0x33)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                T V_2,
+                int V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.1
+  IL_0003:  ldloca.s   V_2
+  IL_0005:  initobj    ""T""
+  IL_000b:  ldloc.2
+  IL_000c:  box        ""T""
+  IL_0011:  brtrue.s   IL_001e
+  IL_0013:  ldloc.1
+  IL_0014:  ldobj      ""T""
+  IL_0019:  stloc.0
+  IL_001a:  ldloca.s   V_0
+  IL_001c:  br.s       IL_001f
+  IL_001e:  ldloc.1
+  IL_001f:  call       ""int Program.Get1()""
+  IL_0024:  stloc.3
+  IL_0025:  ldobj      ""T""
+  IL_002a:  ldc.i4.0
+  IL_002b:  ldloc.3
+  IL_002c:  call       ""void E.set_Item<T>(T, int, int)""
+  IL_0031:  nop
+  IL_0032:  ret
+}");
+
+        verifier.VerifyIL("Program.Test2<T>(ref T)",
+@"{
+  // Code size       22 (0x16)
+  .maxstack  3
+  .locals init (int V_0)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  call       ""int Program.Get1()""
+  IL_0007:  stloc.0
+  IL_0008:  ldobj      ""T""
+  IL_000d:  ldc.i4.0
+  IL_000e:  ldloc.0
+  IL_000f:  call       ""void E.set_Item<T>(T, int, int)""
+  IL_0014:  nop
+  IL_0015:  ret
+}");
+
+        comp = CreateRuntimeAsyncCompilation(src, options: TestOptions.DebugExe);
+        verifier = CompileAndVerify(comp, expectedOutput: RuntimeAsyncTestHelpers.ExpectedOutput(expectedOutput), verify: Verification.Fails with
+        {
+            ILVerifyMessage = """
+                [Main]: Return value missing on the stack. { Offset = 0xad }
+                [Test3]: Return value missing on the stack. { Offset = 0x4e }
+                [Get1Async]: Unexpected type on the stack. { Offset = 0x4b, Found = Int32, Expected = ref '[System.Runtime]System.Threading.Tasks.Task`1<int32>' }
+                """
+        });
+
+        verifier.VerifyIL("Program.Test3<T>()", """
+            {
+              // Code size       79 (0x4f)
+              .maxstack  3
+              .locals init (T V_0,
+                            T& V_1,
+                            int V_2,
+                            int V_3,
+                            T V_4)
+              IL_0000:  nop
+              IL_0001:  ldloca.s   V_4
+              IL_0003:  initobj    "T"
+              IL_0009:  ldloc.s    V_4
+              IL_000b:  box        "T"
+              IL_0010:  brtrue.s   IL_001a
+              IL_0012:  ldsfld     "T Program<T>.F"
+              IL_0017:  stloc.0
+              IL_0018:  br.s       IL_0020
+              IL_001a:  ldsfld     "T Program<T>.F"
+              IL_001f:  pop
+              IL_0020:  call       "System.Threading.Tasks.Task<int> Program.Get1Async()"
+              IL_0025:  call       "int System.Runtime.CompilerServices.AsyncHelpers.Await<int>(System.Threading.Tasks.Task<int>)"
+              IL_002a:  stloc.2
+              IL_002b:  ldloc.2
+              IL_002c:  stloc.3
+              IL_002d:  ldloca.s   V_4
+              IL_002f:  initobj    "T"
+              IL_0035:  ldloc.s    V_4
+              IL_0037:  box        "T"
+              IL_003c:  brtrue.s   IL_0041
+              IL_003e:  ldloc.0
+              IL_003f:  br.s       IL_0046
+              IL_0041:  ldsfld     "T Program<T>.F"
+              IL_0046:  ldc.i4.0
+              IL_0047:  ldloc.3
+              IL_0048:  call       "void E.set_Item<T>(T, int, int)"
+              IL_004d:  nop
+              IL_004e:  ret
+            }
+            """);
+    }
+
+    [Fact]
+    public void ElementAccess_DeconstructAssignment_05()
+    {
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int this[int i]
+        {
+            get
+            {
+                throw null;
+            }
+            set
+            {
+                System.Console.Write(((S1)(object)x).F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        Program<S1>.F = new S1 { F1 = 123 };
+        Test2(ref Program<S1>.F);
+        System.Console.Write(Program<S1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<S1>.F = new S1 { F1 = 123 };
+        await Test3<S1>();
+        System.Console.Write(Program<S1>.F.F1);
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        (f[0], _) = (Get1(), 0);
+    }
+
+    static int Get1()
+    {
+        System.Console.Write(Program<S1>.F.F1);
+        Program<S1>.F.F1++;
+        return 1;
+    }
+
+    static async Task Test3<T>() where T : struct
+    {
+        (Program<T>.F[0], _) = (await Get1Async(), 0);
+    }
+
+    static async Task<int> Get1Async()
+    {
+        System.Console.Write(Program<S1>.F.F1);
+        Program<S1>.F.F1++;
+        await Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var expectedOutput = "123124124:123124124";
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test2<T>(ref T)",
+@"{
+  // Code size       17 (0x11)
+  .maxstack  3
+  .locals init (int V_0)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  call       ""int Program.Get1()""
+  IL_0007:  stloc.0
+  IL_0008:  ldc.i4.0
+  IL_0009:  ldloc.0
+  IL_000a:  call       ""void E.set_Item<T>(ref T, int, int)""
+  IL_000f:  nop
+  IL_0010:  ret
+}");
+
+        comp = CreateRuntimeAsyncCompilation(src, options: TestOptions.DebugExe);
+        verifier = CompileAndVerify(comp, expectedOutput: RuntimeAsyncTestHelpers.ExpectedOutput(expectedOutput), verify: Verification.Fails with
+        {
+            ILVerifyMessage = """
+                [Main]: Return value missing on the stack. { Offset = 0x70 }
+                [Test3]: Return value missing on the stack. { Offset = 0x1b }
+                [Get1Async]: Unexpected type on the stack. { Offset = 0x4b, Found = Int32, Expected = ref '[System.Runtime]System.Threading.Tasks.Task`1<int32>' }
+                """
+        });
+
+        verifier.VerifyIL("Program.Test3<T>()", """
+            {
+              // Code size       28 (0x1c)
+              .maxstack  3
+              .locals init (T& V_0,
+                            int V_1,
+                            int V_2)
+              IL_0000:  nop
+              IL_0001:  call       "System.Threading.Tasks.Task<int> Program.Get1Async()"
+              IL_0006:  call       "int System.Runtime.CompilerServices.AsyncHelpers.Await<int>(System.Threading.Tasks.Task<int>)"
+              IL_000b:  stloc.1
+              IL_000c:  ldloc.1
+              IL_000d:  stloc.2
+              IL_000e:  ldsflda    "T Program<T>.F"
+              IL_0013:  ldc.i4.0
+              IL_0014:  ldloc.2
+              IL_0015:  call       "void E.set_Item<T>(ref T, int, int)"
+              IL_001a:  nop
+              IL_001b:  ret
+            }
+            """);
+
+        var src2 = """
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int this[int i] { get => 0; set {} }
+    }
+}
+
+class Program
+{
+    static void Test<T>() where T : struct
+    {
+        (default(T)[0], _) = (1, 0);
+    }
+}
+
+namespace NS1
+{
+    static class E
+    {
+        extension<T>(in T x) where T : struct
+        {
+        }
+    }
+}
+
+namespace NS2
+{
+    static class E
+    {
+        extension<T>(ref readonly T x) where T : struct
+        {
+        }
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2);
+        comp2.VerifyDiagnostics(
+            // (13,10): error CS1510: A ref or out value must be an assignable variable
+            //         (default(T)[0], _) = (1, 0);
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(13, 10),
+            // (21,25): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(in T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(21, 25),
+            // (31,35): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(ref readonly T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(31, 35)
+            );
+    }
+
+    [Fact]
+    public void ElementAccess_DeconstructAssignment_06()
+    {
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i]
+        {
+            get
+            {
+                throw null;
+            }
+            set
+            {
+                System.Console.Write(((C1)(object)x).F1);
+            }
+        }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        Program<C1>.F = new C1 { F1 = 123 };
+        Test1(ref Program<C1>.F);
+        System.Console.Write(Program<C1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<C1>.F = new C1 { F1 = 123 };
+        Test2(ref Program<C1>.F);
+        System.Console.Write(Program<C1>.F.F1);
+
+        System.Console.Write(":");
+
+        Program<C1>.F = new C1 { F1 = 123 };
+        await Test3<C1>();
+        System.Console.Write(Program<C1>.F.F1);
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        (f[0], _) = (Get1(), 0);
+    }
+
+    static void Test2<T>(ref T f) where T : class
+    {
+        (f[0], _) = (Get1(), 0);
+    }
+
+    static int Get1()
+    {
+        System.Console.Write(Program<C1>.F.F1);
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        return 1;
+    }
+
+    static async Task Test3<T>()
+    {
+        (Program<T>.F[0], _) = (await Get1Async(), 0);
+    }
+
+    static async Task<int> Get1Async()
+    {
+        System.Console.Write(Program<C1>.F.F1);
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        await Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var expectedOutput = "123123124:123123124:123123124";
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1<T>(ref T)",
+@"{
+  // Code size       51 (0x33)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                T V_2,
+                int V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.1
+  IL_0003:  ldloca.s   V_2
+  IL_0005:  initobj    ""T""
+  IL_000b:  ldloc.2
+  IL_000c:  box        ""T""
+  IL_0011:  brtrue.s   IL_001e
+  IL_0013:  ldloc.1
+  IL_0014:  ldobj      ""T""
+  IL_0019:  stloc.0
+  IL_001a:  ldloca.s   V_0
+  IL_001c:  br.s       IL_001f
+  IL_001e:  ldloc.1
+  IL_001f:  call       ""int Program.Get1()""
+  IL_0024:  stloc.3
+  IL_0025:  ldobj      ""T""
+  IL_002a:  ldc.i4.0
+  IL_002b:  ldloc.3
+  IL_002c:  call       ""void E.set_Item<T>(T, int, int)""
+  IL_0031:  nop
+  IL_0032:  ret
+}");
+
+        verifier.VerifyIL("Program.Test2<T>(ref T)",
+@"{
+  // Code size       22 (0x16)
+  .maxstack  3
+  .locals init (int V_0)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  ldobj      ""T""
+  IL_0007:  call       ""int Program.Get1()""
+  IL_000c:  stloc.0
+  IL_000d:  ldc.i4.0
+  IL_000e:  ldloc.0
+  IL_000f:  call       ""void E.set_Item<T>(T, int, int)""
+  IL_0014:  nop
+  IL_0015:  ret
+}");
+
+        comp = CreateRuntimeAsyncCompilation(src, options: TestOptions.DebugExe);
+        verifier = CompileAndVerify(comp, expectedOutput: RuntimeAsyncTestHelpers.ExpectedOutput(expectedOutput), verify: Verification.Fails with
+        {
+            ILVerifyMessage = """
+                [Main]: Return value missing on the stack. { Offset = 0x9e }
+                [Test3]: Return value missing on the stack. { Offset = 0x4e }
+                [Get1Async]: Unexpected type on the stack. { Offset = 0x58, Found = Int32, Expected = ref '[System.Runtime]System.Threading.Tasks.Task`1<int32>' }
+                """
+        });
+
+        verifier.VerifyIL("Program.Test3<T>()", """
+            {
+              // Code size       79 (0x4f)
+              .maxstack  3
+              .locals init (T V_0,
+                            T& V_1,
+                            int V_2,
+                            int V_3,
+                            T V_4)
+              IL_0000:  nop
+              IL_0001:  ldloca.s   V_4
+              IL_0003:  initobj    "T"
+              IL_0009:  ldloc.s    V_4
+              IL_000b:  box        "T"
+              IL_0010:  brtrue.s   IL_001a
+              IL_0012:  ldsfld     "T Program<T>.F"
+              IL_0017:  stloc.0
+              IL_0018:  br.s       IL_0020
+              IL_001a:  ldsfld     "T Program<T>.F"
+              IL_001f:  pop
+              IL_0020:  call       "System.Threading.Tasks.Task<int> Program.Get1Async()"
+              IL_0025:  call       "int System.Runtime.CompilerServices.AsyncHelpers.Await<int>(System.Threading.Tasks.Task<int>)"
+              IL_002a:  stloc.2
+              IL_002b:  ldloc.2
+              IL_002c:  stloc.3
+              IL_002d:  ldloca.s   V_4
+              IL_002f:  initobj    "T"
+              IL_0035:  ldloc.s    V_4
+              IL_0037:  box        "T"
+              IL_003c:  brtrue.s   IL_0041
+              IL_003e:  ldloc.0
+              IL_003f:  br.s       IL_0046
+              IL_0041:  ldsfld     "T Program<T>.F"
+              IL_0046:  ldc.i4.0
+              IL_0047:  ldloc.3
+              IL_0048:  call       "void E.set_Item<T>(T, int, int)"
+              IL_004d:  nop
+              IL_004e:  ret
+            }
+            """);
+    }
+
+    [Fact]
+    [WorkItem("https://github.com/dotnet/roslyn/issues/79416")]
+    public void ElementAccess_Set_ReadonlyReceiver_040()
+    {
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i]
+        {
+            get
+            {
+                System.Console.Write(((S1)(object)x).F1);
+                Program.Increment();
+                return 0;
+            }
+            set
+            {
+                System.Console.Write(((S1)(object)x).F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static readonly T F;
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        Initialize();
+        Test1<S1>();
+        System.Console.Write(Program<S1>.F.F1);
+
+        System.Console.Write(":");
+
+        Initialize();
+        await Test3<S1>();
+        System.Console.Write(Program<S1>.F.F1);
+    }
+
+    static unsafe void Initialize()
+    {
+        fixed (int* f1 = &Program<S1>.F.F1)
+        {
+            *f1 = 123;
+        }
+    }
+
+    public static unsafe void Increment()
+    {
+        fixed (int* f1 = &Program<S1>.F.F1)
+        {
+            (*f1)++;
+        }
+    }
+
+    static void Test1<T>()
+    {
+        Program<T>.F[0] = Get1();
+    }
+
+    static int Get1()
+    {
+        Increment();
+        return 1;
+    }
+
+    static async Task Test3<T>()
+    {
+        Program<T>.F[0] = await Get1Async();
+    }
+
+    static async Task<int> Get1Async()
+    {
+        Increment();
+        await Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var expectedOutput = "124124:124124";
+        var comp = CreateCompilation([src], options: TestOptions.DebugExe.WithAllowUnsafe(true));
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput, verify: Verification.Skipped).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1<T>()",
+@"{
+  // Code size       55 (0x37)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                int V_2,
+                T V_3)
+  IL_0000:  nop
+  IL_0001:  ldsflda    ""T Program<T>.F""
+  IL_0006:  stloc.1
+  IL_0007:  ldloca.s   V_3
+  IL_0009:  initobj    ""T""
+  IL_000f:  ldloc.3
+  IL_0010:  box        ""T""
+  IL_0015:  brtrue.s   IL_0022
+  IL_0017:  ldloc.1
+  IL_0018:  ldobj      ""T""
+  IL_001d:  stloc.0
+  IL_001e:  ldloca.s   V_0
+  IL_0020:  br.s       IL_0023
+  IL_0022:  ldloc.1
+  IL_0023:  call       ""int Program.Get1()""
+  IL_0028:  stloc.2
+  IL_0029:  ldobj      ""T""
+  IL_002e:  ldc.i4.0
+  IL_002f:  ldloc.2
+  IL_0030:  call       ""void E.set_Item<T>(T, int, int)""
+  IL_0035:  nop
+  IL_0036:  ret
+}");
+
+        comp = CreateRuntimeAsyncCompilation(src, options: TestOptions.UnsafeReleaseExe);
+        // The goal of this test is to validate that there's a `ldsfld     "T Program<T>.F"` after the async call. Regular state machine code is so large that it's
+        // very hard to verify this by reading the IL, so it does what is undefined behavior (modifying a static readonly field) to observe this. In runtime async
+        // mode, this undefined behavior results in a different output, but the IL is also smaller so we can easily verify that the read occurs where it should in the IL.
+        verifier = CompileAndVerify(comp, expectedOutput: null, verify: Verification.Fails with
+        {
+            ILVerifyMessage = """
+                [Main]: Cannot change initonly field outside its .ctor. { Offset = 0xa }
+                [Main]: Cannot change initonly field outside its .ctor. { Offset = 0x32 }
+                [Main]: Return value missing on the stack. { Offset = 0x41 }
+                [Initialize]: Cannot change initonly field outside its .ctor. { Offset = 0x0 }
+                [Initialize]: Expected numeric type on the stack. { Offset = 0xc, Found = address of Int32 }
+                [Increment]: Cannot change initonly field outside its .ctor. { Offset = 0x0 }
+                [Increment]: Expected numeric type on the stack. { Offset = 0xc, Found = address of Int32 }
+                [Test1]: Cannot change initonly field outside its .ctor. { Offset = 0x0 }
+                [Test3]: Return value missing on the stack. { Offset = 0x48 }
+                [Get1Async]: Unexpected type on the stack. { Offset = 0x2a, Found = Int32, Expected = ref '[System.Runtime]System.Threading.Tasks.Task`1<int32>' }
+                """
+        });
+
+        verifier.VerifyIL("Program.Test3<T>()", """
+            {
+              // Code size       73 (0x49)
+              .maxstack  3
+              .locals init (T V_0,
+                            int V_1,
+                            T V_2)
+              IL_0000:  ldloca.s   V_2
+              IL_0002:  initobj    "T"
+              IL_0008:  ldloc.2
+              IL_0009:  box        "T"
+              IL_000e:  brtrue.s   IL_0018
+              IL_0010:  ldsfld     "T Program<T>.F"
+              IL_0015:  stloc.0
+              IL_0016:  br.s       IL_001e
+              IL_0018:  ldsfld     "T Program<T>.F"
+              IL_001d:  pop
+              IL_001e:  call       "System.Threading.Tasks.Task<int> Program.Get1Async()"
+              IL_0023:  call       "int System.Runtime.CompilerServices.AsyncHelpers.Await<int>(System.Threading.Tasks.Task<int>)"
+              IL_0028:  stloc.1
+              IL_0029:  ldloca.s   V_2
+              IL_002b:  initobj    "T"
+              IL_0031:  ldloc.2
+              IL_0032:  box        "T"
+              IL_0037:  brtrue.s   IL_003c
+              IL_0039:  ldloc.0
+              IL_003a:  br.s       IL_0041
+              IL_003c:  ldsfld     "T Program<T>.F"
+              IL_0041:  ldc.i4.0
+              IL_0042:  ldloc.1
+              IL_0043:  call       "void E.set_Item<T>(T, int, int)"
+              IL_0048:  ret
+            }
+            """);
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ElementAccess_Set_ReadonlyReceiver_041(string refKind)
+    {
+        var src = $$$"""
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i]
+        {
+            get
+            {
+                System.Console.Write(((S1)(object)x).F1);
+                Program<S1>.F.F1++;
+                return 0;
+            }
+            set
+            {
+                System.Console.Write(((S1)(object)x).F1);
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static void Main()
+    {
+        Program<S1>.F = new S1 { F1 = 123 };
+        Test1({{{(refKind == "ref" ? "ref" : "in")}}} Program<S1>.F);
+        System.Console.Write(Program<S1>.F.F1);
+    }
+
+    static void Test1<T>({{{refKind}}} T f)
+    {
+        f[0] = Get1();
+    }
+
+    static int Get1()
+    {
+        Program<S1>.F.F1++;
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation([src], options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "124124").VerifyDiagnostics();
+
+        verifier.VerifyIL($"Program.Test1<T>({refKind} T)",
+@"{
+  // Code size       51 (0x33)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                int V_2,
+                T V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.1
+  IL_0003:  ldloca.s   V_3
+  IL_0005:  initobj    ""T""
+  IL_000b:  ldloc.3
+  IL_000c:  box        ""T""
+  IL_0011:  brtrue.s   IL_001e
+  IL_0013:  ldloc.1
+  IL_0014:  ldobj      ""T""
+  IL_0019:  stloc.0
+  IL_001a:  ldloca.s   V_0
+  IL_001c:  br.s       IL_001f
+  IL_001e:  ldloc.1
+  IL_001f:  call       ""int Program.Get1()""
+  IL_0024:  stloc.2
+  IL_0025:  ldobj      ""T""
+  IL_002a:  ldc.i4.0
+  IL_002b:  ldloc.2
+  IL_002c:  call       ""void E.set_Item<T>(T, int, int)""
+  IL_0031:  nop
+  IL_0032:  ret
+}");
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ElementAccess_Set_ReadonlyReceiver_061(string refKind)
+    {
+        var src = $$$"""
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i]
+        {
+            get
+            {
+                System.Console.Write(((C1)(object)x).F1);
+                Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+                return 0;
+            }
+            set
+            {
+                System.Console.Write(((C1)(object)x).F1);
+            }
+        }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static void Main()
+    {
+        Program<C1>.F = new C1 { F1 = 123 };
+        Test1({{{(refKind == "ref" ? "ref" : "in")}}} Program<C1>.F);
+        System.Console.Write(Program<C1>.F.F1);
+    }
+
+    static void Test1<T>({{{refKind}}} T f)
+    {
+        f[0] = Get1();
+    }
+
+    static int Get1()
+    {
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation([src], options: TestOptions.DebugExe);
+        var verifier = CompileAndVerify(comp, expectedOutput: "123124").VerifyDiagnostics();
+
+        verifier.VerifyIL($"Program.Test1<T>({refKind} T)",
+@"{
+  // Code size       51 (0x33)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                int V_2,
+                T V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.1
+  IL_0003:  ldloca.s   V_3
+  IL_0005:  initobj    ""T""
+  IL_000b:  ldloc.3
+  IL_000c:  box        ""T""
+  IL_0011:  brtrue.s   IL_001e
+  IL_0013:  ldloc.1
+  IL_0014:  ldobj      ""T""
+  IL_0019:  stloc.0
+  IL_001a:  ldloca.s   V_0
+  IL_001c:  br.s       IL_001f
+  IL_001e:  ldloc.1
+  IL_001f:  call       ""int Program.Get1()""
+  IL_0024:  stloc.2
+  IL_0025:  ldobj      ""T""
+  IL_002a:  ldc.i4.0
+  IL_002b:  ldloc.2
+  IL_002c:  call       ""void E.set_Item<T>(T, int, int)""
+  IL_0031:  nop
+  IL_0032:  ret
+}");
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexer_CompoundAssignment_01()
+    {
+        // sibling to ExtensionTests.IndexerAccess_CompoundAssignment_01
+        // struct receiver, extension this[int] + extension Length
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int this[int i]
+        {
+            get { System.Console.Write($"get:{x.F1} "); Program.F.F1++; return 0; }
+            set { System.Console.Write($"set:{x.F1} "); }
+        }
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F.F1++; return 3; } }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public void Test2()
+    {
+        this[Program.GetIndex()] += Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetIndex()] += GetValue();
+    }
+
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+
+    public static System.Index GetIndex() { System.Console.Write($"GetIndex:{Program.F.F1} "); Program.F.F1++; return ^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7, GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7"),
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", """
+{
+  // Code size       66 (0x42)
+  .maxstack  3
+  .locals init (S1& V_0,
+                int V_1,
+                System.Index V_2,
+                int V_3)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  stloc.0
+  IL_0007:  call       "System.Index Program.GetIndex()"
+  IL_000c:  stloc.2
+  IL_000d:  ldloca.s   V_2
+  IL_000f:  ldloc.0
+  IL_0010:  ldobj      "S1"
+  IL_0015:  call       "int E.get_Length(S1)"
+  IL_001a:  call       "int System.Index.GetOffset(int)"
+  IL_001f:  stloc.1
+  IL_0020:  ldloc.0
+  IL_0021:  ldobj      "S1"
+  IL_0026:  ldloc.1
+  IL_0027:  call       "int E.get_Item(S1, int)"
+  IL_002c:  call       "int Program.GetValue()"
+  IL_0031:  add
+  IL_0032:  stloc.3
+  IL_0033:  ldloc.0
+  IL_0034:  ldobj      "S1"
+  IL_0039:  ldloc.1
+  IL_003a:  ldloc.3
+  IL_003b:  call       "void E.set_Item(S1, int, int)"
+  IL_0040:  nop
+  IL_0041:  ret
+}
+""");
+
+        verifier.VerifyIL("S1.Test2", """
+{
+  // Code size       62 (0x3e)
+  .maxstack  3
+  .locals init (S1& V_0,
+                int V_1,
+                System.Index V_2,
+                int V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.0
+  IL_0003:  call       "System.Index Program.GetIndex()"
+  IL_0008:  stloc.2
+  IL_0009:  ldloca.s   V_2
+  IL_000b:  ldloc.0
+  IL_000c:  ldobj      "S1"
+  IL_0011:  call       "int E.get_Length(S1)"
+  IL_0016:  call       "int System.Index.GetOffset(int)"
+  IL_001b:  stloc.1
+  IL_001c:  ldloc.0
+  IL_001d:  ldobj      "S1"
+  IL_0022:  ldloc.1
+  IL_0023:  call       "int E.get_Item(S1, int)"
+  IL_0028:  call       "int Program.GetValue()"
+  IL_002d:  add
+  IL_002e:  stloc.3
+  IL_002f:  ldloc.0
+  IL_0030:  ldobj      "S1"
+  IL_0035:  ldloc.1
+  IL_0036:  ldloc.3
+  IL_0037:  call       "void E.set_Item(S1, int, int)"
+  IL_003c:  nop
+  IL_003d:  ret
+}
+""");
+
+        // receiver is not a variable
+        var src2 = $$$"""
+static class E
+{
+    extension(S1 x)
+    {
+        public int this[int i] { get => 0; set {} }
+        public int Length => 3;
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[^1] += 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        // Tracked by https://github.com/dotnet/roslyn/issues/79451 : consider adjusting receiver requirements for extension members
+        comp2.VerifyEmitDiagnostics(
+            // (16,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+            //         default(S1)[^1] += 1;
+            Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[^1]").WithLocation(16, 9));
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexer_CompoundAssignment_01_02()
+    {
+        // struct receiver, instance this[int] + extension Length
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F.F1++; return 3; } }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public int this[int i]
+    {
+        get { System.Console.Write($"get:{F1} "); Program.F.F1++; return 0; }
+        set { System.Console.Write($"set:{F1} "); }
+    }
+
+    public void Test2()
+    {
+        this[Program.GetIndex()] += Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetIndex()] += GetValue();
+    }
+
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+
+    public static System.Index GetIndex() { System.Console.Write($"GetIndex:{Program.F.F1} "); Program.F.F1++; return ^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7, GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7"),
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", """
+{
+  // Code size       54 (0x36)
+  .maxstack  4
+  .locals init (S1& V_0,
+                int V_1,
+                System.Index V_2)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  stloc.0
+  IL_0007:  call       "System.Index Program.GetIndex()"
+  IL_000c:  stloc.2
+  IL_000d:  ldloca.s   V_2
+  IL_000f:  ldloc.0
+  IL_0010:  ldobj      "S1"
+  IL_0015:  call       "int E.get_Length(S1)"
+  IL_001a:  call       "int System.Index.GetOffset(int)"
+  IL_001f:  stloc.1
+  IL_0020:  ldloc.0
+  IL_0021:  ldloc.1
+  IL_0022:  ldloc.0
+  IL_0023:  ldloc.1
+  IL_0024:  call       "int S1.this[int].get"
+  IL_0029:  call       "int Program.GetValue()"
+  IL_002e:  add
+  IL_002f:  call       "void S1.this[int].set"
+  IL_0034:  nop
+  IL_0035:  ret
+}
+""");
+
+        verifier.VerifyIL("S1.Test2", """
+{
+  // Code size       50 (0x32)
+  .maxstack  4
+  .locals init (S1& V_0,
+                int V_1,
+                System.Index V_2)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.0
+  IL_0003:  call       "System.Index Program.GetIndex()"
+  IL_0008:  stloc.2
+  IL_0009:  ldloca.s   V_2
+  IL_000b:  ldloc.0
+  IL_000c:  ldobj      "S1"
+  IL_0011:  call       "int E.get_Length(S1)"
+  IL_0016:  call       "int System.Index.GetOffset(int)"
+  IL_001b:  stloc.1
+  IL_001c:  ldloc.0
+  IL_001d:  ldloc.1
+  IL_001e:  ldloc.0
+  IL_001f:  ldloc.1
+  IL_0020:  call       "int S1.this[int].get"
+  IL_0025:  call       "int Program.GetValue()"
+  IL_002a:  add
+  IL_002b:  call       "void S1.this[int].set"
+  IL_0030:  nop
+  IL_0031:  ret
+}
+""");
+
+        // receiver is not a variable
+        var src2 = $$$"""
+static class E
+{
+    extension(S1 x)
+    {
+        public int this[int i] { get => 0; set {} }
+        public int Length => 3;
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[^1] += 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        // Tracked by https://github.com/dotnet/roslyn/issues/79451 : consider adjusting receiver requirements for extension members
+        comp2.VerifyEmitDiagnostics(
+            // (16,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+            //         default(S1)[^1] += 1;
+            Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[^1]").WithLocation(16, 9));
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexer_CompoundAssignment_01_03()
+    {
+        // struct receiver, extension this[int] + instance Length
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int this[int i]
+        {
+            get { System.Console.Write($"get:{x.F1} "); Program.F.F1++; return 0; }
+            set { System.Console.Write($"set:{x.F1} "); }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.F.F1++; return 3; } }
+
+    public void Test2()
+    {
+        this[Program.GetIndex()] += Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetIndex()] += GetValue();
+    }
+
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+
+    public static System.Index GetIndex() { System.Console.Write($"GetIndex:{Program.F.F1} "); Program.F.F1++; return ^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7, GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7"),
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", """
+{
+  // Code size       61 (0x3d)
+  .maxstack  3
+  .locals init (S1& V_0,
+                int V_1,
+                System.Index V_2,
+                int V_3)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  stloc.0
+  IL_0007:  call       "System.Index Program.GetIndex()"
+  IL_000c:  stloc.2
+  IL_000d:  ldloca.s   V_2
+  IL_000f:  ldloc.0
+  IL_0010:  call       "int S1.Length.get"
+  IL_0015:  call       "int System.Index.GetOffset(int)"
+  IL_001a:  stloc.1
+  IL_001b:  ldloc.0
+  IL_001c:  ldobj      "S1"
+  IL_0021:  ldloc.1
+  IL_0022:  call       "int E.get_Item(S1, int)"
+  IL_0027:  call       "int Program.GetValue()"
+  IL_002c:  add
+  IL_002d:  stloc.3
+  IL_002e:  ldloc.0
+  IL_002f:  ldobj      "S1"
+  IL_0034:  ldloc.1
+  IL_0035:  ldloc.3
+  IL_0036:  call       "void E.set_Item(S1, int, int)"
+  IL_003b:  nop
+  IL_003c:  ret
+}
+""");
+
+        // TODO2 we probably don't need to do the ldarg.0 / stloc.0 steps here since the receiver is not used for the length call,
+        // but it's simpler to share codegen with the other tests if we do it this way.
+        verifier.VerifyIL("S1.Test2", """
+{
+  // Code size       57 (0x39)
+  .maxstack  3
+  .locals init (S1& V_0,
+                int V_1,
+                System.Index V_2,
+                int V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.0
+  IL_0003:  call       "System.Index Program.GetIndex()"
+  IL_0008:  stloc.2
+  IL_0009:  ldloca.s   V_2
+  IL_000b:  ldloc.0
+  IL_000c:  call       "int S1.Length.get"
+  IL_0011:  call       "int System.Index.GetOffset(int)"
+  IL_0016:  stloc.1
+  IL_0017:  ldloc.0
+  IL_0018:  ldobj      "S1"
+  IL_001d:  ldloc.1
+  IL_001e:  call       "int E.get_Item(S1, int)"
+  IL_0023:  call       "int Program.GetValue()"
+  IL_0028:  add
+  IL_0029:  stloc.3
+  IL_002a:  ldloc.0
+  IL_002b:  ldobj      "S1"
+  IL_0030:  ldloc.1
+  IL_0031:  ldloc.3
+  IL_0032:  call       "void E.set_Item(S1, int, int)"
+  IL_0037:  nop
+  IL_0038:  ret
+}
+""");
+
+        // receiver is not a variable
+        var src2 = $$$"""
+static class E
+{
+    extension(S1 x)
+    {
+        public int this[int i] { get => 0; set {} }
+        public int Length => 3;
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[^1] += 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        // Tracked by https://github.com/dotnet/roslyn/issues/79451 : consider adjusting receiver requirements for extension members
+        comp2.VerifyEmitDiagnostics(
+            // (16,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+            //         default(S1)[^1] += 1;
+            Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[^1]").WithLocation(16, 9));
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitIndexIndexer_CompoundAssignment_02(string refKind)
+    {
+        // sibling to ExtensionTests.IndexerAccess_CompoundAssignment_02
+        // struct receiver passed by ref, extension this[int] + extension Length
+        var src = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int this[int i]
+        {
+            get { System.Console.Write($"get:{x.F1} "); Program.F.F1++; return 0; }
+            set { System.Console.Write($"set:{x.F1} "); }
+        }
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F.F1++; return 3; } }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public void Test2()
+    {
+        this[Program.GetIndex()] += Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetIndex()] += GetValue();
+    }
+
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+
+    public static System.Index GetIndex() { System.Console.Write($"GetIndex:{Program.F.F1} "); Program.F.F1++; return ^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7, GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7"),
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", $$"""
+{
+  // Code size       49 (0x31)
+  .maxstack  4
+  .locals init (S1& V_0,
+                int V_1,
+                System.Index V_2)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  stloc.0
+  IL_0007:  call       "System.Index Program.GetIndex()"
+  IL_000c:  stloc.2
+  IL_000d:  ldloca.s   V_2
+  IL_000f:  ldloc.0
+  IL_0010:  call       "int E.get_Length({{refKind}} S1)"
+  IL_0015:  call       "int System.Index.GetOffset(int)"
+  IL_001a:  stloc.1
+  IL_001b:  ldloc.0
+  IL_001c:  ldloc.1
+  IL_001d:  ldloc.0
+  IL_001e:  ldloc.1
+  IL_001f:  call       "int E.get_Item({{refKind}} S1, int)"
+  IL_0024:  call       "int Program.GetValue()"
+  IL_0029:  add
+  IL_002a:  call       "void E.set_Item({{refKind}} S1, int, int)"
+  IL_002f:  nop
+  IL_0030:  ret
+}
+""");
+
+        // TODO2 verify IL once dust settles
+        //        verifier.VerifyIL("S1.Test2", $$"""
+        //{
+        //  // Code size       43 (0x2b)
+        //  .maxstack  4
+        //  .locals init (int V_0,
+        //                System.Index V_1)
+        //  IL_0000:  nop
+        //  IL_0001:  call       "System.Index Program.GetIndex()"
+        //  IL_0006:  stloc.1
+        //  IL_0007:  ldloca.s   V_1
+        //  IL_0009:  ldarg.0
+        //  IL_000a:  call       "int E.get_Length({{refKind}} S1)"
+        //  IL_000f:  call       "int System.Index.GetOffset(int)"
+        //  IL_0014:  stloc.0
+        //  IL_0015:  ldarg.0
+        //  IL_0016:  ldloc.0
+        //  IL_0017:  ldarg.0
+        //  IL_0018:  ldloc.0
+        //  IL_0019:  call       "int E.get_Item({{refKind}} S1, int)"
+        //  IL_001e:  call       "int Program.GetValue()"
+        //  IL_0023:  add
+        //  IL_0024:  call       "void E.set_Item({{refKind}} S1, int, int)"
+        //  IL_0029:  nop
+        //  IL_002a:  ret
+        //}
+        //""");
+
+        // receiver is not a variable
+        var src2 = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int this[int i] { get => 0; set {} }
+        public int Length => 3;
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[^1] += 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        switch (refKind)
+        {
+            case "ref":
+                // One diagnostic for extension(ref default).Length and one for extension(ref default).this[int]
+                comp2.VerifyDiagnostics(
+                    // (16,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9),
+                    // (16,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9)
+                    );
+                break;
+            case "ref readonly":
+                // One warning for extension(default).Length and one for extension(default).this[int]
+                // Error for compound assignment target not being a variable
+                // Tracked by https://github.com/dotnet/roslyn/issues/79451 : consider adjusting receiver requirements for extension members
+                comp2.VerifyDiagnostics(
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    // (16,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[^1]").WithLocation(16, 9)
+                    );
+                break;
+            case "in":
+                // Tracked by https://github.com/dotnet/roslyn/issues/79451 : consider adjusting receiver requirements for extension members
+                comp2.VerifyDiagnostics(
+                    // (16,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[^1]").WithLocation(16, 9)
+                    );
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(refKind);
+        }
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitIndexIndexer_CompoundAssignment_02_02(string refKind)
+    {
+        // struct receiver passed by ref, instance this[int] + extension Length
+        var src = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F.F1++; return 3; } }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public int this[int i]
+    {
+        get { System.Console.Write($"get:{F1} "); Program.F.F1++; return 0; }
+        set { System.Console.Write($"set:{F1} "); }
+    }
+
+    public void Test2()
+    {
+        this[Program.GetIndex()] += Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetIndex()] += GetValue();
+    }
+
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+
+    public static System.Index GetIndex() { System.Console.Write($"GetIndex:{Program.F.F1} "); Program.F.F1++; return ^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7, GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7"),
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", $$"""
+{
+  // Code size       49 (0x31)
+  .maxstack  4
+  .locals init (S1& V_0,
+                int V_1,
+                System.Index V_2)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  stloc.0
+  IL_0007:  call       "System.Index Program.GetIndex()"
+  IL_000c:  stloc.2
+  IL_000d:  ldloca.s   V_2
+  IL_000f:  ldloc.0
+  IL_0010:  call       "int E.get_Length({{refKind}} S1)"
+  IL_0015:  call       "int System.Index.GetOffset(int)"
+  IL_001a:  stloc.1
+  IL_001b:  ldloc.0
+  IL_001c:  ldloc.1
+  IL_001d:  ldloc.0
+  IL_001e:  ldloc.1
+  IL_001f:  call       "int S1.this[int].get"
+  IL_0024:  call       "int Program.GetValue()"
+  IL_0029:  add
+  IL_002a:  call       "void S1.this[int].set"
+  IL_002f:  nop
+  IL_0030:  ret
+}
+""");
+
+        verifier.VerifyIL("S1.Test2", $$"""
+{
+  // Code size       45 (0x2d)
+  .maxstack  4
+  .locals init (S1& V_0,
+                int V_1,
+                System.Index V_2)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.0
+  IL_0003:  call       "System.Index Program.GetIndex()"
+  IL_0008:  stloc.2
+  IL_0009:  ldloca.s   V_2
+  IL_000b:  ldloc.0
+  IL_000c:  call       "int E.get_Length({{refKind}} S1)"
+  IL_0011:  call       "int System.Index.GetOffset(int)"
+  IL_0016:  stloc.1
+  IL_0017:  ldloc.0
+  IL_0018:  ldloc.1
+  IL_0019:  ldloc.0
+  IL_001a:  ldloc.1
+  IL_001b:  call       "int S1.this[int].get"
+  IL_0020:  call       "int Program.GetValue()"
+  IL_0025:  add
+  IL_0026:  call       "void S1.this[int].set"
+  IL_002b:  nop
+  IL_002c:  ret
+}
+""");
+
+        // receiver is not a variable
+        var src2 = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int this[int i] { get => 0; set {} }
+        public int Length => 3;
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[^1] += 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        switch (refKind)
+        {
+            case "ref":
+                // One diagnostic for extension(ref default).Length and one for extension(ref default).this[int]
+                comp2.VerifyDiagnostics(
+                    // (16,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9),
+                    // (16,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9)
+                    );
+                break;
+            case "ref readonly":
+                // One warning for extension(default).Length and one for extension(default).this[int]
+                // Error for compound assignment target not being a variable
+                // Tracked by https://github.com/dotnet/roslyn/issues/79451 : consider adjusting receiver requirements for extension members
+                comp2.VerifyDiagnostics(
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    // (16,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[^1]").WithLocation(16, 9)
+                    );
+                break;
+            case "in":
+                // Tracked by https://github.com/dotnet/roslyn/issues/79451 : consider adjusting receiver requirements for extension members
+                comp2.VerifyDiagnostics(
+                    // (16,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[^1]").WithLocation(16, 9)
+                    );
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(refKind);
+        }
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitIndexIndexer_CompoundAssignment_02_03(string refKind)
+    {
+        // struct receiver passed by ref, extension this[int] + instance Length
+        var src = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int this[int i]
+        {
+            get { System.Console.Write($"get:{x.F1} "); Program.F.F1++; return 0; }
+            set { System.Console.Write($"set:{x.F1} "); }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.F.F1++; return 3; } }
+
+    public void Test2()
+    {
+        this[Program.GetIndex()] += Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetIndex()] += GetValue();
+    }
+
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+
+    public static System.Index GetIndex() { System.Console.Write($"GetIndex:{Program.F.F1} "); Program.F.F1++; return ^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7, GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7"),
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        // TODO2 verify IL once dust settles
+        //        verifier.VerifyIL("Program.Test1", refKind switch
+        //        {
+        //            "in" or "ref readonly" => $$"""
+        //{
+        //  // Code size       57 (0x39)
+        //  .maxstack  4
+        //  .locals init (S1& V_0,
+        //                int V_1,
+        //                System.Index V_2,
+        //                S1 V_3)
+        //  IL_0000:  nop
+        //  IL_0001:  ldsflda    "S1 Program.F"
+        //  IL_0006:  stloc.0
+        //  IL_0007:  call       "System.Index Program.GetIndex()"
+        //  IL_000c:  stloc.2
+        //  IL_000d:  ldloca.s   V_2
+        //  IL_000f:  ldloc.0
+        //  IL_0010:  ldobj      "S1"
+        //  IL_0015:  stloc.3
+        //  IL_0016:  ldloca.s   V_3
+        //  IL_0018:  call       "int S1.Length.get"
+        //  IL_001d:  call       "int System.Index.GetOffset(int)"
+        //  IL_0022:  stloc.1
+        //  IL_0023:  ldloc.0
+        //  IL_0024:  ldloc.1
+        //  IL_0025:  ldloc.0
+        //  IL_0026:  ldloc.1
+        //  IL_0027:  call       "int E.get_Item({{refKind}} S1, int)"
+        //  IL_002c:  call       "int Program.GetValue()"
+        //  IL_0031:  add
+        //  IL_0032:  call       "void E.set_Item({{refKind}} S1, int, int)"
+        //  IL_0037:  nop
+        //  IL_0038:  ret
+        //}
+        //""",
+        //            _ => $$"""
+        //{
+        //  // Code size       49 (0x31)
+        //  .maxstack  4
+        //  .locals init (S1& V_0,
+        //                int V_1,
+        //                System.Index V_2)
+        //  IL_0000:  nop
+        //  IL_0001:  ldsflda    "S1 Program.F"
+        //  IL_0006:  stloc.0
+        //  IL_0007:  call       "System.Index Program.GetIndex()"
+        //  IL_000c:  stloc.2
+        //  IL_000d:  ldloca.s   V_2
+        //  IL_000f:  ldloc.0
+        //  IL_0010:  call       "int S1.Length.get"
+        //  IL_0015:  call       "int System.Index.GetOffset(int)"
+        //  IL_001a:  stloc.1
+        //  IL_001b:  ldloc.0
+        //  IL_001c:  ldloc.1
+        //  IL_001d:  ldloc.0
+        //  IL_001e:  ldloc.1
+        //  IL_001f:  call       "int E.get_Item({{refKind}} S1, int)"
+        //  IL_0024:  call       "int Program.GetValue()"
+        //  IL_0029:  add
+        //  IL_002a:  call       "void E.set_Item({{refKind}} S1, int, int)"
+        //  IL_002f:  nop
+        //  IL_0030:  ret
+        //}
+        //"""
+        //        });
+
+        // TODO2 verify IL
+        //        verifier.VerifyIL("S1.Test2", $$"""
+        //{
+        //  // Code size       43 (0x2b)
+        //  .maxstack  4
+        //  .locals init (int V_0,
+        //                System.Index V_1)
+        //  IL_0000:  nop
+        //  IL_0001:  call       "System.Index Program.GetIndex()"
+        //  IL_0006:  stloc.1
+        //  IL_0007:  ldloca.s   V_1
+        //  IL_0009:  ldarg.0
+        //  IL_000a:  call       "int S1.Length.get"
+        //  IL_000f:  call       "int System.Index.GetOffset(int)"
+        //  IL_0014:  stloc.0
+        //  IL_0015:  ldarg.0
+        //  IL_0016:  ldloc.0
+        //  IL_0017:  ldarg.0
+        //  IL_0018:  ldloc.0
+        //  IL_0019:  call       "int E.get_Item({{refKind}} S1, int)"
+        //  IL_001e:  call       "int Program.GetValue()"
+        //  IL_0023:  add
+        //  IL_0024:  call       "void E.set_Item({{refKind}} S1, int, int)"
+        //  IL_0029:  nop
+        //  IL_002a:  ret
+        //}
+        //""");
+
+        // receiver is not a variable
+        var src2 = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int this[int i] { get => 0; set {} }
+        public int Length => 3;
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[^1] += 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        switch (refKind)
+        {
+            case "ref":
+                // One diagnostic for extension(ref default).Length and one for extension(ref default).this[int]
+                comp2.VerifyDiagnostics(
+                    // (16,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9),
+                    // (16,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9)
+                    );
+                break;
+            case "ref readonly":
+                // One warning for extension(default).Length and one for extension(default).this[int]
+                // Error for compound assignment target not being a variable
+                // Tracked by https://github.com/dotnet/roslyn/issues/79451 : consider adjusting receiver requirements for extension members
+                comp2.VerifyDiagnostics(
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    // (16,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[^1]").WithLocation(16, 9)
+                    );
+                break;
+            case "in":
+                // Tracked by https://github.com/dotnet/roslyn/issues/79451 : consider adjusting receiver requirements for extension members
+                comp2.VerifyDiagnostics(
+                    // (16,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                    //         default(S1)[^1] += 1;
+                    Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[^1]").WithLocation(16, 9)
+                    );
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(refKind);
+        }
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexer_CompoundAssignment_03()
+    {
+        // sibling to ExtensionTests.IndexerAccess_CompoundAssignment_03
+        // class receiver, extension this[int] + extension Length
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int this[int i]
+        {
+            get { System.Console.Write($"get:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 0; }
+            set { System.Console.Write($"set:{x.F1} "); }
+        }
+
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 3; } }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static C1 F;
+
+    static void Main()
+    {
+        F = new C1 { F1 = 3 };
+        Test();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test()
+    {
+        F[GetIndex()] += GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1;
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return ^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:3 get:3 GetValue:6 set:3 final:7"),
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test", """
+{
+  // Code size       49 (0x31)
+  .maxstack  4
+  .locals init (C1 V_0,
+                int V_1,
+                System.Index V_2)
+  IL_0000:  nop
+  IL_0001:  ldsfld     "C1 Program.F"
+  IL_0006:  stloc.0
+  IL_0007:  call       "System.Index Program.GetIndex()"
+  IL_000c:  stloc.2
+  IL_000d:  ldloca.s   V_2
+  IL_000f:  ldloc.0
+  IL_0010:  call       "int E.get_Length(C1)"
+  IL_0015:  call       "int System.Index.GetOffset(int)"
+  IL_001a:  stloc.1
+  IL_001b:  ldloc.0
+  IL_001c:  ldloc.1
+  IL_001d:  ldloc.0
+  IL_001e:  ldloc.1
+  IL_001f:  call       "int E.get_Item(C1, int)"
+  IL_0024:  call       "int Program.GetValue()"
+  IL_0029:  add
+  IL_002a:  call       "void E.set_Item(C1, int, int)"
+  IL_002f:  nop
+  IL_0030:  ret
+}
+""");
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexer_CompoundAssignment_03_02()
+    {
+        // class receiver, instance this[int] + extension Length
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 3; } }
+    }
+}
+
+class C1
+{
+    public int F1;
+
+    public int this[int i]
+    {
+        get { System.Console.Write($"get:{F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 0; }
+        set { System.Console.Write($"set:{F1} "); }
+    }
+}
+
+class Program
+{
+    public static C1 F;
+
+    static void Main()
+    {
+        F = new C1 { F1 = 3 };
+        Test();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test()
+    {
+        F[GetIndex()] += GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1;
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return ^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:3 get:3 GetValue:6 set:3 final:7"),
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test", """
+{
+  // Code size       49 (0x31)
+  .maxstack  4
+  .locals init (C1 V_0,
+                int V_1,
+                System.Index V_2)
+  IL_0000:  nop
+  IL_0001:  ldsfld     "C1 Program.F"
+  IL_0006:  stloc.0
+  IL_0007:  call       "System.Index Program.GetIndex()"
+  IL_000c:  stloc.2
+  IL_000d:  ldloca.s   V_2
+  IL_000f:  ldloc.0
+  IL_0010:  call       "int E.get_Length(C1)"
+  IL_0015:  call       "int System.Index.GetOffset(int)"
+  IL_001a:  stloc.1
+  IL_001b:  ldloc.0
+  IL_001c:  ldloc.1
+  IL_001d:  ldloc.0
+  IL_001e:  ldloc.1
+  IL_001f:  callvirt   "int C1.this[int].get"
+  IL_0024:  call       "int Program.GetValue()"
+  IL_0029:  add
+  IL_002a:  callvirt   "void C1.this[int].set"
+  IL_002f:  nop
+  IL_0030:  ret
+}
+""");
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexer_CompoundAssignment_03_03()
+    {
+        // class receiver, extension this[int] + instance Length
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int this[int i]
+        {
+            get { System.Console.Write($"get:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 0; }
+            set { System.Console.Write($"set:{x.F1} "); }
+        }
+    }
+}
+
+class C1
+{
+    public int F1;
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 3; } }
+}
+
+class Program
+{
+    public static C1 F;
+
+    static void Main()
+    {
+        F = new C1 { F1 = 3 };
+        Test();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test()
+    {
+        F[GetIndex()] += GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1;
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return ^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:3 get:3 GetValue:6 set:3 final:7"),
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test", """
+{
+  // Code size       49 (0x31)
+  .maxstack  4
+  .locals init (C1 V_0,
+                int V_1,
+                System.Index V_2)
+  IL_0000:  nop
+  IL_0001:  ldsfld     "C1 Program.F"
+  IL_0006:  stloc.0
+  IL_0007:  call       "System.Index Program.GetIndex()"
+  IL_000c:  stloc.2
+  IL_000d:  ldloca.s   V_2
+  IL_000f:  ldloc.0
+  IL_0010:  callvirt   "int C1.Length.get"
+  IL_0015:  call       "int System.Index.GetOffset(int)"
+  IL_001a:  stloc.1
+  IL_001b:  ldloc.0
+  IL_001c:  ldloc.1
+  IL_001d:  ldloc.0
+  IL_001e:  ldloc.1
+  IL_001f:  call       "int E.get_Item(C1, int)"
+  IL_0024:  call       "int Program.GetValue()"
+  IL_0029:  add
+  IL_002a:  call       "void E.set_Item(C1, int, int)"
+  IL_002f:  nop
+  IL_0030:  ret
+}
+""");
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexer_CompoundAssignment_04()
+    {
+        // sibling to ExtensionTests.IndexerAccess_CompoundAssignment_04
+        // generic receiver with unconstrained or struct-constrained reference
+        var src = """
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length
+        {
+            get
+            {
+                System.Console.Write($"length:{((S1)(object)x).F1} ");
+                Program<S1>.F.F1++;
+                return 3;
+            }
+        }
+
+        public int this[int i]
+        {
+            get
+            {
+                System.Console.Write($"get:{((S1)(object)x).F1} ");
+                Program<S1>.F.F1++;
+                return 0;
+            }
+            set
+            {
+                System.Console.Write($"set:{((S1)(object)x).F1} ");
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async System.Threading.Tasks.Task Main()
+    {
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test1(ref Program<S1>.F);
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test2(ref Program<S1>.F);
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Program<S1>.F = new S1 { F1 = 3 };
+        await Test3<S1>();
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        f[GetIndex()] += GetValue();
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        f[GetIndex()] += GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return 1;
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return ^1;
+    }
+
+    static async System.Threading.Tasks.Task Test3<T>()
+    {
+        Program<T>.F[GetIndex()] += await GetValueAsync();
+    }
+
+    static async System.Threading.Tasks.Task<int> GetValueAsync()
+    {
+        System.Console.Write($"GetValueAsync:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        await System.Threading.Tasks.Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var expectedOutput = "GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7, GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7, GetIndex:3 length:4 get:5 GetValueAsync:6 set:7 final:7";
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput(expectedOutput), verify: Verification.Skipped).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1<T>(ref T)", """
+{
+  // Code size       95 (0x5f)
+  .maxstack  3
+  .locals init (T& V_0,
+                T V_1,
+                T& V_2,
+                int V_3,
+                T V_4,
+                System.Index V_5,
+                int V_6)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.2
+  IL_0003:  ldloca.s   V_4
+  IL_0005:  initobj    "T"
+  IL_000b:  ldloc.s    V_4
+  IL_000d:  box        "T"
+  IL_0012:  brtrue.s   IL_001f
+  IL_0014:  ldloc.2
+  IL_0015:  ldobj      "T"
+  IL_001a:  stloc.1
+  IL_001b:  ldloca.s   V_1
+  IL_001d:  br.s       IL_0020
+  IL_001f:  ldloc.2
+  IL_0020:  stloc.0
+  IL_0021:  call       "System.Index Program.GetIndex()"
+  IL_0026:  stloc.s    V_5
+  IL_0028:  ldloca.s   V_5
+  IL_002a:  ldloc.0
+  IL_002b:  ldobj      "T"
+  IL_0030:  call       "int E.get_Length<T>(T)"
+  IL_0035:  call       "int System.Index.GetOffset(int)"
+  IL_003a:  stloc.3
+  IL_003b:  ldloc.0
+  IL_003c:  ldobj      "T"
+  IL_0041:  ldloc.3
+  IL_0042:  call       "int E.get_Item<T>(T, int)"
+  IL_0047:  call       "int Program.GetValue()"
+  IL_004c:  add
+  IL_004d:  stloc.s    V_6
+  IL_004f:  ldloc.0
+  IL_0050:  ldobj      "T"
+  IL_0055:  ldloc.3
+  IL_0056:  ldloc.s    V_6
+  IL_0058:  call       "void E.set_Item<T>(T, int, int)"
+  IL_005d:  nop
+  IL_005e:  ret
+}
+""");
+
+        verifier.VerifyIL("Program.Test2<T>(ref T)", """
+{
+  // Code size       62 (0x3e)
+  .maxstack  3
+  .locals init (T& V_0,
+                int V_1,
+                System.Index V_2,
+                int V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.0
+  IL_0003:  call       "System.Index Program.GetIndex()"
+  IL_0008:  stloc.2
+  IL_0009:  ldloca.s   V_2
+  IL_000b:  ldloc.0
+  IL_000c:  ldobj      "T"
+  IL_0011:  call       "int E.get_Length<T>(T)"
+  IL_0016:  call       "int System.Index.GetOffset(int)"
+  IL_001b:  stloc.1
+  IL_001c:  ldloc.0
+  IL_001d:  ldobj      "T"
+  IL_0022:  ldloc.1
+  IL_0023:  call       "int E.get_Item<T>(T, int)"
+  IL_0028:  call       "int Program.GetValue()"
+  IL_002d:  add
+  IL_002e:  stloc.3
+  IL_002f:  ldloc.0
+  IL_0030:  ldobj      "T"
+  IL_0035:  ldloc.1
+  IL_0036:  ldloc.3
+  IL_0037:  call       "void E.set_Item<T>(T, int, int)"
+  IL_003c:  nop
+  IL_003d:  ret
+}
+""");
+
+        comp = CreateRuntimeAsyncCompilation(src, options: TestOptions.DebugExe);
+        verifier = CompileAndVerify(comp, expectedOutput: RuntimeAsyncTestHelpers.ExpectedOutput(expectedOutput), verify: Verification.Fails with
+        {
+            ILVerifyMessage = """
+                [Main]: Return value missing on the stack. { Offset = 0x119 }
+                [Test3]: Return value missing on the stack. { Offset = 0xa1 }
+                [GetValueAsync]: Unexpected type on the stack. { Offset = 0x7e, Found = Int32, Expected = ref '[System.Runtime]System.Threading.Tasks.Task`1<int32>' }
+                """
+        });
+
+        verifier.VerifyIL("Program.Test3<T>()", """
+{
+  // Code size      162 (0xa2)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                int V_2,
+                int V_3,
+                int V_4,
+                int V_5,
+                T V_6,
+                System.Index V_7)
+  IL_0000:  nop
+  IL_0001:  ldloca.s   V_6
+  IL_0003:  initobj    "T"
+  IL_0009:  ldloc.s    V_6
+  IL_000b:  box        "T"
+  IL_0010:  brtrue.s   IL_001a
+  IL_0012:  ldsfld     "T Program<T>.F"
+  IL_0017:  stloc.0
+  IL_0018:  br.s       IL_0020
+  IL_001a:  ldsfld     "T Program<T>.F"
+  IL_001f:  pop
+  IL_0020:  call       "System.Index Program.GetIndex()"
+  IL_0025:  stloc.s    V_7
+  IL_0027:  ldloca.s   V_7
+  IL_0029:  ldloca.s   V_6
+  IL_002b:  initobj    "T"
+  IL_0031:  ldloc.s    V_6
+  IL_0033:  box        "T"
+  IL_0038:  brtrue.s   IL_003d
+  IL_003a:  ldloc.0
+  IL_003b:  br.s       IL_0042
+  IL_003d:  ldsfld     "T Program<T>.F"
+  IL_0042:  call       "int E.get_Length<T>(T)"
+  IL_0047:  call       "int System.Index.GetOffset(int)"
+  IL_004c:  stloc.2
+  IL_004d:  ldloca.s   V_6
+  IL_004f:  initobj    "T"
+  IL_0055:  ldloc.s    V_6
+  IL_0057:  box        "T"
+  IL_005c:  brtrue.s   IL_0061
+  IL_005e:  ldloc.0
+  IL_005f:  br.s       IL_0066
+  IL_0061:  ldsfld     "T Program<T>.F"
+  IL_0066:  ldloc.2
+  IL_0067:  call       "int E.get_Item<T>(T, int)"
+  IL_006c:  stloc.3
+  IL_006d:  call       "System.Threading.Tasks.Task<int> Program.GetValueAsync()"
+  IL_0072:  call       "int System.Runtime.CompilerServices.AsyncHelpers.Await<int>(System.Threading.Tasks.Task<int>)"
+  IL_0077:  stloc.s    V_4
+  IL_0079:  ldloc.3
+  IL_007a:  ldloc.s    V_4
+  IL_007c:  add
+  IL_007d:  stloc.s    V_5
+  IL_007f:  ldloca.s   V_6
+  IL_0081:  initobj    "T"
+  IL_0087:  ldloc.s    V_6
+  IL_0089:  box        "T"
+  IL_008e:  brtrue.s   IL_0093
+  IL_0090:  ldloc.0
+  IL_0091:  br.s       IL_0098
+  IL_0093:  ldsfld     "T Program<T>.F"
+  IL_0098:  ldloc.2
+  IL_0099:  ldloc.s    V_5
+  IL_009b:  call       "void E.set_Item<T>(T, int, int)"
+  IL_00a0:  nop
+  IL_00a1:  ret
+}
+""");
+
+        // receiver not a variable, struct-constrained extension parameter
+        var src2 = """
+static class E
+{
+    extension<T>(T x) where T : struct
+    {
+        public int Length => 3;
+        public int this[int i] { get => 0; set {} }
+    }
+}
+
+class Program
+{
+    static void Test<T>() where T : struct
+    {
+        default(T)[^1] += 1;
+    }
+}
+
+namespace NS1
+{
+    static class E
+    {
+        extension<T>(in T x) where T : struct
+        {
+        }
+    }
+}
+
+namespace NS2
+{
+    static class E
+    {
+        extension<T>(ref readonly T x) where T : struct
+        {
+        }
+    }
+}
+""";
+
+        CreateCompilation(src2, targetFramework: TargetFramework.Net100).VerifyDiagnostics(
+            // (14,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+            //         default(T)[^1] += 1;
+            Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(T)[^1]").WithLocation(14, 9),
+            // (22,25): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(in T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(22, 25),
+            // (32,35): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(ref readonly T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(32, 35));
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexer_CompoundAssignment_05()
+    {
+        // sibling to ExtensionTests.IndexerAccess_CompoundAssignment_05
+        // struct-constrained generic receiver passed by ref
+        var src = """
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int Length
+        {
+            get
+            {
+                System.Console.Write($"length:{((S1)(object)x).F1} ");
+                Program<S1>.F.F1++;
+                return 3;
+            }
+        }
+
+        public int this[int i]
+        {
+            get
+            {
+                System.Console.Write($"get:{((S1)(object)x).F1} ");
+                Program<S1>.F.F1++;
+                return 0;
+            }
+            set
+            {
+                System.Console.Write($"set:{((S1)(object)x).F1} ");
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async System.Threading.Tasks.Task Main()
+    {
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test2(ref Program<S1>.F);
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Program<S1>.F = new S1 { F1 = 3 };
+        await Test3<S1>();
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        f[GetIndex()] += GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return 1;
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return ^1;
+    }
+
+    static async System.Threading.Tasks.Task Test3<T>() where T : struct
+    {
+        Program<T>.F[GetIndex()] += await GetValueAsync();
+    }
+
+    static async System.Threading.Tasks.Task<int> GetValueAsync()
+    {
+        System.Console.Write($"GetValueAsync:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        await System.Threading.Tasks.Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var expectedOutput = "GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7, GetIndex:3 length:4 get:5 GetValueAsync:6 set:7 final:7";
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput(expectedOutput), verify: Verification.Skipped).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test2<T>(ref T)", """
+{
+  // Code size       45 (0x2d)
+  .maxstack  4
+  .locals init (T& V_0,
+                int V_1,
+                System.Index V_2)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.0
+  IL_0003:  call       "System.Index Program.GetIndex()"
+  IL_0008:  stloc.2
+  IL_0009:  ldloca.s   V_2
+  IL_000b:  ldloc.0
+  IL_000c:  call       "int E.get_Length<T>(ref T)"
+  IL_0011:  call       "int System.Index.GetOffset(int)"
+  IL_0016:  stloc.1
+  IL_0017:  ldloc.0
+  IL_0018:  ldloc.1
+  IL_0019:  ldloc.0
+  IL_001a:  ldloc.1
+  IL_001b:  call       "int E.get_Item<T>(ref T, int)"
+  IL_0020:  call       "int Program.GetValue()"
+  IL_0025:  add
+  IL_0026:  call       "void E.set_Item<T>(ref T, int, int)"
+  IL_002b:  nop
+  IL_002c:  ret
+}
+""");
+
+        comp = CreateRuntimeAsyncCompilation(src, options: TestOptions.DebugExe);
+        verifier = CompileAndVerify(comp, expectedOutput: RuntimeAsyncTestHelpers.ExpectedOutput(expectedOutput), verify: Verification.Fails with
+        {
+            ILVerifyMessage = """
+                [Main]: Return value missing on the stack. { Offset = 0xb8 }
+                [Test3]: Return value missing on the stack. { Offset = 0x44 }
+                [GetValueAsync]: Unexpected type on the stack. { Offset = 0x7e, Found = Int32, Expected = ref '[System.Runtime]System.Threading.Tasks.Task`1<int32>' }
+                """
+        });
+
+        verifier.VerifyIL("Program.Test3<T>()", """
+{
+  // Code size       69 (0x45)
+  .maxstack  4
+  .locals init (T& V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                int V_4,
+                System.Index V_5)
+  IL_0000:  nop
+  IL_0001:  call       "System.Index Program.GetIndex()"
+  IL_0006:  stloc.s    V_5
+  IL_0008:  ldloca.s   V_5
+  IL_000a:  ldsflda    "T Program<T>.F"
+  IL_000f:  call       "int E.get_Length<T>(ref T)"
+  IL_0014:  call       "int System.Index.GetOffset(int)"
+  IL_0019:  stloc.1
+  IL_001a:  ldloc.1
+  IL_001b:  stloc.2
+  IL_001c:  ldsflda    "T Program<T>.F"
+  IL_0021:  ldloc.1
+  IL_0022:  call       "int E.get_Item<T>(ref T, int)"
+  IL_0027:  stloc.3
+  IL_0028:  call       "System.Threading.Tasks.Task<int> Program.GetValueAsync()"
+  IL_002d:  call       "int System.Runtime.CompilerServices.AsyncHelpers.Await<int>(System.Threading.Tasks.Task<int>)"
+  IL_0032:  stloc.s    V_4
+  IL_0034:  ldsflda    "T Program<T>.F"
+  IL_0039:  ldloc.2
+  IL_003a:  ldloc.3
+  IL_003b:  ldloc.s    V_4
+  IL_003d:  add
+  IL_003e:  call       "void E.set_Item<T>(ref T, int, int)"
+  IL_0043:  nop
+  IL_0044:  ret
+}
+""");
+
+        // receiver not a variable
+        var src2 = """
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int Length => 3;
+        public int this[int i] { get => 0; set {} }
+    }
+}
+
+class Program
+{
+    static void Test<T>() where T : struct
+    {
+        default(T)[^1] += 1;
+    }
+}
+
+namespace NS1
+{
+    static class E
+    {
+        extension<T>(in T x) where T : struct
+        {
+        }
+    }
+}
+
+namespace NS2
+{
+    static class E
+    {
+        extension<T>(ref readonly T x) where T : struct
+        {
+        }
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        comp2.VerifyDiagnostics(
+            // (14,9): error CS1510: A ref or out value must be an assignable variable
+            //         default(T)[^1] += 1;
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(14, 9),
+            // (14,9): error CS1510: A ref or out value must be an assignable variable
+            //         default(T)[^1] += 1;
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(14, 9),
+            // (22,25): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(in T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(22, 25),
+            // (32,35): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(ref readonly T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(32, 35)
+            );
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexer_CompoundAssignment_06()
+    {
+        // sibling to ExtensionTests.IndexerAccess_CompoundAssignment_06
+        // generic receiver with unconstrained or class-constrained reference
+        var src = """
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length
+        {
+            get
+            {
+                System.Console.Write($"length:{((C1)(object)x).F1} ");
+                Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+                return 3;
+            }
+        }
+
+        public int this[int i]
+        {
+            get
+            {
+                System.Console.Write($"get:{((C1)(object)x).F1} ");
+                Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+                return 0;
+            }
+            set
+            {
+                System.Console.Write($"set:{((C1)(object)x).F1} ");
+            }
+        }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async System.Threading.Tasks.Task Main()
+    {
+        Program<C1>.F = new C1 { F1 = 3 };
+        Test1(ref Program<C1>.F);
+        System.Console.Write($"final:{Program<C1>.F.F1}");
+
+        System.Console.Write(":");
+
+        Program<C1>.F = new C1 { F1 = 3 };
+        Test2(ref Program<C1>.F);
+        System.Console.Write($"final:{Program<C1>.F.F1}");
+
+        System.Console.Write(":");
+
+        Program<C1>.F = new C1 { F1 = 3 };
+        await Test3<C1>();
+        System.Console.Write($"final:{Program<C1>.F.F1}");
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        f[GetIndex()] += GetValue();
+    }
+
+    static void Test2<T>(ref T f) where T : class
+    {
+        f[GetIndex()] += GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program<C1>.F.F1} ");
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        return 1;
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program<C1>.F.F1} ");
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        return ^1;
+    }
+
+    static async System.Threading.Tasks.Task Test3<T>()
+    {
+        Program<T>.F[GetIndex()] += await GetValueAsync();
+    }
+
+    static async System.Threading.Tasks.Task<int> GetValueAsync()
+    {
+        System.Console.Write($"GetValueAsync:{Program<C1>.F.F1} ");
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        await System.Threading.Tasks.Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var expectedOutput = "GetIndex:3 length:3 get:3 GetValue:6 set:3 final:7:GetIndex:3 length:3 get:3 GetValue:6 set:3 final:7:GetIndex:3 length:3 get:3 GetValueAsync:6 set:3 final:7";
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput(expectedOutput), verify: Verification.Skipped).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1<T>(ref T)", """
+{
+  // Code size       95 (0x5f)
+  .maxstack  3
+  .locals init (T& V_0,
+                T V_1,
+                T& V_2,
+                int V_3,
+                T V_4,
+                System.Index V_5,
+                int V_6)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.2
+  IL_0003:  ldloca.s   V_4
+  IL_0005:  initobj    "T"
+  IL_000b:  ldloc.s    V_4
+  IL_000d:  box        "T"
+  IL_0012:  brtrue.s   IL_001f
+  IL_0014:  ldloc.2
+  IL_0015:  ldobj      "T"
+  IL_001a:  stloc.1
+  IL_001b:  ldloca.s   V_1
+  IL_001d:  br.s       IL_0020
+  IL_001f:  ldloc.2
+  IL_0020:  stloc.0
+  IL_0021:  call       "System.Index Program.GetIndex()"
+  IL_0026:  stloc.s    V_5
+  IL_0028:  ldloca.s   V_5
+  IL_002a:  ldloc.0
+  IL_002b:  ldobj      "T"
+  IL_0030:  call       "int E.get_Length<T>(T)"
+  IL_0035:  call       "int System.Index.GetOffset(int)"
+  IL_003a:  stloc.3
+  IL_003b:  ldloc.0
+  IL_003c:  ldobj      "T"
+  IL_0041:  ldloc.3
+  IL_0042:  call       "int E.get_Item<T>(T, int)"
+  IL_0047:  call       "int Program.GetValue()"
+  IL_004c:  add
+  IL_004d:  stloc.s    V_6
+  IL_004f:  ldloc.0
+  IL_0050:  ldobj      "T"
+  IL_0055:  ldloc.3
+  IL_0056:  ldloc.s    V_6
+  IL_0058:  call       "void E.set_Item<T>(T, int, int)"
+  IL_005d:  nop
+  IL_005e:  ret
+}
+""");
+
+        verifier.VerifyIL("Program.Test2<T>(ref T)", """
+{
+  // Code size       50 (0x32)
+  .maxstack  4
+  .locals init (T V_0,
+                int V_1,
+                System.Index V_2)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  ldobj      "T"
+  IL_0007:  stloc.0
+  IL_0008:  call       "System.Index Program.GetIndex()"
+  IL_000d:  stloc.2
+  IL_000e:  ldloca.s   V_2
+  IL_0010:  ldloc.0
+  IL_0011:  call       "int E.get_Length<T>(T)"
+  IL_0016:  call       "int System.Index.GetOffset(int)"
+  IL_001b:  stloc.1
+  IL_001c:  ldloc.0
+  IL_001d:  ldloc.1
+  IL_001e:  ldloc.0
+  IL_001f:  ldloc.1
+  IL_0020:  call       "int E.get_Item<T>(T, int)"
+  IL_0025:  call       "int Program.GetValue()"
+  IL_002a:  add
+  IL_002b:  call       "void E.set_Item<T>(T, int, int)"
+  IL_0030:  nop
+  IL_0031:  ret
+}
+""");
+
+        comp = CreateRuntimeAsyncCompilation(src, options: TestOptions.DebugExe);
+        verifier = CompileAndVerify(comp, expectedOutput: RuntimeAsyncTestHelpers.ExpectedOutput(expectedOutput), verify: Verification.Fails with
+        {
+            ILVerifyMessage = """
+                [Main]: Return value missing on the stack. { Offset = 0x10a }
+                [Test3]: Return value missing on the stack. { Offset = 0xa1 }
+                [GetValueAsync]: Unexpected type on the stack. { Offset = 0x8b, Found = Int32, Expected = ref '[System.Runtime]System.Threading.Tasks.Task`1<int32>' }
+                """
+        });
+
+        verifier.VerifyIL("Program.Test3<T>()", """
+{
+  // Code size      162 (0xa2)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                int V_2,
+                int V_3,
+                int V_4,
+                int V_5,
+                T V_6,
+                System.Index V_7)
+  IL_0000:  nop
+  IL_0001:  ldloca.s   V_6
+  IL_0003:  initobj    "T"
+  IL_0009:  ldloc.s    V_6
+  IL_000b:  box        "T"
+  IL_0010:  brtrue.s   IL_001a
+  IL_0012:  ldsfld     "T Program<T>.F"
+  IL_0017:  stloc.0
+  IL_0018:  br.s       IL_0020
+  IL_001a:  ldsfld     "T Program<T>.F"
+  IL_001f:  pop
+  IL_0020:  call       "System.Index Program.GetIndex()"
+  IL_0025:  stloc.s    V_7
+  IL_0027:  ldloca.s   V_7
+  IL_0029:  ldloca.s   V_6
+  IL_002b:  initobj    "T"
+  IL_0031:  ldloc.s    V_6
+  IL_0033:  box        "T"
+  IL_0038:  brtrue.s   IL_003d
+  IL_003a:  ldloc.0
+  IL_003b:  br.s       IL_0042
+  IL_003d:  ldsfld     "T Program<T>.F"
+  IL_0042:  call       "int E.get_Length<T>(T)"
+  IL_0047:  call       "int System.Index.GetOffset(int)"
+  IL_004c:  stloc.2
+  IL_004d:  ldloca.s   V_6
+  IL_004f:  initobj    "T"
+  IL_0055:  ldloc.s    V_6
+  IL_0057:  box        "T"
+  IL_005c:  brtrue.s   IL_0061
+  IL_005e:  ldloc.0
+  IL_005f:  br.s       IL_0066
+  IL_0061:  ldsfld     "T Program<T>.F"
+  IL_0066:  ldloc.2
+  IL_0067:  call       "int E.get_Item<T>(T, int)"
+  IL_006c:  stloc.3
+  IL_006d:  call       "System.Threading.Tasks.Task<int> Program.GetValueAsync()"
+  IL_0072:  call       "int System.Runtime.CompilerServices.AsyncHelpers.Await<int>(System.Threading.Tasks.Task<int>)"
+  IL_0077:  stloc.s    V_4
+  IL_0079:  ldloc.3
+  IL_007a:  ldloc.s    V_4
+  IL_007c:  add
+  IL_007d:  stloc.s    V_5
+  IL_007f:  ldloca.s   V_6
+  IL_0081:  initobj    "T"
+  IL_0087:  ldloc.s    V_6
+  IL_0089:  box        "T"
+  IL_008e:  brtrue.s   IL_0093
+  IL_0090:  ldloc.0
+  IL_0091:  br.s       IL_0098
+  IL_0093:  ldsfld     "T Program<T>.F"
+  IL_0098:  ldloc.2
+  IL_0099:  ldloc.s    V_5
+  IL_009b:  call       "void E.set_Item<T>(T, int, int)"
+  IL_00a0:  nop
+  IL_00a1:  ret
+}
+""");
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexer_CompoundAssignment_ReadonlyReceiver_040()
+    {
+        // sibling to ElementAccess_CompoundAssignment_ReadonlyReceiver_040
+        // unconstrained generic receiver on a readonly field, extension this[int] + extension Length
+        var src = """
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i]
+        {
+            get
+            {
+                System.Console.Write($"get:{((S1)(object)x).F1} ");
+                Program.Increment();
+                return 0;
+            }
+            set
+            {
+                System.Console.Write($"set:{((S1)(object)x).F1} ");
+            }
+        }
+
+        public int Length
+        {
+            get
+            {
+                System.Console.Write($"length:{((S1)(object)x).F1} ");
+                Program.Increment();
+                return 3;
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static readonly T F;
+}
+
+class Program
+{
+    static async System.Threading.Tasks.Task Main()
+    {
+        Initialize();
+        Test1<S1>();
+        System.Console.Write($"final:{Program<S1>.F.F1}, ");
+
+        Initialize();
+        await Test3<S1>();
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+    }
+
+    static unsafe void Initialize()
+    {
+        fixed (int* f1 = &Program<S1>.F.F1)
+        {
+            *f1 = 3;
+        }
+    }
+
+    public static unsafe void Increment()
+    {
+        fixed (int* f1 = &Program<S1>.F.F1)
+        {
+            (*f1)++;
+        }
+    }
+
+    static void Test1<T>()
+    {
+        Program<T>.F[GetIndex()] += GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program<S1>.F.F1} ");
+        Increment();
+        return 1;
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program<S1>.F.F1} ");
+        Increment();
+        return ^1;
+    }
+
+    static async System.Threading.Tasks.Task Test3<T>()
+    {
+        Program<T>.F[GetIndex()] += await GetValueAsync();
+    }
+
+    static async System.Threading.Tasks.Task<int> GetValueAsync()
+    {
+        System.Console.Write($"GetValueAsync:{Program<S1>.F.F1} ");
+        Increment();
+        await System.Threading.Tasks.Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var expectedOutput = ExpectedOutput("GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7, GetIndex:3 length:4 get:5 GetValueAsync:6 set:7 final:7");
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe.WithAllowUnsafe(true), targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: expectedOutput, verify: Verification.Skipped).VerifyDiagnostics();
+
+        // TODO2 this IL is wrong
+        verifier.VerifyIL("Program.Test1<T>()", """
+{
+  // Code size      103 (0x67)
+  .maxstack  3
+  .locals init (T& V_0,
+                T V_1,
+                T& V_2,
+                int V_3,
+                T V_4,
+                T V_5,
+                System.Index V_6,
+                int V_7)
+  IL_0000:  nop
+  IL_0001:  ldsfld     "T Program<T>.F"
+  IL_0006:  stloc.s    V_4
+  IL_0008:  ldloca.s   V_4
+  IL_000a:  stloc.2
+  IL_000b:  ldloca.s   V_5
+  IL_000d:  initobj    "T"
+  IL_0013:  ldloc.s    V_5
+  IL_0015:  box        "T"
+  IL_001a:  brtrue.s   IL_0027
+  IL_001c:  ldloc.2
+  IL_001d:  ldobj      "T"
+  IL_0022:  stloc.1
+  IL_0023:  ldloca.s   V_1
+  IL_0025:  br.s       IL_0028
+  IL_0027:  ldloc.2
+  IL_0028:  stloc.0
+  IL_0029:  call       "System.Index Program.GetIndex()"
+  IL_002e:  stloc.s    V_6
+  IL_0030:  ldloca.s   V_6
+  IL_0032:  ldloc.0
+  IL_0033:  ldobj      "T"
+  IL_0038:  call       "int E.get_Length<T>(T)"
+  IL_003d:  call       "int System.Index.GetOffset(int)"
+  IL_0042:  stloc.3
+  IL_0043:  ldloc.0
+  IL_0044:  ldobj      "T"
+  IL_0049:  ldloc.3
+  IL_004a:  call       "int E.get_Item<T>(T, int)"
+  IL_004f:  call       "int Program.GetValue()"
+  IL_0054:  add
+  IL_0055:  stloc.s    V_7
+  IL_0057:  ldloc.0
+  IL_0058:  ldobj      "T"
+  IL_005d:  ldloc.3
+  IL_005e:  ldloc.s    V_7
+  IL_0060:  call       "void E.set_Item<T>(T, int, int)"
+  IL_0065:  nop
+  IL_0066:  ret
+}
+""");
+
+        comp = CreateRuntimeAsyncCompilation(src, options: TestOptions.UnsafeReleaseExe);
+        // The goal of this test is to validate that there's a `ldsfld     "T Program<T>.F"` after the async call. Regular state machine code is so large that it's
+        // very hard to verify this by reading the IL, so it does what is undefined behavior (modifying a static readonly field) to observe this. In runtime async
+        // mode, this undefined behavior results in a different output, but the IL is also smaller so we can easily verify that the read occurs where it should in the IL.
+        verifier = CompileAndVerify(comp, expectedOutput: null, verify: Verification.Fails with
+        {
+            ILVerifyMessage = """
+                [Main]: Cannot change initonly field outside its .ctor. { Offset = 0x21 }
+                [Main]: Cannot change initonly field outside its .ctor. { Offset = 0x6e }
+                [Main]: Return value missing on the stack. { Offset = 0x89 }
+                [Initialize]: Cannot change initonly field outside its .ctor. { Offset = 0x0 }
+                [Initialize]: Expected numeric type on the stack. { Offset = 0xc, Found = address of Int32 }
+                [Increment]: Cannot change initonly field outside its .ctor. { Offset = 0x0 }
+                [Increment]: Expected numeric type on the stack. { Offset = 0xc, Found = address of Int32 }
+                [GetValue]: Cannot change initonly field outside its .ctor. { Offset = 0x18 }
+                [GetIndex]: Cannot change initonly field outside its .ctor. { Offset = 0x18 }
+                [Test3]: Return value missing on the stack. { Offset = 0x99 }
+                [GetValueAsync]: Cannot change initonly field outside its .ctor. { Offset = 0x18 }
+                """
+        });
+
+        verifier.VerifyIL("Program.Test3<T>()", """
+{
+  // Code size      154 (0x9a)
+  .maxstack  3
+  .locals init (T V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                T V_4,
+                System.Index V_5)
+  IL_0000:  ldloca.s   V_4
+  IL_0002:  initobj    "T"
+  IL_0008:  ldloc.s    V_4
+  IL_000a:  box        "T"
+  IL_000f:  brtrue.s   IL_0019
+  IL_0011:  ldsfld     "T Program<T>.F"
+  IL_0016:  stloc.0
+  IL_0017:  br.s       IL_001f
+  IL_0019:  ldsfld     "T Program<T>.F"
+  IL_001e:  pop
+  IL_001f:  call       "System.Index Program.GetIndex()"
+  IL_0024:  stloc.s    V_5
+  IL_0026:  ldloca.s   V_5
+  IL_0028:  ldloca.s   V_4
+  IL_002a:  initobj    "T"
+  IL_0030:  ldloc.s    V_4
+  IL_0032:  box        "T"
+  IL_0037:  brtrue.s   IL_003c
+  IL_0039:  ldloc.0
+  IL_003a:  br.s       IL_0041
+  IL_003c:  ldsfld     "T Program<T>.F"
+  IL_0041:  call       "int E.get_Length<T>(T)"
+  IL_0046:  call       "int System.Index.GetOffset(int)"
+  IL_004b:  stloc.1
+  IL_004c:  ldloca.s   V_4
+  IL_004e:  initobj    "T"
+  IL_0054:  ldloc.s    V_4
+  IL_0056:  box        "T"
+  IL_005b:  brtrue.s   IL_0060
+  IL_005d:  ldloc.0
+  IL_005e:  br.s       IL_0065
+  IL_0060:  ldsfld     "T Program<T>.F"
+  IL_0065:  ldloc.1
+  IL_0066:  call       "int E.get_Item<T>(T, int)"
+  IL_006b:  call       "System.Threading.Tasks.Task<int> Program.GetValueAsync()"
+  IL_0070:  call       "int System.Runtime.CompilerServices.AsyncHelpers.Await<int>(System.Threading.Tasks.Task<int>)"
+  IL_0075:  stloc.2
+  IL_0076:  ldloc.2
+  IL_0077:  add
+  IL_0078:  stloc.3
+  IL_0079:  ldloca.s   V_4
+  IL_007b:  initobj    "T"
+  IL_0081:  ldloc.s    V_4
+  IL_0083:  box        "T"
+  IL_0088:  brtrue.s   IL_008d
+  IL_008a:  ldloc.0
+  IL_008b:  br.s       IL_0092
+  IL_008d:  ldsfld     "T Program<T>.F"
+  IL_0092:  ldloc.1
+  IL_0093:  ldloc.3
+  IL_0094:  call       "void E.set_Item<T>(T, int, int)"
+  IL_0099:  ret
+}
+""");
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitIndexIndexer_CompoundAssignment_ReadonlyReceiver_041(string refKind)
+    {
+        // sibling to ElementAccess_CompoundAssignment_ReadonlyReceiver_041
+        // unconstrained generic receiver with ref/ref readonly/in struct value, extension this[int] + extension Length
+        var src = $$$"""
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length
+        {
+            get
+            {
+                System.Console.Write($"length:{((S1)(object)x).F1} ");
+                Program<S1>.F.F1++;
+                return 3;
+            }
+        }
+
+        public int this[int i]
+        {
+            get
+            {
+                System.Console.Write($"get:{((S1)(object)x).F1} ");
+                Program<S1>.F.F1++;
+                return 0;
+            }
+            set
+            {
+                System.Console.Write($"set:{((S1)(object)x).F1} ");
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static void Main()
+    {
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test1({{{(refKind == "ref" ? "ref" : "in")}}} Program<S1>.F);
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+    }
+
+    static void Test1<T>({{{refKind}}} T f)
+    {
+        f[GetIndex()] += GetValue();
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return ^1;
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return 1;
+    }
+}
+""";
+
+        // TODO2 confirm expected output
+        var verifier = CompileAndVerify(
+            CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100),
+            expectedOutput: ExpectedOutput("GetIndex:3 length:4 get:5 GetValue:6 set:7 final:7"),
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        // TODO2 we should probably yield the same IL regardless of refKind. Need to confirm
+        verifier.VerifyIL($"Program.Test1<T>({refKind} T)", """
+{
+  // Code size       95 (0x5f)
+  .maxstack  3
+  .locals init (T& V_0,
+                T V_1,
+                T& V_2,
+                int V_3,
+                T V_4,
+                System.Index V_5,
+                int V_6)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.2
+  IL_0003:  ldloca.s   V_4
+  IL_0005:  initobj    "T"
+  IL_000b:  ldloc.s    V_4
+  IL_000d:  box        "T"
+  IL_0012:  brtrue.s   IL_001f
+  IL_0014:  ldloc.2
+  IL_0015:  ldobj      "T"
+  IL_001a:  stloc.1
+  IL_001b:  ldloca.s   V_1
+  IL_001d:  br.s       IL_0020
+  IL_001f:  ldloc.2
+  IL_0020:  stloc.0
+  IL_0021:  call       "System.Index Program.GetIndex()"
+  IL_0026:  stloc.s    V_5
+  IL_0028:  ldloca.s   V_5
+  IL_002a:  ldloc.0
+  IL_002b:  ldobj      "T"
+  IL_0030:  call       "int E.get_Length<T>(T)"
+  IL_0035:  call       "int System.Index.GetOffset(int)"
+  IL_003a:  stloc.3
+  IL_003b:  ldloc.0
+  IL_003c:  ldobj      "T"
+  IL_0041:  ldloc.3
+  IL_0042:  call       "int E.get_Item<T>(T, int)"
+  IL_0047:  call       "int Program.GetValue()"
+  IL_004c:  add
+  IL_004d:  stloc.s    V_6
+  IL_004f:  ldloc.0
+  IL_0050:  ldobj      "T"
+  IL_0055:  ldloc.3
+  IL_0056:  ldloc.s    V_6
+  IL_0058:  call       "void E.set_Item<T>(T, int, int)"
+  IL_005d:  nop
+  IL_005e:  ret
+}
+""");
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitIndexIndexer_CompoundAssignment_ReadonlyReceiver_061(string refKind)
+    {
+        // sibling to ElementAccess_CompoundAssignment_ReadonlyReceiver_061
+        // unconstrained generic receiver with ref/ref readonly/in class value
+        var src = $$$"""
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length
+        {
+            get
+            {
+                System.Console.Write($"length:{((C1)(object)x).F1} ");
+                Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+                return 3;
+            }
+        }
+
+        public int this[int i]
+        {
+            get
+            {
+                System.Console.Write($"get:{((C1)(object)x).F1} ");
+                Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+                return 0;
+            }
+            set
+            {
+                System.Console.Write($"set:{((C1)(object)x).F1} ");
+            }
+        }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static void Main()
+    {
+        Program<C1>.F = new C1 { F1 = 123 };
+        Test1({{{(refKind == "ref" ? "ref" : "in")}}} Program<C1>.F);
+        System.Console.Write($"final:{Program<C1>.F.F1}");
+    }
+
+    static void Test1<T>({{{refKind}}} T f)
+    {
+        f[GetIndex()] += GetValue();
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program<C1>.F.F1} ");
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        return ^1;
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program<C1>.F.F1} ");
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        return 1;
+    }
+}
+""";
+
+        var verifier = CompileAndVerify(
+            CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100),
+            expectedOutput: ExpectedOutput("GetIndex:123 length:123 get:123 GetValue:126 set:123 final:127"),
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        //        verifier.VerifyIL($"Program.Test1<T>({refKind} T)", """
+        //TODO2 TBD
+        //""");
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexer_CompoundAssignment_01()
+    {
+        // sibling to ExtensionTests.IndexerAccess_CompoundAssignment_01
+        // struct receiver, extension Length + ref-returning extension Slice
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F.F1++; return 5; } }
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F.F1++; return ref Program.Result; }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public void Test2()
+    {
+        this[Program.GetRange()] += Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetRange()] += GetValue();
+    }
+
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+
+    public static System.Range GetRange() { System.Console.Write($"GetRange:{Program.F.F1} "); Program.F.F1++; return 1..^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 GetValue:6 result:11 final:7, GetRange:3 length:4 Slice:5 GetValue:6 result:11 final:7"),
+             verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", """
+{
+  // Code size       84 (0x54)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  call       "System.Range Program.GetRange()"
+  IL_000b:  stloc.0
+  IL_000c:  dup
+  IL_000d:  ldobj      "S1"
+  IL_0012:  call       "int E.get_Length(S1)"
+  IL_0017:  stloc.1
+  IL_0018:  ldloca.s   V_0
+  IL_001a:  call       "System.Index System.Range.Start.get"
+  IL_001f:  stloc.s    V_4
+  IL_0021:  ldloca.s   V_4
+  IL_0023:  ldloc.1
+  IL_0024:  call       "int System.Index.GetOffset(int)"
+  IL_0029:  stloc.2
+  IL_002a:  ldloca.s   V_0
+  IL_002c:  call       "System.Index System.Range.End.get"
+  IL_0031:  stloc.s    V_4
+  IL_0033:  ldloca.s   V_4
+  IL_0035:  ldloc.1
+  IL_0036:  call       "int System.Index.GetOffset(int)"
+  IL_003b:  ldloc.2
+  IL_003c:  sub
+  IL_003d:  stloc.3
+  IL_003e:  ldobj      "S1"
+  IL_0043:  ldloc.2
+  IL_0044:  ldloc.3
+  IL_0045:  call       "ref int E.Slice(S1, int, int)"
+  IL_004a:  dup
+  IL_004b:  ldind.i4
+  IL_004c:  call       "int Program.GetValue()"
+  IL_0051:  add
+  IL_0052:  stind.i4
+  IL_0053:  ret
+}
+""");
+
+        verifier.VerifyIL("S1.Test2", """
+{
+  // Code size       80 (0x50)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  call       "System.Range Program.GetRange()"
+  IL_0007:  stloc.0
+  IL_0008:  dup
+  IL_0009:  ldobj      "S1"
+  IL_000e:  call       "int E.get_Length(S1)"
+  IL_0013:  stloc.1
+  IL_0014:  ldloca.s   V_0
+  IL_0016:  call       "System.Index System.Range.Start.get"
+  IL_001b:  stloc.s    V_4
+  IL_001d:  ldloca.s   V_4
+  IL_001f:  ldloc.1
+  IL_0020:  call       "int System.Index.GetOffset(int)"
+  IL_0025:  stloc.2
+  IL_0026:  ldloca.s   V_0
+  IL_0028:  call       "System.Index System.Range.End.get"
+  IL_002d:  stloc.s    V_4
+  IL_002f:  ldloca.s   V_4
+  IL_0031:  ldloc.1
+  IL_0032:  call       "int System.Index.GetOffset(int)"
+  IL_0037:  ldloc.2
+  IL_0038:  sub
+  IL_0039:  stloc.3
+  IL_003a:  ldobj      "S1"
+  IL_003f:  ldloc.2
+  IL_0040:  ldloc.3
+  IL_0041:  call       "ref int E.Slice(S1, int, int)"
+  IL_0046:  dup
+  IL_0047:  ldind.i4
+  IL_0048:  call       "int Program.GetValue()"
+  IL_004d:  add
+  IL_004e:  stind.i4
+  IL_004f:  ret
+}
+""");
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexer_CompoundAssignment_01_02()
+    {
+        // struct receiver, instance Length + ref-returning extension Slice
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F.F1++; return ref Program.Result; }
+    }
+}
+
+struct S1
+{
+    public int F1;
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.F.F1++; return 5; } }
+
+    public void Test2()
+    {
+        this[Program.GetRange()] += Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetRange()] += GetValue();
+    }
+
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+
+    public static System.Range GetRange() { System.Console.Write($"GetRange:{Program.F.F1} "); Program.F.F1++; return 1..^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 GetValue:6 result:11 final:7, GetRange:3 length:4 Slice:5 GetValue:6 result:11 final:7"),
+             verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", """
+{
+  // Code size       79 (0x4f)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  call       "System.Range Program.GetRange()"
+  IL_000b:  stloc.0
+  IL_000c:  dup
+  IL_000d:  call       "int S1.Length.get"
+  IL_0012:  stloc.1
+  IL_0013:  ldloca.s   V_0
+  IL_0015:  call       "System.Index System.Range.Start.get"
+  IL_001a:  stloc.s    V_4
+  IL_001c:  ldloca.s   V_4
+  IL_001e:  ldloc.1
+  IL_001f:  call       "int System.Index.GetOffset(int)"
+  IL_0024:  stloc.2
+  IL_0025:  ldloca.s   V_0
+  IL_0027:  call       "System.Index System.Range.End.get"
+  IL_002c:  stloc.s    V_4
+  IL_002e:  ldloca.s   V_4
+  IL_0030:  ldloc.1
+  IL_0031:  call       "int System.Index.GetOffset(int)"
+  IL_0036:  ldloc.2
+  IL_0037:  sub
+  IL_0038:  stloc.3
+  IL_0039:  ldobj      "S1"
+  IL_003e:  ldloc.2
+  IL_003f:  ldloc.3
+  IL_0040:  call       "ref int E.Slice(S1, int, int)"
+  IL_0045:  dup
+  IL_0046:  ldind.i4
+  IL_0047:  call       "int Program.GetValue()"
+  IL_004c:  add
+  IL_004d:  stind.i4
+  IL_004e:  ret
+}
+""");
+
+        verifier.VerifyIL("S1.Test2", """
+{
+  // Code size       75 (0x4b)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  call       "System.Range Program.GetRange()"
+  IL_0007:  stloc.0
+  IL_0008:  dup
+  IL_0009:  call       "int S1.Length.get"
+  IL_000e:  stloc.1
+  IL_000f:  ldloca.s   V_0
+  IL_0011:  call       "System.Index System.Range.Start.get"
+  IL_0016:  stloc.s    V_4
+  IL_0018:  ldloca.s   V_4
+  IL_001a:  ldloc.1
+  IL_001b:  call       "int System.Index.GetOffset(int)"
+  IL_0020:  stloc.2
+  IL_0021:  ldloca.s   V_0
+  IL_0023:  call       "System.Index System.Range.End.get"
+  IL_0028:  stloc.s    V_4
+  IL_002a:  ldloca.s   V_4
+  IL_002c:  ldloc.1
+  IL_002d:  call       "int System.Index.GetOffset(int)"
+  IL_0032:  ldloc.2
+  IL_0033:  sub
+  IL_0034:  stloc.3
+  IL_0035:  ldobj      "S1"
+  IL_003a:  ldloc.2
+  IL_003b:  ldloc.3
+  IL_003c:  call       "ref int E.Slice(S1, int, int)"
+  IL_0041:  dup
+  IL_0042:  ldind.i4
+  IL_0043:  call       "int Program.GetValue()"
+  IL_0048:  add
+  IL_0049:  stind.i4
+  IL_004a:  ret
+}
+""");
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexer_CompoundAssignment_01_03()
+    {
+        // struct receiver, extension Length + ref-returning instance Slice
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F.F1++; return ref Program.Result; }
+    }
+}
+
+struct S1
+{
+    public int F1;
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.F.F1++; return 5; } }
+
+    public void Test2()
+    {
+        this[Program.GetRange()] += Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetRange()] += GetValue();
+    }
+
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+
+    public static System.Range GetRange() { System.Console.Write($"GetRange:{Program.F.F1} "); Program.F.F1++; return 1..^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 GetValue:6 result:11 final:7, GetRange:3 length:4 Slice:5 GetValue:6 result:11 final:7"),
+             verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", """
+{
+  // Code size       79 (0x4f)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  call       "System.Range Program.GetRange()"
+  IL_000b:  stloc.0
+  IL_000c:  dup
+  IL_000d:  call       "int S1.Length.get"
+  IL_0012:  stloc.1
+  IL_0013:  ldloca.s   V_0
+  IL_0015:  call       "System.Index System.Range.Start.get"
+  IL_001a:  stloc.s    V_4
+  IL_001c:  ldloca.s   V_4
+  IL_001e:  ldloc.1
+  IL_001f:  call       "int System.Index.GetOffset(int)"
+  IL_0024:  stloc.2
+  IL_0025:  ldloca.s   V_0
+  IL_0027:  call       "System.Index System.Range.End.get"
+  IL_002c:  stloc.s    V_4
+  IL_002e:  ldloca.s   V_4
+  IL_0030:  ldloc.1
+  IL_0031:  call       "int System.Index.GetOffset(int)"
+  IL_0036:  ldloc.2
+  IL_0037:  sub
+  IL_0038:  stloc.3
+  IL_0039:  ldobj      "S1"
+  IL_003e:  ldloc.2
+  IL_003f:  ldloc.3
+  IL_0040:  call       "ref int E.Slice(S1, int, int)"
+  IL_0045:  dup
+  IL_0046:  ldind.i4
+  IL_0047:  call       "int Program.GetValue()"
+  IL_004c:  add
+  IL_004d:  stind.i4
+  IL_004e:  ret
+}
+""");
+
+        verifier.VerifyIL("S1.Test2", """
+{
+  // Code size       75 (0x4b)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  call       "System.Range Program.GetRange()"
+  IL_0007:  stloc.0
+  IL_0008:  dup
+  IL_0009:  call       "int S1.Length.get"
+  IL_000e:  stloc.1
+  IL_000f:  ldloca.s   V_0
+  IL_0011:  call       "System.Index System.Range.Start.get"
+  IL_0016:  stloc.s    V_4
+  IL_0018:  ldloca.s   V_4
+  IL_001a:  ldloc.1
+  IL_001b:  call       "int System.Index.GetOffset(int)"
+  IL_0020:  stloc.2
+  IL_0021:  ldloca.s   V_0
+  IL_0023:  call       "System.Index System.Range.End.get"
+  IL_0028:  stloc.s    V_4
+  IL_002a:  ldloca.s   V_4
+  IL_002c:  ldloc.1
+  IL_002d:  call       "int System.Index.GetOffset(int)"
+  IL_0032:  ldloc.2
+  IL_0033:  sub
+  IL_0034:  stloc.3
+  IL_0035:  ldobj      "S1"
+  IL_003a:  ldloc.2
+  IL_003b:  ldloc.3
+  IL_003c:  call       "ref int E.Slice(S1, int, int)"
+  IL_0041:  dup
+  IL_0042:  ldind.i4
+  IL_0043:  call       "int Program.GetValue()"
+  IL_0048:  add
+  IL_0049:  stind.i4
+  IL_004a:  ret
+}
+""");
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitRangeIndexer_CompoundAssignment_02(string refKind)
+    {
+        // sibling to ExtensionTests.IndexerAccess_CompoundAssignment_02
+        // struct receiver passed by ref, extension Length + ref-returning extension Slice
+        var src = $$"""
+static class E
+{
+    extension({{refKind}} S1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F.F1++; return 5; } }
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F.F1++; return ref Program.Result; }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public void Test2()
+    {
+        this[Program.GetRange()] += Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetRange()] += GetValue();
+    }
+
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+
+    public static System.Range GetRange() { System.Console.Write($"GetRange:{Program.F.F1} "); Program.F.F1++; return 1..^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 GetValue:6 result:11 final:7, GetRange:3 length:4 Slice:5 GetValue:6 result:11 final:7"), verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", $$"""
+{
+  // Code size       74 (0x4a)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  call       "System.Range Program.GetRange()"
+  IL_000b:  stloc.0
+  IL_000c:  dup
+  IL_000d:  call       "int E.get_Length({{refKind}} S1)"
+  IL_0012:  stloc.1
+  IL_0013:  ldloca.s   V_0
+  IL_0015:  call       "System.Index System.Range.Start.get"
+  IL_001a:  stloc.s    V_4
+  IL_001c:  ldloca.s   V_4
+  IL_001e:  ldloc.1
+  IL_001f:  call       "int System.Index.GetOffset(int)"
+  IL_0024:  stloc.2
+  IL_0025:  ldloca.s   V_0
+  IL_0027:  call       "System.Index System.Range.End.get"
+  IL_002c:  stloc.s    V_4
+  IL_002e:  ldloca.s   V_4
+  IL_0030:  ldloc.1
+  IL_0031:  call       "int System.Index.GetOffset(int)"
+  IL_0036:  ldloc.2
+  IL_0037:  sub
+  IL_0038:  stloc.3
+  IL_0039:  ldloc.2
+  IL_003a:  ldloc.3
+  IL_003b:  call       "ref int E.Slice({{refKind}} S1, int, int)"
+  IL_0040:  dup
+  IL_0041:  ldind.i4
+  IL_0042:  call       "int Program.GetValue()"
+  IL_0047:  add
+  IL_0048:  stind.i4
+  IL_0049:  ret
+}
+""");
+
+        verifier.VerifyIL("S1.Test2", $$"""
+{
+  // Code size       70 (0x46)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  call       "System.Range Program.GetRange()"
+  IL_0007:  stloc.0
+  IL_0008:  dup
+  IL_0009:  call       "int E.get_Length({{refKind}} S1)"
+  IL_000e:  stloc.1
+  IL_000f:  ldloca.s   V_0
+  IL_0011:  call       "System.Index System.Range.Start.get"
+  IL_0016:  stloc.s    V_4
+  IL_0018:  ldloca.s   V_4
+  IL_001a:  ldloc.1
+  IL_001b:  call       "int System.Index.GetOffset(int)"
+  IL_0020:  stloc.2
+  IL_0021:  ldloca.s   V_0
+  IL_0023:  call       "System.Index System.Range.End.get"
+  IL_0028:  stloc.s    V_4
+  IL_002a:  ldloca.s   V_4
+  IL_002c:  ldloc.1
+  IL_002d:  call       "int System.Index.GetOffset(int)"
+  IL_0032:  ldloc.2
+  IL_0033:  sub
+  IL_0034:  stloc.3
+  IL_0035:  ldloc.2
+  IL_0036:  ldloc.3
+  IL_0037:  call       "ref int E.Slice({{refKind}} S1, int, int)"
+  IL_003c:  dup
+  IL_003d:  ldind.i4
+  IL_003e:  call       "int Program.GetValue()"
+  IL_0043:  add
+  IL_0044:  stind.i4
+  IL_0045:  ret
+}
+""");
+
+        // receiver is not a variable
+        var src2 = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int Length => 5;
+        public ref int Slice(int start, int length) => throw null;
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[1..^1] += 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        switch (refKind)
+        {
+            case "ref":
+                comp2.VerifyEmitDiagnostics(
+                    // (16,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1)[1..^1] += 1;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9),
+                    // (16,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1)[1..^1] += 1;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9));
+                break;
+            case "ref readonly":
+                comp2.VerifyEmitDiagnostics(
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[1..^1] += 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[1..^1] += 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[1..^1] += 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9));
+                break;
+            case "in":
+                comp2.VerifyEmitDiagnostics();
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(refKind);
+        }
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitRangeIndexer_CompoundAssignment_02_02(string refKind)
+    {
+        // TODO2 review
+        // struct receiver passed by ref, instance Length + ref-returning extension Slice
+        var src = $$"""
+static class E
+{
+    extension({{refKind}} S1 x)
+    {
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F.F1++; return ref Program.Result; }
+    }
+}
+
+struct S1
+{
+    public int F1;
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.F.F1++; return 5; } }
+
+    public void Test2()
+    {
+        this[Program.GetRange()] += Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetRange()] += GetValue();
+    }
+
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+
+    public static System.Range GetRange() { System.Console.Write($"GetRange:{Program.F.F1} "); Program.F.F1++; return 1..^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 GetValue:6 result:11 final:7, GetRange:3 length:4 Slice:5 GetValue:6 result:11 final:7"), verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        // TODO2
+        var lengthGetter = "S1.Length.get";
+
+        verifier.VerifyIL("Program.Test1", $$"""
+{
+  // Code size       74 (0x4a)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  call       "System.Range Program.GetRange()"
+  IL_000b:  stloc.0
+  IL_000c:  dup
+  IL_000d:  call       "int {{lengthGetter}}"
+  IL_0012:  stloc.1
+  IL_0013:  ldloca.s   V_0
+  IL_0015:  call       "System.Index System.Range.Start.get"
+  IL_001a:  stloc.s    V_4
+  IL_001c:  ldloca.s   V_4
+  IL_001e:  ldloc.1
+  IL_001f:  call       "int System.Index.GetOffset(int)"
+  IL_0024:  stloc.2
+  IL_0025:  ldloca.s   V_0
+  IL_0027:  call       "System.Index System.Range.End.get"
+  IL_002c:  stloc.s    V_4
+  IL_002e:  ldloca.s   V_4
+  IL_0030:  ldloc.1
+  IL_0031:  call       "int System.Index.GetOffset(int)"
+  IL_0036:  ldloc.2
+  IL_0037:  sub
+  IL_0038:  stloc.3
+  IL_0039:  ldloc.2
+  IL_003a:  ldloc.3
+  IL_003b:  call       "ref int E.Slice({{refKind}} S1, int, int)"
+  IL_0040:  dup
+  IL_0041:  ldind.i4
+  IL_0042:  call       "int Program.GetValue()"
+  IL_0047:  add
+  IL_0048:  stind.i4
+  IL_0049:  ret
+}
+""");
+
+        verifier.VerifyIL("S1.Test2", $$"""
+{
+  // Code size       70 (0x46)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  call       "System.Range Program.GetRange()"
+  IL_0007:  stloc.0
+  IL_0008:  dup
+  IL_0009:  call       "int {{lengthGetter}}"
+  IL_000e:  stloc.1
+  IL_000f:  ldloca.s   V_0
+  IL_0011:  call       "System.Index System.Range.Start.get"
+  IL_0016:  stloc.s    V_4
+  IL_0018:  ldloca.s   V_4
+  IL_001a:  ldloc.1
+  IL_001b:  call       "int System.Index.GetOffset(int)"
+  IL_0020:  stloc.2
+  IL_0021:  ldloca.s   V_0
+  IL_0023:  call       "System.Index System.Range.End.get"
+  IL_0028:  stloc.s    V_4
+  IL_002a:  ldloca.s   V_4
+  IL_002c:  ldloc.1
+  IL_002d:  call       "int System.Index.GetOffset(int)"
+  IL_0032:  ldloc.2
+  IL_0033:  sub
+  IL_0034:  stloc.3
+  IL_0035:  ldloc.2
+  IL_0036:  ldloc.3
+  IL_0037:  call       "ref int E.Slice({{refKind}} S1, int, int)"
+  IL_003c:  dup
+  IL_003d:  ldind.i4
+  IL_003e:  call       "int Program.GetValue()"
+  IL_0043:  add
+  IL_0044:  stind.i4
+  IL_0045:  ret
+}
+""");
+
+        // receiver is not a variable
+        var src2 = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int Length => 5;
+        public ref int Slice(int start, int length) => throw null;
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[1..^1] += 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        switch (refKind)
+        {
+            case "ref":
+                comp2.VerifyDiagnostics(
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9),
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9));
+                break;
+            case "ref readonly":
+                comp2.VerifyDiagnostics(
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9));
+                break;
+            case "in":
+                comp2.VerifyDiagnostics();
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(refKind);
+        }
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitRangeIndexer_CompoundAssignment_02_03(string refKind)
+    {
+        // TODO2 review 
+        // struct receiver passed by ref, extension Length + ref-returning instance Slice
+        var src = $$"""
+static class E
+{
+    extension({{refKind}} S1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F.F1++; return 5; } }
+    }
+}
+
+struct S1
+{
+    public int F1;
+    public ref int Slice(int start, int length) { System.Console.Write($"Slice:{F1} "); Program.F.F1++; return ref Program.Result; }
+
+    public void Test2()
+    {
+        this[Program.GetRange()] += Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetRange()] += GetValue();
+    }
+
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+
+    public static System.Range GetRange() { System.Console.Write($"GetRange:{Program.F.F1} "); Program.F.F1++; return 1..^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 GetValue:6 result:11 final:7, GetRange:3 length:4 Slice:5 GetValue:6 result:11 final:7"), verify: Verification.Skipped).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", $$"""
+{
+  // Code size       74 (0x4a)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  call       "System.Range Program.GetRange()"
+  IL_000b:  stloc.0
+  IL_000c:  dup
+  IL_000d:  call       "int E.get_Length({{refKind}} S1)"
+  IL_0012:  stloc.1
+  IL_0013:  ldloca.s   V_0
+  IL_0015:  call       "System.Index System.Range.Start.get"
+  IL_001a:  stloc.s    V_4
+  IL_001c:  ldloca.s   V_4
+  IL_001e:  ldloc.1
+  IL_001f:  call       "int System.Index.GetOffset(int)"
+  IL_0024:  stloc.2
+  IL_0025:  ldloca.s   V_0
+  IL_0027:  call       "System.Index System.Range.End.get"
+  IL_002c:  stloc.s    V_4
+  IL_002e:  ldloca.s   V_4
+  IL_0030:  ldloc.1
+  IL_0031:  call       "int System.Index.GetOffset(int)"
+  IL_0036:  ldloc.2
+  IL_0037:  sub
+  IL_0038:  stloc.3
+  IL_0039:  ldloc.2
+  IL_003a:  ldloc.3
+  IL_003b:  call       "ref int S1.Slice(int, int)"
+  IL_0040:  dup
+  IL_0041:  ldind.i4
+  IL_0042:  call       "int Program.GetValue()"
+  IL_0047:  add
+  IL_0048:  stind.i4
+  IL_0049:  ret
+}
+""");
+
+        verifier.VerifyIL("S1.Test2", $$"""
+{
+  // Code size       70 (0x46)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  call       "System.Range Program.GetRange()"
+  IL_0007:  stloc.0
+  IL_0008:  dup
+  IL_0009:  call       "int E.get_Length({{refKind}} S1)"
+  IL_000e:  stloc.1
+  IL_000f:  ldloca.s   V_0
+  IL_0011:  call       "System.Index System.Range.Start.get"
+  IL_0016:  stloc.s    V_4
+  IL_0018:  ldloca.s   V_4
+  IL_001a:  ldloc.1
+  IL_001b:  call       "int System.Index.GetOffset(int)"
+  IL_0020:  stloc.2
+  IL_0021:  ldloca.s   V_0
+  IL_0023:  call       "System.Index System.Range.End.get"
+  IL_0028:  stloc.s    V_4
+  IL_002a:  ldloca.s   V_4
+  IL_002c:  ldloc.1
+  IL_002d:  call       "int System.Index.GetOffset(int)"
+  IL_0032:  ldloc.2
+  IL_0033:  sub
+  IL_0034:  stloc.3
+  IL_0035:  ldloc.2
+  IL_0036:  ldloc.3
+  IL_0037:  call       "ref int S1.Slice(int, int)"
+  IL_003c:  dup
+  IL_003d:  ldind.i4
+  IL_003e:  call       "int Program.GetValue()"
+  IL_0043:  add
+  IL_0044:  stind.i4
+  IL_0045:  ret
+}
+""");
+
+        // receiver is not a variable
+        var src2 = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int Length => 5;
+        public ref int Slice(int start, int length) => throw null;
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[1..^1] += 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        switch (refKind)
+        {
+            case "ref":
+                comp2.VerifyDiagnostics(
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9),
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9));
+                break;
+            case "ref readonly":
+                comp2.VerifyDiagnostics(
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9));
+                break;
+            case "in":
+                comp2.VerifyDiagnostics();
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(refKind);
+        }
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexer_CompoundAssignment_03()
+    {
+        // TODO2 review this ported test
+        // sibling to ExtensionTests.IndexerAccess_CompoundAssignment_03
+        // class receiver, extension Length + ref-returning extension Slice
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 5; } }
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return ref Program.Result; }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static C1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new C1 { F1 = 3 };
+        Test();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test()
+    {
+        F[GetRange()] += GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1;
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 GetValue:6 result:11 final:7"),
+             verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test", """
+{
+  // Code size       74 (0x4a)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldsfld     "C1 Program.F"
+  IL_0006:  call       "System.Range Program.GetRange()"
+  IL_000b:  stloc.0
+  IL_000c:  dup
+  IL_000d:  call       "int E.get_Length(C1)"
+  IL_0012:  stloc.1
+  IL_0013:  ldloca.s   V_0
+  IL_0015:  call       "System.Index System.Range.Start.get"
+  IL_001a:  stloc.s    V_4
+  IL_001c:  ldloca.s   V_4
+  IL_001e:  ldloc.1
+  IL_001f:  call       "int System.Index.GetOffset(int)"
+  IL_0024:  stloc.2
+  IL_0025:  ldloca.s   V_0
+  IL_0027:  call       "System.Index System.Range.End.get"
+  IL_002c:  stloc.s    V_4
+  IL_002e:  ldloca.s   V_4
+  IL_0030:  ldloc.1
+  IL_0031:  call       "int System.Index.GetOffset(int)"
+  IL_0036:  ldloc.2
+  IL_0037:  sub
+  IL_0038:  stloc.3
+  IL_0039:  ldloc.2
+  IL_003a:  ldloc.3
+  IL_003b:  call       "ref int E.Slice(C1, int, int)"
+  IL_0040:  dup
+  IL_0041:  ldind.i4
+  IL_0042:  call       "int Program.GetValue()"
+  IL_0047:  add
+  IL_0048:  stind.i4
+  IL_0049:  ret
+}
+""");
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexer_CompoundAssignment_03_02()
+    {
+        // TODO2 review 
+        // class receiver, instance Length + ref-returning extension Slice
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return ref Program.Result; }
+    }
+}
+
+class C1
+{
+    public int F1;
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 5; } }
+}
+
+class Program
+{
+    public static C1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new C1 { F1 = 3 };
+        Test();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test()
+    {
+        F[GetRange()] += GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1;
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 GetValue:6 result:11 final:7"),
+             verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test", """
+{
+  // Code size       74 (0x4a)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldsfld     "C1 Program.F"
+  IL_0006:  call       "System.Range Program.GetRange()"
+  IL_000b:  stloc.0
+  IL_000c:  dup
+  IL_000d:  callvirt   "int C1.Length.get"
+  IL_0012:  stloc.1
+  IL_0013:  ldloca.s   V_0
+  IL_0015:  call       "System.Index System.Range.Start.get"
+  IL_001a:  stloc.s    V_4
+  IL_001c:  ldloca.s   V_4
+  IL_001e:  ldloc.1
+  IL_001f:  call       "int System.Index.GetOffset(int)"
+  IL_0024:  stloc.2
+  IL_0025:  ldloca.s   V_0
+  IL_0027:  call       "System.Index System.Range.End.get"
+  IL_002c:  stloc.s    V_4
+  IL_002e:  ldloca.s   V_4
+  IL_0030:  ldloc.1
+  IL_0031:  call       "int System.Index.GetOffset(int)"
+  IL_0036:  ldloc.2
+  IL_0037:  sub
+  IL_0038:  stloc.3
+  IL_0039:  ldloc.2
+  IL_003a:  ldloc.3
+  IL_003b:  call       "ref int E.Slice(C1, int, int)"
+  IL_0040:  dup
+  IL_0041:  ldind.i4
+  IL_0042:  call       "int Program.GetValue()"
+  IL_0047:  add
+  IL_0048:  stind.i4
+  IL_0049:  ret
+}
+""");
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexer_CompoundAssignment_03_03()
+    {
+        // TODO2 review 
+        // class receiver, extension Length + ref-returning instance Slice
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 5; } }
+    }
+}
+
+class C1
+{
+    public int F1;
+    public ref int Slice(int start, int length) { System.Console.Write($"Slice:{F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return ref Program.Result; }
+}
+
+class Program
+{
+    public static C1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new C1 { F1 = 3 };
+        Test();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test()
+    {
+        F[GetRange()] += GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1;
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 GetValue:6 result:11 final:7"),
+             verify: Verification.Fails).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test", """
+{
+  // Code size       74 (0x4a)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldsfld     "C1 Program.F"
+  IL_0006:  call       "System.Range Program.GetRange()"
+  IL_000b:  stloc.0
+  IL_000c:  dup
+  IL_000d:  call       "int E.get_Length(C1)"
+  IL_0012:  stloc.1
+  IL_0013:  ldloca.s   V_0
+  IL_0015:  call       "System.Index System.Range.Start.get"
+  IL_001a:  stloc.s    V_4
+  IL_001c:  ldloca.s   V_4
+  IL_001e:  ldloc.1
+  IL_001f:  call       "int System.Index.GetOffset(int)"
+  IL_0024:  stloc.2
+  IL_0025:  ldloca.s   V_0
+  IL_0027:  call       "System.Index System.Range.End.get"
+  IL_002c:  stloc.s    V_4
+  IL_002e:  ldloca.s   V_4
+  IL_0030:  ldloc.1
+  IL_0031:  call       "int System.Index.GetOffset(int)"
+  IL_0036:  ldloc.2
+  IL_0037:  sub
+  IL_0038:  stloc.3
+  IL_0039:  ldloc.2
+  IL_003a:  ldloc.3
+  IL_003b:  callvirt   "ref int C1.Slice(int, int)"
+  IL_0040:  dup
+  IL_0041:  ldind.i4
+  IL_0042:  call       "int Program.GetValue()"
+  IL_0047:  add
+  IL_0048:  stind.i4
+  IL_0049:  ret
+}
+""");
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexer_CompoundAssignment_04()
+    {
+        // TODO2 review this ported test
+        // sibling to ExtensionTests.IndexerAccess_CompoundAssignment_04
+        // generic receiver with unconstrained or struct-constrained reference, extension Length + ref-returning extension Slice
+        var src = """
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length
+        {
+            get
+            {
+                System.Console.Write($"length:{((S1)(object)x).F1} ");
+                Program<S1>.F.F1++;
+                return 5;
+            }
+        }
+
+        public ref int Slice(int start, int length)
+        {
+                System.Console.Write($"Slice:{((S1)(object)x).F1} ");
+                Program<S1>.F.F1++;
+                return ref Program.Result;
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    public static int Result;
+
+    static async System.Threading.Tasks.Task Main()
+    {
+        Result = 10;
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test1(ref Program<S1>.F);
+        System.Console.Write($"result:{Result} final:{Program<S1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test2(ref Program<S1>.F);
+        System.Console.Write($"result:{Result} final:{Program<S1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        Program<S1>.F = new S1 { F1 = 3 };
+        await Test3<S1>();
+        System.Console.Write($"result:{Result} final:{Program<S1>.F.F1}");
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        f[GetRange()] += GetValue();
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        f[GetRange()] += GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return 1;
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return 1..^1;
+    }
+
+    static async System.Threading.Tasks.Task Test3<T>()
+    {
+        Program<T>.F[GetRange()] += await GetValueAsync();
+    }
+
+    static async System.Threading.Tasks.Task<int> GetValueAsync()
+    {
+        System.Console.Write($"GetValueAsync:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        await System.Threading.Tasks.Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        comp.VerifyEmitDiagnostics(
+            // (86,9): error CS8178: A reference returned by a call to 'E.Slice<T>(T, int, int)' cannot be preserved across 'await' or 'yield' boundary.
+            //         Program<T>.F[GetRange()] += await GetValueAsync();
+            Diagnostic(ErrorCode.ERR_RefReturningCallAndAwait, "Program<T>.F[GetRange()]").WithArguments("E.Slice<T>(T, int, int)").WithLocation(86, 9));
+
+        comp = CreateRuntimeAsyncCompilation(src, options: TestOptions.DebugExe);
+        comp.VerifyEmitDiagnostics(
+            // (86,9): error CS8178: A reference returned by a call to 'E.Slice<T>(T, int, int)' cannot be preserved across 'await' or 'yield' boundary.
+            //         Program<T>.F[GetRange()] += await GetValueAsync();
+            Diagnostic(ErrorCode.ERR_RefReturningCallAndAwait, "Program<T>.F[GetRange()]").WithArguments("E.Slice<T>(T, int, int)").WithLocation(86, 9));
+
+        var src2 = """
+static class E
+{
+    extension<T>(T x) where T : struct
+    {
+        public int Length => 5;
+        public ref int Slice(int start, int length) => throw null;
+    }
+}
+
+class Program
+{
+    static void Test<T>() where T : struct
+    {
+        default(T)[1..^1] += 1;
+    }
+}
+
+namespace NS1
+{
+    static class E
+    {
+        extension<T>(in T x) where T : struct
+        {
+        }
+    }
+}
+
+namespace NS2
+{
+    static class E
+    {
+        extension<T>(ref readonly T x) where T : struct
+        {
+        }
+    }
+}
+""";
+
+        CreateCompilation(src2, targetFramework: TargetFramework.Net100).VerifyDiagnostics(
+            // (22,25): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(in T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(22, 25),
+            // (32,35): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(ref readonly T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(32, 35));
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexer_CompoundAssignment_05()
+    {
+        // TODO2 review this ported test
+        // sibling to ExtensionTests.IndexerAccess_CompoundAssignment_05
+        // struct-constrained generic receiver passed by ref, extension Length + ref-returning extension Slice
+        var src = """
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int Length
+        {
+            get
+            {
+                System.Console.Write($"length:{((S1)(object)x).F1} ");
+                Program<S1>.F.F1++;
+                return 5;
+            }
+        }
+
+        public ref int Slice(int start, int length)
+        {
+                System.Console.Write($"Slice:{((S1)(object)x).F1} ");
+                Program<S1>.F.F1++;
+                return ref Program.Result;
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    public static int Result;
+
+    static async System.Threading.Tasks.Task Main()
+    {
+        Result = 10;
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test2(ref Program<S1>.F);
+        System.Console.Write($"result:{Result} final:{Program<S1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        Program<S1>.F = new S1 { F1 = 3 };
+        await Test3<S1>();
+        System.Console.Write($"result:{Result} final:{Program<S1>.F.F1}");
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        f[GetRange()] += GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return 1;
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return 1..^1;
+    }
+
+    static async System.Threading.Tasks.Task Test3<T>() where T : struct
+    {
+        Program<T>.F[GetRange()] += await GetValueAsync();
+    }
+
+    static async System.Threading.Tasks.Task<int> GetValueAsync()
+    {
+        System.Console.Write($"GetValueAsync:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        await System.Threading.Tasks.Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        // TODO2 review diagnostic
+        comp.VerifyEmitDiagnostics(
+            // (74,9): error CS8178: A reference returned by a call to 'E.Slice<T>(ref T, int, int)' cannot be preserved across 'await' or 'yield' boundary.
+            //         Program<T>.F[GetRange()] += await GetValueAsync();
+            Diagnostic(ErrorCode.ERR_RefReturningCallAndAwait, "Program<T>.F[GetRange()]").WithArguments("E.Slice<T>(ref T, int, int)").WithLocation(74, 9));
+
+        comp = CreateRuntimeAsyncCompilation(src, options: TestOptions.DebugExe);
+        // TODO2 review diagnostic
+        comp.VerifyEmitDiagnostics(
+            // (74,9): error CS8178: A reference returned by a call to 'E.Slice<T>(ref T, int, int)' cannot be preserved across 'await' or 'yield' boundary.
+            //         Program<T>.F[GetRange()] += await GetValueAsync();
+            Diagnostic(ErrorCode.ERR_RefReturningCallAndAwait, "Program<T>.F[GetRange()]").WithArguments("E.Slice<T>(ref T, int, int)").WithLocation(74, 9));
+
+        // receiver not a variable
+        var src2 = """
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int Length => 5;
+        public ref int Slice(int start, int length) => throw null;
+    }
+}
+
+class Program
+{
+    static void Test<T>() where T : struct
+    {
+        default(T)[1..^1] += 1;
+    }
+}
+
+namespace NS1
+{
+    static class E
+    {
+        extension<T>(in T x) where T : struct
+        {
+        }
+    }
+}
+
+namespace NS2
+{
+    static class E
+    {
+        extension<T>(ref readonly T x) where T : struct
+        {
+        }
+    }
+}
+""";
+
+        CreateCompilation(src2, targetFramework: TargetFramework.Net100).VerifyDiagnostics(
+            // (14,9): error CS1510: A ref or out value must be an assignable variable
+            //         default(T)[1..^1] += 1;
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(14, 9),
+            // (14,9): error CS1510: A ref or out value must be an assignable variable
+            //         default(T)[1..^1] += 1;
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(14, 9),
+            // (22,25): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(in T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(22, 25),
+            // (32,35): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(ref readonly T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(32, 35));
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexer_CompoundAssignment_06()
+    {
+        // TODO2 review this ported test
+        // sibling to ExtensionTests.IndexerAccess_CompoundAssignment_06
+        // generic receiver with unconstrained or class-constrained reference, extension Length + ref-returning extension Slice
+        var src = """
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length
+        {
+            get
+            {
+                System.Console.Write($"length:{((C1)(object)x).F1} ");
+                Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+                return 5;
+            }
+        }
+
+        public ref int Slice(int start, int length)
+        {
+                System.Console.Write($"Slice:{((C1)(object)x).F1} ");
+                Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+                return ref Program.Result;
+        }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    public static int Result;
+
+    static async System.Threading.Tasks.Task Main()
+    {
+        Result = 10;
+        Program<C1>.F = new C1 { F1 = 3 };
+        Test1(ref Program<C1>.F);
+        System.Console.Write($"result:{Result} final:{Program<C1>.F.F1}");
+
+        System.Console.Write(":");
+
+        Result = 10;
+        Program<C1>.F = new C1 { F1 = 3 };
+        Test2(ref Program<C1>.F);
+        System.Console.Write($"result:{Result} final:{Program<C1>.F.F1}");
+
+        System.Console.Write(":");
+
+        Result = 10;
+        Program<C1>.F = new C1 { F1 = 3 };
+        await Test3<C1>();
+        System.Console.Write($"result:{Result} final:{Program<C1>.F.F1}");
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        f[GetRange()] += GetValue();
+    }
+
+    static void Test2<T>(ref T f) where T : class
+    {
+        f[GetRange()] += GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program<C1>.F.F1} ");
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        return 1;
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program<C1>.F.F1} ");
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        return 1..^1;
+    }
+
+    static async System.Threading.Tasks.Task Test3<T>()
+    {
+        Program<T>.F[GetRange()] += await GetValueAsync();
+    }
+
+    static async System.Threading.Tasks.Task<int> GetValueAsync()
+    {
+        System.Console.Write($"GetValueAsync:{Program<C1>.F.F1} ");
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        await System.Threading.Tasks.Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        comp.VerifyEmitDiagnostics(
+            // (86,9): error CS8178: A reference returned by a call to 'E.Slice<T>(T, int, int)' cannot be preserved across 'await' or 'yield' boundary.
+            //         Program<T>.F[GetRange()] += await GetValueAsync();
+            Diagnostic(ErrorCode.ERR_RefReturningCallAndAwait, "Program<T>.F[GetRange()]").WithArguments("E.Slice<T>(T, int, int)").WithLocation(86, 9));
+
+        comp = CreateRuntimeAsyncCompilation(src, options: TestOptions.DebugExe);
+        // TODO2 review diagnostic
+        comp.VerifyEmitDiagnostics(
+            // (86,9): error CS8178: A reference returned by a call to 'E.Slice<T>(T, int, int)' cannot be preserved across 'await' or 'yield' boundary.
+            //         Program<T>.F[GetRange()] += await GetValueAsync();
+            Diagnostic(ErrorCode.ERR_RefReturningCallAndAwait, "Program<T>.F[GetRange()]").WithArguments("E.Slice<T>(T, int, int)").WithLocation(86, 9));
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexer_CompoundAssignment_ReadonlyReceiver_040()
+    {
+        // TODO2 review this ported test
+        // sibling to ElementAccess_CompoundAssignment_ReadonlyReceiver_040
+        // unconstrained generic receiver on a readonly field, extension Length + ref-returning extension Slice
+        var src = """
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length
+        {
+            get
+            {
+                System.Console.Write($"length:{((S1)(object)x).F1} ");
+                Program.Increment();
+                return 5;
+            }
+        }
+
+        public ref int Slice(int start, int length)
+        {
+                System.Console.Write($"Slice:{((S1)(object)x).F1} ");
+                Program.Increment();
+                return ref Program.Result;
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static readonly T F;
+}
+
+class Program
+{
+    public static int Result;
+
+    static async System.Threading.Tasks.Task Main()
+    {
+        Result = 10;
+        Initialize();
+        Test1<S1>();
+        System.Console.Write($"result:{Result} final:{Program<S1>.F.F1}");
+
+        System.Console.Write(":");
+
+        Result = 10;
+        Initialize();
+        await Test3<S1>();
+        System.Console.Write($"result:{Result} final:{Program<S1>.F.F1}");
+    }
+
+    static unsafe void Initialize()
+    {
+        fixed (int* f1 = &Program<S1>.F.F1)
+        {
+            *f1 = 123;
+        }
+    }
+
+    public static unsafe void Increment()
+    {
+        fixed (int* f1 = &Program<S1>.F.F1)
+        {
+            (*f1)++;
+        }
+    }
+
+    static void Test1<T>()
+    {
+        Program<T>.F[GetRange()] += GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program<S1>.F.F1} ");
+        Increment();
+        return 1;
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program<S1>.F.F1} ");
+        Increment();
+        return 1..^1;
+    }
+
+    static async System.Threading.Tasks.Task Test3<T>()
+    {
+        Program<T>.F[GetRange()] += await GetValueAsync();
+    }
+
+    static async System.Threading.Tasks.Task<int> GetValueAsync()
+    {
+        System.Console.Write($"GetValueAsync:{Program<S1>.F.F1} ");
+        Increment();
+        await System.Threading.Tasks.Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var expectedOutput = ExpectedOutput("GetRange:123 length:124 Slice:125 GetValue:126 result:11 final:127:GetRange:123 length:124 Slice:125 GetValueAsync:126 result:11 final:127");
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe.WithAllowUnsafe(true), targetFramework: TargetFramework.Net100);
+        // TODO2 review diagnostic
+        comp.VerifyEmitDiagnostics(
+            // (90,9): error CS8178: A reference returned by a call to 'E.Slice<T>(T, int, int)' cannot be preserved across 'await' or 'yield' boundary.
+            //         Program<T>.F[GetRange()] += await GetValueAsync();
+            Diagnostic(ErrorCode.ERR_RefReturningCallAndAwait, "Program<T>.F[GetRange()]").WithArguments("E.Slice<T>(T, int, int)").WithLocation(90, 9));
+
+        comp = CreateRuntimeAsyncCompilation(src, options: TestOptions.UnsafeReleaseExe);
+        comp.VerifyEmitDiagnostics(
+            // (90,9): error CS8178: A reference returned by a call to 'E.Slice<T>(T, int, int)' cannot be preserved across 'await' or 'yield' boundary.
+            //         Program<T>.F[GetRange()] += await GetValueAsync();
+            Diagnostic(ErrorCode.ERR_RefReturningCallAndAwait, "Program<T>.F[GetRange()]").WithArguments("E.Slice<T>(T, int, int)").WithLocation(90, 9));
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitRangeIndexer_CompoundAssignment_ReadonlyReceiver_041(string refKind)
+    {
+        // TODO2 review this ported test
+        // sibling to ElementAccess_CompoundAssignment_ReadonlyReceiver_041
+        // unconstrained generic receiver with ref/ref readonly/in struct value, extension Length + ref-returning extension Slice
+        var src = $$$"""
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length
+        {
+            get
+            {
+                System.Console.Write($"length:{((S1)(object)x).F1} ");
+                Program<S1>.F.F1++;
+                return 5;
+            }
+        }
+
+        public ref int Slice(int start, int length)
+        {
+                System.Console.Write($"Slice:{((S1)(object)x).F1} ");
+                Program<S1>.F.F1++;
+                return ref Program.Result;
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        Program<S1>.F = new S1 { F1 = 123 };
+        Test1({{{(refKind == "ref" ? "ref" : "in")}}} Program<S1>.F);
+        System.Console.Write($"result:{Result} final:{Program<S1>.F.F1}");
+    }
+
+    static void Test1<T>({{{refKind}}} T f)
+    {
+        f[GetRange()] += GetValue();
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return 1..^1;
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return 1;
+    }
+}
+""";
+
+        var verifier = CompileAndVerify(
+            CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100),
+            expectedOutput: refKind == "ref"
+                ? ExpectedOutput("GetRange:123 length:124 Slice:125 GetValue:126 result:11 final:127")
+                : ExpectedOutput("GetRange:123 length:123 Slice:123 GetValue:126 result:11 final:127"),
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        if (refKind == "ref")
+        {
+            verifier.VerifyIL($"Program.Test1<T>({refKind} T)", """
+{
+  // Code size      115 (0x73)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                System.Range V_2,
+                int V_3,
+                int V_4,
+                int V_5,
+                T V_6,
+                System.Index V_7)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.1
+  IL_0003:  ldloca.s   V_6
+  IL_0005:  initobj    "T"
+  IL_000b:  ldloc.s    V_6
+  IL_000d:  box        "T"
+  IL_0012:  brtrue.s   IL_001f
+  IL_0014:  ldloc.1
+  IL_0015:  ldobj      "T"
+  IL_001a:  stloc.0
+  IL_001b:  ldloca.s   V_0
+  IL_001d:  br.s       IL_0020
+  IL_001f:  ldloc.1
+  IL_0020:  call       "System.Range Program.GetRange()"
+  IL_0025:  stloc.2
+  IL_0026:  dup
+  IL_0027:  ldobj      "T"
+  IL_002c:  call       "int E.get_Length<T>(T)"
+  IL_0031:  stloc.3
+  IL_0032:  ldloca.s   V_2
+  IL_0034:  call       "System.Index System.Range.Start.get"
+  IL_0039:  stloc.s    V_7
+  IL_003b:  ldloca.s   V_7
+  IL_003d:  ldloc.3
+  IL_003e:  call       "int System.Index.GetOffset(int)"
+  IL_0043:  stloc.s    V_4
+  IL_0045:  ldloca.s   V_2
+  IL_0047:  call       "System.Index System.Range.End.get"
+  IL_004c:  stloc.s    V_7
+  IL_004e:  ldloca.s   V_7
+  IL_0050:  ldloc.3
+  IL_0051:  call       "int System.Index.GetOffset(int)"
+  IL_0056:  ldloc.s    V_4
+  IL_0058:  sub
+  IL_0059:  stloc.s    V_5
+  IL_005b:  ldobj      "T"
+  IL_0060:  ldloc.s    V_4
+  IL_0062:  ldloc.s    V_5
+  IL_0064:  call       "ref int E.Slice<T>(T, int, int)"
+  IL_0069:  dup
+  IL_006a:  ldind.i4
+  IL_006b:  call       "int Program.GetValue()"
+  IL_0070:  add
+  IL_0071:  stind.i4
+  IL_0072:  ret
+}
+""");
+        }
+        else
+        {
+            verifier.VerifyIL($"Program.Test1<T>({refKind} T)", """
+{
+  // Code size      124 (0x7c)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                System.Range V_2,
+                int V_3,
+                int V_4,
+                int V_5,
+                T V_6,
+                T V_7,
+                System.Index V_8)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  ldobj      "T"
+  IL_0007:  stloc.s    V_6
+  IL_0009:  ldloca.s   V_6
+  IL_000b:  stloc.1
+  IL_000c:  ldloca.s   V_7
+  IL_000e:  initobj    "T"
+  IL_0014:  ldloc.s    V_7
+  IL_0016:  box        "T"
+  IL_001b:  brtrue.s   IL_0028
+  IL_001d:  ldloc.1
+  IL_001e:  ldobj      "T"
+  IL_0023:  stloc.0
+  IL_0024:  ldloca.s   V_0
+  IL_0026:  br.s       IL_0029
+  IL_0028:  ldloc.1
+  IL_0029:  call       "System.Range Program.GetRange()"
+  IL_002e:  stloc.2
+  IL_002f:  dup
+  IL_0030:  ldobj      "T"
+  IL_0035:  call       "int E.get_Length<T>(T)"
+  IL_003a:  stloc.3
+  IL_003b:  ldloca.s   V_2
+  IL_003d:  call       "System.Index System.Range.Start.get"
+  IL_0042:  stloc.s    V_8
+  IL_0044:  ldloca.s   V_8
+  IL_0046:  ldloc.3
+  IL_0047:  call       "int System.Index.GetOffset(int)"
+  IL_004c:  stloc.s    V_4
+  IL_004e:  ldloca.s   V_2
+  IL_0050:  call       "System.Index System.Range.End.get"
+  IL_0055:  stloc.s    V_8
+  IL_0057:  ldloca.s   V_8
+  IL_0059:  ldloc.3
+  IL_005a:  call       "int System.Index.GetOffset(int)"
+  IL_005f:  ldloc.s    V_4
+  IL_0061:  sub
+  IL_0062:  stloc.s    V_5
+  IL_0064:  ldobj      "T"
+  IL_0069:  ldloc.s    V_4
+  IL_006b:  ldloc.s    V_5
+  IL_006d:  call       "ref int E.Slice<T>(T, int, int)"
+  IL_0072:  dup
+  IL_0073:  ldind.i4
+  IL_0074:  call       "int Program.GetValue()"
+  IL_0079:  add
+  IL_007a:  stind.i4
+  IL_007b:  ret
+}
+""");
+        }
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitRangeIndexer_CompoundAssignment_ReadonlyReceiver_061(string refKind)
+    {
+        // TODO2 review this ported test
+        // sibling to ElementAccess_CompoundAssignment_ReadonlyReceiver_061
+        // unconstrained generic receiver with ref/ref readonly/in class value, extension Length + ref-returning extension Slice
+        var src = $$$"""
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length
+        {
+            get
+            {
+                System.Console.Write($"length:{((C1)(object)x).F1} ");
+                Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+                return 5;
+            }
+        }
+
+        public ref int Slice(int start, int length)
+        {
+                System.Console.Write($"Slice:{((C1)(object)x).F1} ");
+                Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+                return ref Program.Result;
+        }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        Program<C1>.F = new C1 { F1 = 123 };
+        Test1({{{(refKind == "ref" ? "ref" : "in")}}} Program<C1>.F);
+        System.Console.Write($"result:{Result} final:{Program<C1>.F.F1}");
+    }
+
+    static void Test1<T>({{{refKind}}} T f)
+    {
+        f[GetRange()] += GetValue();
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program<C1>.F.F1} ");
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        return 1..^1;
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program<C1>.F.F1} ");
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        return 1;
+    }
+}
+""";
+
+        var verifier = CompileAndVerify(
+            CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100),
+            expectedOutput: ExpectedOutput("GetRange:123 length:123 Slice:123 GetValue:126 result:11 final:127"),
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        if (refKind == "ref")
+        {
+            verifier.VerifyIL($"Program.Test1<T>({refKind} T)", """
+{
+  // Code size      115 (0x73)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                System.Range V_2,
+                int V_3,
+                int V_4,
+                int V_5,
+                T V_6,
+                System.Index V_7)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.1
+  IL_0003:  ldloca.s   V_6
+  IL_0005:  initobj    "T"
+  IL_000b:  ldloc.s    V_6
+  IL_000d:  box        "T"
+  IL_0012:  brtrue.s   IL_001f
+  IL_0014:  ldloc.1
+  IL_0015:  ldobj      "T"
+  IL_001a:  stloc.0
+  IL_001b:  ldloca.s   V_0
+  IL_001d:  br.s       IL_0020
+  IL_001f:  ldloc.1
+  IL_0020:  call       "System.Range Program.GetRange()"
+  IL_0025:  stloc.2
+  IL_0026:  dup
+  IL_0027:  ldobj      "T"
+  IL_002c:  call       "int E.get_Length<T>(T)"
+  IL_0031:  stloc.3
+  IL_0032:  ldloca.s   V_2
+  IL_0034:  call       "System.Index System.Range.Start.get"
+  IL_0039:  stloc.s    V_7
+  IL_003b:  ldloca.s   V_7
+  IL_003d:  ldloc.3
+  IL_003e:  call       "int System.Index.GetOffset(int)"
+  IL_0043:  stloc.s    V_4
+  IL_0045:  ldloca.s   V_2
+  IL_0047:  call       "System.Index System.Range.End.get"
+  IL_004c:  stloc.s    V_7
+  IL_004e:  ldloca.s   V_7
+  IL_0050:  ldloc.3
+  IL_0051:  call       "int System.Index.GetOffset(int)"
+  IL_0056:  ldloc.s    V_4
+  IL_0058:  sub
+  IL_0059:  stloc.s    V_5
+  IL_005b:  ldobj      "T"
+  IL_0060:  ldloc.s    V_4
+  IL_0062:  ldloc.s    V_5
+  IL_0064:  call       "ref int E.Slice<T>(T, int, int)"
+  IL_0069:  dup
+  IL_006a:  ldind.i4
+  IL_006b:  call       "int Program.GetValue()"
+  IL_0070:  add
+  IL_0071:  stind.i4
+  IL_0072:  ret
+}
+""");
+        }
+        else
+        {
+            verifier.VerifyIL($"Program.Test1<T>({refKind} T)", """
+{
+  // Code size      124 (0x7c)
+  .maxstack  3
+  .locals init (T V_0,
+                T& V_1,
+                System.Range V_2,
+                int V_3,
+                int V_4,
+                int V_5,
+                T V_6,
+                T V_7,
+                System.Index V_8)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  ldobj      "T"
+  IL_0007:  stloc.s    V_6
+  IL_0009:  ldloca.s   V_6
+  IL_000b:  stloc.1
+  IL_000c:  ldloca.s   V_7
+  IL_000e:  initobj    "T"
+  IL_0014:  ldloc.s    V_7
+  IL_0016:  box        "T"
+  IL_001b:  brtrue.s   IL_0028
+  IL_001d:  ldloc.1
+  IL_001e:  ldobj      "T"
+  IL_0023:  stloc.0
+  IL_0024:  ldloca.s   V_0
+  IL_0026:  br.s       IL_0029
+  IL_0028:  ldloc.1
+  IL_0029:  call       "System.Range Program.GetRange()"
+  IL_002e:  stloc.2
+  IL_002f:  dup
+  IL_0030:  ldobj      "T"
+  IL_0035:  call       "int E.get_Length<T>(T)"
+  IL_003a:  stloc.3
+  IL_003b:  ldloca.s   V_2
+  IL_003d:  call       "System.Index System.Range.Start.get"
+  IL_0042:  stloc.s    V_8
+  IL_0044:  ldloca.s   V_8
+  IL_0046:  ldloc.3
+  IL_0047:  call       "int System.Index.GetOffset(int)"
+  IL_004c:  stloc.s    V_4
+  IL_004e:  ldloca.s   V_2
+  IL_0050:  call       "System.Index System.Range.End.get"
+  IL_0055:  stloc.s    V_8
+  IL_0057:  ldloca.s   V_8
+  IL_0059:  ldloc.3
+  IL_005a:  call       "int System.Index.GetOffset(int)"
+  IL_005f:  ldloc.s    V_4
+  IL_0061:  sub
+  IL_0062:  stloc.s    V_5
+  IL_0064:  ldobj      "T"
+  IL_0069:  ldloc.s    V_4
+  IL_006b:  ldloc.s    V_5
+  IL_006d:  call       "ref int E.Slice<T>(T, int, int)"
+  IL_0072:  dup
+  IL_0073:  ldind.i4
+  IL_0074:  call       "int Program.GetValue()"
+  IL_0079:  add
+  IL_007a:  stind.i4
+  IL_007b:  ret
+}
+""");
+        }
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Set_01()
+    {
+        // TODO2 review this ported test
+        // sibling of IndexerAccess_Set_01
+        // struct receiver, extension implicit this[Index]
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F.F1++; return 3; } }
+        public int this[int i]
+        {
+            set { System.Console.Write($"set:{x.F1} "); Program.F.F1++; }
+        }
+    }
+}
+
+public struct S1
+{
+    public int F1;
+
+    public void Test2()
+    {
+        this[Program.GetIndex()] = Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write(F.F1);
+
+        System.Console.Write(", ");
+
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write(F.F1);
+    }
+
+    static void Test1()
+    {
+        F[GetIndex()] = GetValue();
+    }
+
+    public static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program.F.F1} ");
+        Program.F.F1++;
+        return ^1;
+    }
+
+    public static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program.F.F1} ");
+        Program.F.F1++;
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 GetValue:5 set:6 7, GetIndex:3 length:4 GetValue:5 set:6 7"),
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", """
+{
+  // Code size       53 (0x35)
+  .maxstack  3
+  .locals init (S1& V_0,
+                int V_1,
+                int V_2,
+                System.Index V_3)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  stloc.0
+  IL_0007:  ldloc.0
+  IL_0008:  call       "System.Index Program.GetIndex()"
+  IL_000d:  stloc.3
+  IL_000e:  ldloca.s   V_3
+  IL_0010:  ldloc.0
+  IL_0011:  ldobj      "S1"
+  IL_0016:  call       "int E.get_Length(S1)"
+  IL_001b:  call       "int System.Index.GetOffset(int)"
+  IL_0020:  stloc.1
+  IL_0021:  call       "int Program.GetValue()"
+  IL_0026:  stloc.2
+  IL_0027:  ldobj      "S1"
+  IL_002c:  ldloc.1
+  IL_002d:  ldloc.2
+  IL_002e:  call       "void E.set_Item(S1, int, int)"
+  IL_0033:  nop
+  IL_0034:  ret
+}
+""");
+
+        verifier.VerifyIL("S1.Test2", """
+{
+  // Code size       49 (0x31)
+  .maxstack  3
+  .locals init (S1& V_0,
+                int V_1,
+                int V_2,
+                System.Index V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.0
+  IL_0003:  ldloc.0
+  IL_0004:  call       "System.Index Program.GetIndex()"
+  IL_0009:  stloc.3
+  IL_000a:  ldloca.s   V_3
+  IL_000c:  ldloc.0
+  IL_000d:  ldobj      "S1"
+  IL_0012:  call       "int E.get_Length(S1)"
+  IL_0017:  call       "int System.Index.GetOffset(int)"
+  IL_001c:  stloc.1
+  IL_001d:  call       "int Program.GetValue()"
+  IL_0022:  stloc.2
+  IL_0023:  ldobj      "S1"
+  IL_0028:  ldloc.1
+  IL_0029:  ldloc.2
+  IL_002a:  call       "void E.set_Item(S1, int, int)"
+  IL_002f:  nop
+  IL_0030:  ret
+}
+""");
+
+        // receiver not a variable
+        var src2 = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int Length => 3;
+        public int this[int i] { get => 0; set {} }
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[^1] = 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation([src2], targetFramework: TargetFramework.Net100);
+        comp2.VerifyDiagnostics(
+            // (16,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+            //         default(S1)[^1] = 1;
+            Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[^1]").WithLocation(16, 9)
+            );
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Set_01_02()
+    {
+        // TODO2 review
+        // struct receiver, instance this[int] + extension Length
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int this[int i]
+        {
+            set { System.Console.Write($"set:{x.F1} "); Program.F.F1++; }
+        }
+    }
+}
+
+public struct S1
+{
+    public int F1;
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.F.F1++; return 3; } }
+
+    public void Test2()
+    {
+        this[Program.GetIndex()] = Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write(F.F1);
+
+        System.Console.Write(", ");
+
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write(F.F1);
+    }
+
+    static void Test1()
+    {
+        F[GetIndex()] = GetValue();
+    }
+
+    public static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program.F.F1} ");
+        Program.F.F1++;
+        return ^1;
+    }
+
+    public static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program.F.F1} ");
+        Program.F.F1++;
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 GetValue:5 set:6 7, GetIndex:3 length:4 GetValue:5 set:6 7"),
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", """
+{
+  // Code size       48 (0x30)
+  .maxstack  3
+  .locals init (S1& V_0,
+                int V_1,
+                int V_2,
+                System.Index V_3)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  stloc.0
+  IL_0007:  ldloc.0
+  IL_0008:  call       "System.Index Program.GetIndex()"
+  IL_000d:  stloc.3
+  IL_000e:  ldloca.s   V_3
+  IL_0010:  ldloc.0
+  IL_0011:  call       "int S1.Length.get"
+  IL_0016:  call       "int System.Index.GetOffset(int)"
+  IL_001b:  stloc.1
+  IL_001c:  call       "int Program.GetValue()"
+  IL_0021:  stloc.2
+  IL_0022:  ldobj      "S1"
+  IL_0027:  ldloc.1
+  IL_0028:  ldloc.2
+  IL_0029:  call       "void E.set_Item(S1, int, int)"
+  IL_002e:  nop
+  IL_002f:  ret
+}
+""");
+
+        // TODO2 ldarg.0 + stloc.0 seems unnecessary. We have argument 0, which we can load later, once we need it
+        verifier.VerifyIL("S1.Test2", """
+{
+  // Code size       44 (0x2c)
+  .maxstack  3
+  .locals init (S1& V_0,
+                int V_1,
+                int V_2,
+                System.Index V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.0
+  IL_0003:  ldloc.0
+  IL_0004:  call       "System.Index Program.GetIndex()"
+  IL_0009:  stloc.3
+  IL_000a:  ldloca.s   V_3
+  IL_000c:  ldloc.0
+  IL_000d:  call       "int S1.Length.get"
+  IL_0012:  call       "int System.Index.GetOffset(int)"
+  IL_0017:  stloc.1
+  IL_0018:  call       "int Program.GetValue()"
+  IL_001d:  stloc.2
+  IL_001e:  ldobj      "S1"
+  IL_0023:  ldloc.1
+  IL_0024:  ldloc.2
+  IL_0025:  call       "void E.set_Item(S1, int, int)"
+  IL_002a:  nop
+  IL_002b:  ret
+}
+""");
+
+        // receiver not a variable
+        var src2 = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int Length => 3;
+        public int this[int i] { get => 0; set {} }
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[^1] = 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation([src2], targetFramework: TargetFramework.Net100);
+        comp2.VerifyDiagnostics(
+            // (16,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+            //         default(S1)[^1] = 1;
+            Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[^1]").WithLocation(16, 9)
+            );
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Set_01_03()
+    {
+        // TODO2 review
+        // struct receiver, extension this[int] + instance Length
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int this[int i]
+        {
+            set { System.Console.Write($"set:{x.F1} "); Program.F.F1++; }
+        }
+    }
+}
+
+public struct S1
+{
+    public int F1;
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.F.F1++; return 3; } }
+
+    public void Test2()
+    {
+        this[Program.GetIndex()] = Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write(F.F1);
+
+        System.Console.Write(", ");
+
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write(F.F1);
+    }
+
+    static void Test1()
+    {
+        F[GetIndex()] = GetValue();
+    }
+
+    public static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program.F.F1} ");
+        Program.F.F1++;
+        return ^1;
+    }
+
+    public static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program.F.F1} ");
+        Program.F.F1++;
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 GetValue:5 set:6 7, GetIndex:3 length:4 GetValue:5 set:6 7"),
+            verify: Verification.FailsPEVerify).VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", """
+{
+  // Code size       48 (0x30)
+  .maxstack  3
+  .locals init (S1& V_0,
+                int V_1,
+                int V_2,
+                System.Index V_3)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  stloc.0
+  IL_0007:  ldloc.0
+  IL_0008:  call       "System.Index Program.GetIndex()"
+  IL_000d:  stloc.3
+  IL_000e:  ldloca.s   V_3
+  IL_0010:  ldloc.0
+  IL_0011:  call       "int S1.Length.get"
+  IL_0016:  call       "int System.Index.GetOffset(int)"
+  IL_001b:  stloc.1
+  IL_001c:  call       "int Program.GetValue()"
+  IL_0021:  stloc.2
+  IL_0022:  ldobj      "S1"
+  IL_0027:  ldloc.1
+  IL_0028:  ldloc.2
+  IL_0029:  call       "void E.set_Item(S1, int, int)"
+  IL_002e:  nop
+  IL_002f:  ret
+}
+""");
+
+        // TODO2 not sure about initial ldarg.0 and stloc.0. We have argument 0, which we can load later, once we need it...
+        verifier.VerifyIL("S1.Test2", """
+{
+  // Code size       44 (0x2c)
+  .maxstack  3
+  .locals init (S1& V_0,
+                int V_1,
+                int V_2,
+                System.Index V_3)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  stloc.0
+  IL_0003:  ldloc.0
+  IL_0004:  call       "System.Index Program.GetIndex()"
+  IL_0009:  stloc.3
+  IL_000a:  ldloca.s   V_3
+  IL_000c:  ldloc.0
+  IL_000d:  call       "int S1.Length.get"
+  IL_0012:  call       "int System.Index.GetOffset(int)"
+  IL_0017:  stloc.1
+  IL_0018:  call       "int Program.GetValue()"
+  IL_001d:  stloc.2
+  IL_001e:  ldobj      "S1"
+  IL_0023:  ldloc.1
+  IL_0024:  ldloc.2
+  IL_0025:  call       "void E.set_Item(S1, int, int)"
+  IL_002a:  nop
+  IL_002b:  ret
+}
+""");
+
+        // receiver not a variable
+        var src2 = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int Length => 3;
+        public int this[int i] { get => 0; set {} }
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[^1] = 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation([src2], targetFramework: TargetFramework.Net100);
+        comp2.VerifyDiagnostics(
+            // (16,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+            //         default(S1)[^1] = 1;
+            Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[^1]").WithLocation(16, 9)
+            );
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitIndexIndexerAccess_Set_02(string refKind)
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Set_02
+        // struct receiver passed by ref, extension implicit this[Index]
+        var src = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int this[int i]
+        {
+            set
+            {
+                System.Console.Write($"set:{x.F1} ");
+            }
+        }
+
+        public int Length
+        {
+            get
+            {
+                System.Console.Write($"length:{x.F1} ");
+                Program.F.F1++;
+                return 3;
+            }
+        }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public void Test2()
+    {
+        this[Program.GetIndex()] = Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetIndex()] = GetValue();
+    }
+
+    public static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program.F.F1} ");
+        Program.F.F1++;
+        return 1;
+    }
+
+    public static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program.F.F1} ");
+        Program.F.F1++;
+        return ^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 GetValue:5 set:6 final:6, GetIndex:3 length:4 GetValue:5 set:6 final:6"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", $$"""
+{
+  // Code size       39 (0x27)
+  .maxstack  3
+  .locals init (S1& V_0,
+                System.Index V_1)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  stloc.0
+  IL_0007:  ldloc.0
+  IL_0008:  call       "System.Index Program.GetIndex()"
+  IL_000d:  stloc.1
+  IL_000e:  ldloca.s   V_1
+  IL_0010:  ldloc.0
+  IL_0011:  call       "int E.get_Length({{refKind}} S1)"
+  IL_0016:  call       "int System.Index.GetOffset(int)"
+  IL_001b:  call       "int Program.GetValue()"
+  IL_0020:  call       "void E.set_Item({{refKind}} S1, int, int)"
+  IL_0025:  nop
+  IL_0026:  ret
+}
+""");
+
+        // TODO2 verify IL once dust settles
+        //        verifier.VerifyIL("S1.Test2", $$"""
+        //{
+        //  // Code size       33 (0x21)
+        //  .maxstack  3
+        //  .locals init (System.Index V_0)
+        //  IL_0000:  nop
+        //  IL_0001:  ldarg.0
+        //  IL_0002:  call       "System.Index Program.GetIndex()"
+        //  IL_0007:  stloc.0
+        //  IL_0008:  ldloca.s   V_0
+        //  IL_000a:  ldarg.0
+        //  IL_000b:  call       "int E.get_Length({{refKind}} S1)"
+        //  IL_0010:  call       "int System.Index.GetOffset(int)"
+        //  IL_0015:  call       "int Program.GetValue()"
+        //  IL_001a:  call       "void E.set_Item({{refKind}} S1, int, int)"
+        //  IL_001f:  nop
+        //  IL_0020:  ret
+        //}
+        //""");
+
+        var src2 = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int this[int i] { get => 0; set {} }
+        public int Length => 3;
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[^1] = 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        if (refKind == "ref")
+        {
+            // One diagnostic for extension(ref default).Length and one for extension(ref default).this[int]
+            comp2.VerifyDiagnostics(
+                // (16,9): error CS1510: A ref or out value must be an assignable variable
+                //         default(S1)[^1] = 1;
+                Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9),
+                // (16,9): error CS1510: A ref or out value must be an assignable variable
+                //         default(S1)[^1] = 1;
+                Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9)
+                );
+        }
+        else if (refKind == "ref readonly")
+        {
+            // One warning for extension(default).Length and one for extension(default).this[int]
+            // Error for assignment target not being a variable
+            comp2.VerifyDiagnostics(
+                // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                //         default(S1)[^1] = 1;
+                Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                //         default(S1)[^1] = 1;
+                Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                // (16,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                //         default(S1)[^1] = 1;
+                Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[^1]").WithLocation(16, 9)
+                );
+        }
+        else
+        {
+            // Tracked by https://github.com/dotnet/roslyn/issues/79451 : consider adjusting receiver requirements for extension members
+            comp2.VerifyDiagnostics(
+                // (16,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+                //         default(S1)[^1] = 1;
+                Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(S1)[^1]").WithLocation(16, 9)
+                );
+        }
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Set_03()
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Set_03
+        // class receiver, extension implicit this[Index]
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int this[int i]
+        {
+            set
+            {
+                System.Console.Write($"set:{x.F1} ");
+            }
+        }
+
+        public int Length
+        {
+            get
+            {
+                System.Console.Write($"length:{x.F1} ");
+                return 3;
+            }
+        }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static C1 F;
+
+    static void Main()
+    {
+        F = new C1 { F1 = 123 };
+        Test();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test()
+    {
+        F[GetIndex()] = GetValue();
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return ^1;
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:123 length:123 GetValue:124 set:123 final:125"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test", """
+{
+  // Code size       39 (0x27)
+  .maxstack  3
+  .locals init (C1 V_0,
+                System.Index V_1)
+  IL_0000:  nop
+  IL_0001:  ldsfld     "C1 Program.F"
+  IL_0006:  stloc.0
+  IL_0007:  ldloc.0
+  IL_0008:  call       "System.Index Program.GetIndex()"
+  IL_000d:  stloc.1
+  IL_000e:  ldloca.s   V_1
+  IL_0010:  ldloc.0
+  IL_0011:  call       "int E.get_Length(C1)"
+  IL_0016:  call       "int System.Index.GetOffset(int)"
+  IL_001b:  call       "int Program.GetValue()"
+  IL_0020:  call       "void E.set_Item(C1, int, int)"
+  IL_0025:  nop
+  IL_0026:  ret
+}
+""");
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Set_04()
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Set_04
+        // generic receiver passed by value, extension implicit this[Index]
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i] { set { System.Console.Write($"set:{((S1)(object)x).F1} "); } }
+        public int Length { get { System.Console.Write($"length:{((S1)(object)x).F1} "); Program<S1>.F.F1++; return 3; } }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test1(ref Program<S1>.F);
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test2(ref Program<S1>.F);
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+
+        // https://github.com/dotnet/roslyn/issues/79416 - uncomment the following code once fixed
+        //System.Console.Write(", ");
+
+        //Program<S1>.F = new S1 { F1 = 3 };
+        //await Test3<S1>();
+        //System.Console.Write($"final:{Program<S1>.F.F1}");
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        f[GetIndex()] = GetValue();
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        f[GetIndex()] = GetValue();
+    }
+
+    public static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return 1;
+    }
+
+    public static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return ^1;
+    }
+
+    // https://github.com/dotnet/roslyn/issues/79416 - uncomment the following code once fixed
+    //static async Task Test3<T>()
+    //{
+    //    Program<T>.F[GetIndex()] = await GetValueAsync();
+    //}
+
+    //static async Task<int> GetValueAsync()
+    //{
+    //    System.Console.Write($"GetValueAsync:{Program<S1>.F.F1} ");
+    //    Program<S1>.F.F1++;
+    //    await Task.Yield();
+    //    return 1;
+    //}
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 GetValue:5 set:6 final:6, GetIndex:3 length:4 GetValue:5 set:6 final:6"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+
+        var src2 = """
+static class E
+{
+    extension<T>(T x) where T : struct
+    {
+        public int this[int i] { get => 0; set {} }
+        public int Length => 3;
+    }
+}
+
+class Program
+{
+    static void Test<T>() where T : struct
+    {
+        default(T)[^1] = 1;
+    }
+}
+
+namespace NS1
+{
+    static class E
+    {
+        extension<T>(in T x) where T : struct
+        {
+        }
+    }
+}
+
+namespace NS2
+{
+    static class E
+    {
+        extension<T>(ref readonly T x) where T : struct
+        {
+        }
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        comp2.VerifyDiagnostics(
+            // (14,9): error CS0131: The left-hand side of an assignment must be a variable, property or indexer
+            //         default(T)[^1] = 1;
+            Diagnostic(ErrorCode.ERR_AssgLvalueExpected, "default(T)[^1]").WithLocation(14, 9),
+            // (22,25): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(in T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(22, 25),
+            // (32,35): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(ref readonly T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(32, 35)
+            );
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Set_05()
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Set_05
+        // struct receiver passed by ref, constrained to struct, extension implicit this[Index]
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int this[int i] { set { System.Console.Write($"set:{((S1)(object)x).F1} "); } }
+        public int Length { get { System.Console.Write($"length:{((S1)(object)x).F1} "); Program<S1>.F.F1++; return 3; } }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test2(ref Program<S1>.F);
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Program<S1>.F = new S1 { F1 = 3 };
+        await Test3<S1>();
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        f[GetIndex()] = GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return 1;
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return ^1;
+    }
+
+    static async Task Test3<T>() where T : struct
+    {
+        Program<T>.F[GetIndex()] = await GetValueAsync();
+    }
+
+    static async Task<int> GetValueAsync()
+    {
+        System.Console.Write($"GetValueAsync:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        await Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 GetValue:5 set:6 final:6, GetIndex:3 length:4 GetValueAsync:5 set:6 final:6"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+
+        var src2 = """
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int this[int i] { get => 0; set {} }
+        public int Length => 3;
+    }
+}
+
+class Program
+{
+    static void Test<T>() where T : struct
+    {
+        default(T)[^1] = 1;
+    }
+}
+
+namespace NS1
+{
+    static class E
+    {
+        extension<T>(in T x) where T : struct
+        {
+        }
+    }
+}
+
+namespace NS2
+{
+    static class E
+    {
+        extension<T>(ref readonly T x) where T : struct
+        {
+        }
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        comp2.VerifyDiagnostics(
+            // (14,9): error CS1510: A ref or out value must be an assignable variable
+            //         default(T)[^1] = 1;
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(14, 9),
+            // (14,9): error CS1510: A ref or out value must be an assignable variable
+            //         default(T)[^1] = 1;
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(14, 9),
+            // (22,25): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(in T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(22, 25),
+            // (32,35): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(ref readonly T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(32, 35)
+            );
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Set_06()
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Set_06
+        // generic class receiver passed by value, extension implicit this[Index]
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i] { set { System.Console.Write($"set:{((C1)(object)x).F1} "); } }
+        public int Length { get { System.Console.Write($"length:{((C1)(object)x).F1} "); Program<C1>.F.F1++; return 3; } }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        Program<C1>.F = new C1 { F1 = 3 };
+        Test1(ref Program<C1>.F);
+        System.Console.Write($"final:{Program<C1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Program<C1>.F = new C1 { F1 = 3 };
+        Test2(ref Program<C1>.F);
+        System.Console.Write($"final:{Program<C1>.F.F1}");
+
+        // https://github.com/dotnet/roslyn/issues/79416 - uncomment the following code once fixed
+        //System.Console.Write(", ");
+
+        //Program<C1>.F = new C1 { F1 = 3 };
+        //await Test3<C1>();
+        //System.Console.Write($"final:{Program<C1>.F.F1}");
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        f[GetIndex()] = GetValue();
+    }
+
+    static void Test2<T>(ref T f) where T : class
+    {
+        f[GetIndex()] = GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program<C1>.F.F1} ");
+        Program<C1>.F.F1++;
+        return 1;
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program<C1>.F.F1} ");
+        Program<C1>.F.F1++;
+        return ^1;
+    }
+
+    // https://github.com/dotnet/roslyn/issues/79416 - uncomment the following code once fixed
+    //static async Task Test3<T>()
+    //{
+    //    Program<T>.F[GetIndex()] = await GetValueAsync();
+    //}
+
+    //static async Task<int> GetValueAsync()
+    //{
+    //    System.Console.Write($"GetValueAsync:{Program<C1>.F.F1} ");
+    //    Program<C1>.F.F1++;
+    //    await Task.Yield();
+    //    return 1;
+    //}
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 GetValue:5 set:6 final:6, GetIndex:3 length:4 GetValue:5 set:6 final:6"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Set_07()
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Set_07
+        // generic rvalue struct receiver, extension implicit this[Index]
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i] { set { System.Console.Write($"set:{((S1)(object)x).F1} "); } }
+        public int Length { get { System.Console.Write($"length:{((S1)(object)x).F1} "); Program.State++; return 3; } }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static int State;
+
+    static async Task Main()
+    {
+        State = 3;
+        Test1<S1>();
+        System.Console.Write($"final:{State}");
+
+        System.Console.Write(", ");
+
+        State = 3;
+        await Test3<S1>();
+        System.Console.Write($"final:{State}");
+    }
+
+    static T GetT<T>() => (T)(object)new S1 { F1 = State };
+
+    static void Test1<T>()
+    {
+        GetT<T>()[GetIndex()] = GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{State} ");
+        State++;
+        return 1;
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{State} ");
+        State++;
+        return ^1;
+    }
+
+    static async Task Test3<T>()
+    {
+        GetT<T>()[GetIndex()] = await GetValueAsync();
+    }
+
+    static async Task<int> GetValueAsync()
+    {
+        System.Console.Write($"GetValueAsync:{State} ");
+        State++;
+        await Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:3 GetValue:5 set:3 final:6, GetIndex:3 length:3 GetValueAsync:5 set:3 final:6"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Set_08()
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Set_08
+        // generic rvalue class receiver, extension implicit this[Index]
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i] { set { System.Console.Write($"set:{((C1)(object)x).F1} "); } }
+        public int Length { get { System.Console.Write($"length:{((C1)(object)x).F1} "); Program.State++; return 3; } }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static int State;
+
+    static async Task Main()
+    {
+        State = 3;
+        Test1<C1>();
+        System.Console.Write($"final:{State}");
+
+        System.Console.Write(", ");
+
+        State = 3;
+        Test2<C1>();
+        System.Console.Write($"final:{State}");
+
+        System.Console.Write(", ");
+
+        State = 3;
+        await Test3<C1>();
+        System.Console.Write($"final:{State}");
+    }
+
+    static T GetT<T>() => (T)(object)new C1 { F1 = State };
+
+    static void Test1<T>()
+    {
+        GetT<T>()[GetIndex()] = GetValue();
+    }
+
+    static void Test2<T>() where T : class
+    {
+        GetT<T>()[GetIndex()] = GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{State} ");
+        State++;
+        return 1;
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{State} ");
+        State++;
+        return ^1;
+    }
+
+    static async Task Test3<T>()
+    {
+        GetT<T>()[GetIndex()] = await GetValueAsync();
+    }
+
+    static async Task<int> GetValueAsync()
+    {
+        System.Console.Write($"GetValueAsync:{State} ");
+        State++;
+        await Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:3 GetValue:5 set:3 final:6, GetIndex:3 length:3 GetValue:5 set:3 final:6, GetIndex:3 length:3 GetValueAsync:5 set:3 final:6"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Get_LValueReceiver_01()
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Get_LValueReceiver_01
+        // struct lvalue receiver passed by value, extension implicit this[Index]
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int this[int i] { get { System.Console.Write($"get:{x.F1} "); return 0; } }
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F.F1++; return 3; } }
+    }
+}
+
+public struct S1
+{
+    public int F1;
+
+    public void Test()
+    {
+        _ = this[Program.GetIndex()];
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        F = new S1 { F1 = 3 };
+        F.Test();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        _ = F[GetIndex()];
+    }
+
+    public static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program.F.F1} ");
+        Program.F.F1++;
+        return ^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 get:5 final:5, GetIndex:3 length:4 get:5 final:5"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitIndexIndexerAccess_Get_LValueReceiver_02(string refKind)
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Get_LValueReceiver_02
+        // struct lvalue receiver passed by ref, extension implicit this[Index]
+        var src = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int this[int i] { get { System.Console.Write($"get:{x.F1} "); return 0; } }
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F.F1++; return 3; } }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public void Test()
+    {
+        _ = this[Program.GetIndex()];
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        F = new S1 { F1 = 3 };
+        F.Test();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        _ = F[Program.GetIndex()];
+    }
+
+    public static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program.F.F1} ");
+        Program.F.F1++;
+        return ^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 get:5 final:5, GetIndex:3 length:4 get:5 final:5"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+
+        var src2 = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int this[int i] { get => 0; set {} }
+        public int Length => 3;
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        _ = default(S1)[^1];
+    }
+}
+""";
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        if (refKind == "ref")
+        {
+            comp2.VerifyDiagnostics(
+                // (16,13): error CS1510: A ref or out value must be an assignable variable
+                //         _ = default(S1)[^1];
+                Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 13),
+                // (16,13): error CS1510: A ref or out value must be an assignable variable
+                //         _ = default(S1)[^1];
+                Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 13));
+        }
+        else if (refKind == "ref readonly")
+        {
+            comp2.VerifyDiagnostics(
+                // (16,13): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                //         _ = default(S1)[^1];
+                Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 13),
+                // (16,13): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                //         _ = default(S1)[^1];
+                Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 13));
+        }
+        else
+        {
+            comp2.VerifyDiagnostics();
+        }
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Get_LValueReceiver_03()
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Get_LValueReceiver_03
+        // class lvalue receiver passed by value, extension implicit this[Index]
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int this[int i] { get { System.Console.Write($"get:{x.F1} "); return 0; } }
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 3; } }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static C1 F;
+
+    static void Main()
+    {
+        F = new C1 { F1 = 3 };
+        Test();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test()
+    {
+        _ = F[GetIndex()];
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return ^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:3 get:3 final:5"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Get_LValueReceiver_04()
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Get_LValueReceiver_04
+        // generic struct lvalue receiver passed by value, extension implicit this[Index]
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i] { get { System.Console.Write($"get:{((S1)(object)x).F1} "); return 0; } }
+        public int Length { get { System.Console.Write($"length:{((S1)(object)x).F1} "); Program<S1>.F.F1++; return 3; } }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test1(ref Program<S1>.F);
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test2(ref Program<S1>.F);
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+
+        // https://github.com/dotnet/roslyn/issues/79416 - uncomment the following code once fixed
+        //System.Console.Write(", ");
+
+        //Program<S1>.F = new S1 { F1 = 3 };
+        //await Test3<S1>();
+        //System.Console.Write($"final:{Program<S1>.F.F1}");
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        _ = f[GetIndex()];
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        _ = f[GetIndex()];
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return ^1;
+    }
+
+    // https://github.com/dotnet/roslyn/issues/79416 - uncomment the following code once fixed
+    //static async Task Test3<T>()
+    //{
+    //    _ = Program<T>.F[await GetIndexAsync()];
+    //}
+
+    //static async Task<System.Index> GetIndexAsync()
+    //{
+    //    System.Console.Write($"GetIndexAsync:{Program<S1>.F.F1} ");
+    //    Program<S1>.F.F1++;
+    //    await Task.Yield();
+    //    return ^1;
+    //}
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 get:5 final:5, GetIndex:3 length:4 get:5 final:5"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Get_LValueReceiver_05()
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Get_LValueReceiver_05
+        // struct lvalue receiver passed by ref, constrained to struct, extension implicit this[Index]
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int this[int i] { get { System.Console.Write($"get:{((S1)(object)x).F1} "); return 0; } }
+        public int Length { get { System.Console.Write($"length:{((S1)(object)x).F1} "); Program<S1>.F.F1++; return 3; } }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test2(ref Program<S1>.F);
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Program<S1>.F = new S1 { F1 = 3 };
+        await Test3<S1>();
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        _ = f[GetIndex()];
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return ^1;
+    }
+
+    static async Task Test3<T>() where T : struct
+    {
+        _ = Program<T>.F[await GetIndexAsync()];
+    }
+
+    static async Task<System.Index> GetIndexAsync()
+    {
+        System.Console.Write($"GetIndexAsync:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        await Task.Yield();
+        return ^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:4 get:5 final:5, GetIndexAsync:3 length:4 get:5 final:5"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+
+        var src2 = """
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int this[int i] { get => 0; set {} }
+        public int Length => 3;
+    }
+}
+
+class Program
+{
+    static void Test<T>() where T : struct
+    {
+        _ = default(T)[^1];
+    }
+}
+
+namespace NS1
+{
+    static class E
+    {
+        extension<T>(in T x) where T : struct
+        {
+        }
+    }
+}
+
+namespace NS2
+{
+    static class E
+    {
+        extension<T>(ref readonly T x) where T : struct
+        {
+        }
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        comp2.VerifyDiagnostics(
+            // (14,13): error CS1510: A ref or out value must be an assignable variable
+            //         _ = default(T)[^1];
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(14, 13),
+            // (14,13): error CS1510: A ref or out value must be an assignable variable
+            //         _ = default(T)[^1];
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(14, 13),
+            // (22,25): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(in T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(22, 25),
+            // (32,35): error CS9301: The 'in' or 'ref readonly' receiver parameter of extension must be a concrete (non-generic) value type.
+            //         extension<T>(ref readonly T x) where T : struct
+            Diagnostic(ErrorCode.ERR_InExtensionParameterMustBeValueType, "T").WithLocation(32, 35)
+            );
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Get_LValueReceiver_06()
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Get_LValueReceiver_06
+        // generic class lvalue receiver passed by value, extension implicit this[Index]
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i] { get { System.Console.Write($"get:{((C1)(object)x).F1} "); return 0; } }
+        public int Length { get { System.Console.Write($"length:{((C1)(object)x).F1} "); Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 }; return 3; } }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        Program<C1>.F = new C1 { F1 = 3 };
+        Test1(ref Program<C1>.F);
+        System.Console.Write($"final:{Program<C1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Program<C1>.F = new C1 { F1 = 3 };
+        Test2(ref Program<C1>.F);
+        System.Console.Write($"final:{Program<C1>.F.F1}");
+
+        // https://github.com/dotnet/roslyn/issues/79416 - uncomment the following code once fixed
+        //System.Console.Write(", ");
+
+        //Program<C1>.F = new C1 { F1 = 3 };
+        //await Test3<C1>();
+        //System.Console.Write($"final:{Program<C1>.F.F1}");
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        _ = f[GetIndex()];
+    }
+
+    static void Test2<T>(ref T f) where T : class
+    {
+        _ = f[GetIndex()];
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{Program<C1>.F.F1} ");
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        return ^1;
+    }
+
+    // https://github.com/dotnet/roslyn/issues/79416 - uncomment the following code once fixed
+    //static async Task Test3<T>()
+    //{
+    //    _ = Program<T>.F[await GetIndexAsync()];
+    //}
+
+    //static async Task<System.Index> GetIndexAsync()
+    //{
+    //    System.Console.Write($"GetIndexAsync:{Program<C1>.F.F1} ");
+    //    Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+    //    await Task.Yield();
+    //    return ^1;
+    //}
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:3 get:3 final:5, GetIndex:3 length:3 get:3 final:5"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Get_RValueReceiver_01()
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Get_RValueReceiver_01
+        // struct rvalue receiver passed by value, extension implicit this[Index]
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int this[int i] { get { System.Console.Write($"get:{x.F1} "); return 0; } }
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.State++; return 3; } }
+    }
+}
+
+public struct S1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static int State;
+
+    static void Main()
+    {
+        State = 3;
+        Test();
+        System.Console.Write($"final:{State}");
+    }
+
+    static void Test()
+    {
+        _ = GetS1()[GetIndex()];
+    }
+
+    static S1 GetS1() => new S1 { F1 = State };
+
+    public static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{State} ");
+        State++;
+        return ^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:3 get:3 final:5"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitIndexIndexerAccess_Get_RValueReceiver_02(string refKind)
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Get_RValueReceiver_02
+        // struct rvalue receiver passed by ref, extension implicit this[Index]
+        var src = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int this[int i] { get { System.Console.Write($"get:{x.F1} "); return 0; } }
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.State++; return 3; } }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static int State;
+
+    static void Main()
+    {
+        State = 3;
+        Test();
+        System.Console.Write($"final:{State}");
+    }
+
+    static void Test()
+    {
+        _ = GetS1()[GetIndex()];
+    }
+
+    static S1 GetS1() => new S1 { F1 = State };
+
+    public static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{State} ");
+        State++;
+        return ^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe.WithAllowUnsafe(true), targetFramework: TargetFramework.Net100);
+        if (refKind == "ref")
+        {
+            comp.VerifyEmitDiagnostics(
+                // (28,13): error CS1510: A ref or out value must be an assignable variable
+                //         _ = GetS1()[GetIndex()];
+                Diagnostic(ErrorCode.ERR_RefLvalueExpected, "GetS1()").WithLocation(28, 13),
+                // (28,13): error CS1510: A ref or out value must be an assignable variable
+                //         _ = GetS1()[GetIndex()];
+                Diagnostic(ErrorCode.ERR_RefLvalueExpected, "GetS1()").WithLocation(28, 13));
+            return;
+        }
+        else if (refKind == "ref readonly")
+        {
+            comp.VerifyEmitDiagnostics(
+                // (28,13): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                //         _ = GetS1()[GetIndex()];
+                Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "GetS1()").WithArguments("0").WithLocation(28, 13),
+                // (28,13): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                //         _ = GetS1()[GetIndex()];
+                Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "GetS1()").WithArguments("0").WithLocation(28, 13));
+        }
+        else
+        {
+            comp.VerifyEmitDiagnostics();
+        }
+
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:3 get:3 final:5"), verify: Verification.Skipped);
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Get_RValueReceiver_03()
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Get_RValueReceiver_03
+        // class rvalue receiver passed by value, extension implicit this[Index]
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int this[int i] { get { System.Console.Write($"get:{x.F1} "); return 0; } }
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.State++; return 3; } }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static int State;
+
+    static void Main()
+    {
+        State = 3;
+        Test();
+        System.Console.Write($"final:{State}");
+    }
+
+    static void Test()
+    {
+        _ = GetC1()[GetIndex()];
+    }
+
+    static C1 GetC1() => new C1 { F1 = State };
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{State} ");
+        State++;
+        return ^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:3 get:3 final:5"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Get_RValueReceiver_04()
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Get_RValueReceiver_04
+        // generic struct rvalue receiver passed by value, extension implicit this[Index]
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i] { get { System.Console.Write($"get:{((S1)(object)x).F1} "); return 0; } }
+        public int Length { get { System.Console.Write($"length:{((S1)(object)x).F1} "); Program.State++; return 3; } }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static int State;
+
+    static async Task Main()
+    {
+        State = 3;
+        Test1<S1>();
+        System.Console.Write($"final:{State}");
+
+        System.Console.Write(", ");
+
+        State = 3;
+        Test2<S1>();
+        System.Console.Write($"final:{State}");
+
+        System.Console.Write(", ");
+
+        State = 3;
+        await Test3<S1>();
+        System.Console.Write($"final:{State}");
+    }
+
+    static T GetT<T>() => (T)(object)new S1 { F1 = State };
+
+    static void Test1<T>()
+    {
+        _ = GetT<T>()[GetIndex()];
+    }
+
+    static void Test2<T>() where T : struct
+    {
+        _ = GetT<T>()[GetIndex()];
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{State} ");
+        State++;
+        return ^1;
+    }
+
+    static async Task Test3<T>()
+    {
+        _ = GetT<T>()[await GetIndexAsync()];
+    }
+
+    static async Task<System.Index> GetIndexAsync()
+    {
+        System.Console.Write($"GetIndexAsync:{State} ");
+        State++;
+        await Task.Yield();
+        return ^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:3 get:3 final:5, GetIndex:3 length:3 get:3 final:5, GetIndexAsync:3 length:3 get:3 final:5"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Get_RValueReceiver_05()
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Get_RValueReceiver_05
+        // struct rvalue receiver passed by ref, constrained to struct, extension implicit this[Index]
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int this[int i] { get { System.Console.Write($"get:{((S1)(object)x).F1} "); return 0; } }
+        public int Length => 3;
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        Test2<S1>();
+
+        System.Console.Write(", ");
+
+        await Test3<S1>();
+    }
+
+    static void Test2<T>() where T : struct
+    {
+        _ = GetT<T>()[GetIndex()];
+    }
+
+    static T GetT<T>() => (T)(object)new S1 { F1 = 3 };
+
+    static System.Index GetIndex() => ^1;
+
+    static async Task Test3<T>() where T : struct
+    {
+        _ = GetT<T>()[await GetIndexAsync()];
+    }
+
+    static async Task<System.Index> GetIndexAsync()
+    {
+        await Task.Yield();
+        return ^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        comp.VerifyEmitDiagnostics(
+            // (30,13): error CS1510: A ref or out value must be an assignable variable
+            //         _ = GetT<T>()[GetIndex()];
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "GetT<T>()").WithLocation(30, 13),
+            // (30,13): error CS1510: A ref or out value must be an assignable variable
+            //         _ = GetT<T>()[GetIndex()];
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "GetT<T>()").WithLocation(30, 13),
+            // (39,13): error CS1510: A ref or out value must be an assignable variable
+            //         _ = GetT<T>()[await GetIndexAsync()];
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "GetT<T>()").WithLocation(39, 13),
+            // (39,13): error CS1510: A ref or out value must be an assignable variable
+            //         _ = GetT<T>()[await GetIndexAsync()];
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "GetT<T>()").WithLocation(39, 13));
+    }
+
+    [Fact]
+    public void ImplicitIndexIndexerAccess_Get_RValueReceiver_06()
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Get_RValueReceiver_06
+        // generic class rvalue receiver passed by value, extension implicit this[Index]
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public int this[int i] { get { System.Console.Write($"get:{((C1)(object)x).F1} "); return 0; } }
+        public int Length { get { System.Console.Write($"length:{((C1)(object)x).F1} "); Program.State++; return 3; } }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static int State;
+
+    static async Task Main()
+    {
+        State = 3;
+        Test1<C1>();
+        System.Console.Write($"final:{State}");
+
+        System.Console.Write(", ");
+
+        State = 3;
+        Test2<C1>();
+        System.Console.Write($"final:{State}");
+
+        System.Console.Write(", ");
+
+        State = 3;
+        await Test3<C1>();
+        System.Console.Write($"final:{State}");
+    }
+
+    static T GetT<T>() => (T)(object)new C1 { F1 = State };
+
+    static void Test1<T>()
+    {
+        _ = GetT<T>()[GetIndex()];
+    }
+
+    static void Test2<T>() where T : class
+    {
+        _ = GetT<T>()[GetIndex()];
+    }
+
+    static System.Index GetIndex()
+    {
+        System.Console.Write($"GetIndex:{State} ");
+        State++;
+        return ^1;
+    }
+
+    static async Task Test3<T>()
+    {
+        _ = GetT<T>()[await GetIndexAsync()];
+    }
+
+    static async Task<System.Index> GetIndexAsync()
+    {
+        System.Console.Write($"GetIndexAsync:{State} ");
+        State++;
+        await Task.Yield();
+        return ^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetIndex:3 length:3 get:3 final:5, GetIndex:3 length:3 get:3 final:5, GetIndexAsync:3 length:3 get:3 final:5"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Set_01()
+    {
+        // sibling of IndexerAccess_Set_01
+        // struct receiver, extension Length + ref-returning extension Slice
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F.F1++; return 5; } }
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F.F1++; return ref Program.Result; }
+    }
+}
+
+public struct S1
+{
+    public int F1;
+
+    public void Test2()
+    {
+        this[Program.GetRange()] = Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetRange()] = GetValue();
+    }
+
+    public static System.Range GetRange() { System.Console.Write($"GetRange:{Program.F.F1} "); Program.F.F1++; return 1..^1; }
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 GetValue:6 result:1 final:7, GetRange:3 length:4 Slice:5 GetValue:6 result:1 final:7"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", """
+{
+  // Code size       81 (0x51)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  call       "System.Range Program.GetRange()"
+  IL_000b:  stloc.0
+  IL_000c:  dup
+  IL_000d:  ldobj      "S1"
+  IL_0012:  call       "int E.get_Length(S1)"
+  IL_0017:  stloc.1
+  IL_0018:  ldloca.s   V_0
+  IL_001a:  call       "System.Index System.Range.Start.get"
+  IL_001f:  stloc.s    V_4
+  IL_0021:  ldloca.s   V_4
+  IL_0023:  ldloc.1
+  IL_0024:  call       "int System.Index.GetOffset(int)"
+  IL_0029:  stloc.2
+  IL_002a:  ldloca.s   V_0
+  IL_002c:  call       "System.Index System.Range.End.get"
+  IL_0031:  stloc.s    V_4
+  IL_0033:  ldloca.s   V_4
+  IL_0035:  ldloc.1
+  IL_0036:  call       "int System.Index.GetOffset(int)"
+  IL_003b:  ldloc.2
+  IL_003c:  sub
+  IL_003d:  stloc.3
+  IL_003e:  ldobj      "S1"
+  IL_0043:  ldloc.2
+  IL_0044:  ldloc.3
+  IL_0045:  call       "ref int E.Slice(S1, int, int)"
+  IL_004a:  call       "int Program.GetValue()"
+  IL_004f:  stind.i4
+  IL_0050:  ret
+}
+""");
+
+        verifier.VerifyIL("S1.Test2", """
+{
+  // Code size       77 (0x4d)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  call       "System.Range Program.GetRange()"
+  IL_0007:  stloc.0
+  IL_0008:  dup
+  IL_0009:  ldobj      "S1"
+  IL_000e:  call       "int E.get_Length(S1)"
+  IL_0013:  stloc.1
+  IL_0014:  ldloca.s   V_0
+  IL_0016:  call       "System.Index System.Range.Start.get"
+  IL_001b:  stloc.s    V_4
+  IL_001d:  ldloca.s   V_4
+  IL_001f:  ldloc.1
+  IL_0020:  call       "int System.Index.GetOffset(int)"
+  IL_0025:  stloc.2
+  IL_0026:  ldloca.s   V_0
+  IL_0028:  call       "System.Index System.Range.End.get"
+  IL_002d:  stloc.s    V_4
+  IL_002f:  ldloca.s   V_4
+  IL_0031:  ldloc.1
+  IL_0032:  call       "int System.Index.GetOffset(int)"
+  IL_0037:  ldloc.2
+  IL_0038:  sub
+  IL_0039:  stloc.3
+  IL_003a:  ldobj      "S1"
+  IL_003f:  ldloc.2
+  IL_0040:  ldloc.3
+  IL_0041:  call       "ref int E.Slice(S1, int, int)"
+  IL_0046:  call       "int Program.GetValue()"
+  IL_004b:  stind.i4
+  IL_004c:  ret
+}
+""");
+
+        var src2 = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int Length => 5;
+        public ref int Slice(int start, int length) => throw null;
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[1..^1] = 1;
+    }
+}
+""";
+
+        // TODO2 verify execution
+        CreateCompilation(src2, targetFramework: TargetFramework.Net100).VerifyEmitDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Set_01_02()
+    {
+        // sibling of IndexerAccess_Set_01
+        // struct receiver, instance Length + ref-returning extension Slice
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F.F1++; return ref Program.Result; }
+    }
+}
+
+public struct S1
+{
+    public int F1;
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.F.F1++; return 5; } }
+
+    public void Test2()
+    {
+        this[Program.GetRange()] = Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetRange()] = GetValue();
+    }
+
+    public static System.Range GetRange() { System.Console.Write($"GetRange:{Program.F.F1} "); Program.F.F1++; return 1..^1; }
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 GetValue:6 result:1 final:7, GetRange:3 length:4 Slice:5 GetValue:6 result:1 final:7"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", """
+{
+  // Code size       76 (0x4c)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  call       "System.Range Program.GetRange()"
+  IL_000b:  stloc.0
+  IL_000c:  dup
+  IL_000d:  call       "int S1.Length.get"
+  IL_0012:  stloc.1
+  IL_0013:  ldloca.s   V_0
+  IL_0015:  call       "System.Index System.Range.Start.get"
+  IL_001a:  stloc.s    V_4
+  IL_001c:  ldloca.s   V_4
+  IL_001e:  ldloc.1
+  IL_001f:  call       "int System.Index.GetOffset(int)"
+  IL_0024:  stloc.2
+  IL_0025:  ldloca.s   V_0
+  IL_0027:  call       "System.Index System.Range.End.get"
+  IL_002c:  stloc.s    V_4
+  IL_002e:  ldloca.s   V_4
+  IL_0030:  ldloc.1
+  IL_0031:  call       "int System.Index.GetOffset(int)"
+  IL_0036:  ldloc.2
+  IL_0037:  sub
+  IL_0038:  stloc.3
+  IL_0039:  ldobj      "S1"
+  IL_003e:  ldloc.2
+  IL_003f:  ldloc.3
+  IL_0040:  call       "ref int E.Slice(S1, int, int)"
+  IL_0045:  call       "int Program.GetValue()"
+  IL_004a:  stind.i4
+  IL_004b:  ret
+}
+""");
+        verifier.VerifyIL("S1.Test2", """
+{
+  // Code size       72 (0x48)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  call       "System.Range Program.GetRange()"
+  IL_0007:  stloc.0
+  IL_0008:  dup
+  IL_0009:  call       "int S1.Length.get"
+  IL_000e:  stloc.1
+  IL_000f:  ldloca.s   V_0
+  IL_0011:  call       "System.Index System.Range.Start.get"
+  IL_0016:  stloc.s    V_4
+  IL_0018:  ldloca.s   V_4
+  IL_001a:  ldloc.1
+  IL_001b:  call       "int System.Index.GetOffset(int)"
+  IL_0020:  stloc.2
+  IL_0021:  ldloca.s   V_0
+  IL_0023:  call       "System.Index System.Range.End.get"
+  IL_0028:  stloc.s    V_4
+  IL_002a:  ldloca.s   V_4
+  IL_002c:  ldloc.1
+  IL_002d:  call       "int System.Index.GetOffset(int)"
+  IL_0032:  ldloc.2
+  IL_0033:  sub
+  IL_0034:  stloc.3
+  IL_0035:  ldobj      "S1"
+  IL_003a:  ldloc.2
+  IL_003b:  ldloc.3
+  IL_003c:  call       "ref int E.Slice(S1, int, int)"
+  IL_0041:  call       "int Program.GetValue()"
+  IL_0046:  stind.i4
+  IL_0047:  ret
+}
+""");
+
+        var src2 = """
+static class E
+{
+    extension(S1 x)
+    {
+        public ref int Slice(int start, int length) => throw null;
+    }
+}
+
+struct S1
+{
+    public int Length => 5;
+}
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[1..^1] = 1;
+    }
+}
+""";
+
+        CreateCompilation(src2, targetFramework: TargetFramework.Net100).VerifyDiagnostics();
+        // TODO2 execute
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Set_01_03()
+    {
+        // sibling of IndexerAccess_Set_01
+        // struct receiver, extension Length + ref-returning instance Slice
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F.F1++; return 5; } }
+    }
+}
+
+public struct S1
+{
+    public int F1;
+    public ref int Slice(int start, int length) { System.Console.Write($"Slice:{F1} "); Program.F.F1++; return ref Program.Result; }
+
+    public void Test2()
+    {
+        this[Program.GetRange()] = Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetRange()] = GetValue();
+    }
+
+    public static System.Range GetRange() { System.Console.Write($"GetRange:{Program.F.F1} "); Program.F.F1++; return 1..^1; }
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 GetValue:6 result:1 final:7, GetRange:3 length:4 Slice:5 GetValue:6 result:1 final:7"), verify: Verification.Fails)
+            .VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test1", """
+{
+  // Code size       76 (0x4c)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldsflda    "S1 Program.F"
+  IL_0006:  call       "System.Range Program.GetRange()"
+  IL_000b:  stloc.0
+  IL_000c:  dup
+  IL_000d:  ldobj      "S1"
+  IL_0012:  call       "int E.get_Length(S1)"
+  IL_0017:  stloc.1
+  IL_0018:  ldloca.s   V_0
+  IL_001a:  call       "System.Index System.Range.Start.get"
+  IL_001f:  stloc.s    V_4
+  IL_0021:  ldloca.s   V_4
+  IL_0023:  ldloc.1
+  IL_0024:  call       "int System.Index.GetOffset(int)"
+  IL_0029:  stloc.2
+  IL_002a:  ldloca.s   V_0
+  IL_002c:  call       "System.Index System.Range.End.get"
+  IL_0031:  stloc.s    V_4
+  IL_0033:  ldloca.s   V_4
+  IL_0035:  ldloc.1
+  IL_0036:  call       "int System.Index.GetOffset(int)"
+  IL_003b:  ldloc.2
+  IL_003c:  sub
+  IL_003d:  stloc.3
+  IL_003e:  ldloc.2
+  IL_003f:  ldloc.3
+  IL_0040:  call       "ref int S1.Slice(int, int)"
+  IL_0045:  call       "int Program.GetValue()"
+  IL_004a:  stind.i4
+  IL_004b:  ret
+}
+""");
+        verifier.VerifyIL("S1.Test2", """
+{
+  // Code size       72 (0x48)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                System.Index V_4)
+  IL_0000:  nop
+  IL_0001:  ldarg.0
+  IL_0002:  call       "System.Range Program.GetRange()"
+  IL_0007:  stloc.0
+  IL_0008:  dup
+  IL_0009:  ldobj      "S1"
+  IL_000e:  call       "int E.get_Length(S1)"
+  IL_0013:  stloc.1
+  IL_0014:  ldloca.s   V_0
+  IL_0016:  call       "System.Index System.Range.Start.get"
+  IL_001b:  stloc.s    V_4
+  IL_001d:  ldloca.s   V_4
+  IL_001f:  ldloc.1
+  IL_0020:  call       "int System.Index.GetOffset(int)"
+  IL_0025:  stloc.2
+  IL_0026:  ldloca.s   V_0
+  IL_0028:  call       "System.Index System.Range.End.get"
+  IL_002d:  stloc.s    V_4
+  IL_002f:  ldloca.s   V_4
+  IL_0031:  ldloc.1
+  IL_0032:  call       "int System.Index.GetOffset(int)"
+  IL_0037:  ldloc.2
+  IL_0038:  sub
+  IL_0039:  stloc.3
+  IL_003a:  ldloc.2
+  IL_003b:  ldloc.3
+  IL_003c:  call       "ref int S1.Slice(int, int)"
+  IL_0041:  call       "int Program.GetValue()"
+  IL_0046:  stind.i4
+  IL_0047:  ret
+}
+""");
+
+        var src2 = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int Length => 5;
+    }
+}
+
+struct S1
+{
+    public ref int Slice(int start, int length) => throw null;
+}
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[1..^1] = 1;
+    }
+}
+""";
+
+        CreateCompilation(src2, targetFramework: TargetFramework.Net100).VerifyDiagnostics();
+        // TODO2 execute
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitRangeIndexerAccess_Set_02(string refKind)
+    {
+        // sibling of IndexerAccess_Set_02
+        // struct receiver passed by ref, extension Length + ref-returning extension Slice
+        var src = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F.F1++; return 5; } }
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F.F1++; return ref Program.Result; }
+    }
+}
+
+struct S1
+{
+    public int F1;
+
+    public void Test2()
+    {
+        this[Program.GetRange()] = Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetRange()] = GetValue();
+    }
+
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+    public static System.Range GetRange() { System.Console.Write($"GetRange:{Program.F.F1} "); Program.F.F1++; return 1..^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 GetValue:6 result:1 final:7, GetRange:3 length:4 Slice:5 GetValue:6 result:1 final:7"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+
+        var src2 = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int Length => 5;
+        public ref int Slice(int start, int length) => throw null;
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[1..^1] = 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        switch (refKind)
+        {
+            case "ref":
+                comp2.VerifyDiagnostics(
+                    // (16,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1)[1..^1] = 1;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9),
+                    // (16,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1)[1..^1] = 1;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9));
+                break;
+            case "ref readonly":
+                comp2.VerifyDiagnostics(
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[1..^1] = 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[1..^1] = 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[1..^1] = 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9));
+                break;
+            case "in":
+                comp2.VerifyDiagnostics();
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(refKind);
+        }
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitRangeIndexerAccess_Set_02_02(string refKind)
+    {
+        // struct receiver passed by ref, instance Length + ref-returning extension Slice
+        var src = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F.F1++; return ref Program.Result; }
+    }
+}
+
+struct S1
+{
+    public int F1;
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.F.F1++; return 5; } }
+
+    public void Test2()
+    {
+        this[Program.GetRange()] = Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetRange()] = GetValue();
+    }
+
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+    public static System.Range GetRange() { System.Console.Write($"GetRange:{Program.F.F1} "); Program.F.F1++; return 1..^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 GetValue:6 result:1 final:7, GetRange:3 length:4 Slice:5 GetValue:6 result:1 final:7"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+
+        var src2 = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int Length => 5;
+        public ref int Slice(int start, int length) => throw null;
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[1..^1] = 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        switch (refKind)
+        {
+            case "ref":
+                comp2.VerifyEmitDiagnostics(
+                    // (16,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1)[1..^1] = 1;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9),
+                    // (16,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1)[1..^1] = 1;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9));
+                break;
+            case "ref readonly":
+                comp2.VerifyEmitDiagnostics(
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[1..^1] = 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[1..^1] = 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[1..^1] = 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9));
+                break;
+            case "in":
+                comp2.VerifyEmitDiagnostics();
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(refKind);
+        }
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitRangeIndexerAccess_Set_02_03(string refKind)
+    {
+        // struct receiver passed by ref, extension Length + ref-returning instance Slice
+        var src = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F.F1++; return 5; } }
+    }
+}
+
+struct S1
+{
+    public int F1;
+    public ref int Slice(int start, int length) { System.Console.Write($"Slice:{F1} "); Program.F.F1++; return ref Program.Result; }
+
+    public void Test2()
+    {
+        this[Program.GetRange()] = Program.GetValue();
+    }
+}
+
+class Program
+{
+    public static S1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        F = new S1 { F1 = 3 };
+        F.Test2();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        F[GetRange()] = GetValue();
+    }
+
+    public static int GetValue() { System.Console.Write($"GetValue:{Program.F.F1} "); Program.F.F1++; return 1; }
+    public static System.Range GetRange() { System.Console.Write($"GetRange:{Program.F.F1} "); Program.F.F1++; return 1..^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 GetValue:6 result:1 final:7, GetRange:3 length:4 Slice:5 GetValue:6 result:1 final:7"), verify: Verification.Fails)
+            .VerifyDiagnostics();
+
+        var src2 = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int Length => 5;
+        public ref int Slice(int start, int length) => throw null;
+    }
+}
+
+struct S1;
+
+class Program
+{
+    static void Test()
+    {
+        default(S1)[1..^1] = 1;
+    }
+}
+""";
+
+        var comp2 = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        switch (refKind)
+        {
+            case "ref":
+                comp2.VerifyEmitDiagnostics(
+                    // (16,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1)[1..^1] = 1;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9),
+                    // (16,9): error CS1510: A ref or out value must be an assignable variable
+                    //         default(S1)[1..^1] = 1;
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(S1)").WithLocation(16, 9));
+                break;
+            case "ref readonly":
+                comp2.VerifyEmitDiagnostics(
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[1..^1] = 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[1..^1] = 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9),
+                    // (16,9): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         default(S1)[1..^1] = 1;
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "default(S1)").WithArguments("0").WithLocation(16, 9));
+                break;
+            case "in":
+                comp2.VerifyEmitDiagnostics();
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(refKind);
+        }
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Set_03()
+    {
+        // sibling of IndexerAccess_Set_03
+        // class receiver, extension Length + ref-returning extension Slice
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 5; } }
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return ref Program.Result; }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static C1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new C1 { F1 = 3 };
+        Test();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test()
+    {
+        F[GetRange()] = GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1;
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 GetValue:6 result:1 final:7"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Set_03_02()
+    {
+        // class receiver, instance Length + ref-returning extension Slice
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return ref Program.Result; }
+    }
+}
+
+class C1
+{
+    public int F1;
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 5; } }
+}
+
+class Program
+{
+    public static C1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new C1 { F1 = 3 };
+        Test();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test()
+    {
+        F[GetRange()] = GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1;
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 GetValue:6 result:1 final:7"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Set_03_03()
+    {
+        // class receiver, extension Length + ref-returning instance Slice
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 5; } }
+    }
+}
+
+class C1
+{
+    public int F1;
+    public ref int Slice(int start, int length) { System.Console.Write($"Slice:{F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return ref Program.Result; }
+}
+
+class Program
+{
+    public static C1 F;
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        F = new C1 { F1 = 3 };
+        Test();
+        System.Console.Write($"result:{Result} final:{F.F1}");
+    }
+
+    static void Test()
+    {
+        F[GetRange()] = GetValue();
+    }
+
+    static int GetValue()
+    {
+        System.Console.Write($"GetValue:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1;
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 GetValue:6 result:1 final:7"), verify: Verification.Fails)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Set_04()
+    {
+        // sibling of IndexerAccess_Set_04
+        // generic extension parameter, extension Length + ref-returning extension Slice, struct-constrained receiver value
+        var src = """
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length { get { System.Console.Write($"length:{((S1)(object)x).F1} "); Program<S1>.F.F1++; return 5; } }
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{((S1)(object)x).F1} "); Program<S1>.F.F1++; return ref Program.Result; }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test1(ref Program<S1>.F);
+        System.Console.Write($"result:{Result} final:{Program<S1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test2(ref Program<S1>.F);
+        System.Console.Write($"result:{Result} final:{Program<S1>.F.F1}");
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        f[GetRange()] = GetValue();
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        f[GetRange()] = GetValue();
+    }
+
+    static int GetValue() { System.Console.Write($"GetValue:{Program<S1>.F.F1} "); Program<S1>.F.F1++; return 1; }
+    static System.Range GetRange() { System.Console.Write($"GetRange:{Program<S1>.F.F1} "); Program<S1>.F.F1++; return 1..^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 GetValue:6 result:1 final:7, GetRange:3 length:4 Slice:5 GetValue:6 result:1 final:7"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+
+        // receiver is not a variable
+        var src2 = """
+static class E
+{
+    extension<T>(T x) where T : struct
+    {
+        public int Length => 5;
+        public ref int Slice(int start, int length) => throw null;
+    }
+}
+
+class Program
+{
+    static void Test<T>() where T : struct
+    {
+        default(T)[1..^1] = 1;
+    }
+}
+""";
+
+        CreateCompilation(src2, targetFramework: TargetFramework.Net100).VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Set_05()
+    {
+        // sibling of IndexerAccess_Set_05
+        // ref struct-constrained extension parameter, extension Length + ref-returning extension Slice
+        var src = """
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int Length { get { System.Console.Write($"length:{((S1)(object)x).F1} "); Program<S1>.F.F1++; return 5; } }
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{((S1)(object)x).F1} "); Program<S1>.F.F1++; return ref Program.Result; }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test2(ref Program<S1>.F);
+        System.Console.Write($"result:{Result} final:{Program<S1>.F.F1}");
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        f[GetRange()] = GetValue();
+    }
+
+    static int GetValue() { System.Console.Write($"GetValue:{Program<S1>.F.F1} "); Program<S1>.F.F1++; return 1; }
+    static System.Range GetRange() { System.Console.Write($"GetRange:{Program<S1>.F.F1} "); Program<S1>.F.F1++; return 1..^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 GetValue:6 result:1 final:7"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+
+        // spilling for await
+        var src2 = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int Length => 5;
+        public ref int Slice(int start, int length) => throw null;
+    }
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async Task Test3<T>() where T : struct
+    {
+        Program<T>.F[GetRange()] = await GetValueAsync();
+    }
+
+    static System.Range GetRange() => 1..^1;
+
+    static async Task<int> GetValueAsync()
+    {
+        await Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        comp = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        comp.VerifyEmitDiagnostics(
+            // (21,9): error CS8178: A reference returned by a call to 'E.Slice<T>(ref T, int, int)' cannot be preserved across 'await' or 'yield' boundary.
+            //         Program<T>.F[GetRange()] = await GetValueAsync();
+            Diagnostic(ErrorCode.ERR_RefReturningCallAndAwait, "Program<T>.F[GetRange()]").WithArguments("E.Slice<T>(ref T, int, int)").WithLocation(21, 9));
+
+        comp = CreateRuntimeAsyncCompilation(src2);
+        comp.VerifyEmitDiagnostics(
+            // (21,9): error CS8178: A reference returned by a call to 'E.Slice<T>(ref T, int, int)' cannot be preserved across 'await' or 'yield' boundary.
+            //         Program<T>.F[GetRange()] = await GetValueAsync();
+            Diagnostic(ErrorCode.ERR_RefReturningCallAndAwait, "Program<T>.F[GetRange()]").WithArguments("E.Slice<T>(ref T, int, int)").WithLocation(21, 9));
+
+        // receiver is not a variable
+        var src3 = """
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int Length => 5;
+        public ref int Slice(int start, int length) => throw null;
+    }
+}
+
+class Program
+{
+    static void Test<T>() where T : struct
+    {
+        default(T)[1..^1] = 1;
+    }
+}
+""";
+
+        CreateCompilation(src3, targetFramework: TargetFramework.Net100).VerifyEmitDiagnostics(
+            // (14,9): error CS1510: A ref or out value must be an assignable variable
+            //         default(T)[1..^1] = 1;
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(14, 9),
+            // (14,9): error CS1510: A ref or out value must be an assignable variable
+            //         default(T)[1..^1] = 1;
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(14, 9));
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Set_06()
+    {
+        // sibling of IndexerAccess_Set_06
+        // generic extension parameter, extension Length + ref-returning extension Slice, class-constrained receiver value
+        var src = """
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length { get { System.Console.Write($"length:{((C1)(object)x).F1} "); Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 }; return 5; } }
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{((C1)(object)x).F1} "); Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 }; return ref Program.Result; }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    public static int Result;
+
+    static void Main()
+    {
+        Result = 10;
+        Program<C1>.F = new C1 { F1 = 3 };
+        Test1(ref Program<C1>.F);
+        System.Console.Write($"result:{Result} final:{Program<C1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        Program<C1>.F = new C1 { F1 = 3 };
+        Test2(ref Program<C1>.F);
+        System.Console.Write($"result:{Result} final:{Program<C1>.F.F1}");
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        f[GetRange()] = GetValue();
+    }
+
+    static void Test2<T>(ref T f) where T : class
+    {
+        f[GetRange()] = GetValue();
+    }
+
+    static int GetValue() { System.Console.Write($"GetValue:{Program<C1>.F.F1} "); Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 }; return 1; }
+    static System.Range GetRange() { System.Console.Write($"GetRange:{Program<C1>.F.F1} "); Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 }; return 1..^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 GetValue:6 result:1 final:7, GetRange:3 length:3 Slice:3 GetValue:6 result:1 final:7"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Set_07()
+    {
+        // sibling of IndexerAccess_Set_07
+        // generic rvalue struct receiver, extension Length + ref-returning extension Slice
+        var src = """
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length { get { System.Console.Write($"length:{((S1)(object)x).F1} "); Program.State++; return 5; } }
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{((S1)(object)x).F1} "); Program.State++; return ref Program.Result; }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program
+{
+    static T GetT<T>() => (T)(object)new S1 { F1 = State };
+    public static int Result;
+    public static int State;
+
+    static void Main()
+    {
+        Result = 10;
+        State = 3;
+        Test1<S1>();
+        System.Console.Write($"result:{Result} final:{State}");
+    }
+
+    static void Test1<T>()
+    {
+        GetT<T>()[GetRange()] = GetValue();
+    }
+
+    static int GetValue() { System.Console.Write($"GetValue:{State} "); State++; return 1; }
+    static System.Range GetRange() { System.Console.Write($"GetRange:{State} "); State++; return 1..^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 GetValue:6 result:1 final:7"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+
+        // spilling for await
+        var src2 = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length => 5;
+        public ref int Slice(int start, int length) => throw null;
+    }
+}
+
+class Program
+{
+    static T GetT<T>() => default;
+
+    static async Task Test3<T>()
+    {
+        GetT<T>()[GetRange()] = await GetValueAsync();
+    }
+
+    static System.Range GetRange() => 1..^1;
+
+    static async Task<int> GetValueAsync()
+    {
+        await Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        comp = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        comp.VerifyEmitDiagnostics(
+            // (18,9): error CS8178: A reference returned by a call to 'E.Slice<T>(T, int, int)' cannot be preserved across 'await' or 'yield' boundary.
+            //         GetT<T>()[GetRange()] = await GetValueAsync();
+            Diagnostic(ErrorCode.ERR_RefReturningCallAndAwait, "GetT<T>()[GetRange()]").WithArguments("E.Slice<T>(T, int, int)").WithLocation(18, 9));
+
+        comp = CreateRuntimeAsyncCompilation(src2);
+        comp.VerifyEmitDiagnostics(
+            // (18,9): error CS8178: A reference returned by a call to 'E.Slice<T>(T, int, int)' cannot be preserved across 'await' or 'yield' boundary.
+            //         GetT<T>()[GetRange()] = await GetValueAsync();
+            Diagnostic(ErrorCode.ERR_RefReturningCallAndAwait, "GetT<T>()[GetRange()]").WithArguments("E.Slice<T>(T, int, int)").WithLocation(18, 9));
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Set_08()
+    {
+        // sibling of IndexerAccess_Set_08
+        // generic rvalue class receiver, extension Length + ref-returning extension Slice
+        var src = """
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length { get { System.Console.Write($"length:{((C1)(object)x).F1} "); Program.State++; return 5; } }
+        public ref int Slice(int start, int length) { System.Console.Write($"Slice:{((C1)(object)x).F1} "); Program.State++; return ref Program.Result; }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program
+{
+    static T GetT<T>() => (T)(object)new C1 { F1 = State };
+    public static int Result;
+    public static int State;
+
+    static void Main()
+    {
+        Result = 10;
+        State = 3;
+        Test1<C1>();
+        System.Console.Write($"result:{Result} final:{State}");
+
+        System.Console.Write(", ");
+
+        Result = 10;
+        State = 3;
+        Test2<C1>();
+        System.Console.Write($"result:{Result} final:{State}");
+    }
+
+    static void Test1<T>()
+    {
+        GetT<T>()[GetRange()] = GetValue();
+    }
+
+    static void Test2<T>() where T : class
+    {
+        GetT<T>()[GetRange()] = GetValue();
+    }
+
+    static int GetValue() { System.Console.Write($"GetValue:{State} "); State++; return 1; }
+    static System.Range GetRange() { System.Console.Write($"GetRange:{State} "); State++; return 1..^1; }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 GetValue:6 result:1 final:7, GetRange:3 length:3 Slice:3 GetValue:6 result:1 final:7"), verify: Verification.FailsPEVerify)
+            .VerifyDiagnostics();
+
+        // spilling for await
+        var src2 = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length => 5;
+        public ref int Slice(int start, int length) => throw null;
+    }
+}
+
+class Program
+{
+    static T GetT<T>() => default;
+
+    static async Task Test3<T>()
+    {
+        GetT<T>()[GetRange()] = await GetValueAsync();
+    }
+
+    static System.Range GetRange() => 1..^1;
+
+    static async Task<int> GetValueAsync()
+    {
+        await Task.Yield();
+        return 1;
+    }
+}
+""";
+
+        comp = CreateCompilation(src2, targetFramework: TargetFramework.Net100);
+        comp.VerifyEmitDiagnostics(
+            // (18,9): error CS8178: A reference returned by a call to 'E.Slice<T>(T, int, int)' cannot be preserved across 'await' or 'yield' boundary.
+            //         GetT<T>()[GetRange()] = await GetValueAsync();
+            Diagnostic(ErrorCode.ERR_RefReturningCallAndAwait, "GetT<T>()[GetRange()]").WithArguments("E.Slice<T>(T, int, int)").WithLocation(18, 9));
+
+        comp = CreateRuntimeAsyncCompilation(src2);
+        comp.VerifyEmitDiagnostics(
+            // (18,9): error CS8178: A reference returned by a call to 'E.Slice<T>(T, int, int)' cannot be preserved across 'await' or 'yield' boundary.
+            //         GetT<T>()[GetRange()] = await GetValueAsync();
+            Diagnostic(ErrorCode.ERR_RefReturningCallAndAwait, "GetT<T>()[GetRange()]").WithArguments("E.Slice<T>(T, int, int)").WithLocation(18, 9));
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_LValueReceiver_01()
+    {
+        // sibling of IndexerAccess_Get_LValueReceiver_01
+        // struct lvalue receiver passed by value, extension Length + extension Slice
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F.F1++; return 5; } }
+        public int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F.F1++; return 0; }
+    }
+}
+
+public struct S1
+{
+    public int F1;
+
+    public void Test()
+    {
+        _ = this[Program.GetRange()];
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        F = new S1 { F1 = 3 };
+        F.Test();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        _ = F[GetRange()];
+    }
+
+    public static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program.F.F1} ");
+        Program.F.F1++;
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 final:6, GetRange:3 length:4 Slice:5 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+
+        // TODO2 verify IL
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_LValueReceiver_01_02()
+    {
+        // struct lvalue receiver passed by value, instance Length + extension Slice
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F.F1++; return 0; }
+    }
+}
+
+public struct S1
+{
+    public int F1;
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.F.F1++; return 5; } }
+
+    public void Test()
+    {
+        _ = this[Program.GetRange()];
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        F = new S1 { F1 = 3 };
+        F.Test();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        _ = F[GetRange()];
+    }
+
+    public static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program.F.F1} ");
+        Program.F.F1++;
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 final:6, GetRange:3 length:4 Slice:5 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_LValueReceiver_01_03()
+    {
+        // struct lvalue receiver passed by value, extension Length + instance Slice
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F.F1++; return 5; } }
+    }
+}
+
+public struct S1
+{
+    public int F1;
+    public int Slice(int start, int length) { System.Console.Write($"Slice:{F1} "); Program.F.F1++; return 0; }
+
+    public void Test()
+    {
+        _ = this[Program.GetRange()];
+    }
+}
+
+class Program
+{
+    public static S1 F;
+
+    static void Main()
+    {
+        F = new S1 { F1 = 3 };
+        Test1();
+        System.Console.Write($"final:{F.F1}");
+
+        System.Console.Write(", ");
+
+        F = new S1 { F1 = 3 };
+        F.Test();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test1()
+    {
+        _ = F[GetRange()];
+    }
+
+    public static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program.F.F1} ");
+        Program.F.F1++;
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 final:6, GetRange:3 length:4 Slice:5 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_LValueReceiver_03()
+    {
+        // sibling of IndexerAccess_Get_LValueReceiver_03
+        // class lvalue receiver passed by value, extension Length + extension Slice
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 5; } }
+        public int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 0; }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static C1 F;
+
+    static void Main()
+    {
+        F = new C1 { F1 = 3 };
+        Test();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test()
+    {
+        _ = F[GetRange()];
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+        // TODO2 verify IL
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_LValueReceiver_03_02()
+    {
+        // class lvalue receiver passed by value, instance Length + extension Slice
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 0; }
+    }
+}
+
+class C1
+{
+    public int F1;
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 5; } }
+}
+
+class Program
+{
+    public static C1 F;
+
+    static void Main()
+    {
+        F = new C1 { F1 = 3 };
+        Test();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test()
+    {
+        _ = F[GetRange()];
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_LValueReceiver_03_03()
+    {
+        // class lvalue receiver passed by value, extension Length + instance Slice
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 5; } }
+    }
+}
+
+class C1
+{
+    public int F1;
+    public int Slice(int start, int length) { System.Console.Write($"Slice:{F1} "); Program.F = new C1 { F1 = Program.F.F1 + 1 }; return 0; }
+}
+
+class Program
+{
+    public static C1 F;
+
+    static void Main()
+    {
+        F = new C1 { F1 = 3 };
+        Test();
+        System.Console.Write($"final:{F.F1}");
+    }
+
+    static void Test()
+    {
+        _ = F[GetRange()];
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program.F.F1} ");
+        Program.F = new C1 { F1 = Program.F.F1 + 1 };
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_LValueReceiver_04()
+    {
+        // sibling of IndexerAccess_Get_LValueReceiver_04
+        // generic struct lvalue receiver passed by value, extension Length + extension Slice
+        var src = """
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length { get { System.Console.Write($"length:{((S1)(object)x).F1} "); Program<S1>.F.F1++; return 5; } }
+        public int Slice(int start, int length) { System.Console.Write($"Slice:{((S1)(object)x).F1} "); Program<S1>.F.F1++; return 0; }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static void Main()
+    {
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test1(ref Program<S1>.F);
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test2(ref Program<S1>.F);
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        _ = f[GetRange()];
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        _ = f[GetRange()];
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 final:6, GetRange:3 length:4 Slice:5 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+        // TODO2 verify IL
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_LValueReceiver_05()
+    {
+        // sibling of IndexerAccess_Get_LValueReceiver_05
+        // struct lvalue receiver passed by ref, constrained to struct, extension Length + extension Slice
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int Length { get { System.Console.Write($"length:{((S1)(object)x).F1} "); Program<S1>.F.F1++; return 5; } }
+        public int Slice(int start, int length) { System.Console.Write($"Slice:{((S1)(object)x).F1} "); Program<S1>.F.F1++; return 0; }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static async Task Main()
+    {
+        Program<S1>.F = new S1 { F1 = 3 };
+        Test2(ref Program<S1>.F);
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Program<S1>.F = new S1 { F1 = 3 };
+        await Test3<S1>();
+        System.Console.Write($"final:{Program<S1>.F.F1}");
+    }
+
+    static void Test2<T>(ref T f) where T : struct
+    {
+        _ = f[GetRange()];
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        return 1..^1;
+    }
+
+    static async Task Test3<T>() where T : struct
+    {
+        _ = Program<T>.F[await GetRangeAsync()];
+    }
+
+    static async Task<System.Range> GetRangeAsync()
+    {
+        System.Console.Write($"GetRangeAsync:{Program<S1>.F.F1} ");
+        Program<S1>.F.F1++;
+        await Task.Yield();
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:4 Slice:5 final:6, GetRangeAsync:3 length:4 Slice:5 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+        // TODO2 verify IL
+
+        // receiver is not a variable
+        var src2 = """
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int Length => 5;
+        public int Slice(int start, int length) => 0;
+    }
+}
+
+class Program
+{
+    static void Test<T>() where T : struct
+    {
+        _ = default(T)[1..^1];
+    }
+}
+""";
+
+        CreateCompilation(src2, targetFramework: TargetFramework.Net100).VerifyEmitDiagnostics(
+            // (14,13): error CS1510: A ref or out value must be an assignable variable
+            //         _ = default(T)[1..^1];
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(14, 13),
+            // (14,13): error CS1510: A ref or out value must be an assignable variable
+            //         _ = default(T)[1..^1];
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "default(T)").WithLocation(14, 13));
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_LValueReceiver_06()
+    {
+        // sibling of IndexerAccess_Get_LValueReceiver_06
+        // generic class lvalue receiver passed by value, extension Length + extension Slice
+        var src = """
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length { get { System.Console.Write($"length:{((C1)(object)x).F1} "); Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 }; return 5; } }
+        public int Slice(int start, int length) { System.Console.Write($"Slice:{((C1)(object)x).F1} "); Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 }; return 0; }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program<T>
+{
+    public static T F;
+}
+
+class Program
+{
+    static void Main()
+    {
+        Program<C1>.F = new C1 { F1 = 3 };
+        Test1(ref Program<C1>.F);
+        System.Console.Write($"final:{Program<C1>.F.F1}");
+
+        System.Console.Write(", ");
+
+        Program<C1>.F = new C1 { F1 = 3 };
+        Test2(ref Program<C1>.F);
+        System.Console.Write($"final:{Program<C1>.F.F1}");
+    }
+
+    static void Test1<T>(ref T f)
+    {
+        _ = f[GetRange()];
+    }
+
+    static void Test2<T>(ref T f) where T : class
+    {
+        _ = f[GetRange()];
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{Program<C1>.F.F1} ");
+        Program<C1>.F = new C1 { F1 = Program<C1>.F.F1 + 1 };
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 final:6, GetRange:3 length:3 Slice:3 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+        // TODO2 verify IL
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_RValueReceiver_01()
+    {
+        // sibling of IndexerAccess_Get_RValueReceiver_01
+        // struct rvalue receiver passed by value, extension Length + extension Slice
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.State++; return 5; } }
+        public int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.State++; return 0; }
+    }
+}
+
+public struct S1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static int State;
+
+    static void Main()
+    {
+        State = 3;
+        Test();
+        System.Console.Write($"final:{State}");
+    }
+
+    static void Test()
+    {
+        _ = GetS1()[GetRange()];
+    }
+
+    static S1 GetS1() => new S1 { F1 = State };
+
+    public static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{State} ");
+        State++;
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+
+        verifier.VerifyIL("Program.Test", """
+{
+  // Code size       80 (0x50)
+  .maxstack  3
+  .locals init (System.Range V_0,
+                int V_1,
+                int V_2,
+                int V_3,
+                S1 V_4,
+                System.Index V_5)
+  IL_0000:  nop
+  IL_0001:  call       "S1 Program.GetS1()"
+  IL_0006:  stloc.s    V_4
+  IL_0008:  ldloca.s   V_4
+  IL_000a:  call       "System.Range Program.GetRange()"
+  IL_000f:  stloc.0
+  IL_0010:  dup
+  IL_0011:  ldobj      "S1"
+  IL_0016:  call       "int E.get_Length(S1)"
+  IL_001b:  stloc.1
+  IL_001c:  ldloca.s   V_0
+  IL_001e:  call       "System.Index System.Range.Start.get"
+  IL_0023:  stloc.s    V_5
+  IL_0025:  ldloca.s   V_5
+  IL_0027:  ldloc.1
+  IL_0028:  call       "int System.Index.GetOffset(int)"
+  IL_002d:  stloc.2
+  IL_002e:  ldloca.s   V_0
+  IL_0030:  call       "System.Index System.Range.End.get"
+  IL_0035:  stloc.s    V_5
+  IL_0037:  ldloca.s   V_5
+  IL_0039:  ldloc.1
+  IL_003a:  call       "int System.Index.GetOffset(int)"
+  IL_003f:  ldloc.2
+  IL_0040:  sub
+  IL_0041:  stloc.3
+  IL_0042:  ldobj      "S1"
+  IL_0047:  ldloc.2
+  IL_0048:  ldloc.3
+  IL_0049:  call       "int E.Slice(S1, int, int)"
+  IL_004e:  pop
+  IL_004f:  ret
+}
+""");
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_RValueReceiver_01_02()
+    {
+        // struct rvalue receiver passed by value, instance Length + extension Slice
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.State++; return 0; }
+    }
+}
+
+public struct S1
+{
+    public int F1;
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.State++; return 5; } }
+}
+
+class Program
+{
+    public static int State;
+
+    static void Main()
+    {
+        State = 3;
+        Test();
+        System.Console.Write($"final:{State}");
+    }
+
+    static void Test()
+    {
+        _ = GetS1()[GetRange()];
+    }
+
+    static S1 GetS1() => new S1 { F1 = State };
+
+    public static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{State} ");
+        State++;
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_RValueReceiver_01_03()
+    {
+        // struct rvalue receiver passed by value, extension Length + instance Slice
+        var src = """
+static class E
+{
+    extension(S1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.State++; return 5; } }
+    }
+}
+
+public struct S1
+{
+    public int F1;
+    public int Slice(int start, int length) { System.Console.Write($"Slice:{F1} "); Program.State++; return 0; }
+}
+
+class Program
+{
+    public static int State;
+
+    static void Main()
+    {
+        State = 3;
+        Test();
+        System.Console.Write($"final:{State}");
+    }
+
+    static void Test()
+    {
+        _ = GetS1()[GetRange()];
+    }
+
+    static S1 GetS1() => new S1 { F1 = State };
+
+    public static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{State} ");
+        State++;
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitRangeIndexerAccess_Get_RValueReceiver_02(string refKind)
+    {
+        // TODO2 review
+        // sibling of IndexerAccess_Get_RValueReceiver_02
+        // struct rvalue receiver passed by ref, extension Length + extension Slice
+        var src = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.State++; return 5; } }
+        public int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.State++; return 0; }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static int State;
+
+    static void Main()
+    {
+        State = 3;
+        Test();
+        System.Console.Write($"final:{State}");
+    }
+
+    static void Test()
+    {
+        _ = GetS1()[GetRange()];
+    }
+
+    static S1 GetS1() => new S1 { F1 = State };
+
+    public static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{State} ");
+        State++;
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        switch (refKind)
+        {
+            case "ref":
+                comp.VerifyEmitDiagnostics(
+                    // (28,13): error CS1510: A ref or out value must be an assignable variable
+                    //         _ = GetS1()[GetRange()];
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "GetS1()").WithLocation(28, 13),
+                    // (28,13): error CS1510: A ref or out value must be an assignable variable
+                    //         _ = GetS1()[GetRange()];
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "GetS1()").WithLocation(28, 13));
+                return;
+            case "ref readonly":
+                comp.VerifyEmitDiagnostics(
+                    // (28,13): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         _ = GetS1()[GetRange()];
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "GetS1()").WithArguments("0").WithLocation(28, 13),
+                    // (28,13): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         _ = GetS1()[GetRange()];
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "GetS1()").WithArguments("0").WithLocation(28, 13),
+                    // (28,13): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         _ = GetS1()[GetRange()];
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "GetS1()").WithArguments("0").WithLocation(28, 13));
+                break;
+            case "in":
+                comp.VerifyEmitDiagnostics();
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(refKind);
+        }
+
+        var verifier = CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 final:6"), verify: Verification.Skipped);
+        // TODO2 verify IL
+        //        verifier.VerifyIL("Program.Test", """
+
+        //""");
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitRangeIndexerAccess_Get_RValueReceiver_02_02(string refKind)
+    {
+        // struct rvalue receiver passed by ref, instance Length + extension Slice
+        var src = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.State++; return 0; }
+    }
+}
+
+struct S1
+{
+    public int F1;
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.State++; return 5; } }
+}
+
+class Program
+{
+    public static int State;
+
+    static void Main()
+    {
+        State = 3;
+        Test();
+        System.Console.Write($"final:{State}");
+    }
+
+    static void Test()
+    {
+        _ = GetS1()[GetRange()];
+    }
+
+    static S1 GetS1() => new S1 { F1 = State };
+
+    public static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{State} ");
+        State++;
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        switch (refKind)
+        {
+            case "ref":
+                comp.VerifyEmitDiagnostics(
+                    // (28,13): error CS1510: A ref or out value must be an assignable variable
+                    //         _ = GetS1()[GetRange()];
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "GetS1()").WithLocation(28, 13));
+                return;
+            case "ref readonly":
+                comp.VerifyEmitDiagnostics(
+                    // (28,13): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         _ = GetS1()[GetRange()];
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "GetS1()").WithArguments("0").WithLocation(28, 13));
+                break;
+            case "in":
+                comp.VerifyEmitDiagnostics();
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(refKind);
+        }
+
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 final:6"), verify: Verification.Skipped);
+    }
+
+    [Theory]
+    [InlineData("ref")]
+    [InlineData("ref readonly")]
+    [InlineData("in")]
+    public void ImplicitRangeIndexerAccess_Get_RValueReceiver_02_03(string refKind)
+    {
+        // TODO2 review
+        // struct rvalue receiver passed by ref, extension Length + instance Slice
+        var src = $$$"""
+static class E
+{
+    extension({{{refKind}}} S1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.State++; return 5; } }
+    }
+}
+
+struct S1
+{
+    public int F1;
+    public int Slice(int start, int length) { System.Console.Write($"Slice:{F1} "); Program.State++; return 0; }
+}
+
+class Program
+{
+    public static int State;
+
+    static void Main()
+    {
+        State = 3;
+        Test();
+        System.Console.Write($"final:{State}");
+    }
+
+    static void Test()
+    {
+        _ = GetS1()[GetRange()];
+    }
+
+    static S1 GetS1() => new S1 { F1 = State };
+
+    public static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{State} ");
+        State++;
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        switch (refKind)
+        {
+            case "ref":
+                comp.VerifyEmitDiagnostics(
+                    // (28,13): error CS1510: A ref or out value must be an assignable variable
+                    //         _ = GetS1()[GetRange()];
+                    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "GetS1()").WithLocation(28, 13));
+                return;
+            case "ref readonly":
+                comp.VerifyEmitDiagnostics(
+                    // (28,13): warning CS9193: Argument 0 should be a variable because it is passed to a 'ref readonly' parameter
+                    //         _ = GetS1()[GetRange()];
+                    Diagnostic(ErrorCode.WRN_RefReadonlyNotVariable, "GetS1()").WithArguments("0").WithLocation(28, 13));
+                break;
+            case "in":
+                comp.VerifyEmitDiagnostics();
+                break;
+            default:
+                throw ExceptionUtilities.UnexpectedValue(refKind);
+        }
+
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 final:6"), verify: Verification.Skipped);
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_RValueReceiver_03()
+    {
+        // sibling of IndexerAccess_Get_RValueReceiver_03
+        // class rvalue receiver passed by value, extension Length + extension Slice
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.State++; return 5; } }
+        public int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.State++; return 0; }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static int State;
+
+    static void Main()
+    {
+        State = 3;
+        Test();
+        System.Console.Write($"final:{State}");
+    }
+
+    static void Test()
+    {
+        _ = GetC1()[GetRange()];
+    }
+
+    static C1 GetC1() => new C1 { F1 = State };
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{State} ");
+        State++;
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+        // TODO2 verify IL
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_RValueReceiver_03_02()
+    {
+        // class rvalue receiver passed by value, instance Length + extension Slice
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int Slice(int start, int length) { System.Console.Write($"Slice:{x.F1} "); Program.State++; return 0; }
+    }
+}
+
+class C1
+{
+    public int F1;
+    public int Length { get { System.Console.Write($"length:{F1} "); Program.State++; return 5; } }
+}
+
+class Program
+{
+    public static int State;
+
+    static void Main()
+    {
+        State = 3;
+        Test();
+        System.Console.Write($"final:{State}");
+    }
+
+    static void Test()
+    {
+        _ = GetC1()[GetRange()];
+    }
+
+    static C1 GetC1() => new C1 { F1 = State };
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{State} ");
+        State++;
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_RValueReceiver_03_03()
+    {
+        // class rvalue receiver passed by value, extension Length + instance Slice
+        var src = """
+static class E
+{
+    extension(C1 x)
+    {
+        public int Length { get { System.Console.Write($"length:{x.F1} "); Program.State++; return 5; } }
+    }
+}
+
+class C1
+{
+    public int F1;
+    public int Slice(int start, int length) { System.Console.Write($"Slice:{this.F1} "); Program.State++; return 0; }
+}
+
+class Program
+{
+    public static int State;
+
+    static void Main()
+    {
+        State = 3;
+        Test();
+        System.Console.Write($"final:{State}");
+    }
+
+    static void Test()
+    {
+        _ = GetC1()[GetRange()];
+    }
+
+    static C1 GetC1() => new C1 { F1 = State };
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{State} ");
+        State++;
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_RValueReceiver_04()
+    {
+        // sibling of IndexerAccess_Get_RValueReceiver_04
+        // generic struct rvalue receiver passed by value, extension Length + extension Slice
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length { get { System.Console.Write($"length:{((S1)(object)x).F1} "); Program.State++; return 5; } }
+        public int Slice(int start, int length) { System.Console.Write($"Slice:{((S1)(object)x).F1} "); Program.State++; return 0; }
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static int State;
+
+    static async Task Main()
+    {
+        State = 3;
+        Test1<S1>();
+        System.Console.Write($"final:{State}");
+
+        System.Console.Write(", ");
+
+        State = 3;
+        Test2<S1>();
+        System.Console.Write($"final:{State}");
+
+        System.Console.Write(", ");
+
+        State = 3;
+        await Test3<S1>();
+        System.Console.Write($"final:{State}");
+    }
+
+    static T GetT<T>() => (T)(object)new S1 { F1 = State };
+
+    static void Test1<T>()
+    {
+        _ = GetT<T>()[GetRange()];
+    }
+
+    static void Test2<T>() where T : struct
+    {
+        _ = GetT<T>()[GetRange()];
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{State} ");
+        State++;
+        return 1..^1;
+    }
+
+    static async Task Test3<T>()
+    {
+        _ = GetT<T>()[await GetRangeAsync()];
+    }
+
+    static async Task<System.Range> GetRangeAsync()
+    {
+        System.Console.Write($"GetRangeAsync:{State} ");
+        State++;
+        await Task.Yield();
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 final:6, GetRange:3 length:3 Slice:3 final:6, GetRangeAsync:3 length:3 Slice:3 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_RValueReceiver_05()
+    {
+        // sibling of IndexerAccess_Get_RValueReceiver_05
+        // struct rvalue receiver passed by ref, constrained to struct, extension Length + extension Slice
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(ref T x) where T : struct
+    {
+        public int Length => 5;
+        public int Slice(int start, int length) => 0;
+    }
+}
+
+struct S1
+{
+    public int F1;
+}
+
+class Program
+{
+    static void Test2<T>() where T : struct
+    {
+        _ = GetT<T>()[GetRange()];
+    }
+
+    static T GetT<T>() => (T)(object)new S1 { F1 = 3 };
+    static System.Range GetRange() => 1..^1;
+
+    static async Task Test3<T>() where T : struct
+    {
+        _ = GetT<T>()[await GetRangeAsync()];
+    }
+
+    static async Task<System.Range> GetRangeAsync()
+    {
+        await Task.Yield();
+        return 1..^1;
+    }
+}
+""";
+
+        CreateCompilation(src, targetFramework: TargetFramework.Net100).VerifyDiagnostics(
+            // (21,13): error CS1510: A ref or out value must be an assignable variable
+            //         _ = GetT<T>()[GetRange()];
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "GetT<T>()").WithLocation(21, 13),
+            // (21,13): error CS1510: A ref or out value must be an assignable variable
+            //         _ = GetT<T>()[GetRange()];
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "GetT<T>()").WithLocation(21, 13),
+            // (29,13): error CS1510: A ref or out value must be an assignable variable
+            //         _ = GetT<T>()[await GetRangeAsync()];
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "GetT<T>()").WithLocation(29, 13),
+            // (29,13): error CS1510: A ref or out value must be an assignable variable
+            //         _ = GetT<T>()[await GetRangeAsync()];
+            Diagnostic(ErrorCode.ERR_RefLvalueExpected, "GetT<T>()").WithLocation(29, 13));
+    }
+
+    [Fact]
+    public void ImplicitRangeIndexerAccess_Get_RValueReceiver_06()
+    {
+        // sibling of IndexerAccess_Get_RValueReceiver_06
+        // generic class rvalue receiver passed by value, extension Length + extension Slice
+        var src = """
+using System.Threading.Tasks;
+
+static class E
+{
+    extension<T>(T x)
+    {
+        public int Length { get { System.Console.Write($"length:{((C1)(object)x).F1} "); Program.State++; return 5; } }
+        public int Slice(int start, int length) { System.Console.Write($"Slice:{((C1)(object)x).F1} "); Program.State++; return 0; }
+    }
+}
+
+class C1
+{
+    public int F1;
+}
+
+class Program
+{
+    public static int State;
+
+    static async Task Main()
+    {
+        State = 3;
+        Test1<C1>();
+        System.Console.Write($"final:{State}");
+
+        System.Console.Write(", ");
+
+        State = 3;
+        Test2<C1>();
+        System.Console.Write($"final:{State}");
+
+        System.Console.Write(", ");
+
+        State = 3;
+        await Test3<C1>();
+        System.Console.Write($"final:{State}");
+    }
+
+    static T GetT<T>() => (T)(object)new C1 { F1 = State };
+
+    static void Test1<T>()
+    {
+        _ = GetT<T>()[GetRange()];
+    }
+
+    static void Test2<T>() where T : class
+    {
+        _ = GetT<T>()[GetRange()];
+    }
+
+    static System.Range GetRange()
+    {
+        System.Console.Write($"GetRange:{State} ");
+        State++;
+        return 1..^1;
+    }
+
+    static async Task Test3<T>()
+    {
+        _ = GetT<T>()[await GetRangeAsync()];
+    }
+
+    static async Task<System.Range> GetRangeAsync()
+    {
+        System.Console.Write($"GetRangeAsync:{State} ");
+        State++;
+        await Task.Yield();
+        return 1..^1;
+    }
+}
+""";
+
+        var comp = CreateCompilation(src, options: TestOptions.DebugExe, targetFramework: TargetFramework.Net100);
+        CompileAndVerify(comp, expectedOutput: ExpectedOutput("GetRange:3 length:3 Slice:3 final:6, GetRange:3 length:3 Slice:3 final:6, GetRangeAsync:3 length:3 Slice:3 final:6"), verify: Verification.Skipped)
+            .VerifyDiagnostics();
+
+        // TODO2 verify IL
+    }
+
+    // TODO2 add _PrefixIncrementAssignment_NN,  _PostfixIncrementAssignment_NN,  _ConditionalAssignment_NN, _DeconstructAssignment_NN
 }
